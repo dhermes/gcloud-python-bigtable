@@ -2,9 +2,9 @@
 
 ### An extension to [`gcloud-python`][1]
 
-Currently, due to the install story of [`grpc`][2], this hack will only
-supporting this API over HTTP/1.1. We are working with that team to
-improve it rapidly.
+Currently, due to the install story of [`grpc`][2], this library will only
+support the Cloud BigTable API over HTTP/1.1. We are working with the
+gRPC team to rapidly make the install story more user-friendly.
 
 ## Building `_pb2.py` files
 
