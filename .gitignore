@@ -27,3 +27,6 @@ pip-log.txt
 .coverage
 .tox
 nosetests.xml
+
+# Directory for creating generated PB2 files
+generated_python/
