@@ -15,6 +15,7 @@
 """Connection to Google Cloud BigTable API servers."""
 
 import httplib2
+import json
 
 from gcloud_bigtable._generated import bigtable_cluster_service_messages_pb2
 from gcloud_bigtable._generated import bigtable_data_pb2
@@ -23,6 +24,22 @@ from gcloud_bigtable._generated import bigtable_service_messages_pb2
 
 READ_ONLY_SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.data.readonly'
 ADMIN_SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
+
+
+def _print_error(headers, content):
+    """Pretty prints headers and body from an error.
+
+    :type headers: :class:`httplib2.Response`
+    :param headers: Response headers from an error.
+
+    :type content: string
+    :param content: Error response body.
+    """
+    print('RESPONSE HEADERS:')
+    print(json.dumps(headers, indent=2, sort_keys=True))
+    print('-' * 60)
+    print('RESPONSE BODY:')
+    print(json.dumps(json.loads(content), indent=2, sort_keys=True))
 
 
 class Connection(object):
@@ -134,6 +151,7 @@ class Connection(object):
 
         status = headers['status']
         if status != '200':
+            _print_error(headers, content)
             raise ValueError(headers, content)
 
         return content
