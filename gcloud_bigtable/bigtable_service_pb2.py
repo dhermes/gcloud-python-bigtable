@@ -13,9 +13,9 @@ from google.protobuf import descriptor_pb2
 _sym_db = _symbol_database.Default()
 
 
-from google.api import annotations_pb2 as google_dot_api_dot_annotations__pb2
-from google.bigtable.v1 import bigtable_data_pb2 as google_dot_bigtable_dot_v1_dot_bigtable__data__pb2
-from google.bigtable.v1 import bigtable_service_messages_pb2 as google_dot_bigtable_dot_v1_dot_bigtable__service__messages__pb2
+from gcloud_bigtable import annotations_pb2 as google_dot_api_dot_annotations__pb2
+from gcloud_bigtable import bigtable_data_pb2 as google_dot_bigtable_dot_v1_dot_bigtable__data__pb2
+from gcloud_bigtable import bigtable_service_messages_pb2 as google_dot_bigtable_dot_v1_dot_bigtable__service__messages__pb2
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 

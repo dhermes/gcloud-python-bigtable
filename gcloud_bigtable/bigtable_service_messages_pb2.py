@@ -13,7 +13,7 @@ from google.protobuf import descriptor_pb2
 _sym_db = _symbol_database.Default()
 
 
-from google.bigtable.v1 import bigtable_data_pb2 as google_dot_bigtable_dot_v1_dot_bigtable__data__pb2
+from gcloud_bigtable import bigtable_data_pb2 as google_dot_bigtable_dot_v1_dot_bigtable__data__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(

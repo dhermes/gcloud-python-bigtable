@@ -16,6 +16,7 @@ generate:
 	cd cloud-bigtable-client/bigtable-protos/src/main/proto && \
 	    protoc google/api/*.proto --python_out=$(GENERATED_DIR)
 	mv $(GENERATED_DIR)/google/api/* gcloud_bigtable
+	python scripts/rewrite_imports.py
 
 clean:
 	rm -fr cloud-bigtable-client $(GENERATED_DIR)
