@@ -28,5 +28,6 @@ pip-log.txt
 .tox
 nosetests.xml
 
-# Directory for creating generated PB2 files
+# Directories used for creating generated PB2 files
 generated_python/
+cloud-bigtable-client/

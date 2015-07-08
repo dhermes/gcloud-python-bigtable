@@ -42,18 +42,10 @@ $ # [sudo] ldconfig
 ```
 
 After installing `protoc` version `>= 3.0.0`, you can generate the
+protobuf generated modules via
 
 ```bash
-$ git clone https://github.com/GoogleCloudPlatform/cloud-bigtable-client
-$ PYTHON_DIR="$(pwd)/generated_python"
-$ mkdir -p ${PYTHON_DIR}
-$ cd cloud-bigtable-client/bigtable-protos/src/main/proto
-$ protoc google/bigtable/v1/*.proto --python_out=${PYTHON_DIR}
-$ cd ${PYTHON_DIR}/..
-$ rm -fr cloud-bigtable-client  # Clean up the cloned directory
-$ # Move generated files into repo
-$ mv ${PYTHON_DIR}/google/bigtable/v1/* gcloud_bigtable
-$ rm -fr ${PYTHON_DIR}  # Clean up the temporary directory
+$ make generate
 ```
 
 [1]: https://github.com/GoogleCloudPlatform/gcloud-python
