@@ -48,7 +48,15 @@ protobuf generated modules via
 $ make generate
 ```
 
+Also be sure to have the latest version of the Python [`protobuf`][5]
+library:
+
+```bash
+$ [sudo] pip install "protobuf>=3.0.0a3"
+```
+
 [1]: https://github.com/GoogleCloudPlatform/gcloud-python
 [2]: https://www.grpc.io/
 [3]: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/tree/master/bigtable-protos/src/main/proto/google/bigtable/v1
 [4]: https://github.com/google/protobuf
+[5]: https://pypi.python.org/pypi/protobuf
