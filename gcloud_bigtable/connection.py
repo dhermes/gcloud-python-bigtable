@@ -393,7 +393,7 @@ class TableConnection(Connection):
         request_method = 'PUT'
         raise NotImplementedError
 
-    def delete_column_family(self):
+    def delete_column_family(self, cluster_name, table_name, column_family):
         request_uri = self.build_api_url(cluster_name, table_name=table_name,
                                          column_family=column_family)
         request_method = 'DELETE'
