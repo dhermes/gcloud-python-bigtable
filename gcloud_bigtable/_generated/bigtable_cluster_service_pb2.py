@@ -35,4 +35,170 @@ _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 DESCRIPTOR.has_options = True
 DESCRIPTOR._options = _descriptor._ParseOptions(descriptor_pb2.FileOptions(), _b('\n$com.google.bigtable.admin.cluster.v1B\034BigtableClusterServicesProtoP\001'))
+import abc
+from grpc.early_adopter import implementations
+from grpc.framework.alpha import utilities
+class EarlyAdopterBigtableClusterServiceServicer(object):
+  """<fill me in later!>"""
+  __metaclass__ = abc.ABCMeta
+  @abc.abstractmethod
+  def ListZones(self, request, context):
+    raise NotImplementedError()
+  @abc.abstractmethod
+  def GetCluster(self, request, context):
+    raise NotImplementedError()
+  @abc.abstractmethod
+  def ListClusters(self, request, context):
+    raise NotImplementedError()
+  @abc.abstractmethod
+  def CreateCluster(self, request, context):
+    raise NotImplementedError()
+  @abc.abstractmethod
+  def UpdateCluster(self, request, context):
+    raise NotImplementedError()
+  @abc.abstractmethod
+  def DeleteCluster(self, request, context):
+    raise NotImplementedError()
+  @abc.abstractmethod
+  def UndeleteCluster(self, request, context):
+    raise NotImplementedError()
+class EarlyAdopterBigtableClusterServiceServer(object):
+  """<fill me in later!>"""
+  __metaclass__ = abc.ABCMeta
+  @abc.abstractmethod
+  def start(self):
+    raise NotImplementedError()
+  @abc.abstractmethod
+  def stop(self):
+    raise NotImplementedError()
+class EarlyAdopterBigtableClusterServiceStub(object):
+  """<fill me in later!>"""
+  __metaclass__ = abc.ABCMeta
+  @abc.abstractmethod
+  def ListZones(self, request):
+    raise NotImplementedError()
+  ListZones.async = None
+  @abc.abstractmethod
+  def GetCluster(self, request):
+    raise NotImplementedError()
+  GetCluster.async = None
+  @abc.abstractmethod
+  def ListClusters(self, request):
+    raise NotImplementedError()
+  ListClusters.async = None
+  @abc.abstractmethod
+  def CreateCluster(self, request):
+    raise NotImplementedError()
+  CreateCluster.async = None
+  @abc.abstractmethod
+  def UpdateCluster(self, request):
+    raise NotImplementedError()
+  UpdateCluster.async = None
+  @abc.abstractmethod
+  def DeleteCluster(self, request):
+    raise NotImplementedError()
+  DeleteCluster.async = None
+  @abc.abstractmethod
+  def UndeleteCluster(self, request):
+    raise NotImplementedError()
+  UndeleteCluster.async = None
+def early_adopter_create_BigtableClusterService_server(servicer, port, private_key=None, certificate_chain=None):
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
+  import google.protobuf.empty_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
+  import google.longrunning.operations_pb2
+  method_service_descriptions = {
+    "CreateCluster": utilities.unary_unary_service_description(
+      servicer.CreateCluster,
+      google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.CreateClusterRequest.FromString,
+      google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2.Cluster.SerializeToString,
+    ),
+    "DeleteCluster": utilities.unary_unary_service_description(
+      servicer.DeleteCluster,
+      google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.DeleteClusterRequest.FromString,
+      google.protobuf.empty_pb2.Empty.SerializeToString,
+    ),
+    "GetCluster": utilities.unary_unary_service_description(
+      servicer.GetCluster,
+      google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.GetClusterRequest.FromString,
+      google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2.Cluster.SerializeToString,
+    ),
+    "ListClusters": utilities.unary_unary_service_description(
+      servicer.ListClusters,
+      google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.ListClustersRequest.FromString,
+      google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.ListClustersResponse.SerializeToString,
+    ),
+    "ListZones": utilities.unary_unary_service_description(
+      servicer.ListZones,
+      google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.ListZonesRequest.FromString,
+      google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.ListZonesResponse.SerializeToString,
+    ),
+    "UndeleteCluster": utilities.unary_unary_service_description(
+      servicer.UndeleteCluster,
+      google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.UndeleteClusterRequest.FromString,
+      google.longrunning.operations_pb2.Operation.SerializeToString,
+    ),
+    "UpdateCluster": utilities.unary_unary_service_description(
+      servicer.UpdateCluster,
+      google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2.Cluster.FromString,
+      google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2.Cluster.SerializeToString,
+    ),
+  }
+  return implementations.server("google.bigtable.admin.cluster.v1.BigtableClusterService", method_service_descriptions, port, private_key=private_key, certificate_chain=certificate_chain)
+def early_adopter_create_BigtableClusterService_stub(host, port, metadata_transformer=None, secure=False, root_certificates=None, private_key=None, certificate_chain=None, server_host_override=None):
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
+  import google.protobuf.empty_pb2
+  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
+  import google.longrunning.operations_pb2
+  method_invocation_descriptions = {
+    "CreateCluster": utilities.unary_unary_invocation_description(
+      google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.CreateClusterRequest.SerializeToString,
+      google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2.Cluster.FromString,
+    ),
+    "DeleteCluster": utilities.unary_unary_invocation_description(
+      google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.DeleteClusterRequest.SerializeToString,
+      google.protobuf.empty_pb2.Empty.FromString,
+    ),
+    "GetCluster": utilities.unary_unary_invocation_description(
+      google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.GetClusterRequest.SerializeToString,
+      google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2.Cluster.FromString,
+    ),
+    "ListClusters": utilities.unary_unary_invocation_description(
+      google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.ListClustersRequest.SerializeToString,
+      google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.ListClustersResponse.FromString,
+    ),
+    "ListZones": utilities.unary_unary_invocation_description(
+      google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.ListZonesRequest.SerializeToString,
+      google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.ListZonesResponse.FromString,
+    ),
+    "UndeleteCluster": utilities.unary_unary_invocation_description(
+      google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.UndeleteClusterRequest.SerializeToString,
+      google.longrunning.operations_pb2.Operation.FromString,
+    ),
+    "UpdateCluster": utilities.unary_unary_invocation_description(
+      google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2.Cluster.SerializeToString,
+      google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2.Cluster.FromString,
+    ),
+  }
+  return implementations.stub("google.bigtable.admin.cluster.v1.BigtableClusterService", method_invocation_descriptions, host, port, metadata_transformer=metadata_transformer, secure=secure, root_certificates=root_certificates, private_key=private_key, certificate_chain=certificate_chain, server_host_override=server_host_override)
 # @@protoc_insertion_point(module_scope)

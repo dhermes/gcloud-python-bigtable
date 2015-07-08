@@ -376,4 +376,7 @@ DESCRIPTOR.has_options = True
 DESCRIPTOR._options = _descriptor._ParseOptions(descriptor_pb2.FileOptions(), _b('\n\"com.google.bigtable.admin.table.v1B\026BigtableTableDataProtoP\001'))
 _TABLE_COLUMNFAMILIESENTRY.has_options = True
 _TABLE_COLUMNFAMILIESENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001'))
+import abc
+from grpc.early_adopter import implementations
+from grpc.framework.alpha import utilities
 # @@protoc_insertion_point(module_scope)

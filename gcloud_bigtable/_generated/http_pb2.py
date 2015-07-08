@@ -186,4 +186,7 @@ _sym_db.RegisterMessage(CustomHttpPattern)
 
 DESCRIPTOR.has_options = True
 DESCRIPTOR._options = _descriptor._ParseOptions(descriptor_pb2.FileOptions(), _b('\n\016com.google.apiB\tHttpProtoP\001'))
+import abc
+from grpc.early_adopter import implementations
+from grpc.framework.alpha import utilities
 # @@protoc_insertion_point(module_scope)

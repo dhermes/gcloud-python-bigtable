@@ -337,4 +337,110 @@ _sym_db.RegisterMessage(DeleteOperationRequest)
 
 DESCRIPTOR.has_options = True
 DESCRIPTOR._options = _descriptor._ParseOptions(descriptor_pb2.FileOptions(), _b('\n\026com.google.longrunningB\017OperationsProtoP\001'))
+import abc
+from grpc.early_adopter import implementations
+from grpc.framework.alpha import utilities
+class EarlyAdopterOperationsServicer(object):
+  """<fill me in later!>"""
+  __metaclass__ = abc.ABCMeta
+  @abc.abstractmethod
+  def GetOperation(self, request, context):
+    raise NotImplementedError()
+  @abc.abstractmethod
+  def ListOperations(self, request, context):
+    raise NotImplementedError()
+  @abc.abstractmethod
+  def CancelOperation(self, request, context):
+    raise NotImplementedError()
+  @abc.abstractmethod
+  def DeleteOperation(self, request, context):
+    raise NotImplementedError()
+class EarlyAdopterOperationsServer(object):
+  """<fill me in later!>"""
+  __metaclass__ = abc.ABCMeta
+  @abc.abstractmethod
+  def start(self):
+    raise NotImplementedError()
+  @abc.abstractmethod
+  def stop(self):
+    raise NotImplementedError()
+class EarlyAdopterOperationsStub(object):
+  """<fill me in later!>"""
+  __metaclass__ = abc.ABCMeta
+  @abc.abstractmethod
+  def GetOperation(self, request):
+    raise NotImplementedError()
+  GetOperation.async = None
+  @abc.abstractmethod
+  def ListOperations(self, request):
+    raise NotImplementedError()
+  ListOperations.async = None
+  @abc.abstractmethod
+  def CancelOperation(self, request):
+    raise NotImplementedError()
+  CancelOperation.async = None
+  @abc.abstractmethod
+  def DeleteOperation(self, request):
+    raise NotImplementedError()
+  DeleteOperation.async = None
+def early_adopter_create_Operations_server(servicer, port, private_key=None, certificate_chain=None):
+  import google.longrunning.operations_pb2
+  import google.longrunning.operations_pb2
+  import google.longrunning.operations_pb2
+  import google.longrunning.operations_pb2
+  import google.longrunning.operations_pb2
+  import google.protobuf.empty_pb2
+  import google.longrunning.operations_pb2
+  import google.protobuf.empty_pb2
+  method_service_descriptions = {
+    "CancelOperation": utilities.unary_unary_service_description(
+      servicer.CancelOperation,
+      google.longrunning.operations_pb2.CancelOperationRequest.FromString,
+      google.protobuf.empty_pb2.Empty.SerializeToString,
+    ),
+    "DeleteOperation": utilities.unary_unary_service_description(
+      servicer.DeleteOperation,
+      google.longrunning.operations_pb2.DeleteOperationRequest.FromString,
+      google.protobuf.empty_pb2.Empty.SerializeToString,
+    ),
+    "GetOperation": utilities.unary_unary_service_description(
+      servicer.GetOperation,
+      google.longrunning.operations_pb2.GetOperationRequest.FromString,
+      google.longrunning.operations_pb2.Operation.SerializeToString,
+    ),
+    "ListOperations": utilities.unary_unary_service_description(
+      servicer.ListOperations,
+      google.longrunning.operations_pb2.ListOperationsRequest.FromString,
+      google.longrunning.operations_pb2.ListOperationsResponse.SerializeToString,
+    ),
+  }
+  return implementations.server("google.longrunning.Operations", method_service_descriptions, port, private_key=private_key, certificate_chain=certificate_chain)
+def early_adopter_create_Operations_stub(host, port, metadata_transformer=None, secure=False, root_certificates=None, private_key=None, certificate_chain=None, server_host_override=None):
+  import google.longrunning.operations_pb2
+  import google.longrunning.operations_pb2
+  import google.longrunning.operations_pb2
+  import google.longrunning.operations_pb2
+  import google.longrunning.operations_pb2
+  import google.protobuf.empty_pb2
+  import google.longrunning.operations_pb2
+  import google.protobuf.empty_pb2
+  method_invocation_descriptions = {
+    "CancelOperation": utilities.unary_unary_invocation_description(
+      google.longrunning.operations_pb2.CancelOperationRequest.SerializeToString,
+      google.protobuf.empty_pb2.Empty.FromString,
+    ),
+    "DeleteOperation": utilities.unary_unary_invocation_description(
+      google.longrunning.operations_pb2.DeleteOperationRequest.SerializeToString,
+      google.protobuf.empty_pb2.Empty.FromString,
+    ),
+    "GetOperation": utilities.unary_unary_invocation_description(
+      google.longrunning.operations_pb2.GetOperationRequest.SerializeToString,
+      google.longrunning.operations_pb2.Operation.FromString,
+    ),
+    "ListOperations": utilities.unary_unary_invocation_description(
+      google.longrunning.operations_pb2.ListOperationsRequest.SerializeToString,
+      google.longrunning.operations_pb2.ListOperationsResponse.FromString,
+    ),
+  }
+  return implementations.stub("google.longrunning.Operations", method_invocation_descriptions, host, port, metadata_transformer=metadata_transformer, secure=secure, root_certificates=root_certificates, private_key=private_key, certificate_chain=certificate_chain, server_host_override=server_host_override)
 # @@protoc_insertion_point(module_scope)
