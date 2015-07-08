@@ -103,6 +103,63 @@ class Connection(object):
             credentials = credentials.create_scoped(scope)
         return credentials
 
+    def _request(self, request_uri, data, request_method='POST'):
+        """Make a request over the Http transport to the Cloud Datastore API.
+
+        :type request_uri: string
+        :param request_uri: The URI to send the request to.
+
+        :type data: string
+        :param data: The data to send with the API call.
+                     Typically this is a serialized Protobuf string.
+
+        :type request_method: string
+        :param request_method: The HTTP method to send the request. Defaults to
+                               'POST'.
+
+        :rtype: string
+        :returns: The string response content from the API call.
+        :raises: :class:`ValueError` if the response code is not 200 OK.
+        """
+        headers = {
+            'Content-Type': 'application/x-protobuf',
+            'Content-Length': str(len(data)),
+            'User-Agent': self.USER_AGENT,
+        }
+        headers, content = self.http.request(
+            uri=request_uri, method=request_method,
+            headers=headers, body=data)
+
+        status = headers['status']
+        if status != '200':
+            raise ValueError(headers, content)
+
+        return content
+
+    def _rpc(self, request_uri, request_pb, response_pb_cls,
+             request_method='POST'):
+        """Make a protobuf RPC request.
+
+        :type request_uri: string
+        :param request_uri: The URI to send the request to.
+
+        :type request_pb: :class:`google.protobuf.message.Message` instance
+        :param request_pb: the protobuf instance representing the request.
+
+        :type response_pb_cls: A :class:`google.protobuf.message.Message'
+                               subclass.
+        :param response_pb_cls: The class used to unmarshall the response
+                                protobuf.
+
+        :type request_method: string
+        :param request_method: The HTTP method to send the request. Defaults to
+                               'POST'.
+        """
+        response = self._request(request_uri=request_uri,
+                                 data=request_pb.SerializeToString(),
+                                 request_method=request_method)
+        return response_pb_cls.FromString(response)
+
 
 class DataConnection(Connection):
     """Connection to Google Cloud BigTable Data API.
