@@ -16,6 +16,7 @@
 
 import httplib2
 
+from gcloud_bigtable._generated import bigtable_cluster_service_messages_pb2
 from gcloud_bigtable._generated import bigtable_data_pb2
 from gcloud_bigtable._generated import bigtable_service_messages_pb2
 
@@ -279,7 +280,7 @@ class DataConnection(Connection):
         if num_rows_limit is not None:
             request_pb.num_rows_limit = num_rows_limit
 
-        response = self._rpc(self, request_uri, request_pb, response_class)
+        response = self._rpc(request_uri, request_pb, response_class)
         return response
 
     def sample_row_keys(self, table_name):
@@ -510,8 +511,11 @@ class ClusterConnection(Connection):
 
     def list_zones(self, project_name):
         request_uri = self.build_api_url(project_name)
-        request_method = 'GET'
-        raise NotImplementedError
+        response_class = bigtable_cluster_service_messages_pb2.ListZonesResponse
+        request_pb = bigtable_cluster_service_messages_pb2.ListZonesRequest()
+        response = self._rpc(request_uri, request_pb, response_class,
+                             request_method='GET')
+        return response
 
     def get_cluster(self, project_name, zone_name, cluster_name):
         request_uri = self.build_api_url(project_name, zone_name=zone_name,

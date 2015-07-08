@@ -557,12 +557,7 @@ class TestClusterConnection(unittest2.TestCase):
                           zone_name=zone_name, undelete=True)
 
     def test_list_zones(self):
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
-
-        project_name = object()
-        self.assertRaises(NotImplementedError, connection.list_zones,
-                          project_name)
+        self.assertTrue(False)
 
     def test_get_cluster(self):
         credentials = _Credentials()
