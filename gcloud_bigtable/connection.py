@@ -27,7 +27,7 @@ CLUSTER_ADMIN_API_BASE_URL = 'https://bigtableclusteradmin.googleapis.com'
 
 
 class Connection(object):
-    """HTTP-RPC Connection to Google Cloud BigTable.
+    """HTTP-RPC Connection base class for Google Cloud BigTable.
 
     If no value is passed in for ``http``, a :class:`httplib2.Http` object
     will be created and authorized with the ``credentials``. If not, the
@@ -59,8 +59,7 @@ class Connection(object):
 
     def __init__(self, credentials=None, http=None):
         self._http = http
-        self._credentials = self._create_scoped_credentials(
-            credentials, (DATA_SCOPE,))
+        self._credentials = credentials
 
     @property
     def credentials(self):
@@ -103,3 +102,38 @@ class Connection(object):
         if credentials and credentials.create_scoped_required():
             credentials = credentials.create_scoped(scope)
         return credentials
+
+
+class DataConnection(Connection):
+    """Connection to Google Cloud BigTable Data API.
+
+    This only allows interacting with data in an existing table.
+
+    The ``table_name`` value must take the form:
+        "projects/*/zones/*/clusters/*/tables/*"
+    """
+
+    def __init__(self, credentials=None, http=None):
+        credentials = self._create_scoped_credentials(
+            credentials, (DATA_SCOPE,))
+        super(DataConnection, self).__init__(credentials=credentials, http=http)
+
+    def read_rows(self):
+        # POST: "/v1/{table_name}/rows:read"
+        raise NotImplementedError
+
+    def sample_row_keys(self):
+        #  GET: "/v1/{table_name}/rows:sampleKeys"
+        raise NotImplementedError
+
+    def mutate_row(self):
+        # POST: "/v1/{table_name}/rows/{row_key}:mutate"
+        raise NotImplementedError
+
+    def check_and_mutate_row(self):
+        # POST: "/v1/{table_name}/rows/{row_key}:checkAndMutate"
+        raise NotImplementedError
+
+    def read_modify_write_row(self):
+        # POST: "/v1/{table_name}/rows/{row_key}:readModifyWrite"
+        raise NotImplementedError
