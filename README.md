@@ -2,9 +2,24 @@
 
 ### An extension to [`gcloud-python`][1]
 
-Currently, due to the install story of [`grpc`][2], this library will only
-support the Cloud BigTable API over HTTP/1.1. We are working with the
+The Google Cloud BigTable API only supports requests over HTTP/2.
+In order to suppor this, we'll rely on [`grpc`][2]. Unfortunately,
+the install story of gRPC is still developing. We are working with the
 gRPC team to rapidly make the install story more user-friendly.
+
+In it's current form, this library attempted to support requests
+over HTTP/1.1. This is not allowed by the backend, and results in
+a 400 Bad Request:
+
+```json
+{
+  "error": {
+    "code": 400,
+    "message": "Proto over HTTP is not allowed for service 'bigtableclusteradmin.googleapis.com'.",
+    "status": "FAILED_PRECONDITION"
+  }
+}
+```
 
 ## Building `_pb2.py` files
 
