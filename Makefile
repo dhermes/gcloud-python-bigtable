@@ -11,8 +11,11 @@ generate:
 	cd cloud-bigtable-client && git pull origin master
 	mkdir -p $(GENERATED_DIR)
 	cd cloud-bigtable-client/bigtable-protos/src/main/proto && \
-	protoc google/bigtable/v1/*.proto --python_out=$(GENERATED_DIR)
+	    protoc google/bigtable/v1/*.proto --python_out=$(GENERATED_DIR)
 	mv $(GENERATED_DIR)/google/bigtable/v1/* gcloud_bigtable
+	cd cloud-bigtable-client/bigtable-protos/src/main/proto && \
+	    protoc google/api/*.proto --python_out=$(GENERATED_DIR)
+	mv $(GENERATED_DIR)/google/api/* gcloud_bigtable
 
 clean:
 	rm -fr cloud-bigtable-client $(GENERATED_DIR)
