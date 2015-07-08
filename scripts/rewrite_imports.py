@@ -24,11 +24,21 @@ import glob
 IMPORT_TEMPLATE = 'from %s import '
 REPLACEMENTS = {
     'google.api': 'gcloud_bigtable._generated',
+    'google.bigtable.admin.cluster.v1': 'gcloud_bigtable._generated',
+    'google.bigtable.admin.table.v1': 'gcloud_bigtable._generated',
     'google.bigtable.v1': 'gcloud_bigtable._generated',
+    'google.longrunning': 'gcloud_bigtable._generated',
+    'google.rpc': 'gcloud_bigtable._generated',
 }
 DIRECT_REWRITES = {
+    'from google.protobuf import any_pb2':
+        'from gcloud_bigtable._generated import any_pb2',
+    'from google.protobuf import duration_pb2':
+        'from gcloud_bigtable._generated import duration_pb2',
     'from google.protobuf import empty_pb2':
         'from gcloud_bigtable._generated import empty_pb2',
+    'from google.protobuf import timestamp_pb2':
+        'from gcloud_bigtable._generated import timestamp_pb2',
 }
 
 
