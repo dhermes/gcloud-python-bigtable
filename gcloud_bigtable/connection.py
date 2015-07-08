@@ -328,6 +328,30 @@ class TableConnection(Connection):
     @classmethod
     def build_api_url(cls, cluster_name, table_name=None, table_method=None,
                       column_family=None):
+        """Construct the URL for a particular API call.
+
+        This method is used internally to come up with the URL to use when
+        making RPCs to the Google Cloud BigTable Table API.
+
+        :type cluster_name: string
+        :param cluster_name: (Optional) The name of a cluster.
+
+        :type table_name: string
+        :param table_name: (Optional) The name of a table.
+
+        :type table_method: string
+        :param table_method: (Optional) The method for a table. May either be
+                             of the form ":{rpc_verb}" or "/pathToMethod".
+
+        :type column_family: string
+        :param column_family: (Optional) A column family to create.
+
+        :rtype: string
+        :returns: The URL needed to make an API request.
+        :raises: :class:`ValueError` If ``table_method`` is set with
+                 ``column_family`` or without ``table_method``, or if
+                 ``column_family`` is set without ``table_name``.
+        """
         if table_name is None:
             final_segment = ''
         else:
@@ -416,37 +440,110 @@ class ClusterConnection(Connection):
     SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
     """Scope for table and cluster API requests."""
 
-    def list_zones(self):
-        # "/v1/{name=projects/*}/zones"
+    @classmethod
+    def build_api_url(cls, project_name, aggregated=False, zone_name=None,
+                      cluster_name=None, undelete=False):
+        """Construct the URL for a particular API call.
+
+        This method is used internally to come up with the URL to use when
+        making RPCs to the Google Cloud BigTable Cluster API.
+
+        :type project_name: string
+        :param project_name: The name of the project that owns the clusters.
+
+        :type aggregated: boolean
+        :param aggregated: (Optional) Whether the URI should be aggregated
+                           (for :meth:`list_clusters`). Defaults to ``False``.
+                           If ``True``, no other keyword arguments can be set.
+
+        :type zone_name: string
+        :param zone_name: (Optional) The name of the zone in the request.
+
+        :type cluster_name: string
+        :param cluser_name: (Optional) The name of the cluster in the request.
+                            If included, ``zone_name`` is also required.
+
+        :type undelete: boolean
+        :param undelete: (Optional) Whether the URI should be an ``undelete``
+                         required (for :meth:`undelete_cluster`). Defaults
+                         to ``False``. If ``True``, both ``cluster_name`` and
+                         ``zone_name`` are required.
+
+        :rtype: string
+        :returns: The URL needed to make an API request.
+        :raises: :class:`ValueError` If ``aggregated`` is set with
+                 ``zone_name``, or if ``cluster_name`` is set without
+                 ``zone_name`` or if ``undelete`` is set without
+                 ``cluster_name``.
+        """
+        if aggregated:
+            final_segment = 'aggregated/clusters'
+        else:
+            final_segment = 'zones'
+
+        if zone_name is not None:
+            if aggregated:
+                raise ValueError('aggregated cannot be set if zone_name is')
+            final_segment += '/' + zone_name + '/clusters'
+
+        if cluster_name is not None:
+            if zone_name is None:
+                # NOTE: This also covers conflicts from aggregated, since it
+                #       is checked above.
+                raise ValueError('zone_name must be set if cluster_name is')
+
+            final_segment += '/' + cluster_name
+
+        if undelete:
+            if cluster_name is None:
+                # NOTE: This also covers conflicts from aggregated and a missing
+                #       zone_name, since they are checked above.
+                raise ValueError('zone_name and cluster_name must be set '
+                                 'if undelete is')
+            final_segment += ':undelete'
+
+        return cls.API_URL_TEMPLATE.format(
+            api_base=cls.API_BASE_URL,
+            api_version=cls.API_VERSION,
+            project_name=project_name,
+            final_segment=final_segment)
+
+    def list_zones(self, project_name):
+        request_uri = self.build_api_url(project_name)
         request_method = 'GET'
         raise NotImplementedError
 
-    def get_cluster(self):
-        # "/v1/{name=projects/*/zones/*/clusters/*}"
+    def get_cluster(self, project_name, zone_name, cluster_name):
+        request_uri = self.build_api_url(project_name, zone_name=zone_name,
+                                         cluster_name=cluster_name)
         request_method = 'GET'
         raise NotImplementedError
 
-    def list_clusters(self):
-        # "/v1/{name=projects/*}/aggregated/clusters"
+    def list_clusters(self, project_name):
+        request_uri = self.build_api_url(project_name, aggregated=True)
         request_method = 'GET'
         raise NotImplementedError
 
-    def create_cluster(self):
-        # "/v1/{name=projects/*/zones/*}/clusters"
+    def create_cluster(self, project_name, zone_name):
+        request_uri = self.build_api_url(project_name, zone_name=zone_name)
         request_method = 'POST'
         raise NotImplementedError
 
-    def update_cluster(self):
-        # "/v1/{name=projects/*/zones/*/clusters/*}"
+    def update_cluster(self, project_name, zone_name, cluster_name):
+        request_uri = self.build_api_url(project_name, zone_name=zone_name,
+                                         cluster_name=cluster_name)
         request_method = 'PUT'
         raise NotImplementedError
 
-    def delete_cluster(self):
-        # "/v1/{name=projects/*/zones/*/clusters/*}"
+    def delete_cluster(self, project_name, zone_name, cluster_name):
+        request_uri = self.build_api_url(project_name, zone_name=zone_name,
+                                         cluster_name=cluster_name)
         request_method = 'DELETE'
         raise NotImplementedError
 
-    def undelete_cluster(self):
-        # "/v1/{name=projects/*/zones/*/clusters/*}:undelete"
+    def undelete_cluster(self, project_name, zone_name, cluster_name):
+        request_uri = self.build_api_url(project_name, zone_name=zone_name,
+                                         cluster_name=cluster_name,
+                                         undelete=True)
         request_method = 'POST'
         raise NotImplementedError

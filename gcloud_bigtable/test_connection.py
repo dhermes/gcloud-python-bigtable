@@ -433,47 +433,193 @@ class TestClusterConnection(unittest2.TestCase):
         self.assertEqual(connection._credentials._scopes, (klass.SCOPE,))
         self.assertTrue(connection._http is None)
 
+    def test_build_api_url(self):
+        klass = self._getTargetClass()
+
+        project_name = 'project_name'
+        api_url = klass.build_api_url(project_name)
+
+        expected_url = '/'.join([
+            klass.API_BASE_URL,
+            klass.API_VERSION,
+            'projects',
+            project_name,
+            'zones',
+        ])
+        self.assertEqual(api_url, expected_url)
+
+    def test_build_api_url_aggregated(self):
+        klass = self._getTargetClass()
+
+        project_name = 'project_name'
+        api_url = klass.build_api_url(project_name, aggregated=True)
+
+        expected_url = '/'.join([
+            klass.API_BASE_URL,
+            klass.API_VERSION,
+            'projects',
+            project_name,
+            'aggregated',
+            'clusters',
+        ])
+        self.assertEqual(api_url, expected_url)
+
+    def test_build_api_url_zone_name(self):
+        klass = self._getTargetClass()
+
+        project_name = 'project_name'
+        zone_name = 'zone_name'
+        api_url = klass.build_api_url(project_name, zone_name=zone_name)
+
+        expected_url = '/'.join([
+            klass.API_BASE_URL,
+            klass.API_VERSION,
+            'projects',
+            project_name,
+            'zones',
+            zone_name,
+            'clusters',
+        ])
+        self.assertEqual(api_url, expected_url)
+
+    def test_build_api_url_zone_name_conflict(self):
+        klass = self._getTargetClass()
+
+        project_name = 'project_name'
+        zone_name = 'zone_name'
+        self.assertRaises(ValueError, klass.build_api_url, project_name,
+                          zone_name=zone_name, aggregated=True)
+
+    def test_build_api_url_cluster_name(self):
+        klass = self._getTargetClass()
+
+        project_name = 'project_name'
+        zone_name = 'zone_name'
+        cluster_name = 'cluster_name'
+        api_url = klass.build_api_url(project_name, zone_name=zone_name,
+                                      cluster_name=cluster_name)
+
+        expected_url = '/'.join([
+            klass.API_BASE_URL,
+            klass.API_VERSION,
+            'projects',
+            project_name,
+            'zones',
+            zone_name,
+            'clusters',
+            cluster_name,
+        ])
+        self.assertEqual(api_url, expected_url)
+
+    def test_build_api_url_cluster_name_missing_zone_name(self):
+        klass = self._getTargetClass()
+
+        project_name = 'project_name'
+        cluster_name = 'cluster_name'
+        self.assertRaises(ValueError, klass.build_api_url, project_name,
+                          cluster_name=cluster_name)
+
+    def test_build_api_url_undelete(self):
+        klass = self._getTargetClass()
+
+        project_name = 'project_name'
+        zone_name = 'zone_name'
+        cluster_name = 'cluster_name'
+        api_url = klass.build_api_url(project_name, zone_name=zone_name,
+                                      cluster_name=cluster_name, undelete=True)
+
+        expected_url = '/'.join([
+            klass.API_BASE_URL,
+            klass.API_VERSION,
+            'projects',
+            project_name,
+            'zones',
+            zone_name,
+            'clusters',
+            cluster_name + ':undelete',
+        ])
+        self.assertEqual(api_url, expected_url)
+
+    def test_build_api_url_undelete_missing_zone_name(self):
+        klass = self._getTargetClass()
+
+        project_name = 'project_name'
+        cluster_name = 'cluster_name'
+        self.assertRaises(ValueError, klass.build_api_url, project_name,
+                          cluster_name=cluster_name, undelete=True)
+
+    def test_build_api_url_undelete_missing_cluster_name(self):
+        klass = self._getTargetClass()
+
+        project_name = 'project_name'
+        zone_name = 'zone_name'
+        self.assertRaises(ValueError, klass.build_api_url, project_name,
+                          zone_name=zone_name, undelete=True)
+
     def test_list_zones(self):
         credentials = _Credentials()
         connection = self._makeOne(credentials=credentials)
 
-        self.assertRaises(NotImplementedError, connection.list_zones)
+        project_name = object()
+        self.assertRaises(NotImplementedError, connection.list_zones,
+                          project_name)
 
     def test_get_cluster(self):
         credentials = _Credentials()
         connection = self._makeOne(credentials=credentials)
 
-        self.assertRaises(NotImplementedError, connection.get_cluster)
+        project_name = object()
+        zone_name = 'zone_name'
+        cluster_name = 'cluster_name'
+        self.assertRaises(NotImplementedError, connection.get_cluster,
+                          project_name, zone_name, cluster_name)
 
     def test_list_clusters(self):
         credentials = _Credentials()
         connection = self._makeOne(credentials=credentials)
 
-        self.assertRaises(NotImplementedError, connection.list_clusters)
+        project_name = object()
+        self.assertRaises(NotImplementedError, connection.list_clusters,
+                          project_name)
 
     def test_create_cluster(self):
         credentials = _Credentials()
         connection = self._makeOne(credentials=credentials)
 
-        self.assertRaises(NotImplementedError, connection.create_cluster)
+        project_name = object()
+        zone_name = 'zone_name'
+        self.assertRaises(NotImplementedError, connection.create_cluster,
+                          project_name, zone_name)
 
     def test_update_cluster(self):
         credentials = _Credentials()
         connection = self._makeOne(credentials=credentials)
 
-        self.assertRaises(NotImplementedError, connection.update_cluster)
+        project_name = object()
+        zone_name = 'zone_name'
+        cluster_name = 'cluster_name'
+        self.assertRaises(NotImplementedError, connection.update_cluster,
+                          project_name, zone_name, cluster_name)
 
     def test_delete_cluster(self):
         credentials = _Credentials()
         connection = self._makeOne(credentials=credentials)
 
-        self.assertRaises(NotImplementedError, connection.delete_cluster)
+        project_name = object()
+        zone_name = 'zone_name'
+        cluster_name = 'cluster_name'
+        self.assertRaises(NotImplementedError, connection.delete_cluster,
+                          project_name, zone_name, cluster_name)
 
     def test_undelete_cluster(self):
         credentials = _Credentials()
         connection = self._makeOne(credentials=credentials)
 
-        self.assertRaises(NotImplementedError, connection.undelete_cluster)
+        project_name = object()
+        zone_name = 'zone_name'
+        cluster_name = 'cluster_name'
+        self.assertRaises(NotImplementedError, connection.undelete_cluster,
+                          project_name, zone_name, cluster_name)
 
 
 class _Credentials(object):
