@@ -41,6 +41,62 @@ GOOGLE_PROTOBUF_CUSTOM = (
 )
 
 
+def transform_old_to_new(line, old_module, new_module,
+                         ignore_import_from=False):
+    """Transforms from an old module to a new one.
+
+    First checks if a line starts with
+        "from {old_module} import ..."
+    then checks if the line contains
+        "import {old_module} ..."
+    and finally checks if the line starts with (ignoring whitespace)
+        "{old_module} ..."
+
+    In any of these cases, "{old_module}" is replaced with "{new_module}".
+    If none match, nothing is returned.
+
+    :type line: string
+    :param line: The line to be transformed.
+
+    :type old_module: string
+    :param old_module: The import to be re-written.
+
+    :type new_module: string
+    :param new_module: The new location of the re-written import.
+
+    :type ignore_import_from: boolean
+    :param ignore_import_from: Flag to determine if the "from * import"
+                               statements should be ignored.
+
+    :rtype: string or ``NoneType``
+    :returns: The transformed line if the old module was found, otherwise
+              does nothing.
+    """
+    if not ignore_import_from:
+        import_from_statement = IMPORT_FROM_TEMPLATE % (old_module,)
+        if line.startswith(import_from_statement):
+            new_import_from_statement = IMPORT_FROM_TEMPLATE % (new_module,)
+            # Only replace the first instance of the import statement.
+            return line.replace(import_from_statement,
+                                new_import_from_statement, 1)
+
+    # If the line doesn't start with a "from * import *" statement, it
+    # may still contain a "import * ..." statement.
+    import_statement = IMPORT_TEMPLATE % (old_module,)
+    if import_statement in line:
+        new_import_statement = IMPORT_TEMPLATE % (new_module,)
+        # Only replace the first instance of the import statement.
+        return line.replace(import_statement,
+                            new_import_statement, 1)
+
+    # Also need to change references to the standalone imports. As a
+    # stop-gap we fix references to them at the beginning of a line
+    # (ignoring whitespace).
+    if line.lstrip().startswith(old_module):
+        # Only replace the first instance of the old_module.
+        return line.replace(old_module, new_module, 1)
+
+
 def transform_line(line):
     """Transforms an import line in a PB2 module.
 
@@ -57,23 +113,14 @@ def transform_line(line):
     :returns: The transformed line.
     """
     for old_module, new_module in REPLACEMENTS.iteritems():
-        import_from_statement = IMPORT_FROM_TEMPLATE % (old_module,)
-        if line.startswith(import_from_statement):
-            new_import_from_statement = IMPORT_FROM_TEMPLATE % (new_module,)
-            # Only replace the first instance of the import statement.
-            return line.replace(import_from_statement,
-                                new_import_from_statement, 1)
-
-        # If the line doesn't start with a "from * import *" statement, it
-        # may still contain a "import * ..." statement.
-        import_statement = IMPORT_TEMPLATE % (old_module,)
-        if import_statement in line:
-            new_import_statement = IMPORT_TEMPLATE % (new_module,)
-            # Only replace the first instance of the import statement.
-            return line.replace(import_statement,
-                                new_import_statement, 1)
+        result = transform_old_to_new(line, old_module, new_module)
+        if result is not None:
+            return result
 
     for custom_protobuf_module in GOOGLE_PROTOBUF_CUSTOM:
+        # We don't use the "from * import" check in transform_old_to_new
+        # because part of `google.protobuf` comes from the installed
+        # `protobuf` library.
         import_from_statement = PROTOBUF_IMPORT_TEMPLATE % (
             custom_protobuf_module,)
         if line.startswith(import_from_statement):
@@ -83,16 +130,12 @@ def transform_line(line):
             return line.replace(import_from_statement,
                                 new_import_from_statement, 1)
 
-        # If the line doesn't start with a "from * import *" statement, it
-        # may still contain a "import * ..." statement.
-        import_statement = IMPORT_TEMPLATE % (
-            'google.protobuf.' + custom_protobuf_module,)
-        if import_statement in line:
-            new_import_statement = IMPORT_TEMPLATE % (
-                'gcloud_bigtable._generated.' + custom_protobuf_module,)
-            # Only replace the first instance of the import statement.
-            return line.replace(import_statement,
-                                new_import_statement, 1)
+        old_module = 'google.protobuf.' + custom_protobuf_module
+        new_module = 'gcloud_bigtable._generated.' + custom_protobuf_module
+        result = transform_old_to_new(line, old_module, new_module,
+                                      ignore_import_from=True)
+        if result is not None:
+            return result
 
     # If no matches, there is nothing to transform.
     return line

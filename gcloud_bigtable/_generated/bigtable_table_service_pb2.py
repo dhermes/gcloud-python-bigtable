@@ -128,43 +128,43 @@ def early_adopter_create_BigtableTableService_server(servicer, port, private_key
   method_service_descriptions = {
     "CreateColumnFamily": utilities.unary_unary_service_description(
       servicer.CreateColumnFamily,
-      google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2.CreateColumnFamilyRequest.FromString,
-      google.bigtable.admin.table.v1.bigtable_table_data_pb2.ColumnFamily.SerializeToString,
+      gcloud_bigtable._generated.bigtable_table_service_messages_pb2.CreateColumnFamilyRequest.FromString,
+      gcloud_bigtable._generated.bigtable_table_data_pb2.ColumnFamily.SerializeToString,
     ),
     "CreateTable": utilities.unary_unary_service_description(
       servicer.CreateTable,
-      google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2.CreateTableRequest.FromString,
-      google.bigtable.admin.table.v1.bigtable_table_data_pb2.Table.SerializeToString,
+      gcloud_bigtable._generated.bigtable_table_service_messages_pb2.CreateTableRequest.FromString,
+      gcloud_bigtable._generated.bigtable_table_data_pb2.Table.SerializeToString,
     ),
     "DeleteColumnFamily": utilities.unary_unary_service_description(
       servicer.DeleteColumnFamily,
-      google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2.DeleteColumnFamilyRequest.FromString,
-      google.protobuf.empty_pb2.Empty.SerializeToString,
+      gcloud_bigtable._generated.bigtable_table_service_messages_pb2.DeleteColumnFamilyRequest.FromString,
+      gcloud_bigtable._generated.empty_pb2.Empty.SerializeToString,
     ),
     "DeleteTable": utilities.unary_unary_service_description(
       servicer.DeleteTable,
-      google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2.DeleteTableRequest.FromString,
-      google.protobuf.empty_pb2.Empty.SerializeToString,
+      gcloud_bigtable._generated.bigtable_table_service_messages_pb2.DeleteTableRequest.FromString,
+      gcloud_bigtable._generated.empty_pb2.Empty.SerializeToString,
     ),
     "GetTable": utilities.unary_unary_service_description(
       servicer.GetTable,
-      google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2.GetTableRequest.FromString,
-      google.bigtable.admin.table.v1.bigtable_table_data_pb2.Table.SerializeToString,
+      gcloud_bigtable._generated.bigtable_table_service_messages_pb2.GetTableRequest.FromString,
+      gcloud_bigtable._generated.bigtable_table_data_pb2.Table.SerializeToString,
     ),
     "ListTables": utilities.unary_unary_service_description(
       servicer.ListTables,
-      google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2.ListTablesRequest.FromString,
-      google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2.ListTablesResponse.SerializeToString,
+      gcloud_bigtable._generated.bigtable_table_service_messages_pb2.ListTablesRequest.FromString,
+      gcloud_bigtable._generated.bigtable_table_service_messages_pb2.ListTablesResponse.SerializeToString,
     ),
     "RenameTable": utilities.unary_unary_service_description(
       servicer.RenameTable,
-      google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2.RenameTableRequest.FromString,
-      google.protobuf.empty_pb2.Empty.SerializeToString,
+      gcloud_bigtable._generated.bigtable_table_service_messages_pb2.RenameTableRequest.FromString,
+      gcloud_bigtable._generated.empty_pb2.Empty.SerializeToString,
     ),
     "UpdateColumnFamily": utilities.unary_unary_service_description(
       servicer.UpdateColumnFamily,
-      google.bigtable.admin.table.v1.bigtable_table_data_pb2.ColumnFamily.FromString,
-      google.bigtable.admin.table.v1.bigtable_table_data_pb2.ColumnFamily.SerializeToString,
+      gcloud_bigtable._generated.bigtable_table_data_pb2.ColumnFamily.FromString,
+      gcloud_bigtable._generated.bigtable_table_data_pb2.ColumnFamily.SerializeToString,
     ),
   }
   return implementations.server("google.bigtable.admin.table.v1.BigtableTableService", method_service_descriptions, port, private_key=private_key, certificate_chain=certificate_chain)
@@ -187,36 +187,36 @@ def early_adopter_create_BigtableTableService_stub(host, port, metadata_transfor
   import gcloud_bigtable._generated.empty_pb2
   method_invocation_descriptions = {
     "CreateColumnFamily": utilities.unary_unary_invocation_description(
-      google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2.CreateColumnFamilyRequest.SerializeToString,
-      google.bigtable.admin.table.v1.bigtable_table_data_pb2.ColumnFamily.FromString,
+      gcloud_bigtable._generated.bigtable_table_service_messages_pb2.CreateColumnFamilyRequest.SerializeToString,
+      gcloud_bigtable._generated.bigtable_table_data_pb2.ColumnFamily.FromString,
     ),
     "CreateTable": utilities.unary_unary_invocation_description(
-      google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2.CreateTableRequest.SerializeToString,
-      google.bigtable.admin.table.v1.bigtable_table_data_pb2.Table.FromString,
+      gcloud_bigtable._generated.bigtable_table_service_messages_pb2.CreateTableRequest.SerializeToString,
+      gcloud_bigtable._generated.bigtable_table_data_pb2.Table.FromString,
     ),
     "DeleteColumnFamily": utilities.unary_unary_invocation_description(
-      google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2.DeleteColumnFamilyRequest.SerializeToString,
-      google.protobuf.empty_pb2.Empty.FromString,
+      gcloud_bigtable._generated.bigtable_table_service_messages_pb2.DeleteColumnFamilyRequest.SerializeToString,
+      gcloud_bigtable._generated.empty_pb2.Empty.FromString,
     ),
     "DeleteTable": utilities.unary_unary_invocation_description(
-      google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2.DeleteTableRequest.SerializeToString,
-      google.protobuf.empty_pb2.Empty.FromString,
+      gcloud_bigtable._generated.bigtable_table_service_messages_pb2.DeleteTableRequest.SerializeToString,
+      gcloud_bigtable._generated.empty_pb2.Empty.FromString,
     ),
     "GetTable": utilities.unary_unary_invocation_description(
-      google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2.GetTableRequest.SerializeToString,
-      google.bigtable.admin.table.v1.bigtable_table_data_pb2.Table.FromString,
+      gcloud_bigtable._generated.bigtable_table_service_messages_pb2.GetTableRequest.SerializeToString,
+      gcloud_bigtable._generated.bigtable_table_data_pb2.Table.FromString,
     ),
     "ListTables": utilities.unary_unary_invocation_description(
-      google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2.ListTablesRequest.SerializeToString,
-      google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2.ListTablesResponse.FromString,
+      gcloud_bigtable._generated.bigtable_table_service_messages_pb2.ListTablesRequest.SerializeToString,
+      gcloud_bigtable._generated.bigtable_table_service_messages_pb2.ListTablesResponse.FromString,
     ),
     "RenameTable": utilities.unary_unary_invocation_description(
-      google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2.RenameTableRequest.SerializeToString,
-      google.protobuf.empty_pb2.Empty.FromString,
+      gcloud_bigtable._generated.bigtable_table_service_messages_pb2.RenameTableRequest.SerializeToString,
+      gcloud_bigtable._generated.empty_pb2.Empty.FromString,
     ),
     "UpdateColumnFamily": utilities.unary_unary_invocation_description(
-      google.bigtable.admin.table.v1.bigtable_table_data_pb2.ColumnFamily.SerializeToString,
-      google.bigtable.admin.table.v1.bigtable_table_data_pb2.ColumnFamily.FromString,
+      gcloud_bigtable._generated.bigtable_table_data_pb2.ColumnFamily.SerializeToString,
+      gcloud_bigtable._generated.bigtable_table_data_pb2.ColumnFamily.FromString,
     ),
   }
   return implementations.stub("google.bigtable.admin.table.v1.BigtableTableService", method_invocation_descriptions, host, port, metadata_transformer=metadata_transformer, secure=secure, root_certificates=root_certificates, private_key=private_key, certificate_chain=certificate_chain, server_host_override=server_host_override)

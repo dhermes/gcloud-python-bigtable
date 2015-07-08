@@ -395,23 +395,23 @@ def early_adopter_create_Operations_server(servicer, port, private_key=None, cer
   method_service_descriptions = {
     "CancelOperation": utilities.unary_unary_service_description(
       servicer.CancelOperation,
-      google.longrunning.operations_pb2.CancelOperationRequest.FromString,
-      google.protobuf.empty_pb2.Empty.SerializeToString,
+      gcloud_bigtable._generated.operations_pb2.CancelOperationRequest.FromString,
+      gcloud_bigtable._generated.empty_pb2.Empty.SerializeToString,
     ),
     "DeleteOperation": utilities.unary_unary_service_description(
       servicer.DeleteOperation,
-      google.longrunning.operations_pb2.DeleteOperationRequest.FromString,
-      google.protobuf.empty_pb2.Empty.SerializeToString,
+      gcloud_bigtable._generated.operations_pb2.DeleteOperationRequest.FromString,
+      gcloud_bigtable._generated.empty_pb2.Empty.SerializeToString,
     ),
     "GetOperation": utilities.unary_unary_service_description(
       servicer.GetOperation,
-      google.longrunning.operations_pb2.GetOperationRequest.FromString,
-      google.longrunning.operations_pb2.Operation.SerializeToString,
+      gcloud_bigtable._generated.operations_pb2.GetOperationRequest.FromString,
+      gcloud_bigtable._generated.operations_pb2.Operation.SerializeToString,
     ),
     "ListOperations": utilities.unary_unary_service_description(
       servicer.ListOperations,
-      google.longrunning.operations_pb2.ListOperationsRequest.FromString,
-      google.longrunning.operations_pb2.ListOperationsResponse.SerializeToString,
+      gcloud_bigtable._generated.operations_pb2.ListOperationsRequest.FromString,
+      gcloud_bigtable._generated.operations_pb2.ListOperationsResponse.SerializeToString,
     ),
   }
   return implementations.server("google.longrunning.Operations", method_service_descriptions, port, private_key=private_key, certificate_chain=certificate_chain)
@@ -426,20 +426,20 @@ def early_adopter_create_Operations_stub(host, port, metadata_transformer=None, 
   import gcloud_bigtable._generated.empty_pb2
   method_invocation_descriptions = {
     "CancelOperation": utilities.unary_unary_invocation_description(
-      google.longrunning.operations_pb2.CancelOperationRequest.SerializeToString,
-      google.protobuf.empty_pb2.Empty.FromString,
+      gcloud_bigtable._generated.operations_pb2.CancelOperationRequest.SerializeToString,
+      gcloud_bigtable._generated.empty_pb2.Empty.FromString,
     ),
     "DeleteOperation": utilities.unary_unary_invocation_description(
-      google.longrunning.operations_pb2.DeleteOperationRequest.SerializeToString,
-      google.protobuf.empty_pb2.Empty.FromString,
+      gcloud_bigtable._generated.operations_pb2.DeleteOperationRequest.SerializeToString,
+      gcloud_bigtable._generated.empty_pb2.Empty.FromString,
     ),
     "GetOperation": utilities.unary_unary_invocation_description(
-      google.longrunning.operations_pb2.GetOperationRequest.SerializeToString,
-      google.longrunning.operations_pb2.Operation.FromString,
+      gcloud_bigtable._generated.operations_pb2.GetOperationRequest.SerializeToString,
+      gcloud_bigtable._generated.operations_pb2.Operation.FromString,
     ),
     "ListOperations": utilities.unary_unary_invocation_description(
-      google.longrunning.operations_pb2.ListOperationsRequest.SerializeToString,
-      google.longrunning.operations_pb2.ListOperationsResponse.FromString,
+      gcloud_bigtable._generated.operations_pb2.ListOperationsRequest.SerializeToString,
+      gcloud_bigtable._generated.operations_pb2.ListOperationsResponse.FromString,
     ),
   }
   return implementations.stub("google.longrunning.Operations", method_invocation_descriptions, host, port, metadata_transformer=metadata_transformer, secure=secure, root_certificates=root_certificates, private_key=private_key, certificate_chain=certificate_chain, server_host_override=server_host_override)

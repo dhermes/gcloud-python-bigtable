@@ -101,28 +101,28 @@ def early_adopter_create_BigtableService_server(servicer, port, private_key=None
   method_service_descriptions = {
     "CheckAndMutateRow": utilities.unary_unary_service_description(
       servicer.CheckAndMutateRow,
-      google.bigtable.v1.bigtable_service_messages_pb2.CheckAndMutateRowRequest.FromString,
-      google.bigtable.v1.bigtable_service_messages_pb2.CheckAndMutateRowResponse.SerializeToString,
+      gcloud_bigtable._generated.bigtable_service_messages_pb2.CheckAndMutateRowRequest.FromString,
+      gcloud_bigtable._generated.bigtable_service_messages_pb2.CheckAndMutateRowResponse.SerializeToString,
     ),
     "MutateRow": utilities.unary_unary_service_description(
       servicer.MutateRow,
-      google.bigtable.v1.bigtable_service_messages_pb2.MutateRowRequest.FromString,
-      google.protobuf.empty_pb2.Empty.SerializeToString,
+      gcloud_bigtable._generated.bigtable_service_messages_pb2.MutateRowRequest.FromString,
+      gcloud_bigtable._generated.empty_pb2.Empty.SerializeToString,
     ),
     "ReadModifyWriteRow": utilities.unary_unary_service_description(
       servicer.ReadModifyWriteRow,
-      google.bigtable.v1.bigtable_service_messages_pb2.ReadModifyWriteRowRequest.FromString,
-      google.bigtable.v1.bigtable_data_pb2.Row.SerializeToString,
+      gcloud_bigtable._generated.bigtable_service_messages_pb2.ReadModifyWriteRowRequest.FromString,
+      gcloud_bigtable._generated.bigtable_data_pb2.Row.SerializeToString,
     ),
     "ReadRows": utilities.unary_stream_service_description(
       servicer.ReadRows,
-      google.bigtable.v1.bigtable_service_messages_pb2.ReadRowsRequest.FromString,
-      google.bigtable.v1.bigtable_service_messages_pb2.ReadRowsResponse.SerializeToString,
+      gcloud_bigtable._generated.bigtable_service_messages_pb2.ReadRowsRequest.FromString,
+      gcloud_bigtable._generated.bigtable_service_messages_pb2.ReadRowsResponse.SerializeToString,
     ),
     "SampleRowKeys": utilities.unary_stream_service_description(
       servicer.SampleRowKeys,
-      google.bigtable.v1.bigtable_service_messages_pb2.SampleRowKeysRequest.FromString,
-      google.bigtable.v1.bigtable_service_messages_pb2.SampleRowKeysResponse.SerializeToString,
+      gcloud_bigtable._generated.bigtable_service_messages_pb2.SampleRowKeysRequest.FromString,
+      gcloud_bigtable._generated.bigtable_service_messages_pb2.SampleRowKeysResponse.SerializeToString,
     ),
   }
   return implementations.server("google.bigtable.v1.BigtableService", method_service_descriptions, port, private_key=private_key, certificate_chain=certificate_chain)
@@ -139,24 +139,24 @@ def early_adopter_create_BigtableService_stub(host, port, metadata_transformer=N
   import gcloud_bigtable._generated.bigtable_data_pb2
   method_invocation_descriptions = {
     "CheckAndMutateRow": utilities.unary_unary_invocation_description(
-      google.bigtable.v1.bigtable_service_messages_pb2.CheckAndMutateRowRequest.SerializeToString,
-      google.bigtable.v1.bigtable_service_messages_pb2.CheckAndMutateRowResponse.FromString,
+      gcloud_bigtable._generated.bigtable_service_messages_pb2.CheckAndMutateRowRequest.SerializeToString,
+      gcloud_bigtable._generated.bigtable_service_messages_pb2.CheckAndMutateRowResponse.FromString,
     ),
     "MutateRow": utilities.unary_unary_invocation_description(
-      google.bigtable.v1.bigtable_service_messages_pb2.MutateRowRequest.SerializeToString,
-      google.protobuf.empty_pb2.Empty.FromString,
+      gcloud_bigtable._generated.bigtable_service_messages_pb2.MutateRowRequest.SerializeToString,
+      gcloud_bigtable._generated.empty_pb2.Empty.FromString,
     ),
     "ReadModifyWriteRow": utilities.unary_unary_invocation_description(
-      google.bigtable.v1.bigtable_service_messages_pb2.ReadModifyWriteRowRequest.SerializeToString,
-      google.bigtable.v1.bigtable_data_pb2.Row.FromString,
+      gcloud_bigtable._generated.bigtable_service_messages_pb2.ReadModifyWriteRowRequest.SerializeToString,
+      gcloud_bigtable._generated.bigtable_data_pb2.Row.FromString,
     ),
     "ReadRows": utilities.unary_stream_invocation_description(
-      google.bigtable.v1.bigtable_service_messages_pb2.ReadRowsRequest.SerializeToString,
-      google.bigtable.v1.bigtable_service_messages_pb2.ReadRowsResponse.FromString,
+      gcloud_bigtable._generated.bigtable_service_messages_pb2.ReadRowsRequest.SerializeToString,
+      gcloud_bigtable._generated.bigtable_service_messages_pb2.ReadRowsResponse.FromString,
     ),
     "SampleRowKeys": utilities.unary_stream_invocation_description(
-      google.bigtable.v1.bigtable_service_messages_pb2.SampleRowKeysRequest.SerializeToString,
-      google.bigtable.v1.bigtable_service_messages_pb2.SampleRowKeysResponse.FromString,
+      gcloud_bigtable._generated.bigtable_service_messages_pb2.SampleRowKeysRequest.SerializeToString,
+      gcloud_bigtable._generated.bigtable_service_messages_pb2.SampleRowKeysResponse.FromString,
     ),
   }
   return implementations.stub("google.bigtable.v1.BigtableService", method_invocation_descriptions, host, port, metadata_transformer=metadata_transformer, secure=secure, root_certificates=root_certificates, private_key=private_key, certificate_chain=certificate_chain, server_host_override=server_host_override)
