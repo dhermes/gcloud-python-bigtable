@@ -49,24 +49,7 @@ generate:
 	python scripts/rewrite_imports.py
 
 check_generate:
-	python -c "import gcloud_bigtable._generated"
-	python -c "from gcloud_bigtable._generated import annotations_pb2"
-	python -c "from gcloud_bigtable._generated import any_pb2"
-	python -c "from gcloud_bigtable._generated import bigtable_cluster_data_pb2"
-	python -c "from gcloud_bigtable._generated import bigtable_cluster_service_messages_pb2"
-	python -c "from gcloud_bigtable._generated import bigtable_cluster_service_pb2"
-	python -c "from gcloud_bigtable._generated import bigtable_data_pb2"
-	python -c "from gcloud_bigtable._generated import bigtable_service_messages_pb2"
-	python -c "from gcloud_bigtable._generated import bigtable_service_pb2"
-	python -c "from gcloud_bigtable._generated import bigtable_table_data_pb2"
-	python -c "from gcloud_bigtable._generated import bigtable_table_service_messages_pb2"
-	python -c "from gcloud_bigtable._generated import bigtable_table_service_pb2"
-	python -c "from gcloud_bigtable._generated import duration_pb2"
-	python -c "from gcloud_bigtable._generated import empty_pb2"
-	python -c "from gcloud_bigtable._generated import http_pb2"
-	python -c "from gcloud_bigtable._generated import operations_pb2"
-	python -c "from gcloud_bigtable._generated import status_pb2"
-	python -c "from gcloud_bigtable._generated import timestamp_pb2"
+	python scripts/check_generate.py
 
 clean:
 	rm -fr cloud-bigtable-client $(GENERATED_DIR)
