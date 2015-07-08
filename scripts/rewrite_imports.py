@@ -23,12 +23,12 @@ import glob
 
 IMPORT_TEMPLATE = 'from %s import '
 REPLACEMENTS = {
-    'google.api': 'gcloud_bigtable',
-    'google.bigtable.v1': 'gcloud_bigtable',
+    'google.api': 'gcloud_bigtable._generated',
+    'google.bigtable.v1': 'gcloud_bigtable._generated',
 }
 DIRECT_REWRITES = {
     'from google.protobuf import empty_pb2':
-        'from gcloud_bigtable import empty_pb2',
+        'from gcloud_bigtable._generated import empty_pb2',
 }
 
 
@@ -81,7 +81,7 @@ def rewrite_file(filename):
 
 def main():
     """Rewrites all PB2 files."""
-    pb2_files = glob.glob('gcloud_bigtable/*pb2.py')
+    pb2_files = glob.glob('gcloud_bigtable/_generated/*pb2.py')
     for filename in pb2_files:
         rewrite_file(filename)
 
