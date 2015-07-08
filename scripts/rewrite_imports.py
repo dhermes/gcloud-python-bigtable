@@ -22,6 +22,8 @@ import glob
 
 
 IMPORT_TEMPLATE = 'from %s import '
+PROTOBUF_IMPORT_TEMPLATE = 'from google.protobuf import %s '
+REPLACE_PROTOBUF_IMPORT_TEMPLATE = 'from gcloud_bigtable._generated import %s '
 REPLACEMENTS = {
     'google.api': 'gcloud_bigtable._generated',
     'google.bigtable.admin.cluster.v1': 'gcloud_bigtable._generated',
@@ -30,25 +32,22 @@ REPLACEMENTS = {
     'google.longrunning': 'gcloud_bigtable._generated',
     'google.rpc': 'gcloud_bigtable._generated',
 }
-DIRECT_REWRITES = {
-    'from google.protobuf import any_pb2':
-        'from gcloud_bigtable._generated import any_pb2',
-    'from google.protobuf import duration_pb2':
-        'from gcloud_bigtable._generated import duration_pb2',
-    'from google.protobuf import empty_pb2':
-        'from gcloud_bigtable._generated import empty_pb2',
-    'from google.protobuf import timestamp_pb2':
-        'from gcloud_bigtable._generated import timestamp_pb2',
-}
+GOOGLE_PROTOBUF_CUSTOM = (
+    'any_pb2',
+    'duration_pb2',
+    'empty_pb2',
+    'timestamp_pb2',
+)
 
 
 def transform_line(line):
     """Transforms an import line in a PB2 module.
 
     If the line is not an import of one of the packages in
-    ``REPLACEMENTS`` or ``DIRECT_REWRITES``, does nothing and returns the
-    original. Otherwise it replaces the package matched with our local
-    package or directly rewrites the given statement.
+    ``REPLACEMENTS`` or ``GOOGLE_PROTOBUF_CUSTOM``, does nothing and returns
+    the original. Otherwise it replaces the package matched with our local
+    package or directly rewrites the custom ``google.protobuf`` import
+    statement.
 
     :type line: string
     :param line: The line to be transformed.
@@ -63,10 +62,13 @@ def transform_line(line):
             # Only replace the first instance of the import statement.
             return line.replace(import_statement, new_import_statement, 1)
 
-    for old_begin, new_begin in DIRECT_REWRITES.iteritems():
-        if line.startswith(old_begin):
+    for custom_protobuf_module in GOOGLE_PROTOBUF_CUSTOM:
+        import_statement = PROTOBUF_IMPORT_TEMPLATE % (custom_protobuf_module,)
+        if line.startswith(import_statement):
+            new_import_statement = REPLACE_PROTOBUF_IMPORT_TEMPLATE % (
+                custom_protobuf_module,)
             # Only replace the first instance of the import statement.
-            return line.replace(old_begin, new_begin, 1)
+            return line.replace(import_statement, new_import_statement, 1)
 
     # If no matches, there is nothing to transform.
     return line
