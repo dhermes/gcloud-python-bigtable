@@ -28,6 +28,10 @@ pip-log.txt
 .tox
 nosetests.xml
 
+# Virtual environment
+env/
+coverage.xml
+
 # Directories used for creating generated PB2 files
 generated_python/
 cloud-bigtable-client/

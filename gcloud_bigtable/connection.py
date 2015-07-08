@@ -182,7 +182,8 @@ class DataConnection(Connection):
             credentials, (DATA_SCOPE,))
         super(DataConnection, self).__init__(credentials=credentials, http=http)
 
-    def build_api_url(self, table_name, rpc_method, row_key=None):
+    @classmethod
+    def build_api_url(cls, table_name, rpc_method, row_key=None):
         """Construct the URL for a particular API call.
 
         This method is used internally to come up with the URL to use when
@@ -206,9 +207,9 @@ class DataConnection(Connection):
         else:
             final_segment = '/' + row_key + ':' + rpc_method
 
-        return self.API_URL_TEMPLATE.format(
+        return cls.API_URL_TEMPLATE.format(
             api_base=DATA_API_BASE_URL,
-            api_version=self.API_VERSION,
+            api_version=cls.API_VERSION,
             table_name=table_name,
             final_segment=final_segment)
 
