@@ -20,11 +20,9 @@ from gcloud_bigtable._generated import bigtable_data_pb2
 from gcloud_bigtable._generated import bigtable_service_messages_pb2
 
 
-DATA_SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.data'
 READ_ONLY_SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.data.readonly'
 ADMIN_SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
 
-DATA_API_BASE_URL = 'https://bigtable.googleapis.com'
 TABLE_ADMIN_API_BASE_URL = 'https://bigtabletableadmin.googleapis.com'
 CLUSTER_ADMIN_API_BASE_URL = 'https://bigtableclusteradmin.googleapis.com'
 
@@ -59,8 +57,11 @@ class Connection(object):
     """
 
     USER_AGENT = 'gcloud-bigtable-python'
+    SCOPE = None
 
     def __init__(self, credentials=None, http=None):
+        credentials = self._create_scoped_credentials(
+            credentials, (self.SCOPE,))
         self._http = http
         self._credentials = credentials
 
@@ -180,10 +181,11 @@ class DataConnection(Connection):
                         'rows{final_segment}')
     """A template for the URL of a particular API call."""
 
-    def __init__(self, credentials=None, http=None):
-        credentials = self._create_scoped_credentials(
-            credentials, (DATA_SCOPE,))
-        super(DataConnection, self).__init__(credentials=credentials, http=http)
+    API_BASE_URL = 'https://bigtable.googleapis.com'
+    """Base URL for API requests."""
+
+    SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.data'
+    """Scope for data API requests."""
 
     @classmethod
     def build_api_url(cls, table_name, rpc_method, row_key=None):
@@ -211,7 +213,7 @@ class DataConnection(Connection):
             final_segment = '/' + row_key + ':' + rpc_method
 
         return cls.API_URL_TEMPLATE.format(
-            api_base=DATA_API_BASE_URL,
+            api_base=cls.API_BASE_URL,
             api_version=cls.API_VERSION,
             table_name=table_name,
             final_segment=final_segment)
