@@ -304,3 +304,63 @@ class DataConnection(Connection):
         request_uri = self.build_api_url(table_name, 'readModifyWrite',
                                          row_key=row_key)
         raise NotImplementedError
+
+
+class TableConnection(Connection):
+    """Connection to Google Cloud BigTable Table API.
+
+    This only allows interacting with tables in a cluster.
+    """
+
+    API_VERSION = 'v1'
+    """The version of the API, used in building the API call's URL."""
+
+    API_URL_TEMPLATE = ('{api_base}/{api_version}/{cluster_name}/'
+                        'tables{final_segment}')
+    """A template for the URL of a particular API call."""
+
+    API_BASE_URL = 'https://bigtabletableadmin.googleapis.com'
+    """Base URL for API requests."""
+
+    SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
+    """Scope for table and cluster API requests."""
+
+    def create_table(self):
+        # "/v1/{name=projects/*/zones/*/clusters/*}/tables"
+        request_method = 'POST'
+        raise NotImplementedError
+
+    def list_tables(self):
+        # "/v1/{name=projects/*/zones/*/clusters/*}/tables"
+        request_method = 'GET'
+        raise NotImplementedError
+
+    def get_table(self):
+        # "/v1/{name=projects/*/zones/*/clusters/*/tables/*}"
+        request_method = 'GET'
+        raise NotImplementedError
+
+    def delete_table(self):
+        # "/v1/{name=projects/*/zones/*/clusters/*/tables/*}"
+        request_method = 'DELETE'
+        raise NotImplementedError
+
+    def rename_table(self):
+        # "/v1/{name=projects/*/zones/*/clusters/*/tables/*}:rename"
+        request_method = 'POST'
+        raise NotImplementedError
+
+    def create_column_family(self):
+        # "/v1/{name=projects/*/zones/*/clusters/*/tables/*}/columnFamilies"
+        request_method = 'POST'
+        raise NotImplementedError
+
+    def update_column_family(self):
+        # "/v1/{name=projects/*/zones/*/clusters/*/tables/*/columnFamilies/*}"
+        request_method = 'PUT'
+        raise NotImplementedError
+
+    def delete_column_family(self):
+        # "/v1/{name=projects/*/zones/*/clusters/*/tables/*/columnFamilies/*}"
+        request_method = 'DELETE'
+        raise NotImplementedError
