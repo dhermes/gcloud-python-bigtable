@@ -1,10 +1,11 @@
 GENERATED_DIR=$(shell pwd)/generated_python
 
 help:
-	@echo 'Makefile for a gcloud-python-bigtable            '
-	@echo '                                                 '
-	@echo '   make generate   Generates the protobuf modules'
-	@echo '   make clean      Clean generated files         '
+	@echo 'Makefile for a gcloud-python-bigtable                  '
+	@echo '                                                       '
+	@echo '   make generate         Generates the protobuf modules'
+	@echo '   make check_generate   Checks that generate succeeded'
+	@echo '   make clean            Clean generated files         '
 
 generate:
 	[ -d cloud-bigtable-client ] || git clone https://github.com/GoogleCloudPlatform/cloud-bigtable-client
@@ -18,7 +19,15 @@ generate:
 	mv $(GENERATED_DIR)/google/api/* gcloud_bigtable
 	python scripts/rewrite_imports.py
 
+check_generate:
+	python -c "import gcloud_bigtable"
+	python -c "from gcloud_bigtable import http_pb2"
+	python -c "from gcloud_bigtable import bigtable_data_pb2"
+	python -c "from gcloud_bigtable import bigtable_service_messages_pb2"
+	python -c "from gcloud_bigtable import bigtable_service_pb2"
+	python -c "from gcloud_bigtable import annotations_pb2"
+
 clean:
 	rm -fr cloud-bigtable-client $(GENERATED_DIR)
 
-.PHONY: generate clean
+.PHONY: generate check_generate clean
