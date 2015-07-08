@@ -16,6 +16,40 @@
 import unittest2
 
 
+class Test__print_error(unittest2.TestCase):
+
+    def _callFUT(self, headers, content):
+        from gcloud_bigtable.connection import _print_error
+        return _print_error(headers, content)
+
+    def test_it(self):
+        from gcloud_bigtable import connection
+        original_print_func = connection._print_func
+
+        values = []
+
+        def mock_print_func(value):
+            values.append(value)
+
+        headers = {'foo': 'bar'}
+        content = '{"secret": 42}'
+
+        try:
+            connection._print_func = mock_print_func
+            self._callFUT(headers, content)
+        finally:
+            connection._print_func = original_print_func
+
+        expected_values = [
+            'RESPONSE HEADERS:',
+            '{\n  "foo": "bar"\n}',
+            '-' * 60,
+            'RESPONSE BODY:',
+            '{\n  "secret": 42\n}',
+        ]
+        self.assertEqual(values, expected_values)
+
+
 class TestConnection(unittest2.TestCase):
 
     def _getTargetClass(self):
@@ -78,9 +112,9 @@ class TestConnection(unittest2.TestCase):
         http = connection.http
         self.assertTrue(http is credentials._authorized)
 
-    def _request_test_helper(self, status):
+    def _request_test_helper(self, status, content):
+        from gcloud_bigtable.connection import ResponseError
         headers = {'status': status}
-        content = b'FOOBAR'
         http = _Http(headers, content)
         connection = self._makeOne(http=http)
         request_uri = 'https://domain.com/path'
@@ -91,7 +125,7 @@ class TestConnection(unittest2.TestCase):
                                          request_method=request_method)
             self.assertEqual(result, content)
         else:
-            self.assertRaises(ValueError, connection._request, request_uri,
+            self.assertRaises(ResponseError, connection._request, request_uri,
                               data, request_method=request_method)
 
         self.assertEqual(len(http._called_with), 4)
@@ -106,10 +140,10 @@ class TestConnection(unittest2.TestCase):
         self.assertEqual(http._called_with['headers'], expected_headers)
 
     def test__request_success(self):
-        self._request_test_helper('200')
+        self._request_test_helper('200', b'FOOBAR')
 
     def test__request_failure(self):
-        self._request_test_helper('418')
+        self._request_test_helper('418', b'{}')
 
     def test__rpc(self):
         klass = self._getTargetClass()

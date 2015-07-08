@@ -24,6 +24,12 @@ from gcloud_bigtable._generated import bigtable_service_messages_pb2
 
 READ_ONLY_SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.data.readonly'
 ADMIN_SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
+DEBUG = False
+
+
+def _print_func(value):
+    if DEBUG:
+        six.print_(value)
 
 
 def _print_error(headers, content):
@@ -35,11 +41,15 @@ def _print_error(headers, content):
     :type content: string
     :param content: Error response body.
     """
-    print('RESPONSE HEADERS:')
-    print(json.dumps(headers, indent=2, sort_keys=True))
-    print('-' * 60)
-    print('RESPONSE BODY:')
-    print(json.dumps(json.loads(content), indent=2, sort_keys=True))
+    _print_func('RESPONSE HEADERS:')
+    _print_func(json.dumps(headers, indent=2, sort_keys=True))
+    _print_func('-' * 60)
+    _print_func('RESPONSE BODY:')
+    _print_func(json.dumps(json.loads(content), indent=2, sort_keys=True))
+
+
+class ResponseError(Exception):
+    """Custom error for failed responses."""
 
 
 class Connection(object):
@@ -138,7 +148,7 @@ class Connection(object):
 
         :rtype: string
         :returns: The string response content from the API call.
-        :raises: :class:`ValueError` if the response code is not 200 OK.
+        :raises: :class:`ResponseError` if the response code is not 200 OK.
         """
         headers = {
             'Content-Type': 'application/x-protobuf',
@@ -152,7 +162,7 @@ class Connection(object):
         status = headers['status']
         if status != '200':
             _print_error(headers, content)
-            raise ValueError(headers, content)
+            raise ResponseError(headers, content)
 
         return content
 
