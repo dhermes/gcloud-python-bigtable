@@ -16,6 +16,9 @@
 
 import httplib2
 
+from gcloud_bigtable._generated import bigtable_data_pb2
+from gcloud_bigtable._generated import bigtable_service_messages_pb2
+
 
 DATA_SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.data'
 READ_ONLY_SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.data.readonly'
@@ -213,9 +216,72 @@ class DataConnection(Connection):
             table_name=table_name,
             final_segment=final_segment)
 
-    def read_rows(self, table_name):
+    def read_rows(self, table_name, row_key=None, row_range=None,
+                  filter=None, allow_row_interleaving=None,
+                  num_rows_limit=None):
+        """Read rows from table.
+
+        Streams back the contents of all requested rows, optionally applying
+        the same Reader filter to each. Depending on their size, rows may be
+        broken up across multiple responses, but atomicity of each row will
+        still be preserved.
+
+        :type table_name: string
+        :param table_name: The unique name of the table from which to read.
+
+        :type row_key: bytes
+        :param row_key: (Optional) The key of a single row from which to read.
+
+        :type row_range: :class:`bigtable_data_pb2.RowRange`
+        :param row_range: (Optional) A range of rows from which to read.
+
+        :type filter: :class:`bigtable_data_pb2.RowFilter`
+        :param filter: (Optional) The filter to apply to the contents of the
+                       specified row(s). If unset, reads the entire table.
+
+        :type allow_row_interleaving: boolean
+        :param allow_row_interleaving: (Optional) By default, rows are read
+                                       sequentially, producing results which are
+                                       guaranteed to arrive in increasing row
+                                       order. Setting "allow_row_interleaving"
+                                       to true allows multiple rows to be
+                                       interleaved in the response stream,
+                                       which increases throughput but breaks
+                                       this guarantee, and may force the client
+                                       to use more memory to buffer
+                                       partially-received rows.
+
+        :type num_rows_limit: integer
+        :param num_rows_limit: (Optional) The read will terminate after
+                               committing to N rows' worth of results. The
+                               default (zero) is to return all results. Note
+                               that if "allow_row_interleaving" is set to true,
+                               partial results may be returned for more than N
+                               rows. However, only N "commit_row" chunks will
+                               be sent.
+
+        :rtype: :class:`bigtable_service_messages_pb2.ReadRowsResponse`
+        :returns: The response returned by the backend.
+        """
         request_uri = self.build_api_url(table_name, 'read')
-        raise NotImplementedError
+        response_class = bigtable_service_messages_pb2.ReadRowsResponse
+        request_pb = bigtable_service_messages_pb2.ReadRowsRequest(
+            table_name=table_name)
+
+        # NOTE: Only one of row_key and row_range allowed by backend.
+        if row_key is not None:
+            request_pb.row_key = row_key
+        if row_range is not None:
+            request_pb.row_range.CopyFrom(row_range)
+        if filter is not None:
+            request_pb.filter.CopyFrom(filter)
+        if allow_row_interleaving is not None:
+            request_pb.allow_row_interleaving = allow_row_interleaving
+        if num_rows_limit is not None:
+            request_pb.num_rows_limit = num_rows_limit
+
+        response = self._rpc(self, request_uri, request_pb, response_class)
+        return response
 
     def sample_row_keys(self, table_name):
         request_uri = self.build_api_url(table_name, 'sampleKeys')
