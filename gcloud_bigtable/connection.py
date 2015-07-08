@@ -310,6 +310,9 @@ class TableConnection(Connection):
     """Connection to Google Cloud BigTable Table API.
 
     This only allows interacting with tables in a cluster.
+
+    The ``cluster_name`` value must take the form:
+        "projects/*/zones/*/clusters/*"
     """
 
     API_VERSION = 'v1'
@@ -325,42 +328,73 @@ class TableConnection(Connection):
     SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
     """Scope for table and cluster API requests."""
 
-    def create_table(self):
-        # "/v1/{name=projects/*/zones/*/clusters/*}/tables"
+    @classmethod
+    def build_api_url(cls, cluster_name, table_name=None, table_method=None,
+                      column_family=None):
+        if table_name is None:
+            final_segment = ''
+        else:
+            final_segment = '/' + table_name
+
+        if table_method is not None:
+            if table_name is None:
+                raise ValueError('table_name must be set if table_method is')
+            if column_family is not None:
+                raise ValueError('column_family cannot be set if '
+                                 'table_method is')
+            final_segment += table_method
+
+        if column_family is not None:
+            if table_name is None:
+                raise ValueError('table_name must be set if column_family is')
+            final_segment += '/columnFamilies/' + column_family
+
+        return cls.API_URL_TEMPLATE.format(
+            api_base=cls.API_BASE_URL,
+            api_version=cls.API_VERSION,
+            cluster_name=cluster_name,
+            final_segment=final_segment)
+
+    def create_table(self, cluster_name):
+        request_uri = self.build_api_url(cluster_name)
         request_method = 'POST'
         raise NotImplementedError
 
-    def list_tables(self):
-        # "/v1/{name=projects/*/zones/*/clusters/*}/tables"
+    def list_tables(self, cluster_name):
+        request_uri = self.build_api_url(cluster_name)
         request_method = 'GET'
         raise NotImplementedError
 
-    def get_table(self):
-        # "/v1/{name=projects/*/zones/*/clusters/*/tables/*}"
+    def get_table(self, cluster_name, table_name):
+        request_uri = self.build_api_url(cluster_name, table_name=table_name)
         request_method = 'GET'
         raise NotImplementedError
 
-    def delete_table(self):
-        # "/v1/{name=projects/*/zones/*/clusters/*/tables/*}"
+    def delete_table(self, cluster_name, table_name):
+        request_uri = self.build_api_url(cluster_name, table_name=table_name)
         request_method = 'DELETE'
         raise NotImplementedError
 
-    def rename_table(self):
-        # "/v1/{name=projects/*/zones/*/clusters/*/tables/*}:rename"
+    def rename_table(self, cluster_name, table_name):
+        request_uri = self.build_api_url(cluster_name, table_name=table_name,
+                                         table_method=':rename')
         request_method = 'POST'
         raise NotImplementedError
 
-    def create_column_family(self):
-        # "/v1/{name=projects/*/zones/*/clusters/*/tables/*}/columnFamilies"
+    def create_column_family(self, cluster_name, table_name):
+        request_uri = self.build_api_url(cluster_name, table_name=table_name,
+                                         table_method='/columnFamilies')
         request_method = 'POST'
         raise NotImplementedError
 
-    def update_column_family(self):
-        # "/v1/{name=projects/*/zones/*/clusters/*/tables/*/columnFamilies/*}"
+    def update_column_family(self, cluster_name, table_name, column_family):
+        request_uri = self.build_api_url(cluster_name, table_name=table_name,
+                                         column_family=column_family)
         request_method = 'PUT'
         raise NotImplementedError
 
     def delete_column_family(self):
-        # "/v1/{name=projects/*/zones/*/clusters/*/tables/*/columnFamilies/*}"
+        request_uri = self.build_api_url(cluster_name, table_name=table_name,
+                                         column_family=column_family)
         request_method = 'DELETE'
         raise NotImplementedError
