@@ -16,6 +16,7 @@
 
 import httplib2
 import json
+import six
 
 from gcloud_bigtable._generated import bigtable_cluster_service_messages_pb2
 from gcloud_bigtable._generated import bigtable_data_pb2
