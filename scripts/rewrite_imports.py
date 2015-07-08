@@ -15,7 +15,7 @@
 """Build script for rewriting imports for protobuf generated modules.
 
 Intended to be used for Google Cloud BigTable protos (google/bigtable/v1)
-and the dependent modules (google/api).
+and the dependent modules (google/api and google/protobuf).
 """
 
 import glob
@@ -26,15 +26,19 @@ REPLACEMENTS = {
     'google.api': 'gcloud_bigtable',
     'google.bigtable.v1': 'gcloud_bigtable',
 }
+DIRECT_REWRITES = {
+    'from google.protobuf import empty_pb2':
+        'from gcloud_bigtable import empty_pb2',
+}
 
 
 def transform_line(line):
     """Transforms an import line in a PB2 module.
 
     If the line is not an import of one of the packages in
-    ``REPLACEMENTS``, does nothing and returns the original.
-    Otherwise it replaces the package matched with our local
-    package.
+    ``REPLACEMENTS`` or ``DIRECT_REWRITES``, does nothing and returns the
+    original. Otherwise it replaces the package matched with our local
+    package or directly rewrites the given statement.
 
     :type line: string
     :param line: The line to be transformed.
@@ -48,6 +52,11 @@ def transform_line(line):
             new_import_statement = IMPORT_TEMPLATE % (new_module,)
             # Only replace the first instance of the import statement.
             return line.replace(import_statement, new_import_statement, 1)
+
+    for old_begin, new_begin in DIRECT_REWRITES.iteritems():
+        if line.startswith(old_begin):
+            # Only replace the first instance of the import statement.
+            return line.replace(old_begin, new_begin, 1)
 
     # If no matches, there is nothing to transform.
     return line

@@ -17,15 +17,19 @@ generate:
 	cd cloud-bigtable-client/bigtable-protos/src/main/proto && \
 	    protoc google/api/*.proto --python_out=$(GENERATED_DIR)
 	mv $(GENERATED_DIR)/google/api/* gcloud_bigtable
+	cd cloud-bigtable-client/bigtable-protos/src/main/proto && \
+	    protoc google/protobuf/empty.proto --python_out=$(GENERATED_DIR)
+	mv $(GENERATED_DIR)/google/protobuf/empty_pb2.py gcloud_bigtable
 	python scripts/rewrite_imports.py
 
 check_generate:
 	python -c "import gcloud_bigtable"
-	python -c "from gcloud_bigtable import http_pb2"
+	python -c "from gcloud_bigtable import annotations_pb2"
 	python -c "from gcloud_bigtable import bigtable_data_pb2"
 	python -c "from gcloud_bigtable import bigtable_service_messages_pb2"
 	python -c "from gcloud_bigtable import bigtable_service_pb2"
-	python -c "from gcloud_bigtable import annotations_pb2"
+	python -c "from gcloud_bigtable import empty_pb2"
+	python -c "from gcloud_bigtable import http_pb2"
 
 clean:
 	rm -fr cloud-bigtable-client $(GENERATED_DIR)
