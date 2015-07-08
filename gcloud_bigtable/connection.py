@@ -170,27 +170,68 @@ class DataConnection(Connection):
         "projects/*/zones/*/clusters/*/tables/*"
     """
 
+    API_VERSION = 'v1'
+    """The version of the API, used in building the API call's URL."""
+
+    API_URL_TEMPLATE = ('{api_base}/{api_version}/{table_name}/'
+                        'rows{final_segment}')
+    """A template for the URL of a particular API call."""
+
     def __init__(self, credentials=None, http=None):
         credentials = self._create_scoped_credentials(
             credentials, (DATA_SCOPE,))
         super(DataConnection, self).__init__(credentials=credentials, http=http)
 
-    def read_rows(self):
-        # POST: "/v1/{table_name}/rows:read"
+    def build_api_url(self, table_name, rpc_method, row_key=None):
+        """Construct the URL for a particular API call.
+
+        This method is used internally to come up with the URL to use when
+        making RPCs to the Google Cloud BigTable API.
+
+        :type table_name: string
+        :param table_name: The name of a table. Expected to be of the form
+                           "projects/*/zones/*/clusters/*/tables/*".
+
+        :type rpc_method: string
+        :param rpc_method: The RPC method name for the URL.
+
+        :type row_key: string or ``NoneType``
+        :param row_key: (Optional). The row key for the RPC operation.
+
+        :rtype: string
+        :returns: The URL needed to make an API request.
+        """
+        if row_key is None:
+            final_segment = ':' + rpc_method
+        else:
+            final_segment = '/' + row_key + ':' + rpc_method
+
+        return self.API_URL_TEMPLATE.format(
+            api_base=DATA_API_BASE_URL,
+            api_version=self.API_VERSION,
+            table_name=table_name,
+            final_segment=final_segment)
+
+    def read_rows(self, table_name):
+        request_uri = self.build_api_url(table_name, 'read')
         raise NotImplementedError
 
-    def sample_row_keys(self):
-        #  GET: "/v1/{table_name}/rows:sampleKeys"
+    def sample_row_keys(self, table_name):
+        request_uri = self.build_api_url(table_name, 'sampleKeys')
+        request_method = 'GET'
         raise NotImplementedError
 
-    def mutate_row(self):
-        # POST: "/v1/{table_name}/rows/{row_key}:mutate"
+    def mutate_row(self, table_name, row_key):
+        request_uri = self.build_api_url(table_name, 'mutate',
+                                         row_key=row_key)
         raise NotImplementedError
 
-    def check_and_mutate_row(self):
-        # POST: "/v1/{table_name}/rows/{row_key}:checkAndMutate"
+    def check_and_mutate_row(self, table_name, row_key):
+        request_uri = self.build_api_url(table_name, 'checkAndMutate',
+                                         row_key=row_key)
         raise NotImplementedError
 
-    def read_modify_write_row(self):
-        # POST: "/v1/{table_name}/rows/{row_key}:readModifyWrite"
+    def read_modify_write_row(self, table_name, row_key):
+        request_uri = self.build_api_url(table_name, 'readModifyWrite',
+                                         row_key=row_key)
         raise NotImplementedError
