@@ -21,7 +21,8 @@ and the dependent modules (google/api and google/protobuf).
 import glob
 
 
-IMPORT_TEMPLATE = 'from %s import '
+IMPORT_TEMPLATE = 'import %s'
+IMPORT_FROM_TEMPLATE = 'from %s import '
 PROTOBUF_IMPORT_TEMPLATE = 'from google.protobuf import %s '
 REPLACE_PROTOBUF_IMPORT_TEMPLATE = 'from gcloud_bigtable._generated import %s '
 REPLACEMENTS = {
@@ -56,19 +57,42 @@ def transform_line(line):
     :returns: The transformed line.
     """
     for old_module, new_module in REPLACEMENTS.iteritems():
+        import_from_statement = IMPORT_FROM_TEMPLATE % (old_module,)
+        if line.startswith(import_from_statement):
+            new_import_from_statement = IMPORT_FROM_TEMPLATE % (new_module,)
+            # Only replace the first instance of the import statement.
+            return line.replace(import_from_statement,
+                                new_import_from_statement, 1)
+
+        # If the line doesn't start with a "from * import *" statement, it
+        # may still contain a "import * ..." statement.
         import_statement = IMPORT_TEMPLATE % (old_module,)
-        if line.startswith(import_statement):
+        if import_statement in line:
             new_import_statement = IMPORT_TEMPLATE % (new_module,)
             # Only replace the first instance of the import statement.
-            return line.replace(import_statement, new_import_statement, 1)
+            return line.replace(import_statement,
+                                new_import_statement, 1)
 
     for custom_protobuf_module in GOOGLE_PROTOBUF_CUSTOM:
-        import_statement = PROTOBUF_IMPORT_TEMPLATE % (custom_protobuf_module,)
-        if line.startswith(import_statement):
-            new_import_statement = REPLACE_PROTOBUF_IMPORT_TEMPLATE % (
+        import_from_statement = PROTOBUF_IMPORT_TEMPLATE % (
+            custom_protobuf_module,)
+        if line.startswith(import_from_statement):
+            new_import_from_statement = REPLACE_PROTOBUF_IMPORT_TEMPLATE % (
                 custom_protobuf_module,)
             # Only replace the first instance of the import statement.
-            return line.replace(import_statement, new_import_statement, 1)
+            return line.replace(import_from_statement,
+                                new_import_from_statement, 1)
+
+        # If the line doesn't start with a "from * import *" statement, it
+        # may still contain a "import * ..." statement.
+        import_statement = IMPORT_TEMPLATE % (
+            'google.protobuf.' + custom_protobuf_module,)
+        if import_statement in line:
+            new_import_statement = IMPORT_TEMPLATE % (
+                'gcloud_bigtable._generated.' + custom_protobuf_module,)
+            # Only replace the first instance of the import statement.
+            return line.replace(import_statement,
+                                new_import_statement, 1)
 
     # If no matches, there is nothing to transform.
     return line

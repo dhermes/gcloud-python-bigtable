@@ -384,14 +384,14 @@ class EarlyAdopterOperationsStub(object):
     raise NotImplementedError()
   DeleteOperation.async = None
 def early_adopter_create_Operations_server(servicer, port, private_key=None, certificate_chain=None):
-  import google.longrunning.operations_pb2
-  import google.longrunning.operations_pb2
-  import google.longrunning.operations_pb2
-  import google.longrunning.operations_pb2
-  import google.longrunning.operations_pb2
-  import google.protobuf.empty_pb2
-  import google.longrunning.operations_pb2
-  import google.protobuf.empty_pb2
+  import gcloud_bigtable._generated.operations_pb2
+  import gcloud_bigtable._generated.operations_pb2
+  import gcloud_bigtable._generated.operations_pb2
+  import gcloud_bigtable._generated.operations_pb2
+  import gcloud_bigtable._generated.operations_pb2
+  import gcloud_bigtable._generated.empty_pb2
+  import gcloud_bigtable._generated.operations_pb2
+  import gcloud_bigtable._generated.empty_pb2
   method_service_descriptions = {
     "CancelOperation": utilities.unary_unary_service_description(
       servicer.CancelOperation,
@@ -416,14 +416,14 @@ def early_adopter_create_Operations_server(servicer, port, private_key=None, cer
   }
   return implementations.server("google.longrunning.Operations", method_service_descriptions, port, private_key=private_key, certificate_chain=certificate_chain)
 def early_adopter_create_Operations_stub(host, port, metadata_transformer=None, secure=False, root_certificates=None, private_key=None, certificate_chain=None, server_host_override=None):
-  import google.longrunning.operations_pb2
-  import google.longrunning.operations_pb2
-  import google.longrunning.operations_pb2
-  import google.longrunning.operations_pb2
-  import google.longrunning.operations_pb2
-  import google.protobuf.empty_pb2
-  import google.longrunning.operations_pb2
-  import google.protobuf.empty_pb2
+  import gcloud_bigtable._generated.operations_pb2
+  import gcloud_bigtable._generated.operations_pb2
+  import gcloud_bigtable._generated.operations_pb2
+  import gcloud_bigtable._generated.operations_pb2
+  import gcloud_bigtable._generated.operations_pb2
+  import gcloud_bigtable._generated.empty_pb2
+  import gcloud_bigtable._generated.operations_pb2
+  import gcloud_bigtable._generated.empty_pb2
   method_invocation_descriptions = {
     "CancelOperation": utilities.unary_unary_invocation_description(
       google.longrunning.operations_pb2.CancelOperationRequest.SerializeToString,

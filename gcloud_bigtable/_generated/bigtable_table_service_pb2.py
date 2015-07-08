@@ -109,22 +109,22 @@ class EarlyAdopterBigtableTableServiceStub(object):
     raise NotImplementedError()
   DeleteColumnFamily.async = None
 def early_adopter_create_BigtableTableService_server(servicer, port, private_key=None, certificate_chain=None):
-  import google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_data_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_data_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2
-  import google.protobuf.empty_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2
-  import google.protobuf.empty_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_data_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_data_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_data_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2
-  import google.protobuf.empty_pb2
+  import gcloud_bigtable._generated.bigtable_table_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_table_data_pb2
+  import gcloud_bigtable._generated.bigtable_table_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_table_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_table_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_table_data_pb2
+  import gcloud_bigtable._generated.bigtable_table_service_messages_pb2
+  import gcloud_bigtable._generated.empty_pb2
+  import gcloud_bigtable._generated.bigtable_table_service_messages_pb2
+  import gcloud_bigtable._generated.empty_pb2
+  import gcloud_bigtable._generated.bigtable_table_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_table_data_pb2
+  import gcloud_bigtable._generated.bigtable_table_data_pb2
+  import gcloud_bigtable._generated.bigtable_table_data_pb2
+  import gcloud_bigtable._generated.bigtable_table_service_messages_pb2
+  import gcloud_bigtable._generated.empty_pb2
   method_service_descriptions = {
     "CreateColumnFamily": utilities.unary_unary_service_description(
       servicer.CreateColumnFamily,
@@ -169,22 +169,22 @@ def early_adopter_create_BigtableTableService_server(servicer, port, private_key
   }
   return implementations.server("google.bigtable.admin.table.v1.BigtableTableService", method_service_descriptions, port, private_key=private_key, certificate_chain=certificate_chain)
 def early_adopter_create_BigtableTableService_stub(host, port, metadata_transformer=None, secure=False, root_certificates=None, private_key=None, certificate_chain=None, server_host_override=None):
-  import google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_data_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_data_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2
-  import google.protobuf.empty_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2
-  import google.protobuf.empty_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_data_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_data_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_data_pb2
-  import google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2
-  import google.protobuf.empty_pb2
+  import gcloud_bigtable._generated.bigtable_table_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_table_data_pb2
+  import gcloud_bigtable._generated.bigtable_table_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_table_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_table_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_table_data_pb2
+  import gcloud_bigtable._generated.bigtable_table_service_messages_pb2
+  import gcloud_bigtable._generated.empty_pb2
+  import gcloud_bigtable._generated.bigtable_table_service_messages_pb2
+  import gcloud_bigtable._generated.empty_pb2
+  import gcloud_bigtable._generated.bigtable_table_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_table_data_pb2
+  import gcloud_bigtable._generated.bigtable_table_data_pb2
+  import gcloud_bigtable._generated.bigtable_table_data_pb2
+  import gcloud_bigtable._generated.bigtable_table_service_messages_pb2
+  import gcloud_bigtable._generated.empty_pb2
   method_invocation_descriptions = {
     "CreateColumnFamily": utilities.unary_unary_invocation_description(
       google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2.CreateColumnFamilyRequest.SerializeToString,

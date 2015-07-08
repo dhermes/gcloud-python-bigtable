@@ -103,20 +103,20 @@ class EarlyAdopterBigtableClusterServiceStub(object):
     raise NotImplementedError()
   UndeleteCluster.async = None
 def early_adopter_create_BigtableClusterService_server(servicer, port, private_key=None, certificate_chain=None):
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
-  import google.protobuf.empty_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
-  import google.longrunning.operations_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_data_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_data_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_data_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_data_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_service_messages_pb2
+  import gcloud_bigtable._generated.empty_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_service_messages_pb2
+  import gcloud_bigtable._generated.operations_pb2
   method_service_descriptions = {
     "CreateCluster": utilities.unary_unary_service_description(
       servicer.CreateCluster,
@@ -156,20 +156,20 @@ def early_adopter_create_BigtableClusterService_server(servicer, port, private_k
   }
   return implementations.server("google.bigtable.admin.cluster.v1.BigtableClusterService", method_service_descriptions, port, private_key=private_key, certificate_chain=certificate_chain)
 def early_adopter_create_BigtableClusterService_stub(host, port, metadata_transformer=None, secure=False, root_certificates=None, private_key=None, certificate_chain=None, server_host_override=None):
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
-  import google.protobuf.empty_pb2
-  import google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2
-  import google.longrunning.operations_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_data_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_data_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_data_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_data_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_service_messages_pb2
+  import gcloud_bigtable._generated.empty_pb2
+  import gcloud_bigtable._generated.bigtable_cluster_service_messages_pb2
+  import gcloud_bigtable._generated.operations_pb2
   method_invocation_descriptions = {
     "CreateCluster": utilities.unary_unary_invocation_description(
       google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.CreateClusterRequest.SerializeToString,

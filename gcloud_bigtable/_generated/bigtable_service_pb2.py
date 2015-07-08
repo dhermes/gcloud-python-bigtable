@@ -88,16 +88,16 @@ class EarlyAdopterBigtableServiceStub(object):
     raise NotImplementedError()
   ReadModifyWriteRow.async = None
 def early_adopter_create_BigtableService_server(servicer, port, private_key=None, certificate_chain=None):
-  import google.bigtable.v1.bigtable_service_messages_pb2
-  import google.bigtable.v1.bigtable_service_messages_pb2
-  import google.bigtable.v1.bigtable_service_messages_pb2
-  import google.bigtable.v1.bigtable_service_messages_pb2
-  import google.bigtable.v1.bigtable_service_messages_pb2
-  import google.protobuf.empty_pb2
-  import google.bigtable.v1.bigtable_service_messages_pb2
-  import google.bigtable.v1.bigtable_service_messages_pb2
-  import google.bigtable.v1.bigtable_service_messages_pb2
-  import google.bigtable.v1.bigtable_data_pb2
+  import gcloud_bigtable._generated.bigtable_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_service_messages_pb2
+  import gcloud_bigtable._generated.empty_pb2
+  import gcloud_bigtable._generated.bigtable_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_data_pb2
   method_service_descriptions = {
     "CheckAndMutateRow": utilities.unary_unary_service_description(
       servicer.CheckAndMutateRow,
@@ -127,16 +127,16 @@ def early_adopter_create_BigtableService_server(servicer, port, private_key=None
   }
   return implementations.server("google.bigtable.v1.BigtableService", method_service_descriptions, port, private_key=private_key, certificate_chain=certificate_chain)
 def early_adopter_create_BigtableService_stub(host, port, metadata_transformer=None, secure=False, root_certificates=None, private_key=None, certificate_chain=None, server_host_override=None):
-  import google.bigtable.v1.bigtable_service_messages_pb2
-  import google.bigtable.v1.bigtable_service_messages_pb2
-  import google.bigtable.v1.bigtable_service_messages_pb2
-  import google.bigtable.v1.bigtable_service_messages_pb2
-  import google.bigtable.v1.bigtable_service_messages_pb2
-  import google.protobuf.empty_pb2
-  import google.bigtable.v1.bigtable_service_messages_pb2
-  import google.bigtable.v1.bigtable_service_messages_pb2
-  import google.bigtable.v1.bigtable_service_messages_pb2
-  import google.bigtable.v1.bigtable_data_pb2
+  import gcloud_bigtable._generated.bigtable_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_service_messages_pb2
+  import gcloud_bigtable._generated.empty_pb2
+  import gcloud_bigtable._generated.bigtable_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_service_messages_pb2
+  import gcloud_bigtable._generated.bigtable_data_pb2
   method_invocation_descriptions = {
     "CheckAndMutateRow": utilities.unary_unary_invocation_description(
       google.bigtable.v1.bigtable_service_messages_pb2.CheckAndMutateRowRequest.SerializeToString,
