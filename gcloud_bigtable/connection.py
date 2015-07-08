@@ -23,9 +23,6 @@ from gcloud_bigtable._generated import bigtable_service_messages_pb2
 READ_ONLY_SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.data.readonly'
 ADMIN_SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
 
-TABLE_ADMIN_API_BASE_URL = 'https://bigtabletableadmin.googleapis.com'
-CLUSTER_ADMIN_API_BASE_URL = 'https://bigtableclusteradmin.googleapis.com'
-
 
 class Connection(object):
     """HTTP-RPC Connection base class for Google Cloud BigTable.
@@ -397,4 +394,59 @@ class TableConnection(Connection):
         request_uri = self.build_api_url(cluster_name, table_name=table_name,
                                          column_family=column_family)
         request_method = 'DELETE'
+        raise NotImplementedError
+
+
+class ClusterConnection(Connection):
+    """Connection to Google Cloud BigTable Cluster API.
+
+    This only allows interacting with clusters in a project.
+    """
+
+    API_VERSION = 'v1'
+    """The version of the API, used in building the API call's URL."""
+
+    API_URL_TEMPLATE = ('{api_base}/{api_version}/projects/{project_name}/'
+                        '{final_segment}')
+    """A template for the URL of a particular API call."""
+
+    API_BASE_URL = 'https://bigtableclusteradmin.googleapis.com'
+    """Base URL for API requests."""
+
+    SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
+    """Scope for table and cluster API requests."""
+
+    def list_zones(self):
+        # "/v1/{name=projects/*}/zones"
+        request_method = 'GET'
+        raise NotImplementedError
+
+    def get_cluster(self):
+        # "/v1/{name=projects/*/zones/*/clusters/*}"
+        request_method = 'GET'
+        raise NotImplementedError
+
+    def list_clusters(self):
+        # "/v1/{name=projects/*}/aggregated/clusters"
+        request_method = 'GET'
+        raise NotImplementedError
+
+    def create_cluster(self):
+        # "/v1/{name=projects/*/zones/*}/clusters"
+        request_method = 'POST'
+        raise NotImplementedError
+
+    def update_cluster(self):
+        # "/v1/{name=projects/*/zones/*/clusters/*}"
+        request_method = 'PUT'
+        raise NotImplementedError
+
+    def delete_cluster(self):
+        # "/v1/{name=projects/*/zones/*/clusters/*}"
+        request_method = 'DELETE'
+        raise NotImplementedError
+
+    def undelete_cluster(self):
+        # "/v1/{name=projects/*/zones/*/clusters/*}:undelete"
+        request_method = 'POST'
         raise NotImplementedError

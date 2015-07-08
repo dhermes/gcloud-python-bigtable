@@ -415,6 +415,66 @@ class TestTableConnection(unittest2.TestCase):
                           cluster_name, table_name, column_family)
 
 
+class TestClusterConnection(unittest2.TestCase):
+
+    @staticmethod
+    def _getTargetClass():
+        from gcloud_bigtable.connection import ClusterConnection
+        return ClusterConnection
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_constructor(self):
+        klass = self._getTargetClass()
+        credentials = _Credentials()
+        connection = self._makeOne(credentials=credentials)
+        self.assertTrue(connection._credentials is credentials)
+        self.assertEqual(connection._credentials._scopes, (klass.SCOPE,))
+        self.assertTrue(connection._http is None)
+
+    def test_list_zones(self):
+        credentials = _Credentials()
+        connection = self._makeOne(credentials=credentials)
+
+        self.assertRaises(NotImplementedError, connection.list_zones)
+
+    def test_get_cluster(self):
+        credentials = _Credentials()
+        connection = self._makeOne(credentials=credentials)
+
+        self.assertRaises(NotImplementedError, connection.get_cluster)
+
+    def test_list_clusters(self):
+        credentials = _Credentials()
+        connection = self._makeOne(credentials=credentials)
+
+        self.assertRaises(NotImplementedError, connection.list_clusters)
+
+    def test_create_cluster(self):
+        credentials = _Credentials()
+        connection = self._makeOne(credentials=credentials)
+
+        self.assertRaises(NotImplementedError, connection.create_cluster)
+
+    def test_update_cluster(self):
+        credentials = _Credentials()
+        connection = self._makeOne(credentials=credentials)
+
+        self.assertRaises(NotImplementedError, connection.update_cluster)
+
+    def test_delete_cluster(self):
+        credentials = _Credentials()
+        connection = self._makeOne(credentials=credentials)
+
+        self.assertRaises(NotImplementedError, connection.delete_cluster)
+
+    def test_undelete_cluster(self):
+        credentials = _Credentials()
+        connection = self._makeOne(credentials=credentials)
+
+        self.assertRaises(NotImplementedError, connection.undelete_cluster)
+
 
 class _Credentials(object):
 
