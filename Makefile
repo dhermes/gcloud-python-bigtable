@@ -20,56 +20,50 @@ generate:
 	cd cloud-bigtable-client/bigtable-protos/src/main/proto && \
 	    protoc --python_out=$(GENERATED_DIR) --grpc_out=$(GENERATED_DIR) \
 	    --plugin=protoc-gen-grpc=$(GRPC_PLUGIN) google/bigtable/v1/*.proto
-	mv $(GENERATED_DIR)/google/bigtable/v1/* $(FINAL_DIR)
 	# Cluster API
 	cd cloud-bigtable-client/bigtable-protos/src/main/proto && \
 	    protoc --python_out=$(GENERATED_DIR) --grpc_out=$(GENERATED_DIR) \
 	    --plugin=protoc-gen-grpc=$(GRPC_PLUGIN) \
 	    google/bigtable/admin/cluster/v1/*.proto
-	mv $(GENERATED_DIR)/google/bigtable/admin/cluster/v1/* $(FINAL_DIR)
 	# Table API
 	cd cloud-bigtable-client/bigtable-protos/src/main/proto && \
 	    protoc --python_out=$(GENERATED_DIR) --grpc_out=$(GENERATED_DIR) \
 	    --plugin=protoc-gen-grpc=$(GRPC_PLUGIN) \
 	    google/bigtable/admin/table/v1/*.proto
-	mv $(GENERATED_DIR)/google/bigtable/admin/table/v1/* $(FINAL_DIR)
 	# Auxiliary protos
 	cd cloud-bigtable-client/bigtable-protos/src/main/proto && \
 	    protoc --python_out=$(GENERATED_DIR) --grpc_out=$(GENERATED_DIR) \
 	    --plugin=protoc-gen-grpc=$(GRPC_PLUGIN) \
 	    google/api/*.proto
-	mv $(GENERATED_DIR)/google/api/* $(FINAL_DIR)
 	cd cloud-bigtable-client/bigtable-protos/src/main/proto && \
 	    protoc --python_out=$(GENERATED_DIR) --grpc_out=$(GENERATED_DIR) \
 	    --plugin=protoc-gen-grpc=$(GRPC_PLUGIN) \
 	    google/protobuf/any.proto
-	mv $(GENERATED_DIR)/google/protobuf/any_pb2.py $(FINAL_DIR)
 	cd cloud-bigtable-client/bigtable-protos/src/main/proto && \
 	    protoc --python_out=$(GENERATED_DIR) --grpc_out=$(GENERATED_DIR) \
 	    --plugin=protoc-gen-grpc=$(GRPC_PLUGIN) \
 	    google/protobuf/duration.proto
-	mv $(GENERATED_DIR)/google/protobuf/duration_pb2.py $(FINAL_DIR)
 	cd cloud-bigtable-client/bigtable-protos/src/main/proto && \
 	    protoc --python_out=$(GENERATED_DIR) --grpc_out=$(GENERATED_DIR) \
 	    --plugin=protoc-gen-grpc=$(GRPC_PLUGIN) \
 	    google/protobuf/empty.proto
-	mv $(GENERATED_DIR)/google/protobuf/empty_pb2.py $(FINAL_DIR)
 	cd cloud-bigtable-client/bigtable-protos/src/main/proto && \
 	    protoc --python_out=$(GENERATED_DIR) --grpc_out=$(GENERATED_DIR) \
 	    --plugin=protoc-gen-grpc=$(GRPC_PLUGIN) \
 	    google/protobuf/timestamp.proto
-	mv $(GENERATED_DIR)/google/protobuf/timestamp_pb2.py $(FINAL_DIR)
 	cd cloud-bigtable-client/bigtable-protos/src/main/proto && \
 	    protoc --python_out=$(GENERATED_DIR) --grpc_out=$(GENERATED_DIR) \
 	    --plugin=protoc-gen-grpc=$(GRPC_PLUGIN) \
 	    google/longrunning/operations.proto
-	mv $(GENERATED_DIR)/google/longrunning/operations_pb2.py $(FINAL_DIR)
 	cd cloud-bigtable-client/bigtable-protos/src/main/proto && \
 	    protoc --python_out=$(GENERATED_DIR) --grpc_out=$(GENERATED_DIR) \
 	    --plugin=protoc-gen-grpc=$(GRPC_PLUGIN) \
 	    google/rpc/status.proto
-	mv $(GENERATED_DIR)/google/rpc/status_pb2.py $(FINAL_DIR)
-	python scripts/rewrite_imports.py
+	rm -fr $(FINAL_DIR)  # Reset the directory
+	mkdir -p $(FINAL_DIR)
+	mv $(GENERATED_DIR)/google $(FINAL_DIR)
+	python scripts/add_init_files.py
+	python scripts/add_absolute_imports.py
 
 check_generate:
 	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(HOME)/.linuxbrew/lib python scripts/check_generate.py

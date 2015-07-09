@@ -12,26 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Checking that protobuf generated modules import correctly."""
+"""Build script for adding absolute_import to protobuf generated modules.
+
+Simply iterators through all *pb2.py files and adds
+    from __future__ import absolute_import
+as the first line.
+"""
 
 import os
 
 
 BASE_DIRECTORY = 'gcloud_bigtable/_generated'
+ABSOLUTE_IMPORT_LINE = 'from __future__ import absolute_import\n'
 
 
 def main():
-    """Import all PB2 files."""
-    print('>>> import gcloud_bigtable._generated')
-    import gcloud_bigtable._generated
+    """Add absolute import line to all PB2 files."""
     for directory, _, files in os.walk(BASE_DIRECTORY):
-        import_parts = directory.split(os.path.sep)
-        from_package = '.'.join(import_parts)
         for filename in files:
             if filename.endswith('pb2.py'):
-                module_name, _ = os.path.splitext(filename)
-                print('>>> from %s import %s' % (from_package, module_name))
-                _ = __import__(from_package, fromlist=[module_name])
+                file_path = os.path.join(directory, filename)
+                with open(file_path, 'r') as file_obj:
+                    contents = file_obj.read()
+                with open(file_path, 'w') as file_obj:
+                    file_obj.write(ABSOLUTE_IMPORT_LINE)
+                    file_obj.write(contents)
 
 
 if __name__ == '__main__':
