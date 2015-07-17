@@ -48,3 +48,37 @@ class Test__print_error(unittest2.TestCase):
             '{\n  "secret": 42\n}',
         ]
         self.assertEqual(values, expected_values)
+
+    def test_it_during_debug(self):
+        import gcloud_bigtable as MUT
+        original_DEBUG = MUT.DEBUG
+        original_six = MUT.six
+
+        class _MockSix(object):
+
+            _values = []
+
+            @classmethod
+            def print_(cls, value):
+                cls._values.append(value)
+
+
+        headers = {'foo': 'bar'}
+        content = '{"secret": 42}'
+
+        try:
+            MUT.DEBUG = True
+            MUT.six = _MockSix
+            self._callFUT(headers, content)
+        finally:
+            MUT.DEBUG = original_DEBUG
+            MUT.six = original_six
+
+        expected_values = [
+            'RESPONSE HEADERS:',
+            '{\n  "foo": "bar"\n}',
+            '-' * 60,
+            'RESPONSE BODY:',
+            '{\n  "secret": 42\n}',
+        ]
+        self.assertEqual(_MockSix._values, expected_values)
