@@ -16,40 +16,6 @@
 import unittest2
 
 
-class Test__print_error(unittest2.TestCase):
-
-    def _callFUT(self, headers, content):
-        from gcloud_bigtable.connection import _print_error
-        return _print_error(headers, content)
-
-    def test_it(self):
-        from gcloud_bigtable import connection
-        original_print_func = connection._print_func
-
-        values = []
-
-        def mock_print_func(value):
-            values.append(value)
-
-        headers = {'foo': 'bar'}
-        content = '{"secret": 42}'
-
-        try:
-            connection._print_func = mock_print_func
-            self._callFUT(headers, content)
-        finally:
-            connection._print_func = original_print_func
-
-        expected_values = [
-            'RESPONSE HEADERS:',
-            '{\n  "foo": "bar"\n}',
-            '-' * 60,
-            'RESPONSE BODY:',
-            '{\n  "secret": 42\n}',
-        ]
-        self.assertEqual(values, expected_values)
-
-
 class TestConnection(unittest2.TestCase):
 
     def _getTargetClass(self):
@@ -60,6 +26,7 @@ class TestConnection(unittest2.TestCase):
         return self._getTargetClass()(*args, **kwargs)
 
     def test_constructor(self):
+        from gcloud_bigtable._testing import _Credentials
         credentials = _Credentials()
         connection = self._makeOne(credentials=credentials)
         self.assertTrue(connection._credentials is credentials)
@@ -75,6 +42,7 @@ class TestConnection(unittest2.TestCase):
         self.assertTrue(new_credentials is credentials)
 
     def test__create_scoped_credentials_with_credentials(self):
+        from gcloud_bigtable._testing import _Credentials
         klass = self._getTargetClass()
         credentials = _Credentials()
         scope = object()
@@ -84,6 +52,7 @@ class TestConnection(unittest2.TestCase):
         self.assertTrue(credentials._scopes is scope)
 
     def test_credentials_property(self):
+        from gcloud_bigtable._testing import _Credentials
         credentials = _Credentials()
         connection = self._makeOne(credentials=credentials)
         self.assertTrue(connection.credentials is credentials)
@@ -99,6 +68,7 @@ class TestConnection(unittest2.TestCase):
         self.assertTrue(getattr(http.request, 'credentials', None) is None)
 
     def test_http_property(self):
+        from gcloud_bigtable._testing import _Credentials
         class _CustomCredentials(_Credentials):
 
             _authorized = None
@@ -202,6 +172,7 @@ class TestDataConnection(unittest2.TestCase):
         return self._getTargetClass()(*args, **kwargs)
 
     def test_constructor(self):
+        from gcloud_bigtable._testing import _Credentials
         klass = self._getTargetClass()
         credentials = _Credentials()
         connection = self._makeOne(credentials=credentials)
@@ -243,6 +214,7 @@ class TestDataConnection(unittest2.TestCase):
         self.assertTrue(False)
 
     def test_sample_row_keys(self):
+        from gcloud_bigtable._testing import _Credentials
         credentials = _Credentials()
         connection = self._makeOne(credentials=credentials)
 
@@ -251,6 +223,7 @@ class TestDataConnection(unittest2.TestCase):
                           table_name)
 
     def test_mutate_row(self):
+        from gcloud_bigtable._testing import _Credentials
         credentials = _Credentials()
         connection = self._makeOne(credentials=credentials)
 
@@ -260,6 +233,7 @@ class TestDataConnection(unittest2.TestCase):
                           table_name, row_key)
 
     def test_check_and_mutate_row(self):
+        from gcloud_bigtable._testing import _Credentials
         credentials = _Credentials()
         connection = self._makeOne(credentials=credentials)
 
@@ -269,6 +243,7 @@ class TestDataConnection(unittest2.TestCase):
                           table_name, row_key)
 
     def test_read_modify_write_row(self):
+        from gcloud_bigtable._testing import _Credentials
         credentials = _Credentials()
         connection = self._makeOne(credentials=credentials)
 
@@ -277,391 +252,6 @@ class TestDataConnection(unittest2.TestCase):
         self.assertRaises(NotImplementedError,
                           connection.read_modify_write_row,
                           table_name, row_key)
-
-
-class TestTableConnection(unittest2.TestCase):
-
-    @staticmethod
-    def _getTargetClass():
-        from gcloud_bigtable.connection import TableConnection
-        return TableConnection
-
-    def _makeOne(self, *args, **kwargs):
-        return self._getTargetClass()(*args, **kwargs)
-
-    def test_constructor(self):
-        klass = self._getTargetClass()
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
-        self.assertTrue(connection._credentials is credentials)
-        self.assertEqual(connection._credentials._scopes, (klass.SCOPE,))
-        self.assertTrue(connection._http is None)
-
-    def test_build_api_url(self):
-        klass = self._getTargetClass()
-
-        cluster_name = 'cluster_name'
-        api_url = klass.build_api_url(cluster_name)
-
-        expected_url = '/'.join([
-            klass.API_BASE_URL,
-            klass.API_VERSION,
-            cluster_name,
-            'tables',
-        ])
-        self.assertEqual(api_url, expected_url)
-
-    def test_build_api_url_table_method_missing_table_name(self):
-        klass = self._getTargetClass()
-
-        cluster_name = 'cluster_name'
-        table_method = 'table_method'
-        self.assertRaises(ValueError, klass.build_api_url, cluster_name,
-                          table_method=table_method)
-
-    def test_build_api_url_table_method_conflict(self):
-        klass = self._getTargetClass()
-
-        cluster_name = 'cluster_name'
-        table_method = 'table_method'
-        table_name = 'table_name'
-        column_family = 'column_family'
-        self.assertRaises(ValueError, klass.build_api_url, cluster_name,
-                          table_method=table_method,
-                          table_name=table_name, column_family=column_family)
-
-    def test_build_api_url_table_method_success(self):
-        klass = self._getTargetClass()
-
-        cluster_name = 'cluster_name'
-        table_method = 'table_method'
-        table_name = 'table_name'
-        api_url = klass.build_api_url(cluster_name, table_method=table_method,
-                                      table_name=table_name)
-
-        expected_url = '/'.join([
-            klass.API_BASE_URL,
-            klass.API_VERSION,
-            cluster_name,
-            'tables',
-            table_name + table_method,
-        ])
-        self.assertEqual(api_url, expected_url)
-
-    def test_build_api_url_column_family_missing_table_name(self):
-        klass = self._getTargetClass()
-
-        cluster_name = 'cluster_name'
-        column_family = 'column_family'
-        self.assertRaises(ValueError, klass.build_api_url, cluster_name,
-                          column_family=column_family)
-
-    def test_build_api_url_column_family_success(self):
-        klass = self._getTargetClass()
-
-        cluster_name = 'cluster_name'
-        column_family = 'column_family'
-        table_name = 'table_name'
-        api_url = klass.build_api_url(
-            cluster_name, column_family=column_family, table_name=table_name)
-
-        expected_url = '/'.join([
-            klass.API_BASE_URL,
-            klass.API_VERSION,
-            cluster_name,
-            'tables',
-            table_name,
-            'columnFamilies',
-            column_family,
-        ])
-        self.assertEqual(api_url, expected_url)
-
-    def test_create_table(self):
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
-
-        cluster_name = object()
-        self.assertRaises(NotImplementedError, connection.create_table,
-                          cluster_name)
-
-    def test_list_tables(self):
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
-
-        cluster_name = object()
-        self.assertRaises(NotImplementedError, connection.list_tables,
-                          cluster_name)
-
-    def test_get_table(self):
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
-
-        cluster_name = object()
-        table_name = 'table_name'
-        self.assertRaises(NotImplementedError, connection.get_table,
-                          cluster_name, table_name)
-
-    def test_delete_table(self):
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
-
-        cluster_name = object()
-        table_name = 'table_name'
-        self.assertRaises(NotImplementedError, connection.delete_table,
-                          cluster_name, table_name)
-
-    def test_rename_table(self):
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
-
-        cluster_name = object()
-        table_name = 'table_name'
-        self.assertRaises(NotImplementedError, connection.rename_table,
-                          cluster_name, table_name)
-
-    def test_create_column_family(self):
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
-
-        cluster_name = object()
-        table_name = 'table_name'
-        self.assertRaises(NotImplementedError, connection.create_column_family,
-                          cluster_name, table_name)
-
-    def test_update_column_family(self):
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
-
-        cluster_name = object()
-        table_name = 'table_name'
-        column_family = 'column_family'
-        self.assertRaises(NotImplementedError, connection.update_column_family,
-                          cluster_name, table_name, column_family)
-
-    def test_delete_column_family(self):
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
-
-        cluster_name = object()
-        table_name = 'table_name'
-        column_family = 'column_family'
-        self.assertRaises(NotImplementedError, connection.delete_column_family,
-                          cluster_name, table_name, column_family)
-
-
-class TestClusterConnection(unittest2.TestCase):
-
-    @staticmethod
-    def _getTargetClass():
-        from gcloud_bigtable.connection import ClusterConnection
-        return ClusterConnection
-
-    def _makeOne(self, *args, **kwargs):
-        return self._getTargetClass()(*args, **kwargs)
-
-    def test_constructor(self):
-        klass = self._getTargetClass()
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
-        self.assertTrue(connection._credentials is credentials)
-        self.assertEqual(connection._credentials._scopes, (klass.SCOPE,))
-        self.assertTrue(connection._http is None)
-
-    def test_build_api_url(self):
-        klass = self._getTargetClass()
-
-        project_name = 'project_name'
-        api_url = klass.build_api_url(project_name)
-
-        expected_url = '/'.join([
-            klass.API_BASE_URL,
-            klass.API_VERSION,
-            'projects',
-            project_name,
-            'zones',
-        ])
-        self.assertEqual(api_url, expected_url)
-
-    def test_build_api_url_aggregated(self):
-        klass = self._getTargetClass()
-
-        project_name = 'project_name'
-        api_url = klass.build_api_url(project_name, aggregated=True)
-
-        expected_url = '/'.join([
-            klass.API_BASE_URL,
-            klass.API_VERSION,
-            'projects',
-            project_name,
-            'aggregated',
-            'clusters',
-        ])
-        self.assertEqual(api_url, expected_url)
-
-    def test_build_api_url_zone_name(self):
-        klass = self._getTargetClass()
-
-        project_name = 'project_name'
-        zone_name = 'zone_name'
-        api_url = klass.build_api_url(project_name, zone_name=zone_name)
-
-        expected_url = '/'.join([
-            klass.API_BASE_URL,
-            klass.API_VERSION,
-            'projects',
-            project_name,
-            'zones',
-            zone_name,
-            'clusters',
-        ])
-        self.assertEqual(api_url, expected_url)
-
-    def test_build_api_url_zone_name_conflict(self):
-        klass = self._getTargetClass()
-
-        project_name = 'project_name'
-        zone_name = 'zone_name'
-        self.assertRaises(ValueError, klass.build_api_url, project_name,
-                          zone_name=zone_name, aggregated=True)
-
-    def test_build_api_url_cluster_name(self):
-        klass = self._getTargetClass()
-
-        project_name = 'project_name'
-        zone_name = 'zone_name'
-        cluster_name = 'cluster_name'
-        api_url = klass.build_api_url(project_name, zone_name=zone_name,
-                                      cluster_name=cluster_name)
-
-        expected_url = '/'.join([
-            klass.API_BASE_URL,
-            klass.API_VERSION,
-            'projects',
-            project_name,
-            'zones',
-            zone_name,
-            'clusters',
-            cluster_name,
-        ])
-        self.assertEqual(api_url, expected_url)
-
-    def test_build_api_url_cluster_name_missing_zone_name(self):
-        klass = self._getTargetClass()
-
-        project_name = 'project_name'
-        cluster_name = 'cluster_name'
-        self.assertRaises(ValueError, klass.build_api_url, project_name,
-                          cluster_name=cluster_name)
-
-    def test_build_api_url_undelete(self):
-        klass = self._getTargetClass()
-
-        project_name = 'project_name'
-        zone_name = 'zone_name'
-        cluster_name = 'cluster_name'
-        api_url = klass.build_api_url(project_name, zone_name=zone_name,
-                                      cluster_name=cluster_name, undelete=True)
-
-        expected_url = '/'.join([
-            klass.API_BASE_URL,
-            klass.API_VERSION,
-            'projects',
-            project_name,
-            'zones',
-            zone_name,
-            'clusters',
-            cluster_name + ':undelete',
-        ])
-        self.assertEqual(api_url, expected_url)
-
-    def test_build_api_url_undelete_missing_zone_name(self):
-        klass = self._getTargetClass()
-
-        project_name = 'project_name'
-        cluster_name = 'cluster_name'
-        self.assertRaises(ValueError, klass.build_api_url, project_name,
-                          cluster_name=cluster_name, undelete=True)
-
-    def test_build_api_url_undelete_missing_cluster_name(self):
-        klass = self._getTargetClass()
-
-        project_name = 'project_name'
-        zone_name = 'zone_name'
-        self.assertRaises(ValueError, klass.build_api_url, project_name,
-                          zone_name=zone_name, undelete=True)
-
-    def test_list_zones(self):
-        self.assertTrue(False)
-
-    def test_get_cluster(self):
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
-
-        project_name = object()
-        zone_name = 'zone_name'
-        cluster_name = 'cluster_name'
-        self.assertRaises(NotImplementedError, connection.get_cluster,
-                          project_name, zone_name, cluster_name)
-
-    def test_list_clusters(self):
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
-
-        project_name = object()
-        self.assertRaises(NotImplementedError, connection.list_clusters,
-                          project_name)
-
-    def test_create_cluster(self):
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
-
-        project_name = object()
-        zone_name = 'zone_name'
-        self.assertRaises(NotImplementedError, connection.create_cluster,
-                          project_name, zone_name)
-
-    def test_update_cluster(self):
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
-
-        project_name = object()
-        zone_name = 'zone_name'
-        cluster_name = 'cluster_name'
-        self.assertRaises(NotImplementedError, connection.update_cluster,
-                          project_name, zone_name, cluster_name)
-
-    def test_delete_cluster(self):
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
-
-        project_name = object()
-        zone_name = 'zone_name'
-        cluster_name = 'cluster_name'
-        self.assertRaises(NotImplementedError, connection.delete_cluster,
-                          project_name, zone_name, cluster_name)
-
-    def test_undelete_cluster(self):
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
-
-        project_name = object()
-        zone_name = 'zone_name'
-        cluster_name = 'cluster_name'
-        self.assertRaises(NotImplementedError, connection.undelete_cluster,
-                          project_name, zone_name, cluster_name)
-
-
-class _Credentials(object):
-
-    _scopes = None
-
-    @staticmethod
-    def create_scoped_required():
-        return True
-
-    def create_scoped(self, scope):
-        self._scopes = scope
-        return self
 
 
 class _Http(object):
