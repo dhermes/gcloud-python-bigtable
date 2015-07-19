@@ -13,36 +13,3 @@
 # limitations under the License.
 
 """Google Cloud BigTable API package."""
-
-
-import json
-import six
-
-
-DEBUG = False
-
-
-def _print_func(value):
-    """Print function which does nothing unless in DEBUG mode.
-
-    :type value: object
-    :param value: The value to print.
-    """
-    if DEBUG:
-        six.print_(value)
-
-
-def _print_error(headers, content):
-    """Pretty prints headers and body from an error.
-
-    :type headers: :class:`httplib2.Response`
-    :param headers: Response headers from an error.
-
-    :type content: string
-    :param content: Error response body.
-    """
-    _print_func('RESPONSE HEADERS:')
-    _print_func(json.dumps(headers, indent=2, sort_keys=True))
-    _print_func('-' * 60)
-    _print_func('RESPONSE BODY:')
-    _print_func(json.dumps(json.loads(content), indent=2, sort_keys=True))

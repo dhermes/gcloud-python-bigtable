@@ -16,6 +16,58 @@
 import unittest2
 
 
+class Test_make_cluster_stub(unittest2.TestCase):
+
+    def _callFUT(self, credentials):
+        from gcloud_bigtable.cluster_connection import make_cluster_stub
+        return make_cluster_stub(credentials)
+
+    def test_it(self):
+        from gcloud_bigtable._testing import _Credentials
+        from gcloud_bigtable import cluster_connection as MUT
+
+        called = []
+        creds_list = []
+        mock_result = object()
+        transformed = object()
+
+        def custom_factory(*args, **kwargs):
+            called.append((args, kwargs))
+            return mock_result
+
+        def transformer(credentials):
+            creds_list.append(credentials)
+            return transformed
+
+        certs = 'FOOBAR'
+        credentials = _Credentials()
+        orig_factory = MUT.CLUSTER_STUB_FACTORY
+        orig_get_certs = MUT.get_certs
+        orig_MetadataTransformer = MUT.MetadataTransformer
+        try:
+            MUT.CLUSTER_STUB_FACTORY = custom_factory
+            MUT.get_certs = lambda: certs
+            MUT.MetadataTransformer = transformer
+            result = self._callFUT(credentials)
+        finally:
+            MUT.CLUSTER_STUB_FACTORY = orig_factory
+            MUT.get_certs = orig_get_certs
+            MUT.MetadataTransformer = orig_MetadataTransformer
+
+        self.assertTrue(result is mock_result)
+        self.assertEqual(creds_list, [credentials])
+        # Unpack single call.
+        (called_args, called_kwargs), = called
+        self.assertEqual(called_args,
+                         (MUT.CLUSTER_ADMIN_HOST, MUT.PORT))
+        expected_kwargs = {
+            'metadata_transformer': transformed,
+            'secure': True,
+            'root_certificates': certs,
+        }
+        self.assertEqual(called_kwargs, expected_kwargs)
+
+
 class TestClusterConnection(unittest2.TestCase):
 
     @staticmethod
@@ -33,7 +85,6 @@ class TestClusterConnection(unittest2.TestCase):
         connection = self._makeOne(credentials=credentials)
         self.assertTrue(connection._credentials is credentials)
         self.assertEqual(connection._credentials._scopes, (klass.SCOPE,))
-        self.assertTrue(connection._http is None)
 
     def test_build_api_url(self):
         klass = self._getTargetClass()
@@ -159,7 +210,13 @@ class TestClusterConnection(unittest2.TestCase):
                           zone_name=zone_name, undelete=True)
 
     def test_list_zones(self):
-        self.assertTrue(False)
+        from gcloud_bigtable._testing import _Credentials
+        credentials = _Credentials()
+        connection = self._makeOne(credentials=credentials)
+
+        project_name = object()
+        self.assertRaises(NotImplementedError, connection.list_zones,
+                          project_name)
 
     def test_get_cluster(self):
         from gcloud_bigtable._testing import _Credentials

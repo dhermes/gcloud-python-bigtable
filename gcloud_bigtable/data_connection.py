@@ -121,26 +121,9 @@ class DataConnection(Connection):
 
         :rtype: :class:`bigtable_service_messages_pb2.ReadRowsResponse`
         :returns: The response returned by the backend.
+        :raises: :class:`NotImplementedError` always.
         """
-        request_uri = self.build_api_url(table_name, 'read')
-        response_class = bigtable_service_messages_pb2.ReadRowsResponse
-        request_pb = bigtable_service_messages_pb2.ReadRowsRequest(
-            table_name=table_name)
-
-        # NOTE: Only one of row_key and row_range allowed by backend.
-        if row_key is not None:
-            request_pb.row_key = row_key
-        if row_range is not None:
-            request_pb.row_range.CopyFrom(row_range)
-        if filter is not None:
-            request_pb.filter.CopyFrom(filter)
-        if allow_row_interleaving is not None:
-            request_pb.allow_row_interleaving = allow_row_interleaving
-        if num_rows_limit is not None:
-            request_pb.num_rows_limit = num_rows_limit
-
-        response = self._rpc(request_uri, request_pb, response_class)
-        return response
+        raise NotImplementedError
 
     def sample_row_keys(self, table_name):
         request_uri = self.build_api_url(table_name, 'sampleKeys')

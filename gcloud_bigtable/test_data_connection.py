@@ -33,7 +33,6 @@ class TestDataConnection(unittest2.TestCase):
         connection = self._makeOne(credentials=credentials)
         self.assertTrue(connection._credentials is credentials)
         self.assertEqual(connection._credentials._scopes, (klass.SCOPE,))
-        self.assertTrue(connection._http is None)
 
     def test_build_api_url(self):
         klass = self._getTargetClass()
@@ -66,7 +65,13 @@ class TestDataConnection(unittest2.TestCase):
         self.assertEqual(api_url, expected_url)
 
     def test_read_rows(self):
-        self.assertTrue(False)
+        from gcloud_bigtable._testing import _Credentials
+        credentials = _Credentials()
+        connection = self._makeOne(credentials=credentials)
+
+        table_name = object()
+        self.assertRaises(NotImplementedError, connection.read_rows,
+                          table_name)
 
     def test_sample_row_keys(self):
         from gcloud_bigtable._testing import _Credentials

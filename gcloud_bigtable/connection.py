@@ -14,53 +14,52 @@
 
 """Connection to Google Cloud BigTable API servers."""
 
-import httplib2
 
 from gcloud_bigtable._generated import bigtable_service_messages_pb2
-from gcloud_bigtable import _print_error
 
 
+# See https://gist.github.com/dhermes/bbc5b7be1932bfffae77
+# for appropriate values on other systems.
+SSL_CERT_FILE = '/etc/ssl/certs/ca-certificates.crt'
 
-class ResponseError(Exception):
-    """Custom error for failed responses."""
+
+class AuthInfo(object):
+    """Local namespace for caching auth information."""
+
+    ROOT_CERTIFICATES = None
+
+
+class MetadataTransformer(object):
+    """Callable class to transform metadata for gRPC requests.
+
+    :type credentials: :class:`oauth2client.client.OAuth2Credentials`
+    :param credentials: The OAuth2 Credentials to use for access tokens
+                        to authorize requests.
+    """
+
+    def __init__(self, credentials):
+        self._credentials = credentials
+
+    def __call__(self, ignored_val):
+        """Adds authorization header to request metadata."""
+        access_token = self._credentials.get_access_token().access_token
+        return [('Authorization', 'Bearer ' + access_token)]
 
 
 class Connection(object):
     """HTTP-RPC Connection base class for Google Cloud BigTable.
 
-    If no value is passed in for ``http``, a :class:`httplib2.Http` object
-    will be created and authorized with the ``credentials``. If not, the
-    ``credentials`` and ``http`` need not be related.
-
-    A custom (non-``httplib2``) HTTP object must have a ``request`` method
-    which accepts the following arguments:
-
-    * ``uri``
-    * ``method``
-    * ``body``
-    * ``headers``
-
-    In addition, ``redirections`` and ``connection_type`` may be used.
-
-    Without the use of ``credentials.authorize(http)``, a custom ``http``
-    object will also need to be able to add a bearer token to API
-    requests and handle token refresh on 401 errors.
-
     :type credentials: :class:`oauth2client.client.OAuth2Credentials` or
                        :class:`NoneType`
     :param credentials: The OAuth2 Credentials to use for this connection.
-
-    :type http: :class:`httplib2.Http` or class that defines ``request()``.
-    :param http: An optional HTTP object to make requests.
     """
 
     USER_AGENT = 'gcloud-bigtable-python'
     SCOPE = None
 
-    def __init__(self, credentials=None, http=None):
+    def __init__(self, credentials=None):
         credentials = self._create_scoped_credentials(
             credentials, (self.SCOPE,))
-        self._http = http
         self._credentials = credentials
 
     @property
@@ -72,19 +71,6 @@ class Connection(object):
         :returns: The credentials object associated with this connection.
         """
         return self._credentials
-
-    @property
-    def http(self):
-        """A getter for the HTTP transport used in talking to the API.
-
-        :rtype: :class:`httplib2.Http`
-        :returns: A Http object used to transport data.
-        """
-        if self._http is None:
-            self._http = httplib2.Http()
-            if self._credentials:
-                self._http = self._credentials.authorize(self._http)
-        return self._http
 
     @staticmethod
     def _create_scoped_credentials(credentials, scope):
@@ -105,60 +91,28 @@ class Connection(object):
             credentials = credentials.create_scoped(scope)
         return credentials
 
-    def _request(self, request_uri, data, request_method='POST'):
-        """Make a request over the Http transport to the Cloud Datastore API.
 
-        :type request_uri: string
-        :param request_uri: The URI to send the request to.
+def _set_certs():
+    """Sets the cached root certificates locally."""
+    with open(SSL_CERT_FILE, mode='rb') as file_obj:
+        AuthInfo.ROOT_CERTIFICATES = file_obj.read()
 
-        :type data: string
-        :param data: The data to send with the API call.
-                     Typically this is a serialized Protobuf string.
 
-        :type request_method: string
-        :param request_method: The HTTP method to send the request. Defaults to
-                               'POST'.
+def set_certs(reset=False):
+    """Sets the cached root certificates locally.
 
-        :rtype: string
-        :returns: The string response content from the API call.
-        :raises: :class:`ResponseError` if the response code is not 200 OK.
-        """
-        headers = {
-            'Content-Type': 'application/x-protobuf',
-            'Content-Length': str(len(data)),
-            'User-Agent': self.USER_AGENT,
-        }
-        headers, content = self.http.request(
-            uri=request_uri, method=request_method,
-            headers=headers, body=data)
+    If not manually told to reset or if the value is already set,
+    does nothing.
+    """
+    if AuthInfo.ROOT_CERTIFICATES is None or reset:
+        _set_certs()
 
-        status = headers['status']
-        if status != '200':
-            _print_error(headers, content)
-            raise ResponseError(headers, content)
 
-        return content
+def get_certs():
+    """Gets the cached root certificates.
 
-    def _rpc(self, request_uri, request_pb, response_pb_cls,
-             request_method='POST'):
-        """Make a protobuf RPC request.
-
-        :type request_uri: string
-        :param request_uri: The URI to send the request to.
-
-        :type request_pb: :class:`google.protobuf.message.Message` instance
-        :param request_pb: the protobuf instance representing the request.
-
-        :type response_pb_cls: A :class:`google.protobuf.message.Message'
-                               subclass.
-        :param response_pb_cls: The class used to unmarshall the response
-                                protobuf.
-
-        :type request_method: string
-        :param request_method: The HTTP method to send the request. Defaults to
-                               'POST'.
-        """
-        response = self._request(request_uri=request_uri,
-                                 data=request_pb.SerializeToString(),
-                                 request_method=request_method)
-        return response_pb_cls.FromString(response)
+    Calls set_certs() first in case the value has not been set, but
+    this will do nothing if the value is already set.
+    """
+    set_certs(reset=False)
+    return AuthInfo.ROOT_CERTIFICATES

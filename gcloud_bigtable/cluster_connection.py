@@ -15,7 +15,35 @@
 """Connection to Google Cloud BigTable Cluster Admin API."""
 
 from gcloud_bigtable._generated import bigtable_cluster_service_messages_pb2
+from gcloud_bigtable._generated import bigtable_cluster_service_pb2
 from gcloud_bigtable.connection import Connection
+from gcloud_bigtable.connection import MetadataTransformer
+from gcloud_bigtable.connection import get_certs
+
+
+CLUSTER_STUB_FACTORY = (bigtable_cluster_service_pb2.
+                        early_adopter_create_BigtableClusterService_stub)
+CLUSTER_ADMIN_HOST = 'bigtableclusteradmin.googleapis.com'
+PORT = 443
+
+
+def make_cluster_stub(credentials):
+    """Makes a stub for the Cluster Admin API.
+
+    :type credentials: :class:`oauth2client.client.OAuth2Credentials`
+    :param credentials: The OAuth2 Credentials to use for access tokens
+                        to authorize requests.
+
+    :rtype: :class:`grpc.early_adopter.implementations._Stub`
+    :returns: The stub object used to make gRPC requests to the
+              Cluster Admin API.
+    """
+    custom_metadata_transformer = MetadataTransformer(credentials)
+    return CLUSTER_STUB_FACTORY(
+        CLUSTER_ADMIN_HOST, PORT,
+        metadata_transformer=custom_metadata_transformer,
+        secure=True,
+        root_certificates=get_certs())
 
 
 class ClusterConnection(Connection):
@@ -106,12 +134,14 @@ class ClusterConnection(Connection):
             final_segment=final_segment)
 
     def list_zones(self, project_name):
-        request_uri = self.build_api_url(project_name)
-        response_class = bigtable_cluster_service_messages_pb2.ListZonesResponse
-        request_pb = bigtable_cluster_service_messages_pb2.ListZonesRequest()
-        response = self._rpc(request_uri, request_pb, response_class,
-                             request_method='GET')
-        return response
+        """Lists zones associated with project.
+
+        :type project_name: string
+        :param project_name: The name of the project to list zones for.
+
+        :raises: :class:`NotImplementedError` always.
+        """
+        raise NotImplementedError
 
     def get_cluster(self, project_name, zone_name, cluster_name):
         request_uri = self.build_api_url(project_name, zone_name=zone_name,

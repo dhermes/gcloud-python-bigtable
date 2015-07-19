@@ -16,6 +16,44 @@
 import unittest2
 
 
+class TestMetadataTransformer(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.connection import MetadataTransformer
+        return MetadataTransformer
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_ctor(self):
+        from gcloud_bigtable._testing import _Credentials
+        credentials = _Credentials()
+        transformer = self._makeOne(credentials)
+        self.assertTrue(transformer._credentials is credentials)
+
+    def test___call__(self):
+        from gcloud_bigtable._testing import _Credentials
+
+        access_token_expected = 'FOOBARBAZ'
+
+        class _ReturnVal(object):
+
+            access_token = access_token_expected
+
+        class _CustomCreds(_Credentials):
+
+            @staticmethod
+            def get_access_token():
+                return _ReturnVal
+
+        credentials = _CustomCreds()
+        transformer = self._makeOne(credentials)
+        result = transformer(None)
+        self.assertEqual(
+            result,
+            [('Authorization', 'Bearer ' + access_token_expected)])
+
+
 class TestConnection(unittest2.TestCase):
 
     def _getTargetClass(self):
@@ -31,7 +69,6 @@ class TestConnection(unittest2.TestCase):
         connection = self._makeOne(credentials=credentials)
         self.assertTrue(connection._credentials is credentials)
         self.assertEqual(connection._credentials._scopes, (None,))
-        self.assertTrue(connection._http is None)
 
     def test__create_scoped_credentials_with_no_credentials(self):
         klass = self._getTargetClass()
@@ -57,119 +94,111 @@ class TestConnection(unittest2.TestCase):
         connection = self._makeOne(credentials=credentials)
         self.assertTrue(connection.credentials is credentials)
 
-    def test_http_property_no_credentials(self):
-        import httplib2
 
-        connection = self._makeOne()
-        self.assertTrue(connection._credentials is None)
-        http = connection.http
-        self.assertTrue(isinstance(http, httplib2.Http))
-        # Make sure no credentials have been bound to the request.
-        self.assertTrue(getattr(http.request, 'credentials', None) is None)
+class Test__set_certs(unittest2.TestCase):
 
-    def test_http_property(self):
-        from gcloud_bigtable._testing import _Credentials
-        class _CustomCredentials(_Credentials):
+    def _callFUT(self):
+        from gcloud_bigtable.connection import _set_certs
+        return _set_certs()
 
-            _authorized = None
+    def test_it(self):
+        import tempfile
+        from gcloud_bigtable import connection as MUT
 
-            def authorize(self, http_obj):
-                self._authorized = http_obj
-                return http_obj
+        self.assertTrue(MUT.AuthInfo.ROOT_CERTIFICATES is None)
 
-        credentials = _CustomCredentials()
-        connection = self._makeOne(credentials=credentials)
-        http = connection.http
-        self.assertTrue(http is credentials._authorized)
+        original_SSL_CERT_FILE = MUT.SSL_CERT_FILE
+        filename = tempfile.mktemp()
+        contents = b'FOOBARBAZ'
+        with open(filename, 'wb') as file_obj:
+            file_obj.write(contents)
+        try:
+            MUT.SSL_CERT_FILE = filename
+            self._callFUT()
+        finally:
+            MUT.SSL_CERT_FILE = original_SSL_CERT_FILE
 
-    def _request_test_helper(self, status, content):
-        from gcloud_bigtable.connection import ResponseError
-        headers = {'status': status}
-        http = _Http(headers, content)
-        connection = self._makeOne(http=http)
-        request_uri = 'https://domain.com/path'
-        data = b'DEADBEEF'
-        request_method = 'PUT'
-        if status == '200':
-            result = connection._request(request_uri, data,
-                                         request_method=request_method)
-            self.assertEqual(result, content)
-        else:
-            self.assertRaises(ResponseError, connection._request, request_uri,
-                              data, request_method=request_method)
-
-        self.assertEqual(len(http._called_with), 4)
-        self.assertEqual(http._called_with['method'], request_method)
-        self.assertEqual(http._called_with['uri'], request_uri)
-        self.assertEqual(http._called_with['body'], data)
-        expected_headers = {
-            'Content-Length': str(len(data)),
-            'Content-Type': 'application/x-protobuf',
-            'User-Agent': 'gcloud-bigtable-python',
-        }
-        self.assertEqual(http._called_with['headers'], expected_headers)
-
-    def test__request_success(self):
-        self._request_test_helper('200', b'FOOBAR')
-
-    def test__request_failure(self):
-        self._request_test_helper('418', b'{}')
-
-    def test__rpc(self):
-        klass = self._getTargetClass()
-        RESPONSE = object()
-        DATA = object()
-        REQUEST_URI = object()
-        REQUEST_METHOD = object()
-
-        class _MockRequestConnection(klass):
-
-            def __init__(self):
-                self._request_uris = []
-                self._data = []
-                self._request_methods = []
-
-            def _request(self, request_uri, data, request_method='POST'):
-                self._request_uris.append(request_uri)
-                self._data.append(data)
-                self._request_methods.append(request_method)
-                return RESPONSE
-
-        class _MockRequestPb(object):
-
-            @staticmethod
-            def SerializeToString():
-                return DATA
-
-        class _MockResponsePbClass(object):
-
-            _from_string_called = []
-
-            @classmethod
-            def FromString(cls, value):
-                cls._from_string_called.append(value)
-                return value
-
-        connection = _MockRequestConnection()
-        result = connection._rpc(REQUEST_URI, _MockRequestPb,
-                                 _MockResponsePbClass,
-                                 request_method=REQUEST_METHOD)
-        self.assertTrue(result is RESPONSE)
-        self.assertEqual(connection._request_uris, [REQUEST_URI])
-        self.assertEqual(connection._data, [DATA])
-        self.assertEqual(connection._request_methods, [REQUEST_METHOD])
-        self.assertEqual(_MockResponsePbClass._from_string_called, [RESPONSE])
+        self.assertEqual(MUT.AuthInfo.ROOT_CERTIFICATES, contents)
 
 
-class _Http(object):
+class Test_set_certs(unittest2.TestCase):
 
-    _called_with = None
+    def _callFUT(self):
+        from gcloud_bigtable.connection import set_certs
+        return set_certs()
 
-    def __init__(self, headers, content):
-        from httplib2 import Response
-        self._response = Response(headers)
-        self._content = content
+    def test_call_private(self):
+        from gcloud_bigtable import connection as MUT
 
-    def request(self, **kw):
-        self._called_with = kw
-        return self._response, self._content
+        orig_certs = MUT.AuthInfo.ROOT_CERTIFICATES
+        orig__set_certs = MUT._set_certs
+
+        call_count = [0]
+
+        def mock_set_certs():
+            call_count[0] += 1
+
+        try:
+            MUT.AuthInfo.ROOT_CERTIFICATES = None
+            MUT._set_certs = mock_set_certs
+            self._callFUT()
+        finally:
+            MUT.AuthInfo.ROOT_CERTIFICATES = orig_certs
+            MUT._set_certs = orig__set_certs
+
+        self.assertEqual(call_count, [1])
+
+    def test_do_nothing(self):
+        from gcloud_bigtable import connection as MUT
+
+        orig_certs = MUT.AuthInfo.ROOT_CERTIFICATES
+        orig__set_certs = MUT._set_certs
+
+        call_count = [0]
+
+        def mock_set_certs():
+            call_count[0] += 1
+
+        # Make sure the fake method gets called by **someone** to make
+        # tox -e cover happy.
+        mock_set_certs()
+        self.assertEqual(call_count, [1])
+        try:
+            MUT.AuthInfo.ROOT_CERTIFICATES = object()
+            MUT._set_certs = mock_set_certs
+            self._callFUT()
+        finally:
+            MUT.AuthInfo.ROOT_CERTIFICATES = orig_certs
+            MUT._set_certs = orig__set_certs
+
+        self.assertEqual(call_count, [1])
+
+
+class Test_get_certs(unittest2.TestCase):
+
+    def _callFUT(self):
+        from gcloud_bigtable.connection import get_certs
+        return get_certs()
+
+    def test_it(self):
+        from gcloud_bigtable import connection as MUT
+
+        orig_certs = MUT.AuthInfo.ROOT_CERTIFICATES
+        orig_set_certs = MUT.set_certs
+
+        call_kwargs = []
+        return_val = object()
+
+        def mock_set_certs(**kwargs):
+            call_kwargs.append(kwargs)
+
+        try:
+            MUT.AuthInfo.ROOT_CERTIFICATES = return_val
+            MUT.set_certs = mock_set_certs
+            result = self._callFUT()
+        finally:
+            MUT.AuthInfo.ROOT_CERTIFICATES = orig_certs
+            MUT.set_certs = orig_set_certs
+
+        self.assertEqual(call_kwargs, [{'reset': False}])
+        self.assertTrue(result is return_val)

@@ -33,7 +33,6 @@ class TestTableConnection(unittest2.TestCase):
         connection = self._makeOne(credentials=credentials)
         self.assertTrue(connection._credentials is credentials)
         self.assertEqual(connection._credentials._scopes, (klass.SCOPE,))
-        self.assertTrue(connection._http is None)
 
     def test_build_api_url(self):
         klass = self._getTargetClass()
