@@ -28,6 +28,20 @@ class _Credentials(object):
         return self
 
 
+class _StubMock(object):
+
+    def __init__(self, credentials):
+        self._credentials = credentials
+        self._enter_calls = 0
+        self._exit_args = []
+
+    def __enter__(self):
+        self._enter_calls += 1
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._exit_args.append((exc_type, exc_val, exc_tb))
+
+
 class _Monkey(object):
     # context-manager for replacing module names in the scope of a test.
 

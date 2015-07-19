@@ -63,7 +63,8 @@ class ClusterConnection(Connection):
 
         :raises: :class:`NotImplementedError` always.
         """
-        raise NotImplementedError
+        with make_cluster_stub(self._credentials):
+            raise NotImplementedError
 
     def get_cluster(self, project_name, zone_name, cluster_name):
         raise NotImplementedError

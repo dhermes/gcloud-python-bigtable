@@ -81,12 +81,32 @@ class TestClusterConnection(unittest2.TestCase):
 
     def test_list_zones(self):
         from gcloud_bigtable._testing import _Credentials
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable._testing import _StubMock
+        from gcloud_bigtable import cluster_connection as MUT
         credentials = _Credentials()
         connection = self._makeOne(credentials=credentials)
+        stubs = []
 
-        project_name = object()
-        self.assertRaises(NotImplementedError, connection.list_zones,
-                          project_name)
+        def mock_make_stub(creds):
+            stub = _StubMock(creds)
+            stubs.append(stub)
+            return stub
+
+        with _Monkey(MUT, make_cluster_stub=mock_make_stub):
+            project_name = object()
+            self.assertRaises(NotImplementedError, connection.list_zones,
+                              project_name)
+
+        # Asserting length 1 by unpacking.
+        stub_used, = stubs
+        self.assertTrue(stub_used._credentials is credentials)
+        self.assertEqual(stub_used._enter_calls, 1)
+
+        # Asserting length 1 (and a 3-tuple) by unpacking.
+        (exc_type, exc_val, _), = stub_used._exit_args
+        self.assertTrue(exc_type is NotImplementedError)
+        self.assertTrue(isinstance(exc_val, NotImplementedError))
 
     def test_get_cluster(self):
         from gcloud_bigtable._testing import _Credentials
