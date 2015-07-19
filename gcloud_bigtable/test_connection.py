@@ -103,22 +103,21 @@ class Test__set_certs(unittest2.TestCase):
 
     def test_it(self):
         import tempfile
+        from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import connection as MUT
 
         self.assertTrue(MUT.AuthInfo.ROOT_CERTIFICATES is None)
 
-        original_SSL_CERT_FILE = MUT.SSL_CERT_FILE
         filename = tempfile.mktemp()
         contents = b'FOOBARBAZ'
         with open(filename, 'wb') as file_obj:
             file_obj.write(contents)
-        try:
-            MUT.SSL_CERT_FILE = filename
+        with _Monkey(MUT, SSL_CERT_FILE=filename):
             self._callFUT()
-        finally:
-            MUT.SSL_CERT_FILE = original_SSL_CERT_FILE
 
         self.assertEqual(MUT.AuthInfo.ROOT_CERTIFICATES, contents)
+        # Reset to `None` value checked above.
+        MUT.AuthInfo.ROOT_CERTIFICATES = None
 
 
 class Test_set_certs(unittest2.TestCase):
@@ -128,31 +127,26 @@ class Test_set_certs(unittest2.TestCase):
         return set_certs()
 
     def test_call_private(self):
+        from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import connection as MUT
-
-        orig_certs = MUT.AuthInfo.ROOT_CERTIFICATES
-        orig__set_certs = MUT._set_certs
 
         call_count = [0]
 
         def mock_set_certs():
             call_count[0] += 1
 
-        try:
-            MUT.AuthInfo.ROOT_CERTIFICATES = None
-            MUT._set_certs = mock_set_certs
+        class _AuthInfo(object):
+            ROOT_CERTIFICATES = None
+
+        with _Monkey(MUT, AuthInfo=_AuthInfo,
+                     _set_certs=mock_set_certs):
             self._callFUT()
-        finally:
-            MUT.AuthInfo.ROOT_CERTIFICATES = orig_certs
-            MUT._set_certs = orig__set_certs
 
         self.assertEqual(call_count, [1])
 
     def test_do_nothing(self):
+        from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import connection as MUT
-
-        orig_certs = MUT.AuthInfo.ROOT_CERTIFICATES
-        orig__set_certs = MUT._set_certs
 
         call_count = [0]
 
@@ -163,13 +157,13 @@ class Test_set_certs(unittest2.TestCase):
         # tox -e cover happy.
         mock_set_certs()
         self.assertEqual(call_count, [1])
-        try:
-            MUT.AuthInfo.ROOT_CERTIFICATES = object()
-            MUT._set_certs = mock_set_certs
+
+        class _AuthInfo(object):
+            ROOT_CERTIFICATES = object()
+
+        with _Monkey(MUT, AuthInfo=_AuthInfo,
+                     _set_certs=mock_set_certs):
             self._callFUT()
-        finally:
-            MUT.AuthInfo.ROOT_CERTIFICATES = orig_certs
-            MUT._set_certs = orig__set_certs
 
         self.assertEqual(call_count, [1])
 
@@ -181,10 +175,8 @@ class Test_get_certs(unittest2.TestCase):
         return get_certs()
 
     def test_it(self):
+        from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import connection as MUT
-
-        orig_certs = MUT.AuthInfo.ROOT_CERTIFICATES
-        orig_set_certs = MUT.set_certs
 
         call_kwargs = []
         return_val = object()
@@ -192,13 +184,12 @@ class Test_get_certs(unittest2.TestCase):
         def mock_set_certs(**kwargs):
             call_kwargs.append(kwargs)
 
-        try:
-            MUT.AuthInfo.ROOT_CERTIFICATES = return_val
-            MUT.set_certs = mock_set_certs
+        class _AuthInfo(object):
+            ROOT_CERTIFICATES = return_val
+
+        with _Monkey(MUT, AuthInfo=_AuthInfo,
+                     set_certs=mock_set_certs):
             result = self._callFUT()
-        finally:
-            MUT.AuthInfo.ROOT_CERTIFICATES = orig_certs
-            MUT.set_certs = orig_set_certs
 
         self.assertEqual(call_kwargs, [{'reset': False}])
         self.assertTrue(result is return_val)

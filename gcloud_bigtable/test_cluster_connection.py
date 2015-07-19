@@ -24,6 +24,7 @@ class Test_make_cluster_stub(unittest2.TestCase):
 
     def test_it(self):
         from gcloud_bigtable._testing import _Credentials
+        from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster_connection as MUT
 
         called = []
@@ -41,18 +42,10 @@ class Test_make_cluster_stub(unittest2.TestCase):
 
         certs = 'FOOBAR'
         credentials = _Credentials()
-        orig_factory = MUT.CLUSTER_STUB_FACTORY
-        orig_get_certs = MUT.get_certs
-        orig_MetadataTransformer = MUT.MetadataTransformer
-        try:
-            MUT.CLUSTER_STUB_FACTORY = custom_factory
-            MUT.get_certs = lambda: certs
-            MUT.MetadataTransformer = transformer
+        with _Monkey(MUT, CLUSTER_STUB_FACTORY=custom_factory,
+                     get_certs=lambda: certs,
+                     MetadataTransformer=transformer):
             result = self._callFUT(credentials)
-        finally:
-            MUT.CLUSTER_STUB_FACTORY = orig_factory
-            MUT.get_certs = orig_get_certs
-            MUT.MetadataTransformer = orig_MetadataTransformer
 
         self.assertTrue(result is mock_result)
         self.assertEqual(creds_list, [credentials])
