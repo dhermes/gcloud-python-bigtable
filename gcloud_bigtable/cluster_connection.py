@@ -24,7 +24,7 @@ from gcloud_bigtable.connection import get_certs
 CLUSTER_STUB_FACTORY = (bigtable_cluster_service_pb2.
                         early_adopter_create_BigtableClusterService_stub)
 CLUSTER_ADMIN_HOST = 'bigtableclusteradmin.googleapis.com'
-"""API request host."""
+"""Cluster Admin API request host."""
 PORT = 443
 SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
 """Scope for table and cluster API requests."""
