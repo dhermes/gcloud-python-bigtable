@@ -18,6 +18,15 @@ from gcloud_bigtable._generated import bigtable_service_messages_pb2
 from gcloud_bigtable.connection import Connection
 
 
+DATA_API_HOST = 'bigtable.googleapis.com'
+"""Base URL for API requests."""
+SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.data'
+"""Scope for data API requests."""
+READ_ONLY_SCOPE = ('https://www.googleapis.com/auth/'
+                   'cloud-bigtable.data.readonly')
+"""Read-only scope for data API requests."""
+
+
 class DataConnection(Connection):
     """Connection to Google Cloud BigTable Data API.
 
@@ -26,54 +35,6 @@ class DataConnection(Connection):
     The ``table_name`` value must take the form:
         "projects/*/zones/*/clusters/*/tables/*"
     """
-
-    API_VERSION = 'v1'
-    """The version of the API, used in building the API call's URL."""
-
-    API_URL_TEMPLATE = ('{api_base}/{api_version}/{table_name}/'
-                        'rows{final_segment}')
-    """A template for the URL of a particular API call."""
-
-    API_BASE_URL = 'https://bigtable.googleapis.com'
-    """Base URL for API requests."""
-
-    SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.data'
-    """Scope for data API requests."""
-
-    READ_ONLY_SCOPE = ('https://www.googleapis.com/auth/'
-                       'cloud-bigtable.data.readonly')
-    """Read-only scope for data API requests."""
-
-    @classmethod
-    def build_api_url(cls, table_name, rpc_method, row_key=None):
-        """Construct the URL for a particular API call.
-
-        This method is used internally to come up with the URL to use when
-        making RPCs to the Google Cloud BigTable API.
-
-        :type table_name: string
-        :param table_name: The name of a table. Expected to be of the form
-                           "projects/*/zones/*/clusters/*/tables/*".
-
-        :type rpc_method: string
-        :param rpc_method: The RPC method name for the URL.
-
-        :type row_key: string or ``NoneType``
-        :param row_key: (Optional). The row key for the RPC operation.
-
-        :rtype: string
-        :returns: The URL needed to make an API request.
-        """
-        if row_key is None:
-            final_segment = ':' + rpc_method
-        else:
-            final_segment = '/' + row_key + ':' + rpc_method
-
-        return cls.API_URL_TEMPLATE.format(
-            api_base=cls.API_BASE_URL,
-            api_version=cls.API_VERSION,
-            table_name=table_name,
-            final_segment=final_segment)
 
     def read_rows(self, table_name, row_key=None, row_range=None,
                   filter=None, allow_row_interleaving=None,
@@ -126,21 +87,13 @@ class DataConnection(Connection):
         raise NotImplementedError
 
     def sample_row_keys(self, table_name):
-        request_uri = self.build_api_url(table_name, 'sampleKeys')
-        request_method = 'GET'
         raise NotImplementedError
 
     def mutate_row(self, table_name, row_key):
-        request_uri = self.build_api_url(table_name, 'mutate',
-                                         row_key=row_key)
         raise NotImplementedError
 
     def check_and_mutate_row(self, table_name, row_key):
-        request_uri = self.build_api_url(table_name, 'checkAndMutate',
-                                         row_key=row_key)
         raise NotImplementedError
 
     def read_modify_write_row(self, table_name, row_key):
-        request_uri = self.build_api_url(table_name, 'readModifyWrite',
-                                         row_key=row_key)
         raise NotImplementedError

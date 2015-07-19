@@ -34,36 +34,6 @@ class TestDataConnection(unittest2.TestCase):
         self.assertTrue(connection._credentials is credentials)
         self.assertEqual(connection._credentials._scopes, (klass.SCOPE,))
 
-    def test_build_api_url(self):
-        klass = self._getTargetClass()
-        table_name = 'table_name'
-        rpc_method = 'rpc_method'
-        api_url = klass.build_api_url(table_name, rpc_method)
-
-        expected_url = '/'.join([
-            klass.API_BASE_URL,
-            klass.API_VERSION,
-            table_name,
-            'rows:' + rpc_method,
-        ])
-        self.assertEqual(api_url, expected_url)
-
-    def test_build_api_url_with_row_key(self):
-        klass = self._getTargetClass()
-        table_name = 'table_name'
-        rpc_method = 'rpc_method'
-        row_key = 'row_key'
-        api_url = klass.build_api_url(table_name, rpc_method, row_key=row_key)
-
-        expected_url = '/'.join([
-            klass.API_BASE_URL,
-            klass.API_VERSION,
-            table_name,
-            'rows',
-            row_key + ':' + rpc_method,
-        ])
-        self.assertEqual(api_url, expected_url)
-
     def test_read_rows(self):
         from gcloud_bigtable._testing import _Credentials
         credentials = _Credentials()
