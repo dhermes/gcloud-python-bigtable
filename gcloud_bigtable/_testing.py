@@ -37,10 +37,20 @@ class _StubMock(object):
 
     def __enter__(self):
         self._enter_calls += 1
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._exit_args.append((exc_type, exc_val, exc_tb))
 
+
+class _StubMockResponse(object):
+
+    def __init__(self, stub, result):
+        self.stub = stub
+        self._result = result
+
+    def result(self):
+        return self._result
 
 class _Monkey(object):
     # context-manager for replacing module names in the scope of a test.

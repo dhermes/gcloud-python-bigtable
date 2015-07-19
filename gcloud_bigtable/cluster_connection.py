@@ -18,6 +18,7 @@ from gcloud_bigtable._generated import bigtable_cluster_service_messages_pb2
 from gcloud_bigtable._generated import bigtable_cluster_service_pb2
 from gcloud_bigtable.connection import Connection
 from gcloud_bigtable.connection import MetadataTransformer
+from gcloud_bigtable.connection import TIMEOUT_SECONDS
 from gcloud_bigtable.connection import get_certs
 
 
@@ -55,16 +56,29 @@ class ClusterConnection(Connection):
     This only allows interacting with clusters in a project.
     """
 
-    def list_zones(self, project_name):
+    def list_zones(self, project_id, timeout_seconds=TIMEOUT_SECONDS):
         """Lists zones associated with project.
 
-        :type project_name: string
-        :param project_name: The name of the project to list zones for.
+        :type project_id: string
+        :param project_id: The ID of the project to list zones for.
 
-        :raises: :class:`NotImplementedError` always.
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+
+        :rtype: class:`bigtable_cluster_service_messages_pb2.ListZonesResponse`
+        :returns: The response object for the list request.
         """
-        with make_cluster_stub(self._credentials):
-            raise NotImplementedError
+        project_name = 'projects/%s' % (project_id,)
+        request_pb = bigtable_cluster_service_messages_pb2.ListZonesRequest(
+            name=project_name)
+        result_pb = None
+        with make_cluster_stub(self._credentials) as stub:
+            response = stub.ListZones.async(request_pb,
+                                            timeout_seconds)
+            result_pb = response.result()
+
+        return result_pb
 
     def get_cluster(self, project_name, zone_name, cluster_name):
         raise NotImplementedError

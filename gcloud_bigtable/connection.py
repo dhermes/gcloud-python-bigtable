@@ -21,6 +21,7 @@ from gcloud_bigtable._generated import bigtable_service_messages_pb2
 # See https://gist.github.com/dhermes/bbc5b7be1932bfffae77
 # for appropriate values on other systems.
 SSL_CERT_FILE = '/etc/ssl/certs/ca-certificates.crt'
+TIMEOUT_SECONDS = 10
 
 
 class AuthInfo(object):
