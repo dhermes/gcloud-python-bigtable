@@ -83,21 +83,46 @@ class ClusterConnection(Connection):
                                 If not passed, defaults to ``TIMEOUT_SECONDS``.
 
         :rtype: class:`messages.ListZonesResponse`
-        :returns: The response object for the list request.
+        :returns: The response object for the list zones request.
         """
         project_name = 'projects/%s' % (project_id,)
         request_pb = messages.ListZonesRequest(name=project_name)
         result_pb = None
         with make_cluster_stub(self._credentials) as stub:
-            response = stub.ListZones.async(request_pb,
-                                            timeout_seconds)
+            response = stub.ListZones.async(request_pb, timeout_seconds)
             result_pb = response.result()
 
         return result_pb
 
-    def get_cluster(self, project_name, zone_name, cluster_name):
-        """Gets cluster metadata."""
-        raise NotImplementedError
+    def get_cluster(self, project_id, zone_name, cluster_id,
+                    timeout_seconds=TIMEOUT_SECONDS):
+        """Gets cluster metadata.
+
+        :type project_id: string
+        :param project_id: The ID of the project owning the cluster.
+
+        :type zone_name: string
+        :param zone_name: The name of the zone owning the cluster.
+
+        :type cluster_id: string
+        :param cluster_id: The name of the cluster being retrieved.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+
+        :rtype: class:`messages.Cluster`
+        :returns: The response object for the get cluster request.
+        """
+        cluster_name = 'projects/%s/zones/%s/clusters/%s' % (
+            project_id, zone_name, cluster_id)
+        request_pb = messages.GetClusterRequest(name=cluster_name)
+        result_pb = None
+        with make_cluster_stub(self._credentials) as stub:
+            response = stub.GetCluster.async(request_pb, timeout_seconds)
+            result_pb = response.result()
+
+        return result_pb
 
     def list_clusters(self, project_name):
         """List clusters created in a project."""
