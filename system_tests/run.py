@@ -25,6 +25,9 @@ from gcloud_bigtable.cluster_connection import ClusterConnection
 
 
 PROJECT_ID = os.getenv('GCLOUD_TESTS_PROJECT_ID')
+TEST_ZONE_NAME = 'us-central1-c'
+TEST_CLUSTER_ID = 'gcloud-python-cluster'
+TEST_NUMBER_OF_NODES = 3
 
 
 class TestClusterAdminAPI(unittest2.TestCase):
@@ -59,3 +62,39 @@ class TestClusterAdminAPI(unittest2.TestCase):
                          'projects/%s/zones/us-central1-c' % (PROJECT_ID,))
         self.assertEqual(zone4.display_name, 'us-central1-c')
         self.assertEqual(zone4.status, OK_STATUS)
+
+    def _assert_test_cluster(self, cluster):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+        fields_set = sorted([field.name
+                             for field in cluster._fields.keys()])
+        self.assertEqual(fields_set, [
+            'default_storage_type',
+            'display_name',
+            'name',
+            'serve_nodes',
+        ])
+        self.assertEqual(cluster.serve_nodes, TEST_NUMBER_OF_NODES)
+        self.assertEqual(cluster.display_name, TEST_CLUSTER_ID)
+        full_name = 'projects/%s/zones/%s/clusters/%s' % (
+            PROJECT_ID, TEST_ZONE_NAME, TEST_CLUSTER_ID)
+        self.assertEqual(cluster.name, full_name)
+        self.assertEqual(cluster.default_storage_type,
+                         dict(data_pb2.StorageType.items())['STORAGE_SSD'])
+
+    def test_get_cluster_as_user(self):
+        credentials = GoogleCredentials.get_application_default()
+        connection = ClusterConnection(credentials)
+        result_pb = connection.get_cluster(PROJECT_ID, TEST_ZONE_NAME,
+                                           TEST_CLUSTER_ID)
+        self._assert_test_cluster(result_pb)
+
+    def test_list_clusters_as_user(self):
+        credentials = GoogleCredentials.get_application_default()
+        connection = ClusterConnection(credentials)
+        result_pb = connection.list_clusters(PROJECT_ID)
+
+        self.assertEqual(list(result_pb.failed_zones), [])
+        # Unpack implies a single cluster in result set.
+        cluster, = result_pb.clusters
+        self._assert_test_cluster(cluster)

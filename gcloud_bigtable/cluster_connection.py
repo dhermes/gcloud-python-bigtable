@@ -124,9 +124,27 @@ class ClusterConnection(Connection):
 
         return result_pb
 
-    def list_clusters(self, project_name):
-        """List clusters created in a project."""
-        raise NotImplementedError
+    def list_clusters(self, project_id, timeout_seconds=TIMEOUT_SECONDS):
+        """List clusters created in a project.
+
+        :type project_id: string
+        :param project_id: The ID of the project to list clusters for.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+
+        :rtype: class:`messages.ListClustersResponse`
+        :returns: The response object for the list clusters request.
+        """
+        project_name = 'projects/%s' % (project_id,)
+        request_pb = messages.ListClustersRequest(name=project_name)
+        result_pb = None
+        with make_cluster_stub(self._credentials) as stub:
+            response = stub.ListClusters.async(request_pb, timeout_seconds)
+            result_pb = response.result()
+
+        return result_pb
 
     def create_cluster(self, project_name, zone_name):
         """Creates a clusters in a project."""

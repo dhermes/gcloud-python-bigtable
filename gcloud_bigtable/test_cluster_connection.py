@@ -163,13 +163,21 @@ class TestClusterConnection(unittest2.TestCase):
                          'projects/PROJECT_ID/zones/ZONE/clusters/CLUSTER_ID')
 
     def test_list_clusters(self):
-        from gcloud_bigtable._testing import _Credentials
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_service_messages_pb2 as messages)
 
-        project_name = object()
-        self.assertRaises(NotImplementedError, connection.list_clusters,
-                          project_name)
+        PROJECT_ID = 'PROJECT_ID'
+
+        def rpc_method(connection):
+            return connection.list_clusters(PROJECT_ID)
+
+        method_name = 'ListClusters'
+        credentials, stubs = self._rpc_method_test_helper(rpc_method,
+                                                          method_name)
+        request_type = messages.ListClustersRequest
+        request_pb = self._check_rpc_stubs_used(credentials, stubs,
+                                                request_type)
+        self.assertEqual(request_pb.name, 'projects/PROJECT_ID')
 
     def test_create_cluster(self):
         from gcloud_bigtable._testing import _Credentials
