@@ -89,7 +89,7 @@ class TestClusterConnection(unittest2.TestCase):
 
     def test_list_zones(self):
         from gcloud_bigtable._generated import (
-            bigtable_cluster_service_messages_pb2)
+            bigtable_cluster_service_messages_pb2 as messages)
         from gcloud_bigtable._testing import _Credentials
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster_connection as MUT
@@ -121,9 +121,7 @@ class TestClusterConnection(unittest2.TestCase):
 
         # Asserting length 1 by unpacking.
         request_pb, = stub_used.ListZones.request_pbs
-        self.assertTrue(isinstance(
-            request_pb,
-            bigtable_cluster_service_messages_pb2.ListZonesRequest))
+        self.assertTrue(isinstance(request_pb, messages.ListZonesRequest))
         self.assertEqual(request_pb.name, 'projects/PROJECT_ID')
         self.assertEqual(stub_used.ListZones.request_timeouts, [10])
 

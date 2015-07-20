@@ -19,7 +19,8 @@ import unittest2
 
 from oauth2client.client import GoogleCredentials
 
-from gcloud_bigtable._generated import bigtable_cluster_service_messages_pb2
+from gcloud_bigtable._generated import (
+    bigtable_cluster_service_messages_pb2 as messages)
 from gcloud_bigtable.cluster_connection import ClusterConnection
 
 
@@ -32,9 +33,8 @@ class TestClusterAdminAPI(unittest2.TestCase):
         credentials = GoogleCredentials.get_application_default()
         connection = ClusterConnection(credentials)
         result_pb = connection.list_zones(PROJECT_ID)
-        self.assertTrue(isinstance(
-            result_pb,
-            bigtable_cluster_service_messages_pb2.ListZonesResponse))
+        self.assertTrue(isinstance(result_pb, messages.ListZonesResponse))
+
         self.assertEqual(len(result_pb.zones), 4)
         all_zones = sorted(result_pb.zones, key=lambda zone: zone.name)
         zone1, zone2, zone3, zone4 = all_zones

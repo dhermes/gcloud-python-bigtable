@@ -16,7 +16,8 @@
 
 from oauth2client.client import AssertionCredentials
 
-from gcloud_bigtable._generated import bigtable_cluster_service_messages_pb2
+from gcloud_bigtable._generated import (
+    bigtable_cluster_service_messages_pb2 as messages)
 from gcloud_bigtable._generated import bigtable_cluster_service_pb2
 from gcloud_bigtable.connection import Connection
 from gcloud_bigtable.connection import MetadataTransformer
@@ -81,12 +82,11 @@ class ClusterConnection(Connection):
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to ``TIMEOUT_SECONDS``.
 
-        :rtype: class:`bigtable_cluster_service_messages_pb2.ListZonesResponse`
+        :rtype: class:`messages.ListZonesResponse`
         :returns: The response object for the list request.
         """
         project_name = 'projects/%s' % (project_id,)
-        request_pb = bigtable_cluster_service_messages_pb2.ListZonesRequest(
-            name=project_name)
+        request_pb = messages.ListZonesRequest(name=project_name)
         result_pb = None
         with make_cluster_stub(self._credentials) as stub:
             response = stub.ListZones.async(request_pb,
