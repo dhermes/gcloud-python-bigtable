@@ -81,6 +81,12 @@ class TestClusterConnection(unittest2.TestCase):
         self.assertTrue(connection._credentials is credentials)
         self.assertEqual(connection._credentials._scopes, (klass.SCOPE,))
 
+    def test_constructor_bad_type(self):
+        from oauth2client.client import AssertionCredentials
+        assertion_type = 'ASSERTION_TYPE'
+        credentials = AssertionCredentials(assertion_type)
+        self.assertRaises(TypeError, self._makeOne, credentials=credentials)
+
     def test_list_zones(self):
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2)

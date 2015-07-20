@@ -20,8 +20,6 @@ from gcloud_bigtable.connection import Connection
 
 TABLE_ADMIN_HOST = 'https://bigtabletableadmin.googleapis.com'
 """Table Admin API request host."""
-SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
-"""Scope for table and cluster API requests."""
 
 
 class TableConnection(Connection):
@@ -32,6 +30,9 @@ class TableConnection(Connection):
     The ``cluster_name`` value must take the form:
         "projects/*/zones/*/clusters/*"
     """
+
+    SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
+    """Scope for table and cluster API requests."""
 
     def create_table(self, cluster_name):
         raise NotImplementedError

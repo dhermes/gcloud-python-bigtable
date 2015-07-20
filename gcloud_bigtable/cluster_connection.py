@@ -14,6 +14,8 @@
 
 """Connection to Google Cloud BigTable Cluster Admin API."""
 
+from oauth2client.client import AssertionCredentials
+
 from gcloud_bigtable._generated import bigtable_cluster_service_messages_pb2
 from gcloud_bigtable._generated import bigtable_cluster_service_pb2
 from gcloud_bigtable.connection import Connection
@@ -27,8 +29,6 @@ CLUSTER_STUB_FACTORY = (bigtable_cluster_service_pb2.
 CLUSTER_ADMIN_HOST = 'bigtableclusteradmin.googleapis.com'
 """Cluster Admin API request host."""
 PORT = 443
-SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
-"""Scope for table and cluster API requests."""
 
 
 def make_cluster_stub(credentials):
@@ -54,7 +54,22 @@ class ClusterConnection(Connection):
     """Connection to Google Cloud BigTable Cluster API.
 
     This only allows interacting with clusters in a project.
+
+    :type credentials: :class:`oauth2client.client.OAuth2Credentials` or
+                       :class:`NoneType`
+    :param credentials: The OAuth2 Credentials to use for this connection.
+
+    :raises: :class:`TypeError` if the credentials are for a service account.
     """
+
+    SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
+    """Scope for table and cluster API requests."""
+
+    def __init__(self, credentials=None):
+        if isinstance(credentials, AssertionCredentials):
+            raise TypeError('Service accounts are not able to use the Cluster '
+                            'Admin API at this time.')
+        super(ClusterConnection, self).__init__(credentials)
 
     def list_zones(self, project_id, timeout_seconds=TIMEOUT_SECONDS):
         """Lists zones associated with project.

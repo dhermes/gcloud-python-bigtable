@@ -20,11 +20,6 @@ from gcloud_bigtable.connection import Connection
 
 DATA_API_HOST = 'bigtable.googleapis.com'
 """Base URL for API requests."""
-SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.data'
-"""Scope for data API requests."""
-READ_ONLY_SCOPE = ('https://www.googleapis.com/auth/'
-                   'cloud-bigtable.data.readonly')
-"""Read-only scope for data API requests."""
 
 
 class DataConnection(Connection):
@@ -35,6 +30,13 @@ class DataConnection(Connection):
     The ``table_name`` value must take the form:
         "projects/*/zones/*/clusters/*/tables/*"
     """
+
+    SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.data'
+    """Scope for data API requests."""
+
+    READ_ONLY_SCOPE = ('https://www.googleapis.com/auth/'
+                       'cloud-bigtable.data.readonly')
+    """Read-only scope for data API requests."""
 
     def read_rows(self, table_name, row_key=None, row_range=None,
                   filter=None, allow_row_interleaving=None,

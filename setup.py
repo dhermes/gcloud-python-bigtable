@@ -11,8 +11,9 @@ with open(os.path.join(HERE, 'README.md')) as file_obj:
 
 REQUIREMENTS = [
     'httplib2 >= 0.9.1',
+    'oauth2client >= 1.4.6',
     'protobuf >= 3.0.0a3',
-    'six>=1.6.1',
+    'six >= 1.6.1',
 ]
 
 setup(
