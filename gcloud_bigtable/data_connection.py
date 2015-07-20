@@ -14,7 +14,6 @@
 
 """Connection to Google Cloud BigTable Data API."""
 
-from gcloud_bigtable._generated import bigtable_service_messages_pb2
 from gcloud_bigtable.connection import Connection
 
 
@@ -63,10 +62,11 @@ class DataConnection(Connection):
 
         :type allow_row_interleaving: boolean
         :param allow_row_interleaving: (Optional) By default, rows are read
-                                       sequentially, producing results which are
-                                       guaranteed to arrive in increasing row
-                                       order. Setting "allow_row_interleaving"
-                                       to true allows multiple rows to be
+                                       sequentially, producing results which
+                                       are guaranteed to arrive in increasing
+                                       row order. Setting
+                                       "allow_row_interleaving" to true allows
+                                       multiple rows to be
                                        interleaved in the response stream,
                                        which increases throughput but breaks
                                        this guarantee, and may force the client
@@ -89,13 +89,17 @@ class DataConnection(Connection):
         raise NotImplementedError
 
     def sample_row_keys(self, table_name):
+        """Samples row keys."""
         raise NotImplementedError
 
     def mutate_row(self, table_name, row_key):
+        """Mutates a row."""
         raise NotImplementedError
 
     def check_and_mutate_row(self, table_name, row_key):
+        """Checks and mutates a row."""
         raise NotImplementedError
 
     def read_modify_write_row(self, table_name, row_key):
+        """Reads, modifies and writes a row."""
         raise NotImplementedError

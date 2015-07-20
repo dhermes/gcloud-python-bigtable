@@ -52,6 +52,7 @@ class _StubMockResponse(object):
     def result(self):
         return self._result
 
+
 class _Monkey(object):
     # context-manager for replacing module names in the scope of a test.
 

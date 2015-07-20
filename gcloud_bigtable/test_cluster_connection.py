@@ -191,7 +191,6 @@ class TestClusterConnection(unittest2.TestCase):
                           project_name, zone_name, cluster_name)
 
 
-
 class _ListZonesMethod(object):
 
     def __init__(self, stub, result):

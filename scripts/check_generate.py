@@ -14,6 +14,8 @@
 
 """Checking that protobuf generated modules import correctly."""
 
+from __future__ import print_function
+
 import glob
 import os
 
@@ -21,7 +23,7 @@ import os
 def main():
     """Import all PB2 files."""
     print('>>> import gcloud_bigtable._generated')
-    import gcloud_bigtable._generated
+    _ = __import__('gcloud_bigtable._generated')
     pb2_files = sorted(glob.glob('gcloud_bigtable/_generated/*pb2.py'))
     for filename in pb2_files:
         basename = os.path.basename(filename)

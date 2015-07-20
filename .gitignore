@@ -36,3 +36,6 @@ coverage.xml
 generated_python/
 cloud-bigtable-client/
 hello_world/
+
+# Make sure a generated file isn't accidentally committed.
+pylintrc_reduced

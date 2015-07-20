@@ -96,19 +96,25 @@ class ClusterConnection(Connection):
         return result_pb
 
     def get_cluster(self, project_name, zone_name, cluster_name):
+        """Gets cluster metadata."""
         raise NotImplementedError
 
     def list_clusters(self, project_name):
+        """List clusters created in a project."""
         raise NotImplementedError
 
     def create_cluster(self, project_name, zone_name):
+        """Creates a clusters in a project."""
         raise NotImplementedError
 
     def update_cluster(self, project_name, zone_name, cluster_name):
+        """Updates an existing cluster."""
         raise NotImplementedError
 
     def delete_cluster(self, project_name, zone_name, cluster_name):
+        """Deletes a cluster."""
         raise NotImplementedError
 
     def undelete_cluster(self, project_name, zone_name, cluster_name):
+        """Undeletes a cluster that has been queued for deletion."""
         raise NotImplementedError
