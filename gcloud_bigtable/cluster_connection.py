@@ -337,6 +337,32 @@ class ClusterConnection(Connection):
 
         return result_pb
 
-    def undelete_cluster(self, project_name, zone_name, cluster_name):
-        """Undeletes a cluster that has been queued for deletion."""
-        raise NotImplementedError
+    def undelete_cluster(self, project_id, zone_name, cluster_id,
+                         timeout_seconds=TIMEOUT_SECONDS):
+        """Undeletes a cluster that has been queued for deletion.
+
+        :type project_id: string
+        :param project_id: The ID of the project owning the cluster.
+
+        :type zone_name: string
+        :param zone_name: The name of the zone owning the cluster.
+
+        :type cluster_id: string
+        :param cluster_id: The name of the cluster being retrieved.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+
+        :rtype: :class:`gcloud_bigtable._generated.operations_pb2.Operation`
+        :returns: The long running operation that will perform the undelete.
+        """
+        cluster_name = 'projects/%s/zones/%s/clusters/%s' % (
+            project_id, zone_name, cluster_id)
+        request_pb = messages.UndeleteClusterRequest(name=cluster_name)
+        result_pb = None
+        with make_cluster_stub(self._credentials) as stub:
+            response = stub.UndeleteCluster.async(request_pb, timeout_seconds)
+            result_pb = response.result()
+
+        return result_pb

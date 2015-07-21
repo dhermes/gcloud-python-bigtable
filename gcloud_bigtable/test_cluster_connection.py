@@ -273,15 +273,24 @@ class TestClusterConnection(unittest2.TestCase):
                          'projects/PROJECT_ID/zones/ZONE/clusters/CLUSTER_ID')
 
     def test_undelete_cluster(self):
-        from gcloud_bigtable._testing import _Credentials
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_service_messages_pb2 as messages)
 
-        project_name = object()
-        zone_name = 'zone_name'
-        cluster_name = 'cluster_name'
-        self.assertRaises(NotImplementedError, connection.undelete_cluster,
-                          project_name, zone_name, cluster_name)
+        PROJECT_ID = 'PROJECT_ID'
+        ZONE = 'ZONE'
+        CLUSTER_ID = 'CLUSTER_ID'
+
+        def rpc_method(connection):
+            return connection.undelete_cluster(PROJECT_ID, ZONE, CLUSTER_ID)
+
+        method_name = 'UndeleteCluster'
+        credentials, stubs = self._rpc_method_test_helper(rpc_method,
+                                                          method_name)
+        request_type = messages.UndeleteClusterRequest
+        request_pb = self._check_rpc_stubs_used(credentials, stubs,
+                                                request_type)
+        self.assertEqual(request_pb.name,
+                         'projects/PROJECT_ID/zones/ZONE/clusters/CLUSTER_ID')
 
 
 class Test__prepare_cluster(unittest2.TestCase):
