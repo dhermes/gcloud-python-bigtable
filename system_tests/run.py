@@ -41,6 +41,7 @@ class TestClusterAdminAPI(unittest2.TestCase):
     @classmethod
     def setUpClass(cls):
         cls._credentials = cls._get_creds()
+        cls._connection = ClusterConnection(cls._credentials)
 
     @staticmethod
     def _get_creds():
@@ -53,8 +54,7 @@ class TestClusterAdminAPI(unittest2.TestCase):
         return GoogleCredentials.get_application_default()
 
     def test_list_zones(self):
-        connection = ClusterConnection(self._credentials)
-        result_pb = connection.list_zones(PROJECT_ID)
+        result_pb = self._connection.list_zones(PROJECT_ID)
         self.assertTrue(isinstance(result_pb, messages.ListZonesResponse))
 
         self.assertEqual(len(result_pb.zones), 4)
@@ -89,15 +89,13 @@ class TestClusterAdminAPI(unittest2.TestCase):
 
     @unittest2.skip('Temporarily disabling while transitioning to create')
     def test_get_cluster(self):
-        connection = ClusterConnection(self._credentials)
-        result_pb = connection.get_cluster(PROJECT_ID, TEST_ZONE_NAME,
-                                           TEST_CLUSTER_ID)
+        result_pb = self._connection.get_cluster(PROJECT_ID, TEST_ZONE_NAME,
+                                                 TEST_CLUSTER_ID)
         self._assert_test_cluster(result_pb)
 
     @unittest2.skip('Temporarily disabling while transitioning to create')
     def test_list_clusters(self):
-        connection = ClusterConnection(self._credentials)
-        result_pb = connection.list_clusters(PROJECT_ID)
+        result_pb = self._connection.list_clusters(PROJECT_ID)
 
         self.assertEqual(list(result_pb.failed_zones), [])
         # Unpack implies a single cluster in result set.
