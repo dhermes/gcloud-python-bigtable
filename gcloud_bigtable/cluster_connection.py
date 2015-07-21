@@ -195,13 +195,13 @@ class ClusterConnection(Connection):
 
         cluster_kwargs['serve_nodes'] = serve_nodes
 
+        if ssd_bytes is not None and hdd_bytes is not None:
+            raise ValueError('At most one of SSD bytes and HDD bytes '
+                             'can be set.')
         if ssd_bytes is not None:
-            if hdd_bytes is not None:
-                raise ValueError('At most one of SSD bytes and HDD bytes '
-                                 'can be set.')
             cluster_kwargs['ssd_bytes'] = ssd_bytes
             cluster_kwargs['default_storage_type'] = data_pb2.STORAGE_SSD
-        elif hdd_bytes is not None:
+        if hdd_bytes is not None:
             cluster_kwargs['hdd_bytes'] = hdd_bytes
             cluster_kwargs['default_storage_type'] = data_pb2.STORAGE_HDD
 
@@ -224,9 +224,32 @@ class ClusterConnection(Connection):
         """Updates an existing cluster."""
         raise NotImplementedError
 
-    def delete_cluster(self, project_name, zone_name, cluster_name):
-        """Deletes a cluster."""
-        raise NotImplementedError
+    def delete_cluster(self, project_id, zone_name, cluster_id,
+                       timeout_seconds=TIMEOUT_SECONDS):
+        """Deletes a cluster.
+
+        :type project_id: string
+        :param project_id: The ID of the project owning the cluster.
+
+        :type zone_name: string
+        :param zone_name: The name of the zone owning the cluster.
+
+        :type cluster_id: string
+        :param cluster_id: The name of the cluster being retrieved.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+        """
+        cluster_name = 'projects/%s/zones/%s/clusters/%s' % (
+            project_id, zone_name, cluster_id)
+        request_pb = messages.DeleteClusterRequest(name=cluster_name)
+        result_pb = None
+        with make_cluster_stub(self._credentials) as stub:
+            response = stub.DeleteCluster.async(request_pb, timeout_seconds)
+            result_pb = response.result()
+
+        return result_pb
 
     def undelete_cluster(self, project_name, zone_name, cluster_name):
         """Undeletes a cluster that has been queued for deletion."""
