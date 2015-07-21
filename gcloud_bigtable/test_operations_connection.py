@@ -125,11 +125,21 @@ class TestOperationsConnection(unittest2.TestCase):
         return request_pb
 
     def test_get_operation(self):
-        from gcloud_bigtable._testing import _Credentials
-        credentials = _Credentials()
-        host = 'HOST'
-        connection = self._makeOne(host, credentials=credentials)
-        self.assertRaises(NotImplementedError, connection.get_operation)
+        from gcloud_bigtable._generated import operations_pb2
+
+        OPERATION_NAME = 'OPERATION_NAME'
+
+        def rpc_method(connection):
+            return connection.get_operation(OPERATION_NAME)
+
+        method_name = 'GetOperation'
+        credentials, stubs = self._rpc_method_test_helper(
+            rpc_method, method_name)
+        request_type = operations_pb2.GetOperationRequest
+        request_pb = self._check_rpc_stubs_used(credentials, stubs,
+                                                request_type)
+        self.assertEqual(request_pb.name, OPERATION_NAME)
+        self.assertEqual(len(request_pb._fields), 1)
 
     def test_list_operations(self):
         from gcloud_bigtable._generated import operations_pb2

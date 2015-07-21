@@ -94,14 +94,36 @@ class OperationsConnection(Connection):
         setattr(self, 'SCOPE', scope)  # To override the global.
         super(OperationsConnection, self).__init__(credentials)
 
-    def get_operation(self):
-        """Gets a long-running operation."""
-        # GetOperation: GetOperationRequest --> Operation
-        raise NotImplementedError
+    def get_operation(self, operation_name, timeout_seconds=TIMEOUT_SECONDS):
+        """Gets a long-running operation.
+
+        :type operation_name: string
+        :param operation_name: The operation being retrieved. Must be of the
+                               form "operations/**".
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: (Optional) Number of seconds for request
+                                time-out. If not passed, defaults to
+                                ``TIMEOUT_SECONDS``.
+
+        :rtype: :class:`operations_pb2.Operations`
+        :returns: The operation retrieved.
+        """
+        request_pb = operations_pb2.GetOperationRequest(name=operation_name)
+        result_pb = None
+        with make_operations_stub(self._host, self._credentials) as stub:
+            response = stub.GetOperation.async(request_pb, timeout_seconds)
+            result_pb = response.result()
+
+        return result_pb
 
     def list_operations(self, filter=None, page_size=None,
                         page_token=None, timeout_seconds=TIMEOUT_SECONDS):
         """Lists all long-running operations.
+
+        .. note::
+          If the server doesn't support this method, it returns
+          ``google.rpc.Code.UNIMPLEMENTED``.
 
         :type filter: string
         :param filter: (Optional) The filter for the list request.
