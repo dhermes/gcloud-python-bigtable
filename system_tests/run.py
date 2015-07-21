@@ -28,6 +28,12 @@ PROJECT_ID = os.getenv('GCLOUD_TESTS_PROJECT_ID')
 TEST_ZONE_NAME = 'us-central1-c'
 TEST_CLUSTER_ID = 'gcloud-python-cluster'
 TEST_NUMBER_OF_NODES = 3
+EXPECTED_ZONES = (
+    'asia-east1-b',
+    'europe-west1-c',
+    'us-central1-b',
+    TEST_ZONE_NAME,
+)
 
 
 class TestClusterAdminAPI(unittest2.TestCase):
@@ -40,28 +46,14 @@ class TestClusterAdminAPI(unittest2.TestCase):
 
         self.assertEqual(len(result_pb.zones), 4)
         all_zones = sorted(result_pb.zones, key=lambda zone: zone.name)
-        zone1, zone2, zone3, zone4 = all_zones
 
         OK_STATUS = 1
-        self.assertEqual(zone1.name,
-                         'projects/%s/zones/asia-east1-b' % (PROJECT_ID,))
-        self.assertEqual(zone1.display_name, 'asia-east1-b')
-        self.assertEqual(zone1.status, OK_STATUS)
-
-        self.assertEqual(zone2.name,
-                         'projects/%s/zones/europe-west1-c' % (PROJECT_ID,))
-        self.assertEqual(zone2.display_name, 'europe-west1-c')
-        self.assertEqual(zone2.status, OK_STATUS)
-
-        self.assertEqual(zone3.name,
-                         'projects/%s/zones/us-central1-b' % (PROJECT_ID,))
-        self.assertEqual(zone3.display_name, 'us-central1-b')
-        self.assertEqual(zone3.status, OK_STATUS)
-
-        self.assertEqual(zone4.name,
-                         'projects/%s/zones/us-central1-c' % (PROJECT_ID,))
-        self.assertEqual(zone4.display_name, 'us-central1-c')
-        self.assertEqual(zone4.status, OK_STATUS)
+        for curr_zone, expected_name in zip(all_zones, EXPECTED_ZONES):
+            self.assertEqual(
+                curr_zone.name,
+                'projects/%s/zones/%s' % (PROJECT_ID, expected_name))
+            self.assertEqual(curr_zone.display_name, expected_name)
+            self.assertEqual(curr_zone.status, OK_STATUS)
 
     def _assert_test_cluster(self, cluster):
         from gcloud_bigtable._generated import (
