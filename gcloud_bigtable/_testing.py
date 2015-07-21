@@ -28,12 +28,28 @@ class _Credentials(object):
         return self
 
 
+class _MockMethod(object):
+
+    def __init__(self, stub, result):
+        self.stub = stub
+        self.result = result
+        self.request_pbs = []
+        self.request_timeouts = []
+
+    def async(self, request_pb, timeout_seconds):
+        self.request_pbs.append(request_pb)
+        self.request_timeouts.append(timeout_seconds)
+        return _StubMockResponse(self, self.result)
+
+
 class _StubMock(object):
 
-    def __init__(self, credentials):
+    def __init__(self, credentials, result, method_name):
         self._credentials = credentials
         self._enter_calls = 0
         self._exit_args = []
+        self._method = _MockMethod(self, result)
+        setattr(self, method_name, self._method)
 
     def __enter__(self):
         self._enter_calls += 1

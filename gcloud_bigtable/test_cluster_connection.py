@@ -15,8 +15,6 @@
 
 import unittest2
 
-from gcloud_bigtable._testing import _StubMock
-
 
 class Test_make_cluster_stub(unittest2.TestCase):
 
@@ -90,6 +88,7 @@ class TestClusterConnection(unittest2.TestCase):
     def _rpc_method_test_helper(self, rpc_method, method_name):
         from gcloud_bigtable._testing import _Credentials
         from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable._testing import _StubMock
         from gcloud_bigtable import cluster_connection as MUT
         credentials = _Credentials()
         connection = self._makeOne(credentials=credentials)
@@ -97,7 +96,7 @@ class TestClusterConnection(unittest2.TestCase):
         expected_result = object()
 
         def mock_make_stub(creds):
-            stub = _ClusterStubMock(creds, expected_result, method_name)
+            stub = _StubMock(creds, expected_result, method_name)
             stubs.append(stub)
             return stub
 
@@ -344,26 +343,3 @@ class Test__prepare_cluster(unittest2.TestCase):
         with self.assertRaises(ValueError):
             self._helper_non_default_arguments(ssd_bytes=1024,
                                                hdd_bytes=1024)
-
-
-class _MockMethod(object):
-
-    def __init__(self, stub, result):
-        self.stub = stub
-        self.result = result
-        self.request_pbs = []
-        self.request_timeouts = []
-
-    def async(self, request_pb, timeout_seconds):
-        from gcloud_bigtable._testing import _StubMockResponse
-        self.request_pbs.append(request_pb)
-        self.request_timeouts.append(timeout_seconds)
-        return _StubMockResponse(self, self.result)
-
-
-class _ClusterStubMock(_StubMock):
-
-    def __init__(self, credentials, result, method_name):
-        super(_ClusterStubMock, self).__init__(credentials)
-        self._method = _MockMethod(self, result)
-        setattr(self, method_name, self._method)
