@@ -190,13 +190,13 @@ class TestClusterConnection(unittest2.TestCase):
         ZONE = 'ZONE'
         CLUSTER_ID = 'CLUSTER_ID'
         DEFAULT_CLUSTER = data_pb2.Cluster()
-        prepare_cluster_args = []
+        prepare_cluster_kwargs = []
 
         def rpc_method(connection):
             return connection.create_cluster(PROJECT_ID, ZONE, CLUSTER_ID)
 
         def mock_prepare_cluster(**kwargs):
-            prepare_cluster_args.append(kwargs)
+            prepare_cluster_kwargs.append(kwargs)
             return DEFAULT_CLUSTER
 
         method_name = 'CreateCluster'
@@ -209,7 +209,7 @@ class TestClusterConnection(unittest2.TestCase):
         self.assertEqual(request_pb.name, 'projects/PROJECT_ID/zones/ZONE')
         self.assertEqual(request_pb.cluster_id, CLUSTER_ID)
         self.assertEqual(request_pb.cluster, DEFAULT_CLUSTER)
-        self.assertEqual(prepare_cluster_args, [{
+        self.assertEqual(prepare_cluster_kwargs, [{
             'display_name': None,
             'hdd_bytes': None,
             'serve_nodes': 3,
@@ -226,13 +226,13 @@ class TestClusterConnection(unittest2.TestCase):
         ZONE = 'ZONE'
         CLUSTER_ID = 'CLUSTER_ID'
         DEFAULT_CLUSTER = data_pb2.Cluster()
-        prepare_cluster_args = []
+        prepare_cluster_kwargs = []
 
         def rpc_method(connection):
             return connection.update_cluster(PROJECT_ID, ZONE, CLUSTER_ID)
 
         def mock_prepare_cluster(**kwargs):
-            prepare_cluster_args.append(kwargs)
+            prepare_cluster_kwargs.append(kwargs)
             return DEFAULT_CLUSTER
 
         method_name = 'UpdateCluster'
@@ -243,7 +243,7 @@ class TestClusterConnection(unittest2.TestCase):
         request_pb = self._check_rpc_stubs_used(credentials, stubs,
                                                 request_type)
         self.assertEqual(request_pb, DEFAULT_CLUSTER)
-        self.assertEqual(prepare_cluster_args, [{
+        self.assertEqual(prepare_cluster_kwargs, [{
             'display_name': None,
             'hdd_bytes': None,
             'name': 'projects/PROJECT_ID/zones/ZONE/clusters/CLUSTER_ID',

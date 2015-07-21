@@ -80,6 +80,47 @@ class TestOperationsConnection(unittest2.TestCase):
         self.assertTrue(connection._credentials is credentials)
         self.assertEqual(connection._credentials._scopes, (klass.SCOPE,))
 
+    def _rpc_method_test_helper(self, rpc_method, method_name):
+        from gcloud_bigtable._testing import _Credentials
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable._testing import _StubMock
+        from gcloud_bigtable import operations_connection as MUT
+        credentials = _Credentials()
+        connection = self._makeOne(credentials=credentials)
+        stubs = []
+        hosts = []
+        expected_result = object()
+
+        def mock_make_stub(host, creds):
+            hosts.append(host)
+            stub = _StubMock(creds, expected_result, method_name)
+            stubs.append(stub)
+            return stub
+
+        with _Monkey(MUT, make_operations_stub=mock_make_stub):
+            result = rpc_method(connection)
+
+        self.assertTrue(result is expected_result)
+        return credentials, stubs, hosts
+
+    def _check_rpc_stubs_used(self, credentials, stubs, request_type):
+        # Asserting length 1 by unpacking.
+        stub_used, = stubs
+        self.assertTrue(stub_used._credentials is credentials)
+        self.assertEqual(stub_used._enter_calls, 1)
+
+        # Asserting length 1 (and a 3-tuple) by unpacking.
+        (exc_type, exc_val, _), = stub_used._exit_args
+        self.assertTrue(exc_type is None)
+        self.assertTrue(isinstance(exc_val, type(None)))
+
+        # Asserting length 1 by unpacking.
+        request_obj = stub_used._method
+        request_pb, = request_obj.request_pbs
+        self.assertTrue(isinstance(request_pb, request_type))
+        self.assertEqual(request_obj.request_timeouts, [10])
+        return request_pb
+
     def test_get_operation(self):
         from gcloud_bigtable._testing import _Credentials
         credentials = _Credentials()
@@ -87,10 +128,31 @@ class TestOperationsConnection(unittest2.TestCase):
         self.assertRaises(NotImplementedError, connection.get_operation)
 
     def test_list_operations(self):
-        from gcloud_bigtable._testing import _Credentials
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
-        self.assertRaises(NotImplementedError, connection.list_operations)
+        from gcloud_bigtable._generated import operations_pb2
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import operations_connection as MUT
+
+        HOST = 'HOST'
+        DEFAULT_REQUEST = operations_pb2.ListOperationsRequest()
+        prepare_list_request_kwargs = []
+
+        def rpc_method(connection):
+            return connection.list_operations(HOST)
+
+        def mock_prepare_list_request(**kwargs):
+            prepare_list_request_kwargs.append(kwargs)
+            return DEFAULT_REQUEST
+
+        method_name = 'ListOperations'
+        with _Monkey(MUT, _prepare_list_request=mock_prepare_list_request):
+            credentials, stubs, hosts = self._rpc_method_test_helper(
+                rpc_method, method_name)
+
+        self.assertEqual(hosts, [HOST])
+        request_type = operations_pb2.ListOperationsRequest
+        request_pb = self._check_rpc_stubs_used(credentials, stubs,
+                                                request_type)
+        self.assertEqual(request_pb, DEFAULT_REQUEST)
 
     def test_cancel_operation(self):
         from gcloud_bigtable._testing import _Credentials
@@ -103,3 +165,32 @@ class TestOperationsConnection(unittest2.TestCase):
         credentials = _Credentials()
         connection = self._makeOne(credentials=credentials)
         self.assertRaises(NotImplementedError, connection.delete_operation)
+
+
+class Test__prepare_list_request(unittest2.TestCase):
+
+    def _callFUT(self, filter=None, page_size=None, page_token=None):
+        from gcloud_bigtable.operations_connection import _prepare_list_request
+        return _prepare_list_request(filter=filter, page_size=page_size,
+                                     page_token=page_token)
+
+    def test_defaults(self):
+        result = self._callFUT()
+        all_fields = set(field.name for field in result._fields.keys())
+        self.assertEqual(all_fields, set(['name']))
+        self.assertEqual(result.name, 'operations')
+
+    def test_non_default_arguments(self):
+        FILTER = 'FILTER'
+        PAGE_TOKEN = 'PAGE_TOKEN'
+        PAGE_SIZE = 10
+
+        result = self._callFUT(filter=FILTER, page_size=PAGE_SIZE,
+                               page_token=PAGE_TOKEN)
+        all_fields = set(field.name for field in result._fields.keys())
+        self.assertEqual(all_fields,
+                         set(['filter', 'name', 'page_token', 'page_size']))
+        self.assertEqual(result.filter, FILTER)
+        self.assertEqual(result.name, 'operations')
+        self.assertEqual(result.page_token, PAGE_TOKEN)
+        self.assertEqual(result.page_size, PAGE_SIZE)

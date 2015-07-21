@@ -17,6 +17,7 @@
 from gcloud_bigtable._generated import operations_pb2
 from gcloud_bigtable.connection import Connection
 from gcloud_bigtable.connection import MetadataTransformer
+from gcloud_bigtable.connection import TIMEOUT_SECONDS
 from gcloud_bigtable.connection import get_certs
 
 
@@ -48,6 +49,32 @@ def make_operations_stub(host, credentials):
         root_certificates=get_certs())
 
 
+def _prepare_list_request(filter=None, page_size=None, page_token=None):
+    """Make a list request object.
+
+    :type filter: string
+    :param filter: (Optional) The filter for the list request.
+
+    :type page_size: integer
+    :param page_size: (Optional) The size of a single page of results.
+
+    :type page_token: string
+    :param page_token: (Optional) The token to begin paging through
+                       a results set.
+
+    :rtype: :class:`operations_pb2.ListOperationsRequest`
+    :returns: The list operations request object that was created.
+    """
+    list_kwargs = {'name': 'operations'}
+    if filter is not None:
+        list_kwargs['filter'] = filter
+    if page_size is not None:
+        list_kwargs['page_size'] = page_size
+    if page_token is not None:
+        list_kwargs['page_token'] = page_token
+    return operations_pb2.ListOperationsRequest(**list_kwargs)
+
+
 class OperationsConnection(Connection):
     """Connection to Google Cloud Operations API."""
 
@@ -56,10 +83,36 @@ class OperationsConnection(Connection):
         # GetOperation: GetOperationRequest --> Operation
         raise NotImplementedError
 
-    def list_operations(self):
-        """Lists all long-running operations."""
-        # ListOperations: ListOperationsRequest --> ListOperationsResponse
-        raise NotImplementedError
+    def list_operations(self, host, filter=None, page_size=None,
+                        page_token=None, timeout_seconds=TIMEOUT_SECONDS):
+        """Lists all long-running operations.
+
+        :type host: string
+        :param host: The host for the operations service.
+
+        :type filter: string
+        :param filter: (Optional) The filter for the list request.
+
+        :type page_size: integer
+        :param page_size: (Optional) The size of a single page of results.
+
+        :type page_token: string
+        :param page_token: (Optional) The token to begin paging through
+                           a results set.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: (Optional) Number of seconds for request
+                                time-out. If not passed, defaults to
+                                ``TIMEOUT_SECONDS``.
+        """
+        request_pb = _prepare_list_request(filter=filter, page_size=page_size,
+                                           page_token=page_token)
+        result_pb = None
+        with make_operations_stub(host, self._credentials) as stub:
+            response = stub.ListOperations.async(request_pb, timeout_seconds)
+            result_pb = response.result()
+
+        return result_pb
 
     def cancel_operation(self):
         """Cancels a long-running operation."""
