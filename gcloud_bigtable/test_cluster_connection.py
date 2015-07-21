@@ -124,6 +124,30 @@ class TestClusterConnection(unittest2.TestCase):
         self.assertEqual(request_obj.request_timeouts, [10])
         return request_pb
 
+    def test_get_operation(self):
+        from gcloud_bigtable._testing import _Credentials
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import cluster_connection as MUT
+        credentials = _Credentials()
+        with _Monkey(MUT, OperationsConnection=_OperationsConnection):
+            connection = self._makeOne(credentials=credentials)
+
+        expected_result = object()
+        connection._ops_connection._result = expected_result
+
+        PROJECT_ID = 'PROJECT_ID'
+        ZONE = 'ZONE'
+        CLUSTER_ID = 'CLUSTER_ID'
+        OPERATION_ID = 'OPERATION_ID'
+        result = connection.get_operation(PROJECT_ID, ZONE,
+                                          CLUSTER_ID, OPERATION_ID)
+        self.assertTrue(result is expected_result)
+        expected_op_name = ('operations/projects/PROJECT_ID/zones/ZONE/'
+                            'clusters/CLUSTER_ID/operations/OPERATION_ID')
+        expected_timeout_seconds = 10
+        self.assertEqual(connection._ops_connection._get_ops_calls,
+                         [(expected_op_name, expected_timeout_seconds)])
+
     def test_list_zones(self):
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages)
@@ -343,3 +367,17 @@ class Test__prepare_cluster(unittest2.TestCase):
         with self.assertRaises(ValueError):
             self._helper_non_default_arguments(ssd_bytes=1024,
                                                hdd_bytes=1024)
+
+
+class _OperationsConnection(object):
+
+    def __init__(self, host, scope=None, credentials=None):
+        self._host = host
+        self._scope = scope
+        self._credentials = credentials
+        self._get_ops_calls = []
+        self._result = None
+
+    def get_operation(self, operation_name, timeout_seconds=None):
+        self._get_ops_calls.append((operation_name, timeout_seconds))
+        return self._result

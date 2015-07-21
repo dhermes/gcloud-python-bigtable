@@ -24,6 +24,7 @@ from gcloud_bigtable.connection import Connection
 from gcloud_bigtable.connection import MetadataTransformer
 from gcloud_bigtable.connection import TIMEOUT_SECONDS
 from gcloud_bigtable.connection import get_certs
+from gcloud_bigtable.operations_connection import OperationsConnection
 
 
 CLUSTER_STUB_FACTORY = (bigtable_cluster_service_pb2.
@@ -124,6 +125,41 @@ class ClusterConnection(Connection):
             raise TypeError('Service accounts are not able to use the Cluster '
                             'Admin API at this time.')
         super(ClusterConnection, self).__init__(credentials)
+        # We assume credentials.create_scoped_required() will be False
+        # so that the same credentials can be used.
+        self._ops_connection = OperationsConnection(
+            CLUSTER_ADMIN_HOST, scope=self.SCOPE, credentials=credentials)
+
+    def get_operation(self, project_id, zone_name, cluster_id,
+                      operation_id, timeout_seconds=TIMEOUT_SECONDS):
+        """Gets a long-running operation.
+
+        :type project_id: string
+        :param project_id: The ID of the project owning the cluster.
+
+        :type zone_name: string
+        :param zone_name: The name of the zone owning the cluster.
+
+        :type cluster_id: string
+        :param cluster_id: The name of the cluster that initiatied the
+                           long-running operation.
+
+        :type operation_id: integer or string
+        :param operation_id: The ID of the operation to retrieve.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: (Optional) Number of seconds for request
+                                time-out. If not passed, defaults to
+                                ``TIMEOUT_SECONDS``.
+
+        :rtype: :class:`gcloud_bigtable._generated.operations_pb2.Operation`
+        :returns: The operation retrieved.
+        """
+        operation_name = (
+            'operations/projects/%s/zones/%s/clusters/%s/operations/%s' % (
+                project_id, zone_name, cluster_id, operation_id))
+        return self._ops_connection.get_operation(
+            operation_name, timeout_seconds=timeout_seconds)
 
     def list_zones(self, project_id, timeout_seconds=TIMEOUT_SECONDS):
         """Lists zones associated with project.
