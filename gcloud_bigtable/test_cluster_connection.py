@@ -179,85 +179,43 @@ class TestClusterConnection(unittest2.TestCase):
                                                 request_type)
         self.assertEqual(request_pb.name, 'projects/PROJECT_ID')
 
-    def test_create_cluster_with_defaults(self):
-        from gcloud_bigtable._generated import (
-            bigtable_cluster_service_messages_pb2 as messages)
-
-        PROJECT_ID = 'PROJECT_ID'
-        ZONE = 'ZONE'
-        CLUSTER_ID = 'CLUSTER_ID'
-
-        def rpc_method(connection):
-            return connection.create_cluster(PROJECT_ID, ZONE, CLUSTER_ID)
-
-        method_name = 'CreateCluster'
-        credentials, stubs = self._rpc_method_test_helper(rpc_method,
-                                                          method_name)
-        request_type = messages.CreateClusterRequest
-        request_pb = self._check_rpc_stubs_used(credentials, stubs,
-                                                request_type)
-        self.assertEqual(request_pb.name, 'projects/PROJECT_ID/zones/ZONE')
-        self.assertEqual(request_pb.cluster_id, CLUSTER_ID)
-        cluster = request_pb.cluster
-        self.assertEqual(cluster.serve_nodes, 3)
-        self.assertEqual(
-            set(field.name for field in cluster._fields.keys()),
-            set(['serve_nodes']))
-
-    def _create_cluster_helper_non_default_arguments(self, hdd_bytes=None,
-                                                     ssd_bytes=None):
+    def test_create_cluster(self):
         from gcloud_bigtable._generated import (
             bigtable_cluster_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages)
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import cluster_connection as MUT
 
         PROJECT_ID = 'PROJECT_ID'
         ZONE = 'ZONE'
         CLUSTER_ID = 'CLUSTER_ID'
-        DISPLAY_NAME = 'DISPLAY_NAME'
-        SERVE_NODES = 8
+        DEFAULT_CLUSTER = data_pb2.Cluster()
+        prepare_cluster_args = []
 
         def rpc_method(connection):
-            return connection.create_cluster(PROJECT_ID, ZONE, CLUSTER_ID,
-                                             display_name=DISPLAY_NAME,
-                                             serve_nodes=SERVE_NODES,
-                                             ssd_bytes=ssd_bytes,
-                                             hdd_bytes=hdd_bytes)
+            return connection.create_cluster(PROJECT_ID, ZONE, CLUSTER_ID)
+
+        def mock_prepare_cluster(**kwargs):
+            prepare_cluster_args.append(kwargs)
+            return DEFAULT_CLUSTER
 
         method_name = 'CreateCluster'
-        credentials, stubs = self._rpc_method_test_helper(rpc_method,
-                                                          method_name)
+        with _Monkey(MUT, _prepare_cluster=mock_prepare_cluster):
+            credentials, stubs = self._rpc_method_test_helper(rpc_method,
+                                                              method_name)
         request_type = messages.CreateClusterRequest
         request_pb = self._check_rpc_stubs_used(credentials, stubs,
                                                 request_type)
         self.assertEqual(request_pb.name, 'projects/PROJECT_ID/zones/ZONE')
         self.assertEqual(request_pb.cluster_id, CLUSTER_ID)
-        cluster = request_pb.cluster
-        self.assertEqual(cluster.display_name, DISPLAY_NAME)
-        self.assertEqual(cluster.serve_nodes, SERVE_NODES)
-
-        all_fields = set(field.name for field in cluster._fields.keys())
-        if ssd_bytes is not None:
-            self.assertEqual(cluster.ssd_bytes, ssd_bytes)
-            self.assertFalse('hdd_bytes' in all_fields)
-            self.assertEqual(cluster.default_storage_type,
-                             data_pb2.STORAGE_SSD)
-        if hdd_bytes is not None:
-            self.assertEqual(cluster.hdd_bytes, hdd_bytes)
-            self.assertFalse('ssd_bytes' in all_fields)
-            self.assertEqual(cluster.default_storage_type,
-                             data_pb2.STORAGE_HDD)
-
-    def test_create_cluster_non_default_args_with_ssd_bytes(self):
-        self._create_cluster_helper_non_default_arguments(ssd_bytes=1024)
-
-    def test_create_cluster_non_default_args_with_hdd_bytes(self):
-        self._create_cluster_helper_non_default_arguments(hdd_bytes=1024)
-
-    def test_create_cluster_non_default_args_conflict_ssd_and_hdd(self):
-        with self.assertRaises(ValueError):
-            self._create_cluster_helper_non_default_arguments(ssd_bytes=1024,
-                                                              hdd_bytes=1024)
+        self.assertEqual(request_pb.cluster, DEFAULT_CLUSTER)
+        self.assertEqual(prepare_cluster_args, [{
+            'display_name': None,
+            'hdd_bytes': None,
+            'serve_nodes': 3,
+            'ssd_bytes': None,
+        }])
 
     def test_update_cluster(self):
         from gcloud_bigtable._testing import _Credentials
@@ -300,6 +258,59 @@ class TestClusterConnection(unittest2.TestCase):
         cluster_name = 'cluster_name'
         self.assertRaises(NotImplementedError, connection.undelete_cluster,
                           project_name, zone_name, cluster_name)
+
+
+class Test__prepare_cluster(unittest2.TestCase):
+
+    def _callFUT(self, name=None, display_name=None, serve_nodes=3,
+                 hdd_bytes=None, ssd_bytes=None):
+        from gcloud_bigtable.cluster_connection import _prepare_cluster
+        return _prepare_cluster(name=name, display_name=display_name,
+                                serve_nodes=serve_nodes,
+                                hdd_bytes=hdd_bytes, ssd_bytes=ssd_bytes)
+
+    def test_defaults(self):
+        cluster = self._callFUT()
+        all_fields = set(field.name for field in cluster._fields.keys())
+        self.assertEqual(cluster.serve_nodes, 3)
+        self.assertEqual(all_fields, set(['serve_nodes']))
+
+    def _helper_non_default_arguments(self, hdd_bytes=None, ssd_bytes=None):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+
+        NAME = 'NAME'
+        DISPLAY_NAME = 'DISPLAY_NAME'
+        SERVE_NODES = 8
+
+        cluster = self._callFUT(name=NAME, display_name=DISPLAY_NAME,
+                                serve_nodes=SERVE_NODES, hdd_bytes=hdd_bytes,
+                                ssd_bytes=ssd_bytes)
+        self.assertEqual(cluster.display_name, DISPLAY_NAME)
+        self.assertEqual(cluster.serve_nodes, SERVE_NODES)
+
+        all_fields = set(field.name for field in cluster._fields.keys())
+        if ssd_bytes is not None:
+            self.assertEqual(cluster.ssd_bytes, ssd_bytes)
+            self.assertFalse('hdd_bytes' in all_fields)
+            self.assertEqual(cluster.default_storage_type,
+                             data_pb2.STORAGE_SSD)
+        if hdd_bytes is not None:
+            self.assertEqual(cluster.hdd_bytes, hdd_bytes)
+            self.assertFalse('ssd_bytes' in all_fields)
+            self.assertEqual(cluster.default_storage_type,
+                             data_pb2.STORAGE_HDD)
+
+    def test_non_default_args_with_ssd_bytes(self):
+        self._helper_non_default_arguments(ssd_bytes=1024)
+
+    def test_non_default_args_with_hdd_bytes(self):
+        self._helper_non_default_arguments(hdd_bytes=1024)
+
+    def test_non_default_args_conflict_ssd_and_hdd(self):
+        with self.assertRaises(ValueError):
+            self._helper_non_default_arguments(ssd_bytes=1024,
+                                               hdd_bytes=1024)
 
 
 class _MockMethod(object):

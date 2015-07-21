@@ -52,6 +52,58 @@ def make_cluster_stub(credentials):
         root_certificates=get_certs())
 
 
+def _prepare_cluster(name=None, display_name=None, serve_nodes=3,
+                     hdd_bytes=None, ssd_bytes=None):
+    """Create a cluster object with many optional arguments.
+
+    :type name: string
+    :param name: (Optional). The name of the cluster. Must be of the form
+                 "projects/*/zones/*/clusters/*".
+
+    :type display_name: string
+    :param display_name: (Optional) The display name for the cluster in
+                         the Cloud Console UI.
+
+    :type serve_nodes: integer
+    :param serve_nodes: (Optional) The number of nodes in the cluster.
+                        Defaults to 3.
+
+    :type hdd_bytes: integer
+    :param hdd_bytes: (Optional) The number of bytes to use a standard
+                      hard drive disk.
+
+    :type ssd_bytes: integer
+    :param ssd_bytes: (Optional) The number of bytes to use a solid
+                      state drive.
+
+    :rtype: :class:`messages.Cluster`
+    :returns: The cluster object required.
+    :raises: :class:`ValueError` if both ``hdd_bytes`` and ``ssd_bytes``
+             are set.
+    """
+    cluster_kwargs = {}
+
+    if name is not None:
+        cluster_kwargs['name'] = name
+
+    if display_name is not None:
+        cluster_kwargs['display_name'] = display_name
+
+    cluster_kwargs['serve_nodes'] = serve_nodes
+
+    if ssd_bytes is not None and hdd_bytes is not None:
+        raise ValueError('At most one of SSD bytes and HDD bytes '
+                         'can be set.')
+    if ssd_bytes is not None:
+        cluster_kwargs['ssd_bytes'] = ssd_bytes
+        cluster_kwargs['default_storage_type'] = data_pb2.STORAGE_SSD
+    if hdd_bytes is not None:
+        cluster_kwargs['hdd_bytes'] = hdd_bytes
+        cluster_kwargs['default_storage_type'] = data_pb2.STORAGE_HDD
+
+    return data_pb2.Cluster(**cluster_kwargs)
+
+
 class ClusterConnection(Connection):
     """Connection to Google Cloud BigTable Cluster API.
 
@@ -160,7 +212,7 @@ class ClusterConnection(Connection):
         :param zone_name: The name of the zone owning the cluster.
 
         :type cluster_id: string
-        :param cluster_id: The name of the cluster being retrieved.
+        :param cluster_id: The name of the cluster being created.
 
         :type display_name: string
         :param display_name: (Optional) The display name for the cluster in
@@ -184,30 +236,14 @@ class ClusterConnection(Connection):
 
         :rtype: :class:`messages.Cluster`
         :returns: The response object for the create cluster request.
-        :raises: :class:`ValueError` if both ``hdd_bytes`` and ``ssd_bytes``
-                 are set.
         """
         zone_full_name = 'projects/%s/zones/%s' % (project_id, zone_name)
-        cluster_kwargs = {}
-
-        if display_name is not None:
-            cluster_kwargs['display_name'] = display_name
-
-        cluster_kwargs['serve_nodes'] = serve_nodes
-
-        if ssd_bytes is not None and hdd_bytes is not None:
-            raise ValueError('At most one of SSD bytes and HDD bytes '
-                             'can be set.')
-        if ssd_bytes is not None:
-            cluster_kwargs['ssd_bytes'] = ssd_bytes
-            cluster_kwargs['default_storage_type'] = data_pb2.STORAGE_SSD
-        if hdd_bytes is not None:
-            cluster_kwargs['hdd_bytes'] = hdd_bytes
-            cluster_kwargs['default_storage_type'] = data_pb2.STORAGE_HDD
+        cluster = _prepare_cluster(display_name=display_name,
+                                   serve_nodes=serve_nodes,
+                                   hdd_bytes=hdd_bytes, ssd_bytes=ssd_bytes)
 
         # From the .proto definition of CreateClusterRequest: the "name",
         # "delete_time", and "current_operation" fields must be left blank.
-        cluster = data_pb2.Cluster(**cluster_kwargs)
         request_pb = messages.CreateClusterRequest(
             name=zone_full_name,
             cluster_id=cluster_id,
@@ -235,7 +271,7 @@ class ClusterConnection(Connection):
         :param zone_name: The name of the zone owning the cluster.
 
         :type cluster_id: string
-        :param cluster_id: The name of the cluster being retrieved.
+        :param cluster_id: The name of the cluster being deleted.
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
