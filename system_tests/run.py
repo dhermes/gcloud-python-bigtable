@@ -38,8 +38,17 @@ EXPECTED_ZONES = (
 
 class TestClusterAdminAPI(unittest2.TestCase):
 
-    def test_list_zones_as_user(self):
-        credentials = GoogleCredentials.get_application_default()
+    def _get_creds(self):
+        """Get credentials for a test.
+
+        Currently (as of July 20, 2015) the Cluster Admin API does not
+        support service accounts, so only user credentials are
+        used here.
+        """
+        return GoogleCredentials.get_application_default()
+
+    def test_list_zones(self):
+        credentials = self._get_creds()
         connection = ClusterConnection(credentials)
         result_pb = connection.list_zones(PROJECT_ID)
         self.assertTrue(isinstance(result_pb, messages.ListZonesResponse))
@@ -74,15 +83,15 @@ class TestClusterAdminAPI(unittest2.TestCase):
         self.assertEqual(cluster.default_storage_type,
                          data_pb2.STORAGE_SSD)
 
-    def test_get_cluster_as_user(self):
-        credentials = GoogleCredentials.get_application_default()
+    def test_get_cluster(self):
+        credentials = self._get_creds()
         connection = ClusterConnection(credentials)
         result_pb = connection.get_cluster(PROJECT_ID, TEST_ZONE_NAME,
                                            TEST_CLUSTER_ID)
         self._assert_test_cluster(result_pb)
 
-    def test_list_clusters_as_user(self):
-        credentials = GoogleCredentials.get_application_default()
+    def test_list_clusters(self):
+        credentials = self._get_creds()
         connection = ClusterConnection(credentials)
         result_pb = connection.list_clusters(PROJECT_ID)
 
