@@ -83,6 +83,7 @@ class TestClusterAdminAPI(unittest2.TestCase):
         self.assertEqual(cluster.default_storage_type,
                          data_pb2.STORAGE_SSD)
 
+    @unittest2.skip('Temporarily disabling while transitioning to create')
     def test_get_cluster(self):
         credentials = self._get_creds()
         connection = ClusterConnection(credentials)
@@ -90,6 +91,7 @@ class TestClusterAdminAPI(unittest2.TestCase):
                                            TEST_CLUSTER_ID)
         self._assert_test_cluster(result_pb)
 
+    @unittest2.skip('Temporarily disabling while transitioning to create')
     def test_list_clusters(self):
         credentials = self._get_creds()
         connection = ClusterConnection(credentials)
