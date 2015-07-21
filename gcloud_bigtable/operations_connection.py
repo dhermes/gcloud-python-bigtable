@@ -76,19 +76,32 @@ def _prepare_list_request(filter=None, page_size=None, page_token=None):
 
 
 class OperationsConnection(Connection):
-    """Connection to Google Cloud Operations API."""
+    """Connection to Google Cloud Operations API.
+
+    :type host: string
+    :param host: The host for the operations service.
+
+    :type scope: string or iterable of strings
+    :param scope: The effective service auth scopes for the connection.
+
+    :type credentials: :class:`oauth2client.client.OAuth2Credentials` or
+                       :class:`NoneType`
+    :param credentials: The OAuth2 Credentials to use for this connection.
+    """
+
+    def __init__(self, host, scope=None, credentials=None):
+        self._host = host
+        setattr(self, 'SCOPE', scope)  # To override the global.
+        super(OperationsConnection, self).__init__(credentials)
 
     def get_operation(self):
         """Gets a long-running operation."""
         # GetOperation: GetOperationRequest --> Operation
         raise NotImplementedError
 
-    def list_operations(self, host, filter=None, page_size=None,
+    def list_operations(self, filter=None, page_size=None,
                         page_token=None, timeout_seconds=TIMEOUT_SECONDS):
         """Lists all long-running operations.
-
-        :type host: string
-        :param host: The host for the operations service.
 
         :type filter: string
         :param filter: (Optional) The filter for the list request.
@@ -104,11 +117,14 @@ class OperationsConnection(Connection):
         :param timeout_seconds: (Optional) Number of seconds for request
                                 time-out. If not passed, defaults to
                                 ``TIMEOUT_SECONDS``.
+
+        :rtype: :class:`operations_pb2.ListOperationsResponse`
+        :returns: The list operations response object.
         """
         request_pb = _prepare_list_request(filter=filter, page_size=page_size,
                                            page_token=page_token)
         result_pb = None
-        with make_operations_stub(host, self._credentials) as stub:
+        with make_operations_stub(self._host, self._credentials) as stub:
             response = stub.ListOperations.async(request_pb, timeout_seconds)
             result_pb = response.result()
 

@@ -74,11 +74,13 @@ class TestOperationsConnection(unittest2.TestCase):
 
     def test_constructor(self):
         from gcloud_bigtable._testing import _Credentials
-        klass = self._getTargetClass()
         credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
+        host = 'HOST'
+        scope = 'SCOPE'
+        connection = self._makeOne(host, scope=scope, credentials=credentials)
+        self.assertEqual(connection._host, host)
         self.assertTrue(connection._credentials is credentials)
-        self.assertEqual(connection._credentials._scopes, (klass.SCOPE,))
+        self.assertEqual(connection._credentials._scopes, (scope,))
 
     def _rpc_method_test_helper(self, rpc_method, method_name):
         from gcloud_bigtable._testing import _Credentials
@@ -86,13 +88,14 @@ class TestOperationsConnection(unittest2.TestCase):
         from gcloud_bigtable._testing import _StubMock
         from gcloud_bigtable import operations_connection as MUT
         credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
+        HOST = 'HOST'
+        connection = self._makeOne(HOST, credentials=credentials)
         stubs = []
-        hosts = []
         expected_result = object()
 
         def mock_make_stub(host, creds):
-            hosts.append(host)
+            if host != HOST:  # pragma: NO COVER
+                raise ValueError('Unexpected host value: %r' % (host,))
             stub = _StubMock(creds, expected_result, method_name)
             stubs.append(stub)
             return stub
@@ -101,7 +104,7 @@ class TestOperationsConnection(unittest2.TestCase):
             result = rpc_method(connection)
 
         self.assertTrue(result is expected_result)
-        return credentials, stubs, hosts
+        return credentials, stubs
 
     def _check_rpc_stubs_used(self, credentials, stubs, request_type):
         # Asserting length 1 by unpacking.
@@ -124,7 +127,8 @@ class TestOperationsConnection(unittest2.TestCase):
     def test_get_operation(self):
         from gcloud_bigtable._testing import _Credentials
         credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
+        host = 'HOST'
+        connection = self._makeOne(host, credentials=credentials)
         self.assertRaises(NotImplementedError, connection.get_operation)
 
     def test_list_operations(self):
@@ -132,12 +136,11 @@ class TestOperationsConnection(unittest2.TestCase):
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import operations_connection as MUT
 
-        HOST = 'HOST'
         DEFAULT_REQUEST = operations_pb2.ListOperationsRequest()
         prepare_list_request_kwargs = []
 
         def rpc_method(connection):
-            return connection.list_operations(HOST)
+            return connection.list_operations()
 
         def mock_prepare_list_request(**kwargs):
             prepare_list_request_kwargs.append(kwargs)
@@ -145,10 +148,9 @@ class TestOperationsConnection(unittest2.TestCase):
 
         method_name = 'ListOperations'
         with _Monkey(MUT, _prepare_list_request=mock_prepare_list_request):
-            credentials, stubs, hosts = self._rpc_method_test_helper(
+            credentials, stubs = self._rpc_method_test_helper(
                 rpc_method, method_name)
 
-        self.assertEqual(hosts, [HOST])
         request_type = operations_pb2.ListOperationsRequest
         request_pb = self._check_rpc_stubs_used(credentials, stubs,
                                                 request_type)
@@ -157,13 +159,15 @@ class TestOperationsConnection(unittest2.TestCase):
     def test_cancel_operation(self):
         from gcloud_bigtable._testing import _Credentials
         credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
+        host = 'HOST'
+        connection = self._makeOne(host, credentials=credentials)
         self.assertRaises(NotImplementedError, connection.cancel_operation)
 
     def test_delete_operation(self):
         from gcloud_bigtable._testing import _Credentials
         credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
+        host = 'HOST'
+        connection = self._makeOne(host, credentials=credentials)
         self.assertRaises(NotImplementedError, connection.delete_operation)
 
 
