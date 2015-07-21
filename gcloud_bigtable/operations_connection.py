@@ -14,7 +14,38 @@
 
 """Connection to Google Cloud Operations API."""
 
+from gcloud_bigtable._generated import operations_pb2
 from gcloud_bigtable.connection import Connection
+from gcloud_bigtable.connection import MetadataTransformer
+from gcloud_bigtable.connection import get_certs
+
+
+OPERATIONS_STUB_FACTORY = operations_pb2.early_adopter_create_Operations_stub
+PORT = 443
+
+
+def make_operations_stub(host, credentials):
+    """Makes a stub for the Operations API.
+
+    :type host: string
+    :param host: The host for the operations service. This is not specified
+                 as a module level constant, since the host will correspond
+                 to the service which generated the long-running operation.
+
+    :type credentials: :class:`oauth2client.client.OAuth2Credentials`
+    :param credentials: The OAuth2 Credentials to use for access tokens
+                        to authorize requests.
+
+    :rtype: :class:`grpc.early_adopter.implementations._Stub`
+    :returns: The stub object used to make gRPC requests to the
+              Operations API.
+    """
+    custom_metadata_transformer = MetadataTransformer(credentials)
+    return OPERATIONS_STUB_FACTORY(
+        host, PORT,
+        metadata_transformer=custom_metadata_transformer,
+        secure=True,
+        root_certificates=get_certs())
 
 
 class OperationsConnection(Connection):

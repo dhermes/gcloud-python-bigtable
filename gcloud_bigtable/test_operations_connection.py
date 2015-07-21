@@ -16,6 +16,52 @@
 import unittest2
 
 
+class Test_make_operations_stub(unittest2.TestCase):
+
+    def _callFUT(self, host, credentials):
+        from gcloud_bigtable.operations_connection import make_operations_stub
+        return make_operations_stub(host, credentials)
+
+    def test_it(self):
+        from gcloud_bigtable._testing import _Credentials
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import operations_connection as MUT
+
+        host = 'HOST'
+        called = []
+        creds_list = []
+        mock_result = object()
+        transformed = object()
+
+        def custom_factory(*args, **kwargs):
+            called.append((args, kwargs))
+            return mock_result
+
+        def transformer(credentials):
+            creds_list.append(credentials)
+            return transformed
+
+        certs = 'FOOBAR'
+        credentials = _Credentials()
+        with _Monkey(MUT, OPERATIONS_STUB_FACTORY=custom_factory,
+                     get_certs=lambda: certs,
+                     MetadataTransformer=transformer):
+            result = self._callFUT(host, credentials)
+
+        self.assertTrue(result is mock_result)
+        self.assertEqual(creds_list, [credentials])
+        # Unpack single call.
+        (called_args, called_kwargs), = called
+        self.assertEqual(called_args,
+                         (host, MUT.PORT))
+        expected_kwargs = {
+            'metadata_transformer': transformed,
+            'secure': True,
+            'root_certificates': certs,
+        }
+        self.assertEqual(called_kwargs, expected_kwargs)
+
+
 class TestOperationsConnection(unittest2.TestCase):
 
     @staticmethod
