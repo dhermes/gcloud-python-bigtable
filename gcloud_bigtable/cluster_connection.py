@@ -183,7 +183,7 @@ class ClusterConnection(Connection):
                                 If not passed, defaults to ``TIMEOUT_SECONDS``.
 
         :rtype: :class:`messages.Cluster`
-        :returns: The response object for the get cluster request.
+        :returns: The response object for the create cluster request.
         :raises: :class:`ValueError` if both ``hdd_bytes`` and ``ssd_bytes``
                  are set.
         """
@@ -240,6 +240,9 @@ class ClusterConnection(Connection):
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to ``TIMEOUT_SECONDS``.
+
+        :rtype: :class:`gcloud_bigtable._generated.empty_pb2.Empty`
+        :returns: The empty response object for the delete cluster request.
         """
         cluster_name = 'projects/%s/zones/%s/clusters/%s' % (
             project_id, zone_name, cluster_id)
