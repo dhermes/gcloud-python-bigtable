@@ -218,15 +218,39 @@ class TestClusterConnection(unittest2.TestCase):
         }])
 
     def test_update_cluster(self):
-        from gcloud_bigtable._testing import _Credentials
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import cluster_connection as MUT
 
-        project_name = object()
-        zone_name = 'zone_name'
-        cluster_name = 'cluster_name'
-        self.assertRaises(NotImplementedError, connection.update_cluster,
-                          project_name, zone_name, cluster_name)
+        PROJECT_ID = 'PROJECT_ID'
+        ZONE = 'ZONE'
+        CLUSTER_ID = 'CLUSTER_ID'
+        DEFAULT_CLUSTER = data_pb2.Cluster()
+        prepare_cluster_args = []
+
+        def rpc_method(connection):
+            return connection.update_cluster(PROJECT_ID, ZONE, CLUSTER_ID)
+
+        def mock_prepare_cluster(**kwargs):
+            prepare_cluster_args.append(kwargs)
+            return DEFAULT_CLUSTER
+
+        method_name = 'UpdateCluster'
+        with _Monkey(MUT, _prepare_cluster=mock_prepare_cluster):
+            credentials, stubs = self._rpc_method_test_helper(rpc_method,
+                                                              method_name)
+        request_type = data_pb2.Cluster
+        request_pb = self._check_rpc_stubs_used(credentials, stubs,
+                                                request_type)
+        self.assertEqual(request_pb, DEFAULT_CLUSTER)
+        self.assertEqual(prepare_cluster_args, [{
+            'display_name': None,
+            'hdd_bytes': None,
+            'name': 'projects/PROJECT_ID/zones/ZONE/clusters/CLUSTER_ID',
+            'serve_nodes': 3,
+            'ssd_bytes': None,
+        }])
 
     def test_delete_cluster(self):
         from gcloud_bigtable._generated import (

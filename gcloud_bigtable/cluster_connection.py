@@ -69,11 +69,11 @@ def _prepare_cluster(name=None, display_name=None, serve_nodes=3,
                         Defaults to 3.
 
     :type hdd_bytes: integer
-    :param hdd_bytes: (Optional) The number of bytes to use a standard
+    :param hdd_bytes: (Optional) The number of bytes to use for a standard
                       hard drive disk.
 
     :type ssd_bytes: integer
-    :param ssd_bytes: (Optional) The number of bytes to use a solid
+    :param ssd_bytes: (Optional) The number of bytes to use for a solid
                       state drive.
 
     :rtype: :class:`messages.Cluster`
@@ -223,11 +223,11 @@ class ClusterConnection(Connection):
                             Defaults to 3.
 
         :type hdd_bytes: integer
-        :param hdd_bytes: (Optional) The number of bytes to use a standard
+        :param hdd_bytes: (Optional) The number of bytes to use for a standard
                           hard drive disk.
 
         :type ssd_bytes: integer
-        :param ssd_bytes: (Optional) The number of bytes to use a solid
+        :param ssd_bytes: (Optional) The number of bytes to use for a solid
                           state drive.
 
         :type timeout_seconds: integer
@@ -256,9 +256,56 @@ class ClusterConnection(Connection):
 
         return result_pb
 
-    def update_cluster(self, project_name, zone_name, cluster_name):
-        """Updates an existing cluster."""
-        raise NotImplementedError
+    def update_cluster(self, project_id, zone_name, cluster_id,
+                       display_name=None, serve_nodes=3,
+                       hdd_bytes=None, ssd_bytes=None,
+                       timeout_seconds=TIMEOUT_SECONDS):
+        """Updates an existing cluster.
+
+        :type project_id: string
+        :param project_id: The ID of the project owning the cluster.
+
+        :type zone_name: string
+        :param zone_name: The name of the zone owning the cluster.
+
+        :type cluster_id: string
+        :param cluster_id: The name of the cluster being updated.
+
+        :type display_name: string
+        :param display_name: (Optional) The display name for the cluster in
+                             the Cloud Console UI.
+
+        :type serve_nodes: integer
+        :param serve_nodes: (Optional) The number of nodes in the cluster.
+                            Defaults to 3.
+
+        :type hdd_bytes: integer
+        :param hdd_bytes: (Optional) The number of bytes to use for a standard
+                          hard drive disk.
+
+        :type ssd_bytes: integer
+        :param ssd_bytes: (Optional) The number of bytes to use for a solid
+                          state drive.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+
+        :rtype: :class:`data_pb2.Cluster`
+        :returns: The updated cluster from the update cluster request.
+        """
+        cluster_name = 'projects/%s/zones/%s/clusters/%s' % (
+            project_id, zone_name, cluster_id)
+        cluster = _prepare_cluster(name=cluster_name,
+                                   display_name=display_name,
+                                   serve_nodes=serve_nodes,
+                                   hdd_bytes=hdd_bytes, ssd_bytes=ssd_bytes)
+        result_pb = None
+        with make_cluster_stub(self._credentials) as stub:
+            response = stub.UpdateCluster.async(cluster, timeout_seconds)
+            result_pb = response.result()
+
+        return result_pb
 
     def delete_cluster(self, project_id, zone_name, cluster_id,
                        timeout_seconds=TIMEOUT_SECONDS):
