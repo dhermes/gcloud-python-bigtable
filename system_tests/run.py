@@ -38,7 +38,12 @@ EXPECTED_ZONES = (
 
 class TestClusterAdminAPI(unittest2.TestCase):
 
-    def _get_creds(self):
+    @classmethod
+    def setUpClass(cls):
+        cls._credentials = cls._get_creds()
+
+    @staticmethod
+    def _get_creds():
         """Get credentials for a test.
 
         Currently (as of July 20, 2015) the Cluster Admin API does not
@@ -48,8 +53,7 @@ class TestClusterAdminAPI(unittest2.TestCase):
         return GoogleCredentials.get_application_default()
 
     def test_list_zones(self):
-        credentials = self._get_creds()
-        connection = ClusterConnection(credentials)
+        connection = ClusterConnection(self._credentials)
         result_pb = connection.list_zones(PROJECT_ID)
         self.assertTrue(isinstance(result_pb, messages.ListZonesResponse))
 
@@ -85,16 +89,14 @@ class TestClusterAdminAPI(unittest2.TestCase):
 
     @unittest2.skip('Temporarily disabling while transitioning to create')
     def test_get_cluster(self):
-        credentials = self._get_creds()
-        connection = ClusterConnection(credentials)
+        connection = ClusterConnection(self._credentials)
         result_pb = connection.get_cluster(PROJECT_ID, TEST_ZONE_NAME,
                                            TEST_CLUSTER_ID)
         self._assert_test_cluster(result_pb)
 
     @unittest2.skip('Temporarily disabling while transitioning to create')
     def test_list_clusters(self):
-        credentials = self._get_creds()
-        connection = ClusterConnection(credentials)
+        connection = ClusterConnection(self._credentials)
         result_pb = connection.list_clusters(PROJECT_ID)
 
         self.assertEqual(list(result_pb.failed_zones), [])
