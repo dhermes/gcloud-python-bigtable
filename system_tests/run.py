@@ -80,7 +80,7 @@ class TestClusterAdminAPI(unittest2.TestCase):
             PROJECT_ID, TEST_ZONE_NAME, TEST_CLUSTER_ID)
         self.assertEqual(cluster.name, full_name)
         self.assertEqual(cluster.default_storage_type,
-                         dict(data_pb2.StorageType.items())['STORAGE_SSD'])
+                         data_pb2.STORAGE_SSD)
 
     def test_get_cluster_as_user(self):
         credentials = GoogleCredentials.get_application_default()

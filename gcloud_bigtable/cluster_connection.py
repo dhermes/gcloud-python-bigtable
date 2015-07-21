@@ -16,6 +16,7 @@
 
 from oauth2client.client import AssertionCredentials
 
+from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages)
 from gcloud_bigtable._generated import bigtable_cluster_service_pb2
@@ -82,7 +83,7 @@ class ClusterConnection(Connection):
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to ``TIMEOUT_SECONDS``.
 
-        :rtype: class:`messages.ListZonesResponse`
+        :rtype: :class:`messages.ListZonesResponse`
         :returns: The response object for the list zones request.
         """
         project_name = 'projects/%s' % (project_id,)
@@ -111,7 +112,7 @@ class ClusterConnection(Connection):
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to ``TIMEOUT_SECONDS``.
 
-        :rtype: class:`messages.Cluster`
+        :rtype: :class:`messages.Cluster`
         :returns: The response object for the get cluster request.
         """
         cluster_name = 'projects/%s/zones/%s/clusters/%s' % (
@@ -134,7 +135,7 @@ class ClusterConnection(Connection):
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to ``TIMEOUT_SECONDS``.
 
-        :rtype: class:`messages.ListClustersResponse`
+        :rtype: :class:`messages.ListClustersResponse`
         :returns: The response object for the list clusters request.
         """
         project_name = 'projects/%s' % (project_id,)
@@ -146,9 +147,78 @@ class ClusterConnection(Connection):
 
         return result_pb
 
-    def create_cluster(self, project_name, zone_name):
-        """Creates a clusters in a project."""
-        raise NotImplementedError
+    def create_cluster(self, project_id, zone_name, cluster_id,
+                       display_name=None, serve_nodes=3,
+                       hdd_bytes=None, ssd_bytes=None,
+                       timeout_seconds=TIMEOUT_SECONDS):
+        """Create a new cluster.
+
+        :type project_id: string
+        :param project_id: The ID of the project owning the cluster.
+
+        :type zone_name: string
+        :param zone_name: The name of the zone owning the cluster.
+
+        :type cluster_id: string
+        :param cluster_id: The name of the cluster being retrieved.
+
+        :type display_name: string
+        :param display_name: (Optional) The display name for the cluster in
+                             the Cloud Console UI.
+
+        :type serve_nodes: integer
+        :param serve_nodes: (Optional) The number of nodes in the cluster.
+                            Defaults to 3.
+
+        :type hdd_bytes: integer
+        :param hdd_bytes: (Optional) The number of bytes to use a standard
+                          hard drive disk.
+
+        :type ssd_bytes: integer
+        :param ssd_bytes: (Optional) The number of bytes to use a solid
+                          state drive.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+
+        :rtype: :class:`messages.Cluster`
+        :returns: The response object for the get cluster request.
+        :raises: :class:`ValueError` if both ``hdd_bytes`` and ``ssd_bytes``
+                 are set.
+        """
+        zone_full_name = 'projects/%s/zones/%s' % (project_id, zone_name)
+        cluster_kwargs = {}
+
+        if display_name is not None:
+            cluster_kwargs['display_name'] = display_name
+
+        cluster_kwargs['serve_nodes'] = serve_nodes
+
+        if ssd_bytes is not None:
+            if hdd_bytes is not None:
+                raise ValueError('At most one of SSD bytes and HDD bytes '
+                                 'can be set.')
+            cluster_kwargs['ssd_bytes'] = ssd_bytes
+            cluster_kwargs['default_storage_type'] = data_pb2.STORAGE_SSD
+        elif hdd_bytes is not None:
+            cluster_kwargs['hdd_bytes'] = hdd_bytes
+            cluster_kwargs['default_storage_type'] = data_pb2.STORAGE_HDD
+
+        # From the .proto definition of CreateClusterRequest: the "name",
+        # "delete_time", and "current_operation" fields must be left blank.
+        cluster = data_pb2.Cluster(**cluster_kwargs)
+        request_pb = messages.CreateClusterRequest(
+            name=zone_full_name,
+            cluster_id=cluster_id,
+            cluster=cluster,
+        )
+        result_pb = None
+        with make_cluster_stub(self._credentials) as stub:
+            response = stub.CreateCluster.async(request_pb, timeout_seconds)
+            result_pb = response.result()
+
+        return result_pb
 
     def update_cluster(self, project_name, zone_name, cluster_name):
         """Updates an existing cluster."""
