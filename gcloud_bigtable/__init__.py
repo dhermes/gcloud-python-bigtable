@@ -13,3 +13,5 @@
 # limitations under the License.
 
 """Google Cloud BigTable API package."""
+
+from gcloud_bigtable.api import create_cluster
