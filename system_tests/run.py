@@ -15,19 +15,19 @@
 from __future__ import print_function
 
 import os
+import time
 import unittest2
 
-from oauth2client.client import GoogleCredentials
-
+from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
-from gcloud_bigtable.cluster_connection import ClusterConnection
+from gcloud_bigtable.cluster import Cluster
 
 
 PROJECT_ID = os.getenv('GCLOUD_TESTS_PROJECT_ID')
 TEST_ZONE = 'us-central1-c'
-TEST_CLUSTER_ID = 'gcloud-python-cluster'
-TEST_NUMBER_OF_NODES = 3
+TEST_CLUSTER_ID = 'gcloud-python'
+TEST_SERVE_NODES = 3
 EXPECTED_ZONES = (
     'asia-east1-b',
     'europe-west1-c',
@@ -40,18 +40,22 @@ class TestClusterAdminAPI(unittest2.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls._credentials = cls._get_creds()
-        cls._connection = ClusterConnection(cls._credentials)
+        # By using no credentials argument in the constructor, we get the
+        # application default credentials.
+        cls._cluster = Cluster(PROJECT_ID, TEST_ZONE, TEST_CLUSTER_ID)
+        cls._connection = cls._cluster._cluster_conn
+        cls._cluster.create(display_name=TEST_CLUSTER_ID)
 
-    @staticmethod
-    def _get_creds():
-        """Get credentials for a test.
+    @classmethod
+    def tearDownClass(cls):
+        cls._cluster.delete()
 
-        Currently (as of July 20, 2015) the Cluster Admin API does not
-        support service accounts, so only user credentials are
-        used here.
-        """
-        return GoogleCredentials.get_application_default()
+    def setUp(self):
+        self.clusters_to_delete = []
+
+    def tearDown(self):
+        for cluster in self.clusters_to_delete:
+            cluster.delete()
 
     def test_list_zones(self):
         result_pb = self._connection.list_zones(PROJECT_ID)
@@ -68,36 +72,45 @@ class TestClusterAdminAPI(unittest2.TestCase):
             self.assertEqual(curr_zone.display_name, expected_name)
             self.assertEqual(curr_zone.status, OK_STATUS)
 
-    def _assert_test_cluster(self, cluster):
-        from gcloud_bigtable._generated import (
-            bigtable_cluster_data_pb2 as data_pb2)
+    def _assert_test_cluster(self, cluster_pb, cluster_id=TEST_CLUSTER_ID):
         fields_set = sorted([field.name
-                             for field in cluster._fields.keys()])
+                             for field in cluster_pb._fields.keys()])
         self.assertEqual(fields_set, [
             'default_storage_type',
             'display_name',
             'name',
             'serve_nodes',
         ])
-        self.assertEqual(cluster.serve_nodes, TEST_NUMBER_OF_NODES)
-        self.assertEqual(cluster.display_name, TEST_CLUSTER_ID)
+        self.assertEqual(cluster_pb.serve_nodes, TEST_SERVE_NODES)
+        self.assertEqual(cluster_pb.display_name, cluster_id)
         full_name = 'projects/%s/zones/%s/clusters/%s' % (
-            PROJECT_ID, TEST_ZONE, TEST_CLUSTER_ID)
-        self.assertEqual(cluster.name, full_name)
-        self.assertEqual(cluster.default_storage_type,
+            PROJECT_ID, TEST_ZONE, cluster_id)
+        self.assertEqual(cluster_pb.name, full_name)
+        self.assertEqual(cluster_pb.default_storage_type,
                          data_pb2.STORAGE_SSD)
 
-    @unittest2.skip('Temporarily disabling while transitioning to create')
+    def test_create_cluster(self):
+        cluster_id = '%s-%d' % (TEST_CLUSTER_ID, 1000 * time.time())
+        cluster = Cluster(PROJECT_ID, TEST_ZONE, cluster_id)
+        cluster.create(display_name=cluster_id)
+
+        result_pb = cluster._cluster_conn.get_cluster(PROJECT_ID, TEST_ZONE,
+                                                      cluster_id)
+        self._assert_test_cluster(result_pb, cluster_id=cluster_id)
+        # Make sure this cluster gets deleted after the test case.
+        self.clusters_to_delete.append(cluster)
+
     def test_get_cluster(self):
+        # We assume this cluster exists since it was created in `setUpClass`.
         result_pb = self._connection.get_cluster(PROJECT_ID, TEST_ZONE,
                                                  TEST_CLUSTER_ID)
         self._assert_test_cluster(result_pb)
 
-    @unittest2.skip('Temporarily disabling while transitioning to create')
     def test_list_clusters(self):
         result_pb = self._connection.list_clusters(PROJECT_ID)
 
         self.assertEqual(list(result_pb.failed_zones), [])
-        # Unpack implies a single cluster in result set.
+        # We assume all test cases have cleaned up created clusters and
+        # the only one remaining is the one from `setUpClass`.
         cluster, = result_pb.clusters
         self._assert_test_cluster(cluster)
