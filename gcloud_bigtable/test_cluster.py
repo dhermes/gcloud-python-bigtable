@@ -22,6 +22,130 @@ CLUSTER_ID = 'CLUSTER_ID'
 TIMEOUT_SECONDS = 199
 
 
+class TestCluster(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.cluster import Cluster
+        return Cluster
+
+    def _makeOne(self, credentials=None):
+        return self._getTargetClass()(credentials=credentials)
+
+    def test_constructor_default(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import cluster as MUT
+        from gcloud_bigtable.cluster_connection import ClusterConnection
+
+        # Expected order of calls (on creds):
+        # - create_scoped_required (via ClusterConnection)
+        # - create_scoped_required (via OperationsConnection)
+        credentials_result = _MockWithAttachedMethods(False, False)
+        # Expected order of calls (on creds class):
+        # - get_application_default
+        mock_creds_class = _MockWithAttachedMethods(credentials_result)
+
+        with _Monkey(MUT, GoogleCredentials=mock_creds_class):
+            cluster = self._makeOne()
+
+        self.assertEqual(cluster._credentials, credentials_result)
+        self.assertTrue(isinstance(cluster._cluster_conn, ClusterConnection))
+        self.assertEqual(cluster._cluster_conn._credentials,
+                         credentials_result)
+        self.assertEqual(mock_creds_class._called,
+                         [('get_application_default', (), {})])
+        self.assertEqual(credentials_result._called, [
+            ('create_scoped_required', (), {}),
+            ('create_scoped_required', (), {}),
+        ])
+
+    def test_constructor_explicit_credentials(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable.cluster_connection import ClusterConnection
+
+        # Expected order of calls (on creds):
+        # - create_scoped_required (via ClusterConnection)
+        # - create_scoped_required (via OperationsConnection)
+        credentials = _MockWithAttachedMethods(False, False)
+        cluster = self._makeOne(credentials=credentials)
+
+        self.assertEqual(cluster._credentials, credentials)
+        self.assertTrue(isinstance(cluster._cluster_conn, ClusterConnection))
+        self.assertEqual(cluster._cluster_conn._credentials, credentials)
+        self.assertEqual(credentials._called, [
+            ('create_scoped_required', (), {}),
+            ('create_scoped_required', (), {}),
+        ])
+
+    def test_from_service_account_json(self):
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import cluster as MUT
+        from gcloud_bigtable.cluster_connection import ClusterConnection
+
+        klass = self._getTargetClass()
+        # Expected order of calls (on creds):
+        # - create_scoped_required (via ClusterConnection)
+        # - create_scoped_required (via OperationsConnection)
+        credentials = _MockWithAttachedMethods(False, False)
+        get_adc = _MockCalled(credentials)
+        json_credentials_path = 'JSON_CREDENTIALS_PATH'
+
+        with _Monkey(MUT,
+                     _get_application_default_credential_from_file=get_adc):
+            cluster = klass.from_service_account_json(json_credentials_path)
+
+        self.assertEqual(cluster._credentials, credentials)
+        self.assertTrue(isinstance(cluster._cluster_conn, ClusterConnection))
+        self.assertEqual(cluster._cluster_conn._credentials, credentials)
+        self.assertEqual(credentials._called, [
+            ('create_scoped_required', (), {}),
+            ('create_scoped_required', (), {}),
+        ])
+        # _get_application_default_credential_from_file only has pos. args.
+        get_adc.check_called(self, [(json_credentials_path,)])
+
+    def test_from_service_account_p12(self):
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import cluster as MUT
+        from gcloud_bigtable.cluster_connection import ClusterConnection
+
+        klass = self._getTargetClass()
+        # Expected order of calls (on creds):
+        # - create_scoped_required (via ClusterConnection)
+        # - create_scoped_required (via OperationsConnection)
+        credentials = _MockWithAttachedMethods(False, False)
+        signed_creds = _MockCalled(credentials)
+        private_key = 'PRIVATE_KEY'
+        mock_get_contents = _MockCalled(private_key)
+        client_email = 'CLIENT_EMAIL'
+        private_key_path = 'PRIVATE_KEY_PATH'
+
+        with _Monkey(MUT, SignedJwtAssertionCredentials=signed_creds,
+                     _get_contents=mock_get_contents):
+            cluster = klass.from_service_account_p12(client_email,
+                                                     private_key_path)
+
+        self.assertEqual(cluster._credentials, credentials)
+        self.assertTrue(isinstance(cluster._cluster_conn, ClusterConnection))
+        self.assertEqual(cluster._cluster_conn._credentials, credentials)
+        self.assertEqual(credentials._called, [
+            ('create_scoped_required', (), {}),
+            ('create_scoped_required', (), {}),
+        ])
+        # SignedJwtAssertionCredentials() called with only kwargs
+        signed_creds_kw = {
+            'private_key': private_key,
+            'service_account_name': client_email,
+        }
+        signed_creds.check_called(self, [()], [signed_creds_kw])
+        # Load private key (via _get_contents) from the key path.
+        mock_get_contents.check_called(self, [(private_key_path,)])
+
+
 class Test__get_operation_id(unittest2.TestCase):
 
     def _callFUT(self, operation_name, project_id, zone_name, cluster_id):
@@ -185,3 +309,20 @@ class Test__parse_pb_any_to_native(unittest2.TestCase):
         with _Monkey(MUT, _TYPE_URL_MAP=fake_type_url_map):
             with self.assertRaises(ValueError):
                 self._callFUT(any_val, expected_type=type_url1)
+
+
+class Test__get_contents(unittest2.TestCase):
+
+    def _callFUT(self, filename):
+        from gcloud_bigtable.cluster import _get_contents
+        return _get_contents(filename)
+
+    def test_it(self):
+        import tempfile
+
+        filename = tempfile.mktemp()
+        contents = b'foobar'
+        with open(filename, 'wb') as file_obj:
+            file_obj.write(contents)
+
+        self.assertEqual(self._callFUT(filename), contents)

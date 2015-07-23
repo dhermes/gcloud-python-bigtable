@@ -17,7 +17,12 @@
 
 import time
 
+from oauth2client.client import GoogleCredentials
+from oauth2client.client import SignedJwtAssertionCredentials
+from oauth2client.client import _get_application_default_credential_from_file
+
 from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
+from gcloud_bigtable.cluster_connection import ClusterConnection
 from gcloud_bigtable.connection import TIMEOUT_SECONDS
 
 
@@ -29,6 +34,70 @@ _BASE_OPERATION_WAIT_TIME = 1  # in seconds
 _TYPE_URL_MAP = {
     _CLUSTER_TYPE_URL: data_pb2.Cluster,
 }
+
+
+class Cluster(object):
+    """Representation of a Google Cloud BigTable Cluster.
+
+    We can use a :class:`Cluster` to:
+
+    * create itself
+
+    :type credentials: :class:`oauth2client.client.OAuth2Credentials` or
+                       :class:`NoneType`
+    :param credentials: The OAuth2 Credentials to use for this cluster.
+    """
+
+    def __init__(self, credentials=None):
+        if credentials is None:
+            credentials = GoogleCredentials.get_application_default()
+        self._credentials = credentials
+        self._cluster_conn = ClusterConnection(credentials=self._credentials)
+
+    @classmethod
+    def from_service_account_json(cls, json_credentials_path):
+        """Factory to retrieve JSON credentials while creating cluster object.
+
+        :type json_credentials_path: string
+        :param json_credentials_path: The path to a private key file (this file
+                                      was given to you when you created the
+                                      service account). This file must contain
+                                      a JSON object with a private key and
+                                      other credentials information (downloaded
+                                      from the Google APIs console).
+
+        :rtype: :class:`gcloud_bigtable.Cluster`
+        :returns: The cluster object created with the retrieved JSON
+                  credentials.
+        """
+        credentials = _get_application_default_credential_from_file(
+            json_credentials_path)
+        return cls(credentials=credentials)
+
+    @classmethod
+    def from_service_account_p12(cls, client_email, private_key_path):
+        """Factory to retrieve P12 credentials while creating cluster object.
+
+        .. note::
+          Unless you have an explicit reason to use a PKCS12 key for your
+          service account, we recommend using a JSON key.
+
+        :type client_email: string
+        :param client_email: The e-mail attached to the service account.
+
+        :type private_key_path: string
+        :param private_key_path: The path to a private key file (this file was
+                                 given to you when you created the service
+                                 account). This file must be in P12 format.
+
+        :rtype: :class:`gcloud_bigtable.Cluster`
+        :returns: The cluster object created with the retrieved P12
+                  credentials.
+        """
+        credentials = SignedJwtAssertionCredentials(
+            service_account_name=client_email,
+            private_key=_get_contents(private_key_path))
+        return cls(credentials=credentials)
 
 
 def _get_operation_id(operation_name, project_id, zone_name, cluster_id):
@@ -130,3 +199,18 @@ def _parse_pb_any_to_native(any_val, expected_type=None):
             expected_type, any_val.type_url))
     container_class = _TYPE_URL_MAP[any_val.type_url]
     return container_class.FromString(any_val.value)
+
+
+def _get_contents(filename):
+    """Get the contents of a file.
+
+    This is just implemented so we can stub out while testing.
+
+    :type filename: string or bytes
+    :param filename: The name of a file to open.
+
+    :rtype: bytes
+    :returns: The bytes loaded from the file.
+    """
+    with open(filename, 'rb') as file_obj:
+        return file_obj.read()
