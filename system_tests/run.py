@@ -88,7 +88,8 @@ class TestClusterAdminAPI(unittest2.TestCase):
             self.assertEqual(curr_zone.display_name, expected_name)
             self.assertEqual(curr_zone.status, OK_STATUS)
 
-    def _assert_test_cluster(self, cluster_pb, cluster_id=TEST_CLUSTER_ID):
+    def _assert_test_cluster(self, cluster_pb, cluster_id=TEST_CLUSTER_ID,
+                             display_name=None):
         fields_set = sorted([field.name
                              for field in cluster_pb._fields.keys()])
         self.assertEqual(fields_set, [
@@ -98,7 +99,10 @@ class TestClusterAdminAPI(unittest2.TestCase):
             'serve_nodes',
         ])
         self.assertEqual(cluster_pb.serve_nodes, TEST_SERVE_NODES)
-        self.assertEqual(cluster_pb.display_name, cluster_id)
+        if display_name is None:
+            self.assertEqual(cluster_pb.display_name, cluster_id)
+        else:
+            self.assertEqual(cluster_pb.display_name, display_name)
         full_name = 'projects/%s/zones/%s/clusters/%s' % (
             PROJECT_ID, TEST_ZONE, cluster_id)
         self.assertEqual(cluster_pb.name, full_name)
@@ -140,3 +144,18 @@ class TestClusterAdminAPI(unittest2.TestCase):
         # the only one remaining is the one from `setUpClass`.
         cluster, = test_clusters
         self._assert_test_cluster(cluster)
+
+    def test_update_cluster(self):
+        curr_display_name = self._cluster.display_name
+        temp_display_name = 'Foo Bar Baz'
+        self.assertNotEqual(curr_display_name, temp_display_name)
+        self._cluster.update(display_name=temp_display_name)
+        # Make sure the display name has changed after the request.
+        self.assertEqual(self._cluster.display_name, temp_display_name)
+
+        result_pb = self._connection.get_cluster(
+            PROJECT_ID, TEST_ZONE, TEST_CLUSTER_ID)
+        self._assert_test_cluster(result_pb, display_name=temp_display_name)
+
+        # Restore the original state of the cluster.
+        self._cluster.update(display_name=curr_display_name)
