@@ -235,9 +235,7 @@ class TestClusterConnection(unittest2.TestCase):
         self.assertEqual(request_pb.cluster, DEFAULT_CLUSTER)
         self.assertEqual(prepare_cluster_kwargs, [{
             'display_name': None,
-            'hdd_bytes': None,
             'serve_nodes': 3,
-            'ssd_bytes': None,
         }])
 
     def test_update_cluster(self):
@@ -269,10 +267,8 @@ class TestClusterConnection(unittest2.TestCase):
         self.assertEqual(request_pb, DEFAULT_CLUSTER)
         self.assertEqual(prepare_cluster_kwargs, [{
             'display_name': None,
-            'hdd_bytes': None,
             'name': 'projects/PROJECT_ID/zones/ZONE/clusters/CLUSTER_ID',
             'serve_nodes': 3,
-            'ssd_bytes': None,
         }])
 
     def test_delete_cluster(self):
@@ -318,12 +314,10 @@ class TestClusterConnection(unittest2.TestCase):
 
 class Test__prepare_cluster(unittest2.TestCase):
 
-    def _callFUT(self, name=None, display_name=None, serve_nodes=3,
-                 hdd_bytes=None, ssd_bytes=None):
+    def _callFUT(self, name=None, display_name=None, serve_nodes=3):
         from gcloud_bigtable.cluster_connection import _prepare_cluster
         return _prepare_cluster(name=name, display_name=display_name,
-                                serve_nodes=serve_nodes,
-                                hdd_bytes=hdd_bytes, ssd_bytes=ssd_bytes)
+                                serve_nodes=serve_nodes)
 
     def test_defaults(self):
         cluster = self._callFUT()
@@ -331,42 +325,19 @@ class Test__prepare_cluster(unittest2.TestCase):
         self.assertEqual(cluster.serve_nodes, 3)
         self.assertEqual(all_fields, set(['serve_nodes']))
 
-    def _helper_non_default_arguments(self, hdd_bytes=None, ssd_bytes=None):
-        from gcloud_bigtable._generated import (
-            bigtable_cluster_data_pb2 as data_pb2)
-
+    def test_non_default_arguments(self):
         NAME = 'NAME'
         DISPLAY_NAME = 'DISPLAY_NAME'
         SERVE_NODES = 8
 
         cluster = self._callFUT(name=NAME, display_name=DISPLAY_NAME,
-                                serve_nodes=SERVE_NODES, hdd_bytes=hdd_bytes,
-                                ssd_bytes=ssd_bytes)
+                                serve_nodes=SERVE_NODES)
+        all_fields = set(field.name for field in cluster._fields.keys())
+        self.assertEqual(all_fields,
+                         set(['display_name', 'name', 'serve_nodes']))
+
         self.assertEqual(cluster.display_name, DISPLAY_NAME)
         self.assertEqual(cluster.serve_nodes, SERVE_NODES)
-
-        all_fields = set(field.name for field in cluster._fields.keys())
-        if ssd_bytes is not None:
-            self.assertEqual(cluster.ssd_bytes, ssd_bytes)
-            self.assertFalse('hdd_bytes' in all_fields)
-            self.assertEqual(cluster.default_storage_type,
-                             data_pb2.STORAGE_SSD)
-        if hdd_bytes is not None:
-            self.assertEqual(cluster.hdd_bytes, hdd_bytes)
-            self.assertFalse('ssd_bytes' in all_fields)
-            self.assertEqual(cluster.default_storage_type,
-                             data_pb2.STORAGE_HDD)
-
-    def test_non_default_args_with_ssd_bytes(self):
-        self._helper_non_default_arguments(ssd_bytes=1024)
-
-    def test_non_default_args_with_hdd_bytes(self):
-        self._helper_non_default_arguments(hdd_bytes=1024)
-
-    def test_non_default_args_conflict_ssd_and_hdd(self):
-        with self.assertRaises(ValueError):
-            self._helper_non_default_arguments(ssd_bytes=1024,
-                                               hdd_bytes=1024)
 
 
 class _OperationsConnection(object):

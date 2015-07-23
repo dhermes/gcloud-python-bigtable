@@ -53,9 +53,13 @@ def make_cluster_stub(credentials):
         root_certificates=get_certs())
 
 
-def _prepare_cluster(name=None, display_name=None, serve_nodes=3,
-                     hdd_bytes=None, ssd_bytes=None):
+def _prepare_cluster(name=None, display_name=None, serve_nodes=3):
     """Create a cluster object with many optional arguments.
+
+    .. note::
+      For now, we leave out the arguments ``hdd_bytes`` and ``ssd_bytes``
+      (both integers) and also the ``default_storage_type`` (an enum)
+      which if not sent will end up as ``data_pb2.STORAGE_SSD``.
 
     :type name: string
     :param name: (Optional). The name of the cluster. Must be of the form
@@ -69,18 +73,8 @@ def _prepare_cluster(name=None, display_name=None, serve_nodes=3,
     :param serve_nodes: (Optional) The number of nodes in the cluster.
                         Defaults to 3.
 
-    :type hdd_bytes: integer
-    :param hdd_bytes: (Optional) The number of bytes to use for a standard
-                      hard drive disk.
-
-    :type ssd_bytes: integer
-    :param ssd_bytes: (Optional) The number of bytes to use for a solid
-                      state drive.
-
     :rtype: :class:`data_pb2.Cluster`
     :returns: The cluster object required.
-    :raises: :class:`ValueError` if both ``hdd_bytes`` and ``ssd_bytes``
-             are set.
     """
     cluster_kwargs = {}
 
@@ -91,17 +85,6 @@ def _prepare_cluster(name=None, display_name=None, serve_nodes=3,
         cluster_kwargs['display_name'] = display_name
 
     cluster_kwargs['serve_nodes'] = serve_nodes
-
-    if ssd_bytes is not None and hdd_bytes is not None:
-        raise ValueError('At most one of SSD bytes and HDD bytes '
-                         'can be set.')
-    if ssd_bytes is not None:
-        cluster_kwargs['ssd_bytes'] = ssd_bytes
-        cluster_kwargs['default_storage_type'] = data_pb2.STORAGE_SSD
-    if hdd_bytes is not None:
-        cluster_kwargs['hdd_bytes'] = hdd_bytes
-        cluster_kwargs['default_storage_type'] = data_pb2.STORAGE_HDD
-
     return data_pb2.Cluster(**cluster_kwargs)
 
 
@@ -237,9 +220,13 @@ class ClusterConnection(Connection):
 
     def create_cluster(self, project_id, zone, cluster_id,
                        display_name=None, serve_nodes=3,
-                       hdd_bytes=None, ssd_bytes=None,
                        timeout_seconds=TIMEOUT_SECONDS):
         """Create a new cluster.
+
+        .. note::
+          For now, we leave out the arguments ``hdd_bytes`` and ``ssd_bytes``
+          (both integers) and also the ``default_storage_type`` (an enum)
+          which if not sent will end up as ``data_pb2.STORAGE_SSD``.
 
         :type project_id: string
         :param project_id: The ID of the project owning the cluster.
@@ -258,14 +245,6 @@ class ClusterConnection(Connection):
         :param serve_nodes: (Optional) The number of nodes in the cluster.
                             Defaults to 3.
 
-        :type hdd_bytes: integer
-        :param hdd_bytes: (Optional) The number of bytes to use for a standard
-                          hard drive disk.
-
-        :type ssd_bytes: integer
-        :param ssd_bytes: (Optional) The number of bytes to use for a solid
-                          state drive.
-
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to ``TIMEOUT_SECONDS``.
@@ -275,8 +254,7 @@ class ClusterConnection(Connection):
         """
         zone_full_name = 'projects/%s/zones/%s' % (project_id, zone)
         cluster = _prepare_cluster(display_name=display_name,
-                                   serve_nodes=serve_nodes,
-                                   hdd_bytes=hdd_bytes, ssd_bytes=ssd_bytes)
+                                   serve_nodes=serve_nodes)
 
         # From the .proto definition of CreateClusterRequest: the "name",
         # "delete_time", and "current_operation" fields must be left blank.
@@ -294,9 +272,13 @@ class ClusterConnection(Connection):
 
     def update_cluster(self, project_id, zone, cluster_id,
                        display_name=None, serve_nodes=3,
-                       hdd_bytes=None, ssd_bytes=None,
                        timeout_seconds=TIMEOUT_SECONDS):
         """Updates an existing cluster.
+
+        .. note::
+          For now, we leave out the arguments ``hdd_bytes`` and ``ssd_bytes``
+          (both integers) and also the ``default_storage_type`` (an enum)
+          which if not sent will end up as ``data_pb2.STORAGE_SSD``.
 
         :type project_id: string
         :param project_id: The ID of the project owning the cluster.
@@ -315,14 +297,6 @@ class ClusterConnection(Connection):
         :param serve_nodes: (Optional) The number of nodes in the cluster.
                             Defaults to 3.
 
-        :type hdd_bytes: integer
-        :param hdd_bytes: (Optional) The number of bytes to use for a standard
-                          hard drive disk.
-
-        :type ssd_bytes: integer
-        :param ssd_bytes: (Optional) The number of bytes to use for a solid
-                          state drive.
-
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to ``TIMEOUT_SECONDS``.
@@ -334,8 +308,7 @@ class ClusterConnection(Connection):
             project_id, zone, cluster_id)
         cluster = _prepare_cluster(name=cluster_name,
                                    display_name=display_name,
-                                   serve_nodes=serve_nodes,
-                                   hdd_bytes=hdd_bytes, ssd_bytes=ssd_bytes)
+                                   serve_nodes=serve_nodes)
         result_pb = None
         with make_cluster_stub(self._credentials) as stub:
             response = stub.UpdateCluster.async(cluster, timeout_seconds)

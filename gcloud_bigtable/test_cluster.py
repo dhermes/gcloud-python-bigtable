@@ -179,8 +179,6 @@ class TestCluster(unittest2.TestCase):
 
         display_name = 'DISPLAY_NAME'
         serve_nodes = 8
-        hdd_bytes = 1337
-        ssd_bytes = 42
         operation_id = 77
         op_name = 'OP_NAME'
 
@@ -203,7 +201,6 @@ class TestCluster(unittest2.TestCase):
                      _wait_for_operation=mock_wait_for_operation,
                      _parse_pb_any_to_native=mock_parse_pb_any_to_native):
             cluster.create(display_name=display_name, serve_nodes=serve_nodes,
-                           hdd_bytes=hdd_bytes, ssd_bytes=ssd_bytes,
                            timeout_seconds=TIMEOUT_SECONDS)
 
         mock_get_operation_id.check_called(
@@ -228,9 +225,7 @@ class TestCluster(unittest2.TestCase):
                     (PROJECT_ID, ZONE, CLUSTER_ID),
                     {
                         'display_name': display_name,
-                        'hdd_bytes': hdd_bytes,
                         'serve_nodes': serve_nodes,
-                        'ssd_bytes': ssd_bytes,
                         'timeout_seconds': TIMEOUT_SECONDS,
                     },
                 ),

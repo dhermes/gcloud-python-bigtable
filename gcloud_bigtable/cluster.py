@@ -134,9 +134,14 @@ class Cluster(object):
             private_key=_get_contents(private_key_path))
         return cls(project_id, zone, cluster_id, credentials=credentials)
 
-    def create(self, display_name=None, serve_nodes=3, hdd_bytes=None,
-               ssd_bytes=None, timeout_seconds=TIMEOUT_SECONDS):
+    def create(self, display_name=None, serve_nodes=3,
+               timeout_seconds=TIMEOUT_SECONDS):
         """Create this cluster.
+
+        .. note::
+          For now, we leave out the arguments ``hdd_bytes`` and ``ssd_bytes``
+          (both integers) and also the ``default_storage_type`` (an enum)
+          which if not sent will end up as ``data_pb2.STORAGE_SSD``.
 
         :type display_name: string
         :param display_name: (Optional) The display name for the cluster in
@@ -146,14 +151,6 @@ class Cluster(object):
         :param serve_nodes: (Optional) The number of nodes in the cluster.
                             Defaults to 3.
 
-        :type hdd_bytes: integer
-        :param hdd_bytes: (Optional) The number of bytes to use for a standard
-                          hard drive disk.
-
-        :type ssd_bytes: integer
-        :param ssd_bytes: (Optional) The number of bytes to use for a solid
-                          state drive.
-
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to ``TIMEOUT_SECONDS``.
@@ -161,7 +158,6 @@ class Cluster(object):
         result_pb = self._cluster_conn.create_cluster(
             self.project_id, self.zone, self.cluster_id,
             display_name=display_name, serve_nodes=serve_nodes,
-            hdd_bytes=hdd_bytes, ssd_bytes=ssd_bytes,
             timeout_seconds=timeout_seconds)
 
         op_id = _get_operation_id(result_pb.current_operation.name,
