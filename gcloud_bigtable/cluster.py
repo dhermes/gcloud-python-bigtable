@@ -68,6 +68,8 @@ class Cluster(object):
         self.project_id = project_id
         self.zone = zone
         self.cluster_id = cluster_id
+        self.display_name = None
+        self.serve_nodes = None
 
     @classmethod
     def from_service_account_json(cls, json_credentials_path,
@@ -168,6 +170,9 @@ class Cluster(object):
         # Make sure the response is a cluster, but don't return it.
         _parse_pb_any_to_native(op_result_pb.response,
                                 expected_type=_CLUSTER_TYPE_URL)
+        # After successfully parsed response, set the values created.
+        self.display_name = display_name
+        self.serve_nodes = serve_nodes
 
     def delete(self, timeout_seconds=TIMEOUT_SECONDS):
         """Delete this cluster.
@@ -179,6 +184,8 @@ class Cluster(object):
         self._cluster_conn.delete_cluster(
             self.project_id, self.zone, self.cluster_id,
             timeout_seconds=timeout_seconds)
+        # After deleting, the config values are no longer set.
+        self.display_name = self.serve_nodes = None
 
 
 def _get_operation_id(operation_name, project_id, zone, cluster_id):

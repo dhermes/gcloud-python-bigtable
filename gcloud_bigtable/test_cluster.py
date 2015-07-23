@@ -51,6 +51,9 @@ class TestCluster(unittest2.TestCase):
         self.assertEqual(cluster.project_id, PROJECT_ID)
         self.assertEqual(cluster.zone, ZONE)
         self.assertEqual(cluster.cluster_id, CLUSTER_ID)
+        self.assertEqual(cluster.display_name, None)
+        self.assertEqual(cluster.serve_nodes, None)
+
         self.assertEqual(cluster._credentials, credentials_result)
         self.assertTrue(isinstance(cluster._cluster_conn, ClusterConnection))
         self.assertEqual(cluster._cluster_conn._credentials,
@@ -76,6 +79,9 @@ class TestCluster(unittest2.TestCase):
         self.assertEqual(cluster.project_id, PROJECT_ID)
         self.assertEqual(cluster.zone, ZONE)
         self.assertEqual(cluster.cluster_id, CLUSTER_ID)
+        self.assertEqual(cluster.display_name, None)
+        self.assertEqual(cluster.serve_nodes, None)
+
         self.assertEqual(cluster._credentials, credentials)
         self.assertTrue(isinstance(cluster._cluster_conn, ClusterConnection))
         self.assertEqual(cluster._cluster_conn._credentials, credentials)
@@ -107,6 +113,9 @@ class TestCluster(unittest2.TestCase):
         self.assertEqual(cluster.project_id, PROJECT_ID)
         self.assertEqual(cluster.zone, ZONE)
         self.assertEqual(cluster.cluster_id, CLUSTER_ID)
+        self.assertEqual(cluster.display_name, None)
+        self.assertEqual(cluster.serve_nodes, None)
+
         self.assertEqual(cluster._credentials, credentials)
         self.assertTrue(isinstance(cluster._cluster_conn, ClusterConnection))
         self.assertEqual(cluster._cluster_conn._credentials, credentials)
@@ -143,6 +152,9 @@ class TestCluster(unittest2.TestCase):
         self.assertEqual(cluster.project_id, PROJECT_ID)
         self.assertEqual(cluster.zone, ZONE)
         self.assertEqual(cluster.cluster_id, CLUSTER_ID)
+        self.assertEqual(cluster.display_name, None)
+        self.assertEqual(cluster.serve_nodes, None)
+
         self.assertEqual(cluster._credentials, credentials)
         self.assertTrue(isinstance(cluster._cluster_conn, ClusterConnection))
         self.assertEqual(cluster._cluster_conn._credentials, credentials)
@@ -176,6 +188,8 @@ class TestCluster(unittest2.TestCase):
         # patch cluster._cluster_conn.
         cluster = self._makeOne(PROJECT_ID, ZONE, CLUSTER_ID,
                                 credentials=credentials)
+        self.assertEqual(cluster.display_name, None)
+        self.assertEqual(cluster.serve_nodes, None)
 
         display_name = 'DISPLAY_NAME'
         serve_nodes = 8
@@ -202,6 +216,9 @@ class TestCluster(unittest2.TestCase):
                      _parse_pb_any_to_native=mock_parse_pb_any_to_native):
             cluster.create(display_name=display_name, serve_nodes=serve_nodes,
                            timeout_seconds=TIMEOUT_SECONDS)
+
+        self.assertEqual(cluster.display_name, display_name)
+        self.assertEqual(cluster.serve_nodes, serve_nodes)
 
         mock_get_operation_id.check_called(
             self,
@@ -243,12 +260,17 @@ class TestCluster(unittest2.TestCase):
         # patch cluster._cluster_conn.
         cluster = self._makeOne(PROJECT_ID, ZONE, CLUSTER_ID,
                                 credentials=credentials)
+        cluster.display_name = object()
+        cluster.serve_nodes = object()
 
         # Patch the connection with a mock.
         delete_result = object()
         cluster._cluster_conn = connection = _MockWithAttachedMethods(
             delete_result)
         cluster.delete(timeout_seconds=TIMEOUT_SECONDS)
+        # Make sure delete removes the config.
+        self.assertEqual(cluster.display_name, None)
+        self.assertEqual(cluster.serve_nodes, None)
 
         self.assertEqual(connection._called, [
             (
