@@ -404,6 +404,102 @@ class Test__get_operation_id(unittest2.TestCase):
                           ZONE, CLUSTER_ID)
 
 
+class Test__log_operation_duration(unittest2.TestCase):
+
+    def _callFUT(self, operation_pb):
+        from gcloud_bigtable.cluster import _log_operation_duration
+        return _log_operation_duration(operation_pb)
+
+    def test_logger_not_debug(self):
+        import logging
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import cluster as MUT
+
+        mock_logger = _MockWithAttachedMethods()
+        # Make it larger than DEBUG so it is not in DEBUG mode.
+        mock_logger.level = logging.DEBUG + 1
+        with _Monkey(MUT, LOGGER=mock_logger):
+            self._callFUT(None)
+
+        # We make sure that nothing is logged in this case.
+        self.assertEqual(mock_logger._called, [])
+
+    def _logger_test_helper(self, seconds_before, nanos_before,
+                            seconds_after, nanos_after,
+                            seconds_delta, nanos_delta):
+        import logging
+        from gcloud_bigtable._generated import any_pb2
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._generated import operations_pb2
+        from gcloud_bigtable._generated import timestamp_pb2
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import cluster as MUT
+
+        type_url_display = 'TYPE_URL'
+        # Need a period at the beginning.
+        type_url = 'FOO.' + type_url_display
+        fake_url_map = {type_url: messages_pb2.CreateClusterMetadata}
+
+        metadata_pb = messages_pb2.CreateClusterMetadata(
+            request_time=timestamp_pb2.Timestamp(
+                seconds=seconds_before,
+                nanos=nanos_before,
+            ),
+            finish_time=timestamp_pb2.Timestamp(
+                seconds=seconds_after,
+                nanos=nanos_after,
+            ),
+        )
+        operation_pb = operations_pb2.Operation(
+            metadata=any_pb2.Any(
+                type_url=type_url,
+                value=metadata_pb.SerializeToString(),
+            )
+        )
+
+        debug_response = object()
+        mock_logger = _MockWithAttachedMethods(debug_response)
+        mock_logger.level = logging.DEBUG
+        with _Monkey(MUT, LOGGER=mock_logger, _TYPE_URL_MAP=fake_url_map):
+            self._callFUT(operation_pb)
+
+        self.assertEqual(mock_logger._called, [
+            (
+                'debug',
+                (
+                    MUT._DURATION_LOG_TEMPLATE,
+                    type_url_display,
+                    seconds_delta,
+                    nanos_delta,
+                ),
+                {},
+            )
+        ])
+
+    def test_logger_in_debug_mode(self):
+        seconds = 101
+        nanos_before = 42
+        nanos_after = 1337
+        nanos_delta = nanos_after - nanos_before
+        seconds_delta = 0
+        self._logger_test_helper(seconds, nanos_before, seconds,
+                                 nanos_after, seconds_delta, nanos_delta)
+
+    def test_logger_in_debug_mode_differing_seconds(self):
+        seconds_before = 1
+        seconds_after = 2
+        nanos_before = 10**9 - 1
+        nanos_after = 1
+        # The above is rigged so that the difference is 2.
+        nanos_delta = 2
+        seconds_delta = 0
+        self._logger_test_helper(seconds_before, nanos_before, seconds_after,
+                                 nanos_after, seconds_delta, nanos_delta)
+
+
 class Test__wait_for_operation(unittest2.TestCase):
 
     def _callFUT(self, cluster_connection, project_id, zone, cluster_id,

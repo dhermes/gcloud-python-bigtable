@@ -15,12 +15,15 @@
 """User friendly methods for calling the Google Cloud BigTable API."""
 
 
+import logging
 import time
 
 from oauth2client.client import GoogleCredentials
 from oauth2client.client import SignedJwtAssertionCredentials
 from oauth2client.client import _get_application_default_credential_from_file
 
+from gcloud_bigtable._generated import (
+    bigtable_cluster_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
 from gcloud_bigtable._logging import LOGGER
 from gcloud_bigtable.cluster_connection import ClusterConnection
@@ -32,8 +35,16 @@ _ADMIN_TYPE_URL_BASE = _TYPE_URL_BASE + 'admin.cluster.v1.'
 _CLUSTER_TYPE_URL = _ADMIN_TYPE_URL_BASE + 'Cluster'
 _MAX_OPERATION_WAITS = 5
 _BASE_OPERATION_WAIT_TIME = 1  # in seconds
+_DURATION_LOG_TEMPLATE = ('Long-running operation (metadata type: %s) '
+                          'duration: %d.%09d seconds')
 _TYPE_URL_MAP = {
     _CLUSTER_TYPE_URL: data_pb2.Cluster,
+    _ADMIN_TYPE_URL_BASE + 'CreateClusterMetadata': (
+        messages_pb2.CreateClusterMetadata),
+    _ADMIN_TYPE_URL_BASE + 'UndeleteClusterMetadata': (
+        messages_pb2.UndeleteClusterMetadata),
+    _ADMIN_TYPE_URL_BASE + 'UpdateClusterMetadata': (
+        messages_pb2.UpdateClusterMetadata),
 }
 
 
@@ -297,6 +308,38 @@ def _get_operation_id(operation_name, project_id, zone, cluster_id):
     return int(op_id)
 
 
+def _log_operation_duration(operation_pb):
+    """Logs duration of a long-running operation.
+
+    If ``LOGGER`` is not a ``DEBUG`` logger, does nothing. This is so that
+    tests do not have to deal with specifying mock operations which
+    fit the assumptions of a completed request.
+
+    :type operation_pb: :class:`._generated.operations_pb2.Operation`
+    :param operation_pb: A completed long-running operation. We expect
+                         ``operation_pb.metadata`` to contain a message
+                         that defines both ``request_time`` and
+                         ``finish_time``.
+
+    :rtype: tuple of strings
+    :returns: The metadata type name, delta seconds, delta nanoseconds.
+    """
+    if LOGGER.level > logging.DEBUG:
+        return
+
+    metadata_type = _TYPE_URL_MAP[operation_pb.metadata.type_url]
+    _, op_type = operation_pb.metadata.type_url.rsplit('.', 1)
+    op_metadata = metadata_type.FromString(operation_pb.metadata.value)
+    seconds_delta = (op_metadata.finish_time.seconds -
+                     op_metadata.request_time.seconds)
+    nanos_delta = (op_metadata.finish_time.nanos -
+                   op_metadata.request_time.nanos)
+    if nanos_delta < 0:
+        seconds_delta -= 1
+        nanos_delta += 10**9
+    LOGGER.debug(_DURATION_LOG_TEMPLATE, op_type, seconds_delta, nanos_delta)
+
+
 def _wait_for_operation(cluster_connection, project_id, zone, cluster_id,
                         operation_id, timeout_seconds=TIMEOUT_SECONDS):
     """Wait for an operation to complete.
@@ -340,6 +383,7 @@ def _wait_for_operation(cluster_connection, project_id, zone, cluster_id,
     if wait_count == _MAX_OPERATION_WAITS:
         raise ValueError('Long-running operation did not complete.')
     else:
+        _log_operation_duration(op_result_pb)
         return op_result_pb
 
 

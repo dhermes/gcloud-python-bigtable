@@ -17,6 +17,7 @@
 
 import argparse
 import logging
+import os
 import sys
 
 
@@ -24,7 +25,8 @@ LOGGER = logging.getLogger('gcloud_bigtable')
 PARSER = argparse.ArgumentParser(
     description='Internal gcloud-python-bigtable logging parser.')
 # No help since internal.
-PARSER.add_argument('--log', default='INFO', dest='log_level')
+PARSER.add_argument('--log', dest='log_level')
+ENV_VAR_NAME = 'GCLOUD_LOGGING_LEVEL'
 
 # Get logging level from user input.
 DEFAULT_LEVEL = logging.INFO
@@ -48,7 +50,7 @@ def get_log_level(argv):
     """
     parsed_args, _ = PARSER.parse_known_args(argv)
     # Use upper case since that is used in MAPPING.
-    log_level = parsed_args.log_level.upper()
+    log_level = parsed_args.log_level or os.getenv(ENV_VAR_NAME)
     return MAPPING.get(log_level, DEFAULT_LEVEL)
 
 
