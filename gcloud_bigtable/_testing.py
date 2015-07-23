@@ -90,6 +90,31 @@ class _StubMockResponse(object):
         return self._result
 
 
+class _AttachedMethod(object):
+
+    def __init__(self, parent, name):
+        self.parent = parent
+        self.name = name
+
+    def __call__(self, *args, **kwargs):
+        self.parent._called.append((self.name, args, kwargs))
+        curr_result = self.parent._results[0]
+        self.parent._results = self.parent._results[1:]
+        return curr_result
+
+
+class _MockWithAttachedMethods(object):
+
+    def __init__(self, *results):
+        self._results = results
+        self._called = []
+
+    def __getattr__(self, name):
+        # We need not worry about names: _results, _called
+        # since __getattribute__ will handle them.
+        return _AttachedMethod(self, name)
+
+
 class _Monkey(object):
     # context-manager for replacing module names in the scope of a test.
 
