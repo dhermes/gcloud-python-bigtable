@@ -171,6 +171,52 @@ class TestCluster(unittest2.TestCase):
         # Load private key (via _get_contents) from the key path.
         mock_get_contents.check_called(self, [(private_key_path,)])
 
+    def test_reload(self):
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import cluster as MUT
+
+        # Expected order of calls (on creds):
+        # - create_scoped_required (via ClusterConnection)
+        # - create_scoped_required (via OperationsConnection)
+        credentials = _MockWithAttachedMethods(False, False)
+        # The credentials will just be thrown away when we
+        # patch cluster._cluster_conn.
+        cluster = self._makeOne(PROJECT_ID, ZONE, CLUSTER_ID,
+                                credentials=credentials)
+        self.assertEqual(cluster.display_name, None)
+        self.assertEqual(cluster.serve_nodes, None)
+
+        # Patch the connection with a mock.
+        get_cluster_result = object()
+        cluster._cluster_conn = connection = _MockWithAttachedMethods(
+            get_cluster_result)
+        pb_property_result = object()
+        mock_require_pb_property = _MockCalled(pb_property_result)
+
+        with _Monkey(MUT, _require_pb_property=mock_require_pb_property):
+            cluster.reload(timeout_seconds=TIMEOUT_SECONDS)
+
+        # Make sure reload sets the config.
+        self.assertEqual(cluster.display_name, pb_property_result)
+        self.assertEqual(cluster.serve_nodes, pb_property_result)
+
+        mock_require_pb_property.check_called(
+            self,
+            [
+                (get_cluster_result, 'display_name', None),
+                (get_cluster_result, 'serve_nodes', None),
+            ],
+        )
+        self.assertEqual(connection._called, [
+            (
+                'get_cluster',
+                (PROJECT_ID, ZONE, CLUSTER_ID),
+                {'timeout_seconds': TIMEOUT_SECONDS},
+            ),
+        ])
+
     def _create_or_update_helper(self, method_name, display_name, serve_nodes):
         from gcloud_bigtable._generated import (
             bigtable_cluster_data_pb2 as data_pb2)
@@ -209,12 +255,12 @@ class TestCluster(unittest2.TestCase):
         mock_wait_for_operation = _MockCalled(get_op_result)
         parse_pb_result = object()
         mock_parse_pb_any_to_native = _MockCalled(parse_pb_result)
-        mock_require_serve_nodes = _MockCalled(serve_nodes)
+        mock_require_pb_property = _MockCalled(serve_nodes)
 
         with _Monkey(MUT, _get_operation_id=mock_get_operation_id,
                      _wait_for_operation=mock_wait_for_operation,
                      _parse_pb_any_to_native=mock_parse_pb_any_to_native,
-                     _require_serve_nodes=mock_require_serve_nodes):
+                     _require_pb_property=mock_require_pb_property):
             method = getattr(cluster, method_name)
             method(display_name=display_name, serve_nodes=serve_nodes,
                    timeout_seconds=TIMEOUT_SECONDS)
@@ -236,9 +282,9 @@ class TestCluster(unittest2.TestCase):
             [(get_op_result.response,)],
             [{'expected_type': MUT._CLUSTER_TYPE_URL}],
         )
-        mock_require_serve_nodes.check_called(
+        mock_require_pb_property.check_called(
             self,
-            [(parse_pb_result, serve_nodes)],
+            [(parse_pb_result, 'serve_nodes', serve_nodes)],
         )
         self.assertEqual(
             connection._called,
@@ -491,18 +537,18 @@ class Test__parse_pb_any_to_native(unittest2.TestCase):
                 self._callFUT(any_val, expected_type=type_url1)
 
 
-class Test__require_serve_nodes(unittest2.TestCase):
+class Test__require_pb_property(unittest2.TestCase):
 
-    def _callFUT(self, cluster_pb, serve_nodes):
-        from gcloud_bigtable.cluster import _require_serve_nodes
-        return _require_serve_nodes(cluster_pb, serve_nodes)
+    def _callFUT(self, message_pb, property_name, value):
+        from gcloud_bigtable.cluster import _require_pb_property
+        return _require_pb_property(message_pb, property_name, value)
 
     def test_it(self):
         from gcloud_bigtable._generated import (
             bigtable_cluster_data_pb2 as data_pb2)
         serve_nodes = 119
         cluster_pb = data_pb2.Cluster(serve_nodes=serve_nodes)
-        result = self._callFUT(cluster_pb, serve_nodes)
+        result = self._callFUT(cluster_pb, 'serve_nodes', serve_nodes)
         self.assertEqual(result, serve_nodes)
 
     def test_with_null_serve_nodes(self):
@@ -511,7 +557,7 @@ class Test__require_serve_nodes(unittest2.TestCase):
         serve_nodes = None
         actual_serve_nodes = 119
         cluster_pb = data_pb2.Cluster(serve_nodes=actual_serve_nodes)
-        result = self._callFUT(cluster_pb, serve_nodes)
+        result = self._callFUT(cluster_pb, 'serve_nodes', serve_nodes)
         self.assertEqual(result, actual_serve_nodes)
 
     def test_with_serve_nodes_unset_on_cluster(self):
@@ -520,7 +566,7 @@ class Test__require_serve_nodes(unittest2.TestCase):
         serve_nodes = 119
         cluster_pb = data_pb2.Cluster()
         with self.assertRaises(ValueError):
-            self._callFUT(cluster_pb, serve_nodes)
+            self._callFUT(cluster_pb, 'serve_nodes', serve_nodes)
 
     def test_with_serve_nodes_disagreeing(self):
         from gcloud_bigtable._generated import (
@@ -530,7 +576,7 @@ class Test__require_serve_nodes(unittest2.TestCase):
         self.assertNotEqual(serve_nodes, other_serve_nodes)
         cluster_pb = data_pb2.Cluster(serve_nodes=other_serve_nodes)
         with self.assertRaises(ValueError):
-            self._callFUT(cluster_pb, serve_nodes)
+            self._callFUT(cluster_pb, 'serve_nodes', serve_nodes)
 
 
 class Test__get_contents(unittest2.TestCase):

@@ -88,6 +88,19 @@ class TestClusterAdminAPI(unittest2.TestCase):
             self.assertEqual(curr_zone.display_name, expected_name)
             self.assertEqual(curr_zone.status, OK_STATUS)
 
+    def test_reload(self):
+        credentials = self._cluster._credentials
+        # Use same arguments as self._cluster (created in `setUpClass`).
+        cluster = Cluster(PROJECT_ID, TEST_ZONE, TEST_CLUSTER_ID,
+                          credentials=credentials)
+        # Make sure metadata unset before reloading.
+        self.assertEqual(cluster.display_name, None)
+        self.assertEqual(cluster.serve_nodes, None)
+
+        cluster.reload()
+        self.assertEqual(cluster.display_name, self._cluster.display_name)
+        self.assertEqual(cluster.serve_nodes, self._cluster.serve_nodes)
+
     def _assert_test_cluster(self, cluster_pb, cluster_id=TEST_CLUSTER_ID,
                              display_name=None):
         fields_set = sorted([field.name

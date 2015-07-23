@@ -43,7 +43,9 @@ class Cluster(object):
     We can use a :class:`Cluster` to:
 
     * :meth:`Cluster.create` itself
+    * :meth:`Cluster.update` itself
     * :meth:`Cluster.delete` itself
+    * :meth:`Cluster.reload` itself
 
     :type project_id: string
     :param project_id: The ID of the project that owns the cluster.
@@ -136,6 +138,23 @@ class Cluster(object):
             private_key=_get_contents(private_key_path))
         return cls(project_id, zone, cluster_id, credentials=credentials)
 
+    def reload(self, timeout_seconds=TIMEOUT_SECONDS):
+        """Reload the metadata for this cluster.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+        """
+        cluster_pb = self._cluster_conn.get_cluster(
+            self.project_id, self.zone, self.cluster_id,
+            timeout_seconds=timeout_seconds)
+
+        # After deleting, the config values are no longer set.
+        self.display_name = _require_pb_property(cluster_pb, 'display_name',
+                                                 None)
+        self.serve_nodes = _require_pb_property(cluster_pb, 'serve_nodes',
+                                                None)
+
     def create(self, display_name, serve_nodes=3,
                timeout_seconds=TIMEOUT_SECONDS):
         """Create this cluster.
@@ -172,7 +191,8 @@ class Cluster(object):
         created_cluster_pb = _parse_pb_any_to_native(
             op_result_pb.response, expected_type=_CLUSTER_TYPE_URL)
 
-        serve_nodes = _require_serve_nodes(created_cluster_pb, serve_nodes)
+        serve_nodes = _require_pb_property(created_cluster_pb, 'serve_nodes',
+                                           serve_nodes)
         # After successfully parsing response, set the values created.
         self.display_name = display_name
         self.serve_nodes = serve_nodes
@@ -222,7 +242,8 @@ class Cluster(object):
         updated_cluster_pb = _parse_pb_any_to_native(
             op_result_pb.response, expected_type=_CLUSTER_TYPE_URL)
 
-        serve_nodes = _require_serve_nodes(updated_cluster_pb, serve_nodes)
+        serve_nodes = _require_pb_property(updated_cluster_pb, 'serve_nodes',
+                                           serve_nodes)
         # After successfully parsing response, set the values updated.
         self.display_name = display_name
         self.serve_nodes = serve_nodes
@@ -344,35 +365,39 @@ def _parse_pb_any_to_native(any_val, expected_type=None):
     return container_class.FromString(any_val.value)
 
 
-def _require_serve_nodes(cluster_pb, serve_nodes):
-    """Check that serve nodes agrees with the value on the cluster.
+def _require_pb_property(message_pb, property_name, value):
+    """Check that a property agrees with the value on the message.
 
-    :type cluster_pb: :class:`data_pb2.Cluster`
-    :param cluster_pb: The cluster to check for ``serve_nodes``.
+    :type message_pb: :class:`google.protobuf.message.Message`
+    :param message_pb: The message to check for ``property_name``.
 
-    :type serve_nodes: integer or :class:`NoneType`
-    :param serve_nodes: The value to check against the cluster. If ``None``,
-                        will not be checked.
+    :type property_name: string
+    :param property_name: The property value to check against.
 
-    :rtype: integer
-    :returns: The value of serve nodes set on ``cluster_pb``.
+    :type value: objector :class:`NoneType`
+    :param value: The value to check against the cluster. If ``None``,
+                  will not be checked.
+
+    :rtype: object
+    :returns: The value of ``property_name`` set on ``message_pb``.
     :raises: :class:`ValueError` if the result returned from the
-             long-running operation does not contain the ``serve_nodes``
-             value or if the value returned disagrees with the value passed
-             with the request (if that value is not null).
+             ``message_pb`` does not contain the ``property_name``
+             value or if the value returned disagrees with the ``value``
+             passed with the request (if that value is not null).
     """
-    # Make sure `serve_nodes` is set on the response.
+    # Make sure `property_name` is set on the response.
     # NOTE: HasField() doesn't work in protobuf>=3.0.0a3
-    all_fields = set([field.name for field in cluster_pb._fields])
-    if 'serve_nodes' not in all_fields:
-        raise ValueError('Cluster response does not contain serve_nodes.')
-    if serve_nodes is None:
-        serve_nodes = cluster_pb.serve_nodes
-    elif serve_nodes != cluster_pb.serve_nodes:
-        raise ValueError('Cluster returned serve_nodes value disagreeing '
-                         'with value passed in.')
+    all_fields = set([field.name for field in message_pb._fields])
+    if property_name not in all_fields:
+        raise ValueError('Message does not contain %s.' % (property_name,))
+    property_val = getattr(message_pb, property_name)
+    if value is None:
+        value = property_val
+    elif value != property_val:
+        raise ValueError('Message returned %s value disagreeing '
+                         'with value passed in.' % (property_name,))
 
-    return serve_nodes
+    return value
 
 
 def _get_contents(filename):
