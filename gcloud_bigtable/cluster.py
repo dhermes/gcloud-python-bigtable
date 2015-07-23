@@ -136,7 +136,7 @@ class Cluster(object):
             private_key=_get_contents(private_key_path))
         return cls(project_id, zone, cluster_id, credentials=credentials)
 
-    def create(self, display_name, serve_nodes=None,
+    def create(self, display_name, serve_nodes=3,
                timeout_seconds=TIMEOUT_SECONDS):
         """Create this cluster.
 
@@ -152,6 +152,7 @@ class Cluster(object):
 
         :type serve_nodes: integer
         :param serve_nodes: (Optional) The number of nodes in the cluster.
+                            Defaults to 3.
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
