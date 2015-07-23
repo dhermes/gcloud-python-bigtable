@@ -26,6 +26,9 @@ _ADMIN_TYPE_URL_BASE = _TYPE_URL_BASE + 'admin.cluster.v1.'
 _CLUSTER_TYPE_URL = _ADMIN_TYPE_URL_BASE + 'Cluster'
 _MAX_OPERATION_WAITS = 5
 _BASE_OPERATION_WAIT_TIME = 1  # in seconds
+_TYPE_URL_MAP = {
+    _CLUSTER_TYPE_URL: data_pb2.Cluster,
+}
 
 
 def _get_operation_id(operation_name, project_id, zone_name, cluster_id):
@@ -107,6 +110,28 @@ def _wait_for_operation(cluster_connection, project_id, zone_name, cluster_id,
         return op_result_pb
 
 
+def _parse_pb_any_to_native(any_val, expected_type=None):
+    """Convert a serialized "google.protobuf.Any" value to actual type.
+
+    :type any_val: :class:`gcloud_bigtable._generated.any_pb2.Any`
+    :param any_val: A serialized protobuf value container.
+
+    :type expected_type: string
+    :param expected_type: (Optional) The type URL we expect ``any_val``
+                          to have.
+
+    :rtype: object
+    :returns: The de-serialized object.
+    :raises: :class:`ValueError` if the ``expected_type`` does not match
+             the ``type_url`` on the input.
+    """
+    if expected_type is not None and expected_type != any_val.type_url:
+        raise ValueError('Expected type: %s, Received: %s' % (
+            expected_type, any_val.type_url))
+    container_class = _TYPE_URL_MAP[any_val.type_url]
+    return container_class.FromString(any_val.value)
+
+
 def create_cluster(cluster_connection, project_id, zone_name, cluster_id,
                    display_name=None, serve_nodes=3, hdd_bytes=None,
                    ssd_bytes=None, timeout_seconds=TIMEOUT_SECONDS):
@@ -159,9 +184,5 @@ def create_cluster(cluster_connection, project_id, zone_name, cluster_id,
     op_result_pb = _wait_for_operation(
         cluster_connection, project_id, zone_name, cluster_id,
         op_id, timeout_seconds=timeout_seconds)
-
-    if op_result_pb.response.type_url != _CLUSTER_TYPE_URL:
-        raise ValueError('Unexpected type URL for response in '
-                         'long-running operation.')
-
-    return data_pb2.Cluster.FromString(op_result_pb.response.value)
+    return _parse_pb_any_to_native(op_result_pb.response,
+                                   expected_type=_CLUSTER_TYPE_URL)

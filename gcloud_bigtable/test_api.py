@@ -131,6 +131,135 @@ class Test__wait_for_operation(unittest2.TestCase):
         self.assertEqual(connection._called, conn_called)
 
 
+class Test__parse_pb_any_to_native(unittest2.TestCase):
+
+    def _callFUT(self, any_val, expected_type=None):
+        from gcloud_bigtable.api import _parse_pb_any_to_native
+        return _parse_pb_any_to_native(any_val, expected_type=expected_type)
+
+    def test_it(self):
+        from gcloud_bigtable._generated import any_pb2
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import api as MUT
+
+        type_url = 'type.googleapis.com/' + data_pb2._CELL.full_name
+        fake_type_url_map = {type_url: data_pb2.Cell}
+
+        cell = data_pb2.Cell(
+            timestamp_micros=0,
+            value=b'foobar',
+        )
+        any_val = any_pb2.Any(
+            type_url=type_url,
+            value=cell.SerializeToString(),
+        )
+        with _Monkey(MUT, _TYPE_URL_MAP=fake_type_url_map):
+            result = self._callFUT(any_val)
+
+        self.assertEqual(result, cell)
+
+    def test_unknown_type_url(self):
+        from gcloud_bigtable._generated import any_pb2
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import api as MUT
+
+        fake_type_url_map = {}
+        any_val = any_pb2.Any()
+        with _Monkey(MUT, _TYPE_URL_MAP=fake_type_url_map):
+            with self.assertRaises(KeyError):
+                self._callFUT(any_val)
+
+    def test_disagreeing_type_url(self):
+        from gcloud_bigtable._generated import any_pb2
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import api as MUT
+
+        type_url1 = 'foo'
+        type_url2 = 'bar'
+        fake_type_url_map = {type_url1: None}
+        any_val = any_pb2.Any(type_url=type_url2)
+        with _Monkey(MUT, _TYPE_URL_MAP=fake_type_url_map):
+            with self.assertRaises(ValueError):
+                self._callFUT(any_val, expected_type=type_url1)
+
+
+class Test_create_cluster(unittest2.TestCase):
+
+    def _callFUT(self, *args, **kwargs):
+        from gcloud_bigtable.api import create_cluster
+        return create_cluster(*args, **kwargs)
+
+    def test_it(self):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+        from gcloud_bigtable._generated import operations_pb2
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import api as MUT
+
+        display_name = 'DISPLAY_NAME'
+        serve_nodes = 8
+        hdd_bytes = 1337
+        ssd_bytes = 42
+        operation_id = 77
+        op_name = 'OP_NAME'
+
+        create_result = data_pb2.Cluster(
+            current_operation=operations_pb2.Operation(
+                name=op_name,
+            ),
+        )
+        get_op_result = operations_pb2.Operation()
+        connection = _Connection(create_result, get_op_result)
+
+        mock_get_operation_id = _MockCalled(operation_id)
+        mock_wait_for_operation = _MockCalled(get_op_result)
+        final_result = object()
+        mock_parse_pb_any_to_native = _MockCalled(final_result)
+
+        with _Monkey(MUT, _get_operation_id=mock_get_operation_id,
+                     _wait_for_operation=mock_wait_for_operation,
+                     _parse_pb_any_to_native=mock_parse_pb_any_to_native):
+            result = self._callFUT(
+                connection, PROJECT_ID, ZONE_NAME, CLUSTER_ID,
+                display_name=display_name, serve_nodes=serve_nodes,
+                hdd_bytes=hdd_bytes, ssd_bytes=ssd_bytes,
+                timeout_seconds=TIMEOUT_SECONDS)
+
+        self.assertTrue(result is final_result)
+        mock_get_operation_id.check_called(
+            self,
+            [(op_name, PROJECT_ID, ZONE_NAME, CLUSTER_ID)],
+        )
+        mock_wait_for_operation.check_called(
+            self,
+            [(connection, PROJECT_ID, ZONE_NAME, CLUSTER_ID, operation_id)],
+            [{'timeout_seconds': TIMEOUT_SECONDS}],
+        )
+        mock_parse_pb_any_to_native.check_called(
+            self,
+            [(get_op_result.response,)],
+            [{'expected_type': MUT._CLUSTER_TYPE_URL}],
+        )
+        self.assertEqual(
+            connection._called,
+            [
+                (
+                    'create_cluster',
+                    (PROJECT_ID, ZONE_NAME, CLUSTER_ID),
+                    {
+                        'display_name': display_name,
+                        'hdd_bytes': hdd_bytes,
+                        'serve_nodes': serve_nodes,
+                        'ssd_bytes': ssd_bytes,
+                        'timeout_seconds': TIMEOUT_SECONDS,
+                    },
+                ),
+            ],
+        )
+
+
 class _Connection(object):
 
     def __init__(self, *results):
