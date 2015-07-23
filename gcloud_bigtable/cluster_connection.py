@@ -18,7 +18,7 @@ from oauth2client.client import AssertionCredentials
 
 from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
-    bigtable_cluster_service_messages_pb2 as messages)
+    bigtable_cluster_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._generated import bigtable_cluster_service_pb2
 from gcloud_bigtable.connection import Connection
 from gcloud_bigtable.connection import MetadataTransformer
@@ -77,7 +77,7 @@ def _prepare_cluster(name=None, display_name=None, serve_nodes=3,
     :param ssd_bytes: (Optional) The number of bytes to use for a solid
                       state drive.
 
-    :rtype: :class:`messages.Cluster`
+    :rtype: :class:`data_pb2.Cluster`
     :returns: The cluster object required.
     :raises: :class:`ValueError` if both ``hdd_bytes`` and ``ssd_bytes``
              are set.
@@ -171,11 +171,11 @@ class ClusterConnection(Connection):
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to ``TIMEOUT_SECONDS``.
 
-        :rtype: :class:`messages.ListZonesResponse`
+        :rtype: :class:`messages_pb2.ListZonesResponse`
         :returns: The response object for the list zones request.
         """
         project_name = 'projects/%s' % (project_id,)
-        request_pb = messages.ListZonesRequest(name=project_name)
+        request_pb = messages_pb2.ListZonesRequest(name=project_name)
         result_pb = None
         with make_cluster_stub(self._credentials) as stub:
             response = stub.ListZones.async(request_pb, timeout_seconds)
@@ -200,12 +200,12 @@ class ClusterConnection(Connection):
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to ``TIMEOUT_SECONDS``.
 
-        :rtype: :class:`messages.Cluster`
+        :rtype: :class:`data_pb2.Cluster`
         :returns: The response object for the get cluster request.
         """
         cluster_name = 'projects/%s/zones/%s/clusters/%s' % (
             project_id, zone_name, cluster_id)
-        request_pb = messages.GetClusterRequest(name=cluster_name)
+        request_pb = messages_pb2.GetClusterRequest(name=cluster_name)
         result_pb = None
         with make_cluster_stub(self._credentials) as stub:
             response = stub.GetCluster.async(request_pb, timeout_seconds)
@@ -223,11 +223,11 @@ class ClusterConnection(Connection):
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to ``TIMEOUT_SECONDS``.
 
-        :rtype: :class:`messages.ListClustersResponse`
+        :rtype: :class:`messages_pb2.ListClustersResponse`
         :returns: The response object for the list clusters request.
         """
         project_name = 'projects/%s' % (project_id,)
-        request_pb = messages.ListClustersRequest(name=project_name)
+        request_pb = messages_pb2.ListClustersRequest(name=project_name)
         result_pb = None
         with make_cluster_stub(self._credentials) as stub:
             response = stub.ListClusters.async(request_pb, timeout_seconds)
@@ -270,7 +270,7 @@ class ClusterConnection(Connection):
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to ``TIMEOUT_SECONDS``.
 
-        :rtype: :class:`messages.Cluster`
+        :rtype: :class:`data_pb2.Cluster`
         :returns: The response object for the create cluster request.
         """
         zone_full_name = 'projects/%s/zones/%s' % (project_id, zone_name)
@@ -280,7 +280,7 @@ class ClusterConnection(Connection):
 
         # From the .proto definition of CreateClusterRequest: the "name",
         # "delete_time", and "current_operation" fields must be left blank.
-        request_pb = messages.CreateClusterRequest(
+        request_pb = messages_pb2.CreateClusterRequest(
             name=zone_full_name,
             cluster_id=cluster_id,
             cluster=cluster,
@@ -365,7 +365,7 @@ class ClusterConnection(Connection):
         """
         cluster_name = 'projects/%s/zones/%s/clusters/%s' % (
             project_id, zone_name, cluster_id)
-        request_pb = messages.DeleteClusterRequest(name=cluster_name)
+        request_pb = messages_pb2.DeleteClusterRequest(name=cluster_name)
         result_pb = None
         with make_cluster_stub(self._credentials) as stub:
             response = stub.DeleteCluster.async(request_pb, timeout_seconds)
@@ -395,7 +395,7 @@ class ClusterConnection(Connection):
         """
         cluster_name = 'projects/%s/zones/%s/clusters/%s' % (
             project_id, zone_name, cluster_id)
-        request_pb = messages.UndeleteClusterRequest(name=cluster_name)
+        request_pb = messages_pb2.UndeleteClusterRequest(name=cluster_name)
         result_pb = None
         with make_cluster_stub(self._credentials) as stub:
             response = stub.UndeleteCluster.async(request_pb, timeout_seconds)

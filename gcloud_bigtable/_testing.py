@@ -28,6 +28,27 @@ class _Credentials(object):
         return self
 
 
+class _MockCalled(object):
+
+    def __init__(self, result=None):
+        self.called_args = []
+        self.called_kwargs = []
+        self.result = result
+
+    def check_called(self, test_case, args_list, kwargs_list=None):
+        test_case.assertEqual(self.called_args, args_list)
+        if kwargs_list is None:
+            test_case.assertTrue(all([val == {}
+                                      for val in self.called_kwargs]))
+        else:
+            test_case.assertEqual(self.called_kwargs, kwargs_list)
+
+    def __call__(self, *args, **kwargs):
+        self.called_args.append(args)
+        self.called_kwargs.append(kwargs)
+        return self.result
+
+
 class _MockMethod(object):
 
     def __init__(self, stub, result):

@@ -150,7 +150,7 @@ class TestClusterConnection(unittest2.TestCase):
 
     def test_list_zones(self):
         from gcloud_bigtable._generated import (
-            bigtable_cluster_service_messages_pb2 as messages)
+            bigtable_cluster_service_messages_pb2 as messages_pb2)
 
         PROJECT_ID = 'PROJECT_ID'
 
@@ -160,14 +160,14 @@ class TestClusterConnection(unittest2.TestCase):
         method_name = 'ListZones'
         credentials, stubs = self._rpc_method_test_helper(rpc_method,
                                                           method_name)
-        request_type = messages.ListZonesRequest
+        request_type = messages_pb2.ListZonesRequest
         request_pb = self._check_rpc_stubs_used(credentials, stubs,
                                                 request_type)
         self.assertEqual(request_pb.name, 'projects/PROJECT_ID')
 
     def test_get_cluster(self):
         from gcloud_bigtable._generated import (
-            bigtable_cluster_service_messages_pb2 as messages)
+            bigtable_cluster_service_messages_pb2 as messages_pb2)
 
         PROJECT_ID = 'PROJECT_ID'
         ZONE = 'ZONE'
@@ -179,7 +179,7 @@ class TestClusterConnection(unittest2.TestCase):
         method_name = 'GetCluster'
         credentials, stubs = self._rpc_method_test_helper(rpc_method,
                                                           method_name)
-        request_type = messages.GetClusterRequest
+        request_type = messages_pb2.GetClusterRequest
         request_pb = self._check_rpc_stubs_used(credentials, stubs,
                                                 request_type)
         self.assertEqual(request_pb.name,
@@ -187,7 +187,7 @@ class TestClusterConnection(unittest2.TestCase):
 
     def test_list_clusters(self):
         from gcloud_bigtable._generated import (
-            bigtable_cluster_service_messages_pb2 as messages)
+            bigtable_cluster_service_messages_pb2 as messages_pb2)
 
         PROJECT_ID = 'PROJECT_ID'
 
@@ -197,7 +197,7 @@ class TestClusterConnection(unittest2.TestCase):
         method_name = 'ListClusters'
         credentials, stubs = self._rpc_method_test_helper(rpc_method,
                                                           method_name)
-        request_type = messages.ListClustersRequest
+        request_type = messages_pb2.ListClustersRequest
         request_pb = self._check_rpc_stubs_used(credentials, stubs,
                                                 request_type)
         self.assertEqual(request_pb.name, 'projects/PROJECT_ID')
@@ -206,7 +206,7 @@ class TestClusterConnection(unittest2.TestCase):
         from gcloud_bigtable._generated import (
             bigtable_cluster_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
-            bigtable_cluster_service_messages_pb2 as messages)
+            bigtable_cluster_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster_connection as MUT
 
@@ -227,7 +227,7 @@ class TestClusterConnection(unittest2.TestCase):
         with _Monkey(MUT, _prepare_cluster=mock_prepare_cluster):
             credentials, stubs = self._rpc_method_test_helper(rpc_method,
                                                               method_name)
-        request_type = messages.CreateClusterRequest
+        request_type = messages_pb2.CreateClusterRequest
         request_pb = self._check_rpc_stubs_used(credentials, stubs,
                                                 request_type)
         self.assertEqual(request_pb.name, 'projects/PROJECT_ID/zones/ZONE')
@@ -277,7 +277,7 @@ class TestClusterConnection(unittest2.TestCase):
 
     def test_delete_cluster(self):
         from gcloud_bigtable._generated import (
-            bigtable_cluster_service_messages_pb2 as messages)
+            bigtable_cluster_service_messages_pb2 as messages_pb2)
 
         PROJECT_ID = 'PROJECT_ID'
         ZONE = 'ZONE'
@@ -289,7 +289,7 @@ class TestClusterConnection(unittest2.TestCase):
         method_name = 'DeleteCluster'
         credentials, stubs = self._rpc_method_test_helper(rpc_method,
                                                           method_name)
-        request_type = messages.DeleteClusterRequest
+        request_type = messages_pb2.DeleteClusterRequest
         request_pb = self._check_rpc_stubs_used(credentials, stubs,
                                                 request_type)
         self.assertEqual(request_pb.name,
@@ -297,7 +297,7 @@ class TestClusterConnection(unittest2.TestCase):
 
     def test_undelete_cluster(self):
         from gcloud_bigtable._generated import (
-            bigtable_cluster_service_messages_pb2 as messages)
+            bigtable_cluster_service_messages_pb2 as messages_pb2)
 
         PROJECT_ID = 'PROJECT_ID'
         ZONE = 'ZONE'
@@ -309,7 +309,7 @@ class TestClusterConnection(unittest2.TestCase):
         method_name = 'UndeleteCluster'
         credentials, stubs = self._rpc_method_test_helper(rpc_method,
                                                           method_name)
-        request_type = messages.UndeleteClusterRequest
+        request_type = messages_pb2.UndeleteClusterRequest
         request_pb = self._check_rpc_stubs_used(credentials, stubs,
                                                 request_type)
         self.assertEqual(request_pb.name,

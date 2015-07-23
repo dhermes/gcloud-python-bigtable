@@ -25,13 +25,95 @@ _TYPE_URL_BASE = 'type.googleapis.com/google.bigtable.'
 _ADMIN_TYPE_URL_BASE = _TYPE_URL_BASE + 'admin.cluster.v1.'
 _CLUSTER_TYPE_URL = _ADMIN_TYPE_URL_BASE + 'Cluster'
 _MAX_OPERATION_WAITS = 5
-_OPERATION_WAIT_TIME = 5  # in seconds
+_BASE_OPERATION_WAIT_TIME = 1  # in seconds
+
+
+def _get_operation_id(operation_name, project_id, zone_name, cluster_id):
+    """Parse a returned name of a long-running operation.
+
+    We expect names to be of the form
+        operations/projects/*/zones/*/clusters/*/operations/{OP_ID}
+
+    :type operation_name: string
+    :param operation_name: The name of a long-running operation from the
+                           Cluster Admin API.
+
+    :type project_id: string
+    :param project_id: The ID of the project owning the cluster.
+
+    :type zone_name: string
+    :param zone_name: The name of the zone owning the cluster.
+
+    :type cluster_id: string
+    :param cluster_id: The name of the cluster.
+
+    :rtype: integer
+    :returns: The operation ID (without the cluster, zone or project).
+    :raises: :class:`ValueError` if the operation name returned from the
+             create request is not the correct format.
+    """
+    op_segment, op_id = operation_name.rsplit('/', 1)
+    expected_op_segment = (
+        'operations/projects/%s/zones/%s/clusters/%s/operations' % (
+            project_id, zone_name, cluster_id))
+    if expected_op_segment != op_segment:
+        raise ValueError('Operation name in unexpected format')
+
+    return int(op_id)
+
+
+def _wait_for_operation(cluster_connection, project_id, zone_name, cluster_id,
+                        operation_id, timeout_seconds=TIMEOUT_SECONDS):
+    """Wait for an operation to complete.
+
+    :type cluster_connection: :class:`.cluster_connection.ClusterConnection`
+    :param cluster_connection: Connection to make gRPC requests.
+
+    :type project_id: string
+    :param project_id: The ID of the project owning the cluster.
+
+    :type zone_name: string
+    :param zone_name: The name of the zone owning the cluster.
+
+    :type cluster_id: string
+    :param cluster_id: The name of the cluster.
+
+    :type operation_id: integer or string
+    :param operation_id: The ID of the operation to retrieve.
+
+    :type timeout_seconds: integer
+    :param timeout_seconds: Number of seconds for request time-out.
+                            If not passed, defaults to ``TIMEOUT_SECONDS``.
+
+    :rtype: :class:`gcloud_bigtable._generated.operations_pb2.Operation`
+    :returns: The operation which completed.
+    :raises: :class:`ValueError` if the operation never completed.
+    """
+    wait_count = 0
+    sleep_seconds = _BASE_OPERATION_WAIT_TIME
+    while wait_count < _MAX_OPERATION_WAITS:
+        op_result_pb = cluster_connection.get_operation(
+            project_id, zone_name, cluster_id,
+            operation_id, timeout_seconds=timeout_seconds)
+        if op_result_pb.done:
+            break
+        time.sleep(sleep_seconds)
+        wait_count += 1
+        sleep_seconds *= 2  # exponential backoff
+
+    if wait_count == _MAX_OPERATION_WAITS:
+        raise ValueError('Long-running operation did not complete.')
+    else:
+        return op_result_pb
 
 
 def create_cluster(cluster_connection, project_id, zone_name, cluster_id,
                    display_name=None, serve_nodes=3, hdd_bytes=None,
                    ssd_bytes=None, timeout_seconds=TIMEOUT_SECONDS):
     """Create a new cluster.
+
+    :type cluster_connection: :class:`.cluster_connection.ClusterConnection`
+    :param cluster_connection: Connection to make gRPC requests.
 
     :type project_id: string
     :param project_id: The ID of the project owning the cluster.
@@ -62,36 +144,21 @@ def create_cluster(cluster_connection, project_id, zone_name, cluster_id,
     :param timeout_seconds: Number of seconds for request time-out.
                             If not passed, defaults to ``TIMEOUT_SECONDS``.
 
-    :rtype: :class:`messages.Cluster`
+    :rtype: :class:`data_pb2.Cluster`
     :returns: The created cluster.
-    :raises: :class:`ValueError` if the operation name returned from the
-             create request is not the correct format or if the type URL
-             from the long-running operation is not Cluster.
+    :raises: :class:`ValueError` if the type URL from the long-running
+             operation is not Cluster.
     """
     result_pb = cluster_connection.create_cluster(
         project_id, zone_name, cluster_id, display_name=display_name,
         serve_nodes=serve_nodes, hdd_bytes=hdd_bytes, ssd_bytes=ssd_bytes,
         timeout_seconds=timeout_seconds)
 
-    op_segment, op_id = result_pb.current_operation.name.rsplit('/', 1)
-    expected_op_segment = (
-        'operations/projects/%s/zones/%s/clusters/%s/operations' % (
-            project_id, zone_name, cluster_id))
-    if expected_op_segment != op_segment:
-        raise ValueError('Operation name in unexpected format')
-
-    op_id = int(op_id)
-    op_result_pb = cluster_connection.get_operation(
-        project_id, zone_name, cluster_id,
+    op_id = _get_operation_id(result_pb.current_operation.name, project_id,
+                              zone_name, cluster_id)
+    op_result_pb = _wait_for_operation(
+        cluster_connection, project_id, zone_name, cluster_id,
         op_id, timeout_seconds=timeout_seconds)
-
-    wait_count = 0
-    while wait_count < _MAX_OPERATION_WAITS and not op_result_pb.done:
-        wait_count += 1
-        time.sleep(_OPERATION_WAIT_TIME)
-        op_result_pb = cluster_connection.get_operation(
-            project_id, zone_name, cluster_id,
-            op_id, timeout_seconds=timeout_seconds)
 
     if op_result_pb.response.type_url != _CLUSTER_TYPE_URL:
         raise ValueError('Unexpected type URL for response in '
