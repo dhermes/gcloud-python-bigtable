@@ -41,7 +41,8 @@ class Cluster(object):
 
     We can use a :class:`Cluster` to:
 
-    * create itself
+    * :meth:`Cluster.create` itself
+    * :meth:`Cluster.delete` itself
 
     :type project_id: string
     :param project_id: The ID of the project that owns the cluster.
@@ -170,6 +171,17 @@ class Cluster(object):
         # Make sure the response is a cluster, but don't return it.
         _parse_pb_any_to_native(op_result_pb.response,
                                 expected_type=_CLUSTER_TYPE_URL)
+
+    def delete(self, timeout_seconds=TIMEOUT_SECONDS):
+        """Delete this cluster.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+        """
+        self._cluster_conn.delete_cluster(
+            self.project_id, self.zone, self.cluster_id,
+            timeout_seconds=timeout_seconds)
 
 
 def _get_operation_id(operation_name, project_id, zone_name, cluster_id):

@@ -237,6 +237,32 @@ class TestCluster(unittest2.TestCase):
             ],
         )
 
+    def test_delete(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+
+        # Expected order of calls (on creds):
+        # - create_scoped_required (via ClusterConnection)
+        # - create_scoped_required (via OperationsConnection)
+        credentials = _MockWithAttachedMethods(False, False)
+        # The credentials will just be thrown away when we
+        # patch cluster._cluster_conn.
+        cluster = self._makeOne(PROJECT_ID, ZONE, CLUSTER_ID,
+                                credentials=credentials)
+
+        # Patch the connection with a mock.
+        delete_result = object()
+        cluster._cluster_conn = connection = _MockWithAttachedMethods(
+            delete_result)
+        cluster.delete(timeout_seconds=TIMEOUT_SECONDS)
+
+        self.assertEqual(connection._called, [
+            (
+                'delete_cluster',
+                (PROJECT_ID, ZONE, CLUSTER_ID),
+                {'timeout_seconds': TIMEOUT_SECONDS},
+            ),
+        ])
+
 
 class Test__get_operation_id(unittest2.TestCase):
 
