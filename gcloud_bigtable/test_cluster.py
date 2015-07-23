@@ -17,7 +17,7 @@ import unittest2
 
 
 PROJECT_ID = 'PROJECT_ID'
-ZONE = 'ZONE_NAME'
+ZONE = 'ZONE'
 CLUSTER_ID = 'CLUSTER_ID'
 TIMEOUT_SECONDS = 199
 
@@ -266,10 +266,10 @@ class TestCluster(unittest2.TestCase):
 
 class Test__get_operation_id(unittest2.TestCase):
 
-    def _callFUT(self, operation_name, project_id, zone_name, cluster_id):
+    def _callFUT(self, operation_name, project_id, zone, cluster_id):
         from gcloud_bigtable.cluster import _get_operation_id
         return _get_operation_id(operation_name, project_id,
-                                 zone_name, cluster_id)
+                                 zone, cluster_id)
 
     def test_it(self):
         expected_operation_id = 0
@@ -298,10 +298,10 @@ class Test__get_operation_id(unittest2.TestCase):
 
 class Test__wait_for_operation(unittest2.TestCase):
 
-    def _callFUT(self, cluster_connection, project_id, zone_name, cluster_id,
+    def _callFUT(self, cluster_connection, project_id, zone, cluster_id,
                  operation_id, timeout_seconds=None):
         from gcloud_bigtable.cluster import _wait_for_operation
-        return _wait_for_operation(cluster_connection, project_id, zone_name,
+        return _wait_for_operation(cluster_connection, project_id, zone,
                                    cluster_id, operation_id,
                                    timeout_seconds=timeout_seconds)
 

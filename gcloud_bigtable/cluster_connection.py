@@ -130,15 +130,15 @@ class ClusterConnection(Connection):
         self._ops_connection = OperationsConnection(
             CLUSTER_ADMIN_HOST, scope=self.SCOPE, credentials=credentials)
 
-    def get_operation(self, project_id, zone_name, cluster_id,
+    def get_operation(self, project_id, zone, cluster_id,
                       operation_id, timeout_seconds=TIMEOUT_SECONDS):
         """Gets a long-running operation.
 
         :type project_id: string
         :param project_id: The ID of the project owning the cluster.
 
-        :type zone_name: string
-        :param zone_name: The name of the zone owning the cluster.
+        :type zone: string
+        :param zone: The name of the zone owning the cluster.
 
         :type cluster_id: string
         :param cluster_id: The name of the cluster that initiatied the
@@ -157,7 +157,7 @@ class ClusterConnection(Connection):
         """
         operation_name = (
             'operations/projects/%s/zones/%s/clusters/%s/operations/%s' % (
-                project_id, zone_name, cluster_id, operation_id))
+                project_id, zone, cluster_id, operation_id))
         return self._ops_connection.get_operation(
             operation_name, timeout_seconds=timeout_seconds)
 
@@ -183,15 +183,15 @@ class ClusterConnection(Connection):
 
         return result_pb
 
-    def get_cluster(self, project_id, zone_name, cluster_id,
+    def get_cluster(self, project_id, zone, cluster_id,
                     timeout_seconds=TIMEOUT_SECONDS):
         """Gets cluster metadata.
 
         :type project_id: string
         :param project_id: The ID of the project owning the cluster.
 
-        :type zone_name: string
-        :param zone_name: The name of the zone owning the cluster.
+        :type zone: string
+        :param zone: The name of the zone owning the cluster.
 
         :type cluster_id: string
         :param cluster_id: The name of the cluster being retrieved.
@@ -204,7 +204,7 @@ class ClusterConnection(Connection):
         :returns: The response object for the get cluster request.
         """
         cluster_name = 'projects/%s/zones/%s/clusters/%s' % (
-            project_id, zone_name, cluster_id)
+            project_id, zone, cluster_id)
         request_pb = messages_pb2.GetClusterRequest(name=cluster_name)
         result_pb = None
         with make_cluster_stub(self._credentials) as stub:
@@ -235,7 +235,7 @@ class ClusterConnection(Connection):
 
         return result_pb
 
-    def create_cluster(self, project_id, zone_name, cluster_id,
+    def create_cluster(self, project_id, zone, cluster_id,
                        display_name=None, serve_nodes=3,
                        hdd_bytes=None, ssd_bytes=None,
                        timeout_seconds=TIMEOUT_SECONDS):
@@ -244,8 +244,8 @@ class ClusterConnection(Connection):
         :type project_id: string
         :param project_id: The ID of the project owning the cluster.
 
-        :type zone_name: string
-        :param zone_name: The name of the zone owning the cluster.
+        :type zone: string
+        :param zone: The name of the zone owning the cluster.
 
         :type cluster_id: string
         :param cluster_id: The name of the cluster being created.
@@ -273,7 +273,7 @@ class ClusterConnection(Connection):
         :rtype: :class:`data_pb2.Cluster`
         :returns: The response object for the create cluster request.
         """
-        zone_full_name = 'projects/%s/zones/%s' % (project_id, zone_name)
+        zone_full_name = 'projects/%s/zones/%s' % (project_id, zone)
         cluster = _prepare_cluster(display_name=display_name,
                                    serve_nodes=serve_nodes,
                                    hdd_bytes=hdd_bytes, ssd_bytes=ssd_bytes)
@@ -292,7 +292,7 @@ class ClusterConnection(Connection):
 
         return result_pb
 
-    def update_cluster(self, project_id, zone_name, cluster_id,
+    def update_cluster(self, project_id, zone, cluster_id,
                        display_name=None, serve_nodes=3,
                        hdd_bytes=None, ssd_bytes=None,
                        timeout_seconds=TIMEOUT_SECONDS):
@@ -301,8 +301,8 @@ class ClusterConnection(Connection):
         :type project_id: string
         :param project_id: The ID of the project owning the cluster.
 
-        :type zone_name: string
-        :param zone_name: The name of the zone owning the cluster.
+        :type zone: string
+        :param zone: The name of the zone owning the cluster.
 
         :type cluster_id: string
         :param cluster_id: The name of the cluster being updated.
@@ -331,7 +331,7 @@ class ClusterConnection(Connection):
         :returns: The updated cluster from the update cluster request.
         """
         cluster_name = 'projects/%s/zones/%s/clusters/%s' % (
-            project_id, zone_name, cluster_id)
+            project_id, zone, cluster_id)
         cluster = _prepare_cluster(name=cluster_name,
                                    display_name=display_name,
                                    serve_nodes=serve_nodes,
@@ -343,15 +343,15 @@ class ClusterConnection(Connection):
 
         return result_pb
 
-    def delete_cluster(self, project_id, zone_name, cluster_id,
+    def delete_cluster(self, project_id, zone, cluster_id,
                        timeout_seconds=TIMEOUT_SECONDS):
         """Deletes a cluster.
 
         :type project_id: string
         :param project_id: The ID of the project owning the cluster.
 
-        :type zone_name: string
-        :param zone_name: The name of the zone owning the cluster.
+        :type zone: string
+        :param zone: The name of the zone owning the cluster.
 
         :type cluster_id: string
         :param cluster_id: The name of the cluster being deleted.
@@ -364,7 +364,7 @@ class ClusterConnection(Connection):
         :returns: The empty response object for the delete cluster request.
         """
         cluster_name = 'projects/%s/zones/%s/clusters/%s' % (
-            project_id, zone_name, cluster_id)
+            project_id, zone, cluster_id)
         request_pb = messages_pb2.DeleteClusterRequest(name=cluster_name)
         result_pb = None
         with make_cluster_stub(self._credentials) as stub:
@@ -373,15 +373,15 @@ class ClusterConnection(Connection):
 
         return result_pb
 
-    def undelete_cluster(self, project_id, zone_name, cluster_id,
+    def undelete_cluster(self, project_id, zone, cluster_id,
                          timeout_seconds=TIMEOUT_SECONDS):
         """Undeletes a cluster that has been queued for deletion.
 
         :type project_id: string
         :param project_id: The ID of the project owning the cluster.
 
-        :type zone_name: string
-        :param zone_name: The name of the zone owning the cluster.
+        :type zone: string
+        :param zone: The name of the zone owning the cluster.
 
         :type cluster_id: string
         :param cluster_id: The name of the cluster being retrieved.
@@ -394,7 +394,7 @@ class ClusterConnection(Connection):
         :returns: The long running operation that will perform the undelete.
         """
         cluster_name = 'projects/%s/zones/%s/clusters/%s' % (
-            project_id, zone_name, cluster_id)
+            project_id, zone, cluster_id)
         request_pb = messages_pb2.UndeleteClusterRequest(name=cluster_name)
         result_pb = None
         with make_cluster_stub(self._credentials) as stub:

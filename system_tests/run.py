@@ -25,14 +25,14 @@ from gcloud_bigtable.cluster_connection import ClusterConnection
 
 
 PROJECT_ID = os.getenv('GCLOUD_TESTS_PROJECT_ID')
-TEST_ZONE_NAME = 'us-central1-c'
+TEST_ZONE = 'us-central1-c'
 TEST_CLUSTER_ID = 'gcloud-python-cluster'
 TEST_NUMBER_OF_NODES = 3
 EXPECTED_ZONES = (
     'asia-east1-b',
     'europe-west1-c',
     'us-central1-b',
-    TEST_ZONE_NAME,
+    TEST_ZONE,
 )
 
 
@@ -82,14 +82,14 @@ class TestClusterAdminAPI(unittest2.TestCase):
         self.assertEqual(cluster.serve_nodes, TEST_NUMBER_OF_NODES)
         self.assertEqual(cluster.display_name, TEST_CLUSTER_ID)
         full_name = 'projects/%s/zones/%s/clusters/%s' % (
-            PROJECT_ID, TEST_ZONE_NAME, TEST_CLUSTER_ID)
+            PROJECT_ID, TEST_ZONE, TEST_CLUSTER_ID)
         self.assertEqual(cluster.name, full_name)
         self.assertEqual(cluster.default_storage_type,
                          data_pb2.STORAGE_SSD)
 
     @unittest2.skip('Temporarily disabling while transitioning to create')
     def test_get_cluster(self):
-        result_pb = self._connection.get_cluster(PROJECT_ID, TEST_ZONE_NAME,
+        result_pb = self._connection.get_cluster(PROJECT_ID, TEST_ZONE,
                                                  TEST_CLUSTER_ID)
         self._assert_test_cluster(result_pb)
 

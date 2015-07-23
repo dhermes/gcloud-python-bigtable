@@ -184,7 +184,7 @@ class Cluster(object):
             timeout_seconds=timeout_seconds)
 
 
-def _get_operation_id(operation_name, project_id, zone_name, cluster_id):
+def _get_operation_id(operation_name, project_id, zone, cluster_id):
     """Parse a returned name of a long-running operation.
 
     We expect names to be of the form
@@ -197,8 +197,8 @@ def _get_operation_id(operation_name, project_id, zone_name, cluster_id):
     :type project_id: string
     :param project_id: The ID of the project owning the cluster.
 
-    :type zone_name: string
-    :param zone_name: The name of the zone owning the cluster.
+    :type zone: string
+    :param zone: The name of the zone owning the cluster.
 
     :type cluster_id: string
     :param cluster_id: The name of the cluster.
@@ -211,14 +211,14 @@ def _get_operation_id(operation_name, project_id, zone_name, cluster_id):
     op_segment, op_id = operation_name.rsplit('/', 1)
     expected_op_segment = (
         'operations/projects/%s/zones/%s/clusters/%s/operations' % (
-            project_id, zone_name, cluster_id))
+            project_id, zone, cluster_id))
     if expected_op_segment != op_segment:
         raise ValueError('Operation name in unexpected format')
 
     return int(op_id)
 
 
-def _wait_for_operation(cluster_connection, project_id, zone_name, cluster_id,
+def _wait_for_operation(cluster_connection, project_id, zone, cluster_id,
                         operation_id, timeout_seconds=TIMEOUT_SECONDS):
     """Wait for an operation to complete.
 
@@ -228,8 +228,8 @@ def _wait_for_operation(cluster_connection, project_id, zone_name, cluster_id,
     :type project_id: string
     :param project_id: The ID of the project owning the cluster.
 
-    :type zone_name: string
-    :param zone_name: The name of the zone owning the cluster.
+    :type zone: string
+    :param zone: The name of the zone owning the cluster.
 
     :type cluster_id: string
     :param cluster_id: The name of the cluster.
@@ -249,7 +249,7 @@ def _wait_for_operation(cluster_connection, project_id, zone_name, cluster_id,
     sleep_seconds = _BASE_OPERATION_WAIT_TIME
     while wait_count < _MAX_OPERATION_WAITS:
         op_result_pb = cluster_connection.get_operation(
-            project_id, zone_name, cluster_id,
+            project_id, zone, cluster_id,
             operation_id, timeout_seconds=timeout_seconds)
         if op_result_pb.done:
             break
