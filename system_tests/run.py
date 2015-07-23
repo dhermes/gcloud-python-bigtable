@@ -108,7 +108,13 @@ class TestClusterAdminAPI(unittest2.TestCase):
     def test_create_cluster(self):
         cluster_id = '%s-%d' % (TEST_CLUSTER_ID, 1000 * time.time())
         cluster = Cluster(PROJECT_ID, TEST_ZONE, cluster_id)
+        # Before creation, these are unset.
+        self.assertEqual(cluster.display_name, None)
+        self.assertEqual(cluster.serve_nodes, None)
         cluster.create(display_name=cluster_id)
+        # After creation, they will be unset.
+        self.assertEqual(cluster.display_name, cluster_id)
+        self.assertEqual(cluster.serve_nodes, 3)
 
         result_pb = cluster._cluster_conn.get_cluster(PROJECT_ID, TEST_ZONE,
                                                       cluster_id)

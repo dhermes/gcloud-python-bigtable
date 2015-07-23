@@ -207,11 +207,14 @@ class TestCluster(unittest2.TestCase):
         # Create mocks for the three helpers.
         mock_get_operation_id = _MockCalled(operation_id)
         mock_wait_for_operation = _MockCalled(get_op_result)
-        mock_parse_pb_any_to_native = _MockCalled()
+        parse_pb_result = object()
+        mock_parse_pb_any_to_native = _MockCalled(parse_pb_result)
+        mock_require_serve_nodes = _MockCalled(serve_nodes)
 
         with _Monkey(MUT, _get_operation_id=mock_get_operation_id,
                      _wait_for_operation=mock_wait_for_operation,
-                     _parse_pb_any_to_native=mock_parse_pb_any_to_native):
+                     _parse_pb_any_to_native=mock_parse_pb_any_to_native,
+                     _require_serve_nodes=mock_require_serve_nodes):
             method = getattr(cluster, method_name)
             method(display_name=display_name, serve_nodes=serve_nodes,
                    timeout_seconds=TIMEOUT_SECONDS)
@@ -232,6 +235,10 @@ class TestCluster(unittest2.TestCase):
             self,
             [(get_op_result.response,)],
             [{'expected_type': MUT._CLUSTER_TYPE_URL}],
+        )
+        mock_require_serve_nodes.check_called(
+            self,
+            [(parse_pb_result, serve_nodes)],
         )
         self.assertEqual(
             connection._called,
@@ -482,6 +489,48 @@ class Test__parse_pb_any_to_native(unittest2.TestCase):
         with _Monkey(MUT, _TYPE_URL_MAP=fake_type_url_map):
             with self.assertRaises(ValueError):
                 self._callFUT(any_val, expected_type=type_url1)
+
+
+class Test__require_serve_nodes(unittest2.TestCase):
+
+    def _callFUT(self, cluster_pb, serve_nodes):
+        from gcloud_bigtable.cluster import _require_serve_nodes
+        return _require_serve_nodes(cluster_pb, serve_nodes)
+
+    def test_it(self):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+        serve_nodes = 119
+        cluster_pb = data_pb2.Cluster(serve_nodes=serve_nodes)
+        result = self._callFUT(cluster_pb, serve_nodes)
+        self.assertEqual(result, serve_nodes)
+
+    def test_with_null_serve_nodes(self):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+        serve_nodes = None
+        actual_serve_nodes = 119
+        cluster_pb = data_pb2.Cluster(serve_nodes=actual_serve_nodes)
+        result = self._callFUT(cluster_pb, serve_nodes)
+        self.assertEqual(result, actual_serve_nodes)
+
+    def test_with_serve_nodes_unset_on_cluster(self):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+        serve_nodes = 119
+        cluster_pb = data_pb2.Cluster()
+        with self.assertRaises(ValueError):
+            self._callFUT(cluster_pb, serve_nodes)
+
+    def test_with_serve_nodes_disagreeing(self):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+        serve_nodes = 119
+        other_serve_nodes = 1000
+        self.assertNotEqual(serve_nodes, other_serve_nodes)
+        cluster_pb = data_pb2.Cluster(serve_nodes=other_serve_nodes)
+        with self.assertRaises(ValueError):
+            self._callFUT(cluster_pb, serve_nodes)
 
 
 class Test__get_contents(unittest2.TestCase):

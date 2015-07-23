@@ -136,7 +136,7 @@ class Cluster(object):
             private_key=_get_contents(private_key_path))
         return cls(project_id, zone, cluster_id, credentials=credentials)
 
-    def create(self, display_name=None, serve_nodes=None,
+    def create(self, display_name, serve_nodes=None,
                timeout_seconds=TIMEOUT_SECONDS):
         """Create this cluster.
 
@@ -146,8 +146,9 @@ class Cluster(object):
           which if not sent will end up as ``data_pb2.STORAGE_SSD``.
 
         :type display_name: string
-        :param display_name: (Optional) The display name for the cluster in
-                             the Cloud Console UI.
+        :param display_name: The display name for the cluster in the Cloud
+                             Console UI. (Must be between 4 and 30
+                             characters.)
 
         :type serve_nodes: integer
         :param serve_nodes: (Optional) The number of nodes in the cluster.
@@ -167,9 +168,11 @@ class Cluster(object):
             self._cluster_conn, self.project_id, self.zone, self.cluster_id,
             op_id, timeout_seconds=timeout_seconds)
         # Make sure the response is a cluster, but don't return it.
-        _parse_pb_any_to_native(op_result_pb.response,
-                                expected_type=_CLUSTER_TYPE_URL)
-        # After successfully parsed response, set the values created.
+        created_cluster_pb = _parse_pb_any_to_native(
+            op_result_pb.response, expected_type=_CLUSTER_TYPE_URL)
+
+        serve_nodes = _require_serve_nodes(created_cluster_pb, serve_nodes)
+        # After successfully parsing response, set the values created.
         self.display_name = display_name
         self.serve_nodes = serve_nodes
 
@@ -215,9 +218,11 @@ class Cluster(object):
             self._cluster_conn, self.project_id, self.zone, self.cluster_id,
             op_id, timeout_seconds=timeout_seconds)
         # Make sure the response is a cluster, but don't return it.
-        _parse_pb_any_to_native(op_result_pb.response,
-                                expected_type=_CLUSTER_TYPE_URL)
-        # After successfully parsed response, set the values updated.
+        updated_cluster_pb = _parse_pb_any_to_native(
+            op_result_pb.response, expected_type=_CLUSTER_TYPE_URL)
+
+        serve_nodes = _require_serve_nodes(updated_cluster_pb, serve_nodes)
+        # After successfully parsing response, set the values updated.
         self.display_name = display_name
         self.serve_nodes = serve_nodes
 
@@ -232,7 +237,8 @@ class Cluster(object):
             self.project_id, self.zone, self.cluster_id,
             timeout_seconds=timeout_seconds)
         # After deleting, the config values are no longer set.
-        self.display_name = self.serve_nodes = None
+        self.display_name = None
+        self.serve_nodes = None
 
 
 def _get_operation_id(operation_name, project_id, zone, cluster_id):
@@ -335,6 +341,37 @@ def _parse_pb_any_to_native(any_val, expected_type=None):
             expected_type, any_val.type_url))
     container_class = _TYPE_URL_MAP[any_val.type_url]
     return container_class.FromString(any_val.value)
+
+
+def _require_serve_nodes(cluster_pb, serve_nodes):
+    """Check that serve nodes agrees with the value on the cluster.
+
+    :type cluster_pb: :class:`data_pb2.Cluster`
+    :param cluster_pb: The cluster to check for ``serve_nodes``.
+
+    :type serve_nodes: integer or :class:`NoneType`
+    :param serve_nodes: The value to check against the cluster. If ``None``,
+                        will not be checked.
+
+    :rtype: integer
+    :returns: The value of serve nodes set on ``cluster_pb``.
+    :raises: :class:`ValueError` if the result returned from the
+             long-running operation does not contain the ``serve_nodes``
+             value or if the value returned disagrees with the value passed
+             with the request (if that value is not null).
+    """
+    # Make sure `serve_nodes` is set on the response.
+    # NOTE: HasField() doesn't work in protobuf>=3.0.0a3
+    all_fields = set([field.name for field in cluster_pb._fields])
+    if 'serve_nodes' not in all_fields:
+        raise ValueError('Cluster response does not contain serve_nodes.')
+    if serve_nodes is None:
+        serve_nodes = cluster_pb.serve_nodes
+    elif serve_nodes != cluster_pb.serve_nodes:
+        raise ValueError('Cluster returned serve_nodes value disagreeing '
+                         'with value passed in.')
+
+    return serve_nodes
 
 
 def _get_contents(filename):
