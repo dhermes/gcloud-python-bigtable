@@ -159,6 +159,84 @@ class TestCluster(unittest2.TestCase):
         # Load private key (via _get_contents) from the key path.
         mock_get_contents.check_called(self, [(private_key_path,)])
 
+    def test_create(self):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+        from gcloud_bigtable._generated import operations_pb2
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import cluster as MUT
+
+        # Expected order of calls (on creds):
+        # - create_scoped_required (via ClusterConnection)
+        # - create_scoped_required (via OperationsConnection)
+        credentials = _MockWithAttachedMethods(False, False)
+        # The credentials will just be thrown away when we
+        # patch cluster._cluster_conn.
+        cluster = self._makeOne(PROJECT_ID, ZONE, CLUSTER_ID,
+                                credentials=credentials)
+
+        display_name = 'DISPLAY_NAME'
+        serve_nodes = 8
+        hdd_bytes = 1337
+        ssd_bytes = 42
+        operation_id = 77
+        op_name = 'OP_NAME'
+
+        # Set-up request to return from a mock connection.
+        create_result = data_pb2.Cluster(
+            current_operation=operations_pb2.Operation(
+                name=op_name,
+            ),
+        )
+        get_op_result = operations_pb2.Operation()
+        # Patch the connection with a mock.
+        cluster._cluster_conn = connection = _MockWithAttachedMethods(
+            create_result)
+        # Create mocks for the three helpers.
+        mock_get_operation_id = _MockCalled(operation_id)
+        mock_wait_for_operation = _MockCalled(get_op_result)
+        mock_parse_pb_any_to_native = _MockCalled()
+
+        with _Monkey(MUT, _get_operation_id=mock_get_operation_id,
+                     _wait_for_operation=mock_wait_for_operation,
+                     _parse_pb_any_to_native=mock_parse_pb_any_to_native):
+            cluster.create(display_name=display_name, serve_nodes=serve_nodes,
+                           hdd_bytes=hdd_bytes, ssd_bytes=ssd_bytes,
+                           timeout_seconds=TIMEOUT_SECONDS)
+
+        mock_get_operation_id.check_called(
+            self,
+            [(op_name, PROJECT_ID, ZONE, CLUSTER_ID)],
+        )
+        mock_wait_for_operation.check_called(
+            self,
+            [(connection, PROJECT_ID, ZONE, CLUSTER_ID, operation_id)],
+            [{'timeout_seconds': TIMEOUT_SECONDS}],
+        )
+        mock_parse_pb_any_to_native.check_called(
+            self,
+            [(get_op_result.response,)],
+            [{'expected_type': MUT._CLUSTER_TYPE_URL}],
+        )
+        self.assertEqual(
+            connection._called,
+            [
+                (
+                    'create_cluster',
+                    (PROJECT_ID, ZONE, CLUSTER_ID),
+                    {
+                        'display_name': display_name,
+                        'hdd_bytes': hdd_bytes,
+                        'serve_nodes': serve_nodes,
+                        'ssd_bytes': ssd_bytes,
+                        'timeout_seconds': TIMEOUT_SECONDS,
+                    },
+                ),
+            ],
+        )
+
 
 class Test__get_operation_id(unittest2.TestCase):
 
