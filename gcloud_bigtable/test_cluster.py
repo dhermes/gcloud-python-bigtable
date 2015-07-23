@@ -17,7 +17,7 @@ import unittest2
 
 
 PROJECT_ID = 'PROJECT_ID'
-ZONE_NAME = 'ZONE_NAME'
+ZONE = 'ZONE_NAME'
 CLUSTER_ID = 'CLUSTER_ID'
 TIMEOUT_SECONDS = 199
 
@@ -28,8 +28,8 @@ class TestCluster(unittest2.TestCase):
         from gcloud_bigtable.cluster import Cluster
         return Cluster
 
-    def _makeOne(self, credentials=None):
-        return self._getTargetClass()(credentials=credentials)
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
 
     def test_constructor_default(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
@@ -46,8 +46,11 @@ class TestCluster(unittest2.TestCase):
         mock_creds_class = _MockWithAttachedMethods(credentials_result)
 
         with _Monkey(MUT, GoogleCredentials=mock_creds_class):
-            cluster = self._makeOne()
+            cluster = self._makeOne(PROJECT_ID, ZONE, CLUSTER_ID)
 
+        self.assertEqual(cluster.project_id, PROJECT_ID)
+        self.assertEqual(cluster.zone, ZONE)
+        self.assertEqual(cluster.cluster_id, CLUSTER_ID)
         self.assertEqual(cluster._credentials, credentials_result)
         self.assertTrue(isinstance(cluster._cluster_conn, ClusterConnection))
         self.assertEqual(cluster._cluster_conn._credentials,
@@ -67,8 +70,12 @@ class TestCluster(unittest2.TestCase):
         # - create_scoped_required (via ClusterConnection)
         # - create_scoped_required (via OperationsConnection)
         credentials = _MockWithAttachedMethods(False, False)
-        cluster = self._makeOne(credentials=credentials)
+        cluster = self._makeOne(PROJECT_ID, ZONE, CLUSTER_ID,
+                                credentials=credentials)
 
+        self.assertEqual(cluster.project_id, PROJECT_ID)
+        self.assertEqual(cluster.zone, ZONE)
+        self.assertEqual(cluster.cluster_id, CLUSTER_ID)
         self.assertEqual(cluster._credentials, credentials)
         self.assertTrue(isinstance(cluster._cluster_conn, ClusterConnection))
         self.assertEqual(cluster._cluster_conn._credentials, credentials)
@@ -94,8 +101,12 @@ class TestCluster(unittest2.TestCase):
 
         with _Monkey(MUT,
                      _get_application_default_credential_from_file=get_adc):
-            cluster = klass.from_service_account_json(json_credentials_path)
+            cluster = klass.from_service_account_json(
+                json_credentials_path, PROJECT_ID, ZONE, CLUSTER_ID)
 
+        self.assertEqual(cluster.project_id, PROJECT_ID)
+        self.assertEqual(cluster.zone, ZONE)
+        self.assertEqual(cluster.cluster_id, CLUSTER_ID)
         self.assertEqual(cluster._credentials, credentials)
         self.assertTrue(isinstance(cluster._cluster_conn, ClusterConnection))
         self.assertEqual(cluster._cluster_conn._credentials, credentials)
@@ -126,9 +137,12 @@ class TestCluster(unittest2.TestCase):
 
         with _Monkey(MUT, SignedJwtAssertionCredentials=signed_creds,
                      _get_contents=mock_get_contents):
-            cluster = klass.from_service_account_p12(client_email,
-                                                     private_key_path)
+            cluster = klass.from_service_account_p12(
+                client_email, private_key_path, PROJECT_ID, ZONE, CLUSTER_ID)
 
+        self.assertEqual(cluster.project_id, PROJECT_ID)
+        self.assertEqual(cluster.zone, ZONE)
+        self.assertEqual(cluster.cluster_id, CLUSTER_ID)
         self.assertEqual(cluster._credentials, credentials)
         self.assertTrue(isinstance(cluster._cluster_conn, ClusterConnection))
         self.assertEqual(cluster._cluster_conn._credentials, credentials)
@@ -157,25 +171,25 @@ class Test__get_operation_id(unittest2.TestCase):
         expected_operation_id = 0
         operation_name = (
             'operations/projects/%s/zones/%s/clusters/%s/operations/%s' % (
-                PROJECT_ID, ZONE_NAME, CLUSTER_ID, expected_operation_id))
+                PROJECT_ID, ZONE, CLUSTER_ID, expected_operation_id))
         operation_id = self._callFUT(operation_name, PROJECT_ID,
-                                     ZONE_NAME, CLUSTER_ID)
+                                     ZONE, CLUSTER_ID)
         self.assertEqual(operation_id, expected_operation_id)
 
     def test_non_integer_id(self):
         expected_operation_id = 'FOO'
         operation_name = (
             'operations/projects/%s/zones/%s/clusters/%s/operations/%s' % (
-                PROJECT_ID, ZONE_NAME, CLUSTER_ID, expected_operation_id))
+                PROJECT_ID, ZONE, CLUSTER_ID, expected_operation_id))
         with self.assertRaises(ValueError):
             self._callFUT(operation_name, PROJECT_ID,
-                          ZONE_NAME, CLUSTER_ID)
+                          ZONE, CLUSTER_ID)
 
     def test_failed_format(self):
         operation_name = 'BAD/FORMAT'
         with self.assertRaises(ValueError):
             self._callFUT(operation_name, PROJECT_ID,
-                          ZONE_NAME, CLUSTER_ID)
+                          ZONE, CLUSTER_ID)
 
 
 class Test__wait_for_operation(unittest2.TestCase):
@@ -204,7 +218,7 @@ class Test__wait_for_operation(unittest2.TestCase):
         mock_sleep = _MockCalled()
 
         with _Monkey(time, sleep=mock_sleep):
-            result = self._callFUT(connection, PROJECT_ID, ZONE_NAME,
+            result = self._callFUT(connection, PROJECT_ID, ZONE,
                                    CLUSTER_ID, operation_id,
                                    timeout_seconds=TIMEOUT_SECONDS)
 
@@ -215,7 +229,7 @@ class Test__wait_for_operation(unittest2.TestCase):
         mock_sleep.check_called(self, sleep_args)
         conn_call = (
             'get_operation',
-            (PROJECT_ID, ZONE_NAME, CLUSTER_ID, operation_id),
+            (PROJECT_ID, ZONE, CLUSTER_ID, operation_id),
             {'timeout_seconds': TIMEOUT_SECONDS},
         )
         # We expect 3 calls since first 2 ops are not done.
@@ -239,7 +253,7 @@ class Test__wait_for_operation(unittest2.TestCase):
 
         with _Monkey(time, sleep=mock_sleep):
             with self.assertRaises(ValueError):
-                self._callFUT(connection, PROJECT_ID, ZONE_NAME,
+                self._callFUT(connection, PROJECT_ID, ZONE,
                               CLUSTER_ID, operation_id,
                               timeout_seconds=TIMEOUT_SECONDS)
 
@@ -250,7 +264,7 @@ class Test__wait_for_operation(unittest2.TestCase):
         mock_sleep.check_called(self, sleep_args)
         conn_call = (
             'get_operation',
-            (PROJECT_ID, ZONE_NAME, CLUSTER_ID, operation_id),
+            (PROJECT_ID, ZONE, CLUSTER_ID, operation_id),
             {'timeout_seconds': TIMEOUT_SECONDS},
         )
         # We expect 3 calls since first 2 ops are not done.

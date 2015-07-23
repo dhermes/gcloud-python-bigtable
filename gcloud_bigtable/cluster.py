@@ -43,19 +43,33 @@ class Cluster(object):
 
     * create itself
 
+    :type project_id: string
+    :param project_id: The ID of the project that owns the cluster.
+
+    :type zone: string
+    :param zone: The name of the zone where the cluster will be created.
+
+    :type cluster_id: string
+    :param cluster_id: The ID of the cluster to be created.
+
     :type credentials: :class:`oauth2client.client.OAuth2Credentials` or
                        :class:`NoneType`
     :param credentials: The OAuth2 Credentials to use for this cluster.
     """
 
-    def __init__(self, credentials=None):
+    def __init__(self, project_id, zone, cluster_id, credentials=None):
         if credentials is None:
             credentials = GoogleCredentials.get_application_default()
         self._credentials = credentials
         self._cluster_conn = ClusterConnection(credentials=self._credentials)
 
+        self.project_id = project_id
+        self.zone = zone
+        self.cluster_id = cluster_id
+
     @classmethod
-    def from_service_account_json(cls, json_credentials_path):
+    def from_service_account_json(cls, json_credentials_path,
+                                  project_id, zone, cluster_id):
         """Factory to retrieve JSON credentials while creating cluster object.
 
         :type json_credentials_path: string
@@ -66,16 +80,26 @@ class Cluster(object):
                                       other credentials information (downloaded
                                       from the Google APIs console).
 
+        :type project_id: string
+        :param project_id: The ID of the project that owns the cluster.
+
+        :type zone: string
+        :param zone: The name of the zone where the cluster will be created.
+
+        :type cluster_id: string
+        :param cluster_id: The ID of the cluster to be created.
+
         :rtype: :class:`gcloud_bigtable.Cluster`
         :returns: The cluster object created with the retrieved JSON
                   credentials.
         """
         credentials = _get_application_default_credential_from_file(
             json_credentials_path)
-        return cls(credentials=credentials)
+        return cls(project_id, zone, cluster_id, credentials=credentials)
 
     @classmethod
-    def from_service_account_p12(cls, client_email, private_key_path):
+    def from_service_account_p12(cls, client_email, private_key_path,
+                                 project_id, zone, cluster_id):
         """Factory to retrieve P12 credentials while creating cluster object.
 
         .. note::
@@ -90,6 +114,15 @@ class Cluster(object):
                                  given to you when you created the service
                                  account). This file must be in P12 format.
 
+        :type project_id: string
+        :param project_id: The ID of the project that owns the cluster.
+
+        :type zone: string
+        :param zone: The name of the zone where the cluster will be created.
+
+        :type cluster_id: string
+        :param cluster_id: The ID of the cluster to be created.
+
         :rtype: :class:`gcloud_bigtable.Cluster`
         :returns: The cluster object created with the retrieved P12
                   credentials.
@@ -97,7 +130,7 @@ class Cluster(object):
         credentials = SignedJwtAssertionCredentials(
             service_account_name=client_email,
             private_key=_get_contents(private_key_path))
-        return cls(credentials=credentials)
+        return cls(project_id, zone, cluster_id, credentials=credentials)
 
 
 def _get_operation_id(operation_name, project_id, zone_name, cluster_id):
