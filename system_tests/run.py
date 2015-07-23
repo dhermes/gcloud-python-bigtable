@@ -18,10 +18,13 @@ import os
 import time
 import unittest2
 
+from oauth2client.client import GoogleCredentials
+
 from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable.cluster import Cluster
+from gcloud_bigtable.cluster_connection import ClusterConnection
 
 
 PROJECT_ID = os.getenv('GCLOUD_TESTS_PROJECT_ID')
@@ -34,6 +37,19 @@ EXPECTED_ZONES = (
     'us-central1-b',
     TEST_ZONE,
 )
+EXISTING_CLUSTER_NAMES = []
+
+
+def setUpModule():
+    credentials = GoogleCredentials.get_application_default()
+    connection = ClusterConnection(credentials)
+    result_pb = connection.list_clusters(PROJECT_ID)
+
+    if len(result_pb.failed_zones) != 0:
+        raise ValueError('List clusters failed in module set up.')
+
+    for cluster_pb in result_pb.clusters:
+        EXISTING_CLUSTER_NAMES.append(cluster_pb.name)
 
 
 class TestClusterAdminAPI(unittest2.TestCase):
@@ -110,7 +126,11 @@ class TestClusterAdminAPI(unittest2.TestCase):
         result_pb = self._connection.list_clusters(PROJECT_ID)
 
         self.assertEqual(list(result_pb.failed_zones), [])
+        # We just want to look at the clusters that did not exist before this
+        # test module began running.
+        test_clusters = [cluster_pb for cluster_pb in result_pb.clusters
+                         if cluster_pb.name not in EXISTING_CLUSTER_NAMES]
         # We assume all test cases have cleaned up created clusters and
         # the only one remaining is the one from `setUpClass`.
-        cluster, = result_pb.clusters
+        cluster, = test_clusters
         self._assert_test_cluster(cluster)
