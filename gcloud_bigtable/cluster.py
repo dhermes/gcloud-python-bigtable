@@ -22,6 +22,7 @@ from oauth2client.client import SignedJwtAssertionCredentials
 from oauth2client.client import _get_application_default_credential_from_file
 
 from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
+from gcloud_bigtable._logging import LOGGER
 from gcloud_bigtable.cluster_connection import ClusterConnection
 from gcloud_bigtable.connection import TIMEOUT_SECONDS
 
@@ -253,6 +254,7 @@ def _wait_for_operation(cluster_connection, project_id, zone, cluster_id,
             operation_id, timeout_seconds=timeout_seconds)
         if op_result_pb.done:
             break
+        LOGGER.debug('Sleep for %d seconds', sleep_seconds)
         time.sleep(sleep_seconds)
         wait_count += 1
         sleep_seconds *= 2  # exponential backoff
