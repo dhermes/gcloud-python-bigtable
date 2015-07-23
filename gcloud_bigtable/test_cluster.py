@@ -171,7 +171,7 @@ class TestCluster(unittest2.TestCase):
         # Load private key (via _get_contents) from the key path.
         mock_get_contents.check_called(self, [(private_key_path,)])
 
-    def test_create(self):
+    def _create_or_update_helper(self, method_name, display_name, serve_nodes):
         from gcloud_bigtable._generated import (
             bigtable_cluster_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import operations_pb2
@@ -191,13 +191,11 @@ class TestCluster(unittest2.TestCase):
         self.assertEqual(cluster.display_name, None)
         self.assertEqual(cluster.serve_nodes, None)
 
-        display_name = 'DISPLAY_NAME'
-        serve_nodes = 8
         operation_id = 77
         op_name = 'OP_NAME'
 
         # Set-up request to return from a mock connection.
-        create_result = data_pb2.Cluster(
+        api_action_result = data_pb2.Cluster(
             current_operation=operations_pb2.Operation(
                 name=op_name,
             ),
@@ -205,7 +203,7 @@ class TestCluster(unittest2.TestCase):
         get_op_result = operations_pb2.Operation()
         # Patch the connection with a mock.
         cluster._cluster_conn = connection = _MockWithAttachedMethods(
-            create_result)
+            api_action_result)
         # Create mocks for the three helpers.
         mock_get_operation_id = _MockCalled(operation_id)
         mock_wait_for_operation = _MockCalled(get_op_result)
@@ -214,8 +212,9 @@ class TestCluster(unittest2.TestCase):
         with _Monkey(MUT, _get_operation_id=mock_get_operation_id,
                      _wait_for_operation=mock_wait_for_operation,
                      _parse_pb_any_to_native=mock_parse_pb_any_to_native):
-            cluster.create(display_name=display_name, serve_nodes=serve_nodes,
-                           timeout_seconds=TIMEOUT_SECONDS)
+            method = getattr(cluster, method_name)
+            method(display_name=display_name, serve_nodes=serve_nodes,
+                   timeout_seconds=TIMEOUT_SECONDS)
 
         self.assertEqual(cluster.display_name, display_name)
         self.assertEqual(cluster.serve_nodes, serve_nodes)
@@ -238,7 +237,7 @@ class TestCluster(unittest2.TestCase):
             connection._called,
             [
                 (
-                    'create_cluster',
+                    '%s_cluster' % (method_name,),
                     (PROJECT_ID, ZONE, CLUSTER_ID),
                     {
                         'display_name': display_name,
@@ -248,6 +247,45 @@ class TestCluster(unittest2.TestCase):
                 ),
             ],
         )
+
+    def test_create(self):
+        display_name = 'DISPLAY_NAME'
+        serve_nodes = 8
+        self._create_or_update_helper('create', display_name, serve_nodes)
+
+    def test_update(self):
+        display_name = 'DISPLAY_NAME'
+        serve_nodes = 8
+        self._create_or_update_helper('update', display_name, serve_nodes)
+
+    def test_update_fallback_to_display_name(self):
+        serve_nodes = 8
+        self._create_or_update_helper('update', None, serve_nodes)
+
+    def test_update_fallback_to_serve_nodes(self):
+        display_name = 'DISPLAY_NAME'
+        self._create_or_update_helper('update', display_name, None)
+
+    def test_update_without_updates(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+
+        # Expected order of calls (on creds):
+        # - create_scoped_required (via ClusterConnection)
+        # - create_scoped_required (via OperationsConnection)
+        credentials = _MockWithAttachedMethods(False, False)
+        # The credentials will just be thrown away when we
+        # patch cluster._cluster_conn.
+        cluster = self._makeOne(PROJECT_ID, ZONE, CLUSTER_ID,
+                                credentials=credentials)
+
+        # Patch the connection with a mock that has **no** responses.
+        cluster._cluster_conn = connection = _MockWithAttachedMethods()
+        self.assertEqual(cluster.display_name, None)
+        self.assertEqual(cluster.serve_nodes, None)
+
+        cluster.update()
+        # Ensure that update did not call any methods on the connection.
+        self.assertEqual(connection._called, [])
 
     def test_delete(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods

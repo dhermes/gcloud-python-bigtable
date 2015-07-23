@@ -136,7 +136,7 @@ class Cluster(object):
             private_key=_get_contents(private_key_path))
         return cls(project_id, zone, cluster_id, credentials=credentials)
 
-    def create(self, display_name=None, serve_nodes=3,
+    def create(self, display_name=None, serve_nodes=None,
                timeout_seconds=TIMEOUT_SECONDS):
         """Create this cluster.
 
@@ -151,7 +151,6 @@ class Cluster(object):
 
         :type serve_nodes: integer
         :param serve_nodes: (Optional) The number of nodes in the cluster.
-                            Defaults to 3.
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
@@ -171,6 +170,54 @@ class Cluster(object):
         _parse_pb_any_to_native(op_result_pb.response,
                                 expected_type=_CLUSTER_TYPE_URL)
         # After successfully parsed response, set the values created.
+        self.display_name = display_name
+        self.serve_nodes = serve_nodes
+
+    def update(self, display_name=None, serve_nodes=None,
+               timeout_seconds=TIMEOUT_SECONDS):
+        """Update this cluster.
+
+        .. note::
+          For now, we leave out the arguments ``hdd_bytes`` and ``ssd_bytes``
+          (both integers) and also the ``default_storage_type`` (an enum)
+          which if not sent will end up as ``data_pb2.STORAGE_SSD``.
+
+        :type display_name: string
+        :param display_name: (Optional) The display name for the cluster in
+                             the Cloud Console UI. Defaults to value set on
+                             current cluster.
+
+        :type serve_nodes: integer
+        :param serve_nodes: (Optional) The number of nodes in the cluster.
+                            Defaults to value set on current cluster.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+        """
+        if display_name is None and serve_nodes is None:
+            # No values have been passed in to update.
+            return
+
+        if display_name is None:
+            display_name = self.display_name
+        if serve_nodes is None:
+            serve_nodes = self.serve_nodes
+
+        result_pb = self._cluster_conn.update_cluster(
+            self.project_id, self.zone, self.cluster_id,
+            display_name=display_name, serve_nodes=serve_nodes,
+            timeout_seconds=timeout_seconds)
+
+        op_id = _get_operation_id(result_pb.current_operation.name,
+                                  self.project_id, self.zone, self.cluster_id)
+        op_result_pb = _wait_for_operation(
+            self._cluster_conn, self.project_id, self.zone, self.cluster_id,
+            op_id, timeout_seconds=timeout_seconds)
+        # Make sure the response is a cluster, but don't return it.
+        _parse_pb_any_to_native(op_result_pb.response,
+                                expected_type=_CLUSTER_TYPE_URL)
+        # After successfully parsed response, set the values updated.
         self.display_name = display_name
         self.serve_nodes = serve_nodes
 

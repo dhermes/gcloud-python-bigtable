@@ -53,7 +53,7 @@ def make_cluster_stub(credentials):
         root_certificates=get_certs())
 
 
-def _prepare_cluster(name=None, display_name=None, serve_nodes=3):
+def _prepare_cluster(name=None, display_name=None, serve_nodes=None):
     """Create a cluster object with many optional arguments.
 
     .. note::
@@ -71,7 +71,6 @@ def _prepare_cluster(name=None, display_name=None, serve_nodes=3):
 
     :type serve_nodes: integer
     :param serve_nodes: (Optional) The number of nodes in the cluster.
-                        Defaults to 3.
 
     :rtype: :class:`data_pb2.Cluster`
     :returns: The cluster object required.
@@ -84,7 +83,9 @@ def _prepare_cluster(name=None, display_name=None, serve_nodes=3):
     if display_name is not None:
         cluster_kwargs['display_name'] = display_name
 
-    cluster_kwargs['serve_nodes'] = serve_nodes
+    if serve_nodes is not None:
+        cluster_kwargs['serve_nodes'] = serve_nodes
+
     return data_pb2.Cluster(**cluster_kwargs)
 
 
@@ -219,7 +220,7 @@ class ClusterConnection(Connection):
         return result_pb
 
     def create_cluster(self, project_id, zone, cluster_id,
-                       display_name=None, serve_nodes=3,
+                       display_name=None, serve_nodes=None,
                        timeout_seconds=TIMEOUT_SECONDS):
         """Create a new cluster.
 
@@ -243,7 +244,6 @@ class ClusterConnection(Connection):
 
         :type serve_nodes: integer
         :param serve_nodes: (Optional) The number of nodes in the cluster.
-                            Defaults to 3.
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
@@ -271,7 +271,7 @@ class ClusterConnection(Connection):
         return result_pb
 
     def update_cluster(self, project_id, zone, cluster_id,
-                       display_name=None, serve_nodes=3,
+                       display_name=None, serve_nodes=None,
                        timeout_seconds=TIMEOUT_SECONDS):
         """Updates an existing cluster.
 
@@ -295,7 +295,6 @@ class ClusterConnection(Connection):
 
         :type serve_nodes: integer
         :param serve_nodes: (Optional) The number of nodes in the cluster.
-                            Defaults to 3.
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.

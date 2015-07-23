@@ -235,7 +235,7 @@ class TestClusterConnection(unittest2.TestCase):
         self.assertEqual(request_pb.cluster, DEFAULT_CLUSTER)
         self.assertEqual(prepare_cluster_kwargs, [{
             'display_name': None,
-            'serve_nodes': 3,
+            'serve_nodes': None,
         }])
 
     def test_update_cluster(self):
@@ -268,7 +268,7 @@ class TestClusterConnection(unittest2.TestCase):
         self.assertEqual(prepare_cluster_kwargs, [{
             'display_name': None,
             'name': 'projects/PROJECT_ID/zones/ZONE/clusters/CLUSTER_ID',
-            'serve_nodes': 3,
+            'serve_nodes': None,
         }])
 
     def test_delete_cluster(self):
@@ -314,7 +314,7 @@ class TestClusterConnection(unittest2.TestCase):
 
 class Test__prepare_cluster(unittest2.TestCase):
 
-    def _callFUT(self, name=None, display_name=None, serve_nodes=3):
+    def _callFUT(self, name=None, display_name=None, serve_nodes=None):
         from gcloud_bigtable.cluster_connection import _prepare_cluster
         return _prepare_cluster(name=name, display_name=display_name,
                                 serve_nodes=serve_nodes)
@@ -322,8 +322,7 @@ class Test__prepare_cluster(unittest2.TestCase):
     def test_defaults(self):
         cluster = self._callFUT()
         all_fields = set(field.name for field in cluster._fields.keys())
-        self.assertEqual(cluster.serve_nodes, 3)
-        self.assertEqual(all_fields, set(['serve_nodes']))
+        self.assertEqual(all_fields, set())
 
     def test_non_default_arguments(self):
         NAME = 'NAME'
