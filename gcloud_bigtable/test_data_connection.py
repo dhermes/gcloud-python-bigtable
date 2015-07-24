@@ -13,6 +13,8 @@
 # limitations under the License.
 
 
+import unittest2
+
 from gcloud_bigtable._grpc_mocks import GRPCMockTestMixin
 
 
@@ -57,13 +59,30 @@ class TestDataConnection(GRPCMockTestMixin):
         ])
 
     def test_read_rows(self):
-        from gcloud_bigtable._testing import _Credentials
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import data_connection as MUT
 
-        table_name = object()
-        self.assertRaises(NotImplementedError, connection.read_rows,
-                          table_name)
+        request_obj = object()
+        mock_prepare_read = _MockCalled(request_obj)
+
+        def call_method(connection):
+            return connection.read_rows(TABLE_NAME)
+
+        with _Monkey(MUT, _prepare_read=mock_prepare_read):
+            self._grpc_call_helper(call_method, 'ReadRows', request_obj)
+
+        mock_prepare_read.check_called(
+            self,
+            [(TABLE_NAME,)],
+            [{
+                'allow_row_interleaving': None,
+                'filter_': None,
+                'num_rows_limit': None,
+                'row_key': None,
+                'row_range': None,
+            }],
+        )
 
     def test_sample_row_keys(self):
         from gcloud_bigtable._generated import (
@@ -106,3 +125,73 @@ class TestDataConnection(GRPCMockTestMixin):
         self.assertRaises(NotImplementedError,
                           connection.read_modify_write_row,
                           table_name, row_key)
+
+
+class Test__prepare_read(unittest2.TestCase):
+
+    def _callFUT(self, table_name, row_key=None, row_range=None,
+                 filter_=None, allow_row_interleaving=None,
+                 num_rows_limit=None):
+        from gcloud_bigtable.data_connection import _prepare_read
+        return _prepare_read(
+            table_name, row_key=row_key, row_range=row_range, filter_=filter_,
+            allow_row_interleaving=allow_row_interleaving,
+            num_rows_limit=num_rows_limit)
+
+    def test_defaults(self):
+        read_request = self._callFUT(TABLE_NAME)
+        all_fields = set(field.name for field in read_request._fields.keys())
+        self.assertEqual(all_fields, set(['table_name']))
+        self.assertEqual(read_request.table_name, TABLE_NAME)
+
+    def test_both_row_key_and_row_range(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        row_key = b'foobar'
+        row_range = data_pb2.RowRange(
+            start_key=b'baz',
+            end_key=b'quux',
+        )
+        with self.assertRaises(ValueError):
+            self._callFUT(TABLE_NAME, row_key=row_key, row_range=row_range)
+
+    def test_non_default_arguments_excluding_row_range(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        row_key = b'foobar'
+        filter_ = data_pb2.RowFilter(row_sample_filter=0.25)
+        allow_row_interleaving = True
+        num_rows_limit = 1001
+        read_request = self._callFUT(
+            TABLE_NAME, row_key=row_key, filter_=filter_,
+            allow_row_interleaving=allow_row_interleaving,
+            num_rows_limit=num_rows_limit)
+
+        all_fields = set(field.name for field in read_request._fields.keys())
+        self.assertEqual(all_fields, set([
+            'allow_row_interleaving',
+            'filter',
+            'num_rows_limit',
+            'row_key',
+            'table_name',
+        ]))
+        self.assertEqual(read_request.table_name, TABLE_NAME)
+        self.assertEqual(read_request.allow_row_interleaving,
+                         allow_row_interleaving)
+        self.assertEqual(read_request.filter, filter_)
+        self.assertEqual(read_request.num_rows_limit, num_rows_limit)
+        self.assertEqual(read_request.row_key, row_key)
+
+    def test_non_default_arguments_only_row_range(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        row_range = data_pb2.RowRange(
+            start_key=b'baz',
+            end_key=b'quux',
+        )
+        read_request = self._callFUT(TABLE_NAME, row_range=row_range)
+
+        all_fields = set(field.name for field in read_request._fields.keys())
+        self.assertEqual(all_fields, set([
+            'row_range',
+            'table_name',
+        ]))
+        self.assertEqual(read_request.table_name, TABLE_NAME)
+        self.assertEqual(read_request.row_range, row_range)
