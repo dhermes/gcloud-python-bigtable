@@ -166,12 +166,16 @@ class TestTableConnection(GRPCMockTestMixin):
                           CLUSTER_NAME, TABLE_ID, COLUMN_FAMILY_ID)
 
     def test_delete_column_family(self):
-        from gcloud_bigtable._testing import _Credentials
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
+        from gcloud_bigtable._generated import (
+            bigtable_table_service_messages_pb2 as messages_pb2)
 
-        cluster_name = object()
-        table_name = 'table_name'
-        column_family = 'column_family'
-        self.assertRaises(NotImplementedError, connection.delete_column_family,
-                          cluster_name, table_name, column_family)
+        column_family_name = '%s/tables/%s/columnFamilies/%s' % (
+            CLUSTER_NAME, TABLE_ID, COLUMN_FAMILY_ID)
+        request_obj = messages_pb2.DeleteColumnFamilyRequest(
+            name=column_family_name)
+
+        def call_method(connection):
+            return connection.delete_column_family(
+                CLUSTER_NAME, TABLE_ID, COLUMN_FAMILY_ID)
+
+        self._grpc_call_helper(call_method, 'DeleteColumnFamily', request_obj)
