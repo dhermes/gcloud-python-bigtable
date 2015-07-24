@@ -28,9 +28,25 @@
 # NOTE: This path must be relative due to the use of
 #       os.walk in astroid.modutils.get_module_files.
 # RATIONALE:
-#   _datastore_v1_pb2.py:   protobuf-generated code.
+#   *_pb2.py:   protobuf-generated code.
 ignore =
-    _datastore_v1_pb2.py
+    annotations_pb2.py
+    any_pb2.py
+    bigtable_cluster_data_pb2.py
+    bigtable_cluster_service_messages_pb2.py
+    bigtable_cluster_service_pb2.py
+    bigtable_data_pb2.py
+    bigtable_service_messages_pb2.py
+    bigtable_service_pb2.py
+    bigtable_table_data_pb2.py
+    bigtable_table_service_messages_pb2.py
+    bigtable_table_service_pb2.py
+    duration_pb2.py
+    empty_pb2.py
+    http_pb2.py
+    operations_pb2.py
+    status_pb2.py
+    timestamp_pb2.py
 
 # Pickle collected data for later comparisons.
 # DEFAULT:  persistent=yes
