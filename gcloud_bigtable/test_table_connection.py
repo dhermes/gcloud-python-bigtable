@@ -108,14 +108,16 @@ class TestTableConnection(GRPCMockTestMixin):
         self._grpc_call_helper(call_method, 'GetTable', request_obj)
 
     def test_delete_table(self):
-        from gcloud_bigtable._testing import _Credentials
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
+        from gcloud_bigtable._generated import (
+            bigtable_table_service_messages_pb2 as messages_pb2)
 
-        cluster_name = object()
-        table_name = 'table_name'
-        self.assertRaises(NotImplementedError, connection.delete_table,
-                          cluster_name, table_name)
+        table_name = '%s/tables/%s' % (CLUSTER_NAME, TABLE_ID)
+        request_obj = messages_pb2.DeleteTableRequest(name=table_name)
+
+        def call_method(connection):
+            return connection.delete_table(CLUSTER_NAME, TABLE_ID)
+
+        self._grpc_call_helper(call_method, 'DeleteTable', request_obj)
 
     def test_rename_table(self):
         from gcloud_bigtable._testing import _Credentials
