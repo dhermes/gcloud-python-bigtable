@@ -16,44 +16,6 @@
 import unittest2
 
 
-class Test_make_cluster_stub(unittest2.TestCase):
-
-    def _callFUT(self, credentials):
-        from gcloud_bigtable.cluster_connection import make_cluster_stub
-        return make_cluster_stub(credentials)
-
-    def test_it(self):
-        from gcloud_bigtable._testing import _MockCalled
-        from gcloud_bigtable._testing import _MockWithAttachedMethods
-        from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable import cluster_connection as MUT
-
-        mock_result = object()
-        custom_factory = _MockCalled(mock_result)
-        transformed = object()
-        transformer = _MockCalled(transformed)
-
-        certs = 'FOOBAR'
-        credentials = _MockWithAttachedMethods()
-        with _Monkey(MUT, CLUSTER_STUB_FACTORY=custom_factory,
-                     get_certs=lambda: certs,
-                     MetadataTransformer=transformer):
-            result = self._callFUT(credentials)
-
-        self.assertTrue(result is mock_result)
-        custom_factory.check_called(
-            self,
-            [(MUT.CLUSTER_ADMIN_HOST, MUT.PORT)],
-            [{
-                'metadata_transformer': transformed,
-                'secure': True,
-                'root_certificates': certs,
-            }],
-        )
-        transformer.check_called(self, [(credentials,)])
-        self.assertEqual(credentials._called, [])
-
-
 class TestClusterConnection(unittest2.TestCase):
 
     @staticmethod
@@ -89,44 +51,49 @@ class TestClusterConnection(unittest2.TestCase):
         credentials = AssertionCredentials(assertion_type)
         self.assertRaises(TypeError, self._makeOne, credentials=credentials)
 
-    def _rpc_method_test_helper(self, rpc_method, method_name):
+    def _grpc_call_helper(self, call_method, method_name, request_obj):
+        from gcloud_bigtable._grpc_mocks import StubMockFactory
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable._testing import _StubMock
         from gcloud_bigtable import cluster_connection as MUT
+
         credentials = _MockWithAttachedMethods(False, False)
         connection = self._makeOne(credentials=credentials)
-        stubs = []
+
         expected_result = object()
-
-        def mock_make_stub(creds):
-            stub = _StubMock(creds, expected_result, method_name)
-            stubs.append(stub)
-            return stub
-
-        with _Monkey(MUT, make_cluster_stub=mock_make_stub):
-            result = rpc_method(connection)
+        mock_make_stub = StubMockFactory(expected_result)
+        with _Monkey(MUT, make_stub=mock_make_stub):
+            result = call_method(connection)
 
         self.assertTrue(result is expected_result)
-        return credentials, stubs
+        self.assertEqual(credentials._called, [
+            ('create_scoped_required', (), {}),
+            ('create_scoped_required', (), {}),
+        ])
 
-    def _check_rpc_stubs_used(self, credentials, stubs, request_type):
-        # Asserting length 1 by unpacking.
-        stub_used, = stubs
-        self.assertTrue(stub_used._credentials is credentials)
-        self.assertEqual(stub_used._enter_calls, 1)
-
-        # Asserting length 1 (and a 3-tuple) by unpacking.
-        (exc_type, exc_val, _), = stub_used._exit_args
-        self.assertTrue(exc_type is None)
-        self.assertTrue(isinstance(exc_val, type(None)))
-
-        # Asserting length 1 by unpacking.
-        request_obj = stub_used._method
-        request_pb, = request_obj.request_pbs
-        self.assertTrue(isinstance(request_pb, request_type))
-        self.assertEqual(request_obj.request_timeouts, [10])
-        return request_pb
+        # Check all the stubs that were created and used as a context
+        # manager (should be just one).
+        factory_args = (
+            credentials,
+            MUT.CLUSTER_STUB_FACTORY,
+            MUT.CLUSTER_ADMIN_HOST,
+            MUT.PORT,
+        )
+        self.assertEqual(mock_make_stub.factory_calls,
+                         [(factory_args, {})])
+        stub, = mock_make_stub.stubs  # Asserts just one.
+        self.assertEqual(stub._enter_calls, 1)
+        self.assertEqual(stub._exit_args,
+                         [(None, None, None)])
+        # Check all the method calls.
+        method_calls = [
+            (
+                method_name,
+                (request_obj, MUT.TIMEOUT_SECONDS),
+                {},
+            )
+        ]
+        self.assertEqual(mock_make_stub.method_calls, method_calls)
 
     def test_get_operation(self):
         from gcloud_bigtable._testing import _MockCalled
@@ -180,17 +147,14 @@ class TestClusterConnection(unittest2.TestCase):
             bigtable_cluster_service_messages_pb2 as messages_pb2)
 
         PROJECT_ID = 'PROJECT_ID'
+        request_obj = messages_pb2.ListZonesRequest(
+            name='projects/%s' % (PROJECT_ID,),
+        )
 
-        def rpc_method(connection):
+        def call_method(connection):
             return connection.list_zones(PROJECT_ID)
 
-        method_name = 'ListZones'
-        credentials, stubs = self._rpc_method_test_helper(rpc_method,
-                                                          method_name)
-        request_type = messages_pb2.ListZonesRequest
-        request_pb = self._check_rpc_stubs_used(credentials, stubs,
-                                                request_type)
-        self.assertEqual(request_pb.name, 'projects/PROJECT_ID')
+        self._grpc_call_helper(call_method, 'ListZones', request_obj)
 
     def test_get_cluster(self):
         from gcloud_bigtable._generated import (
@@ -200,103 +164,90 @@ class TestClusterConnection(unittest2.TestCase):
         ZONE = 'ZONE'
         CLUSTER_ID = 'CLUSTER_ID'
 
-        def rpc_method(connection):
+        cluster_name = 'projects/%s/zones/%s/clusters/%s' % (
+            PROJECT_ID, ZONE, CLUSTER_ID)
+        request_obj = messages_pb2.GetClusterRequest(name=cluster_name)
+
+        def call_method(connection):
             return connection.get_cluster(PROJECT_ID, ZONE, CLUSTER_ID)
 
-        method_name = 'GetCluster'
-        credentials, stubs = self._rpc_method_test_helper(rpc_method,
-                                                          method_name)
-        request_type = messages_pb2.GetClusterRequest
-        request_pb = self._check_rpc_stubs_used(credentials, stubs,
-                                                request_type)
-        self.assertEqual(request_pb.name,
-                         'projects/PROJECT_ID/zones/ZONE/clusters/CLUSTER_ID')
+        self._grpc_call_helper(call_method, 'GetCluster', request_obj)
 
     def test_list_clusters(self):
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
 
         PROJECT_ID = 'PROJECT_ID'
+        request_obj = messages_pb2.ListClustersRequest(
+            name='projects/%s' % (PROJECT_ID,),
+        )
 
-        def rpc_method(connection):
+        def call_method(connection):
             return connection.list_clusters(PROJECT_ID)
 
-        method_name = 'ListClusters'
-        credentials, stubs = self._rpc_method_test_helper(rpc_method,
-                                                          method_name)
-        request_type = messages_pb2.ListClustersRequest
-        request_pb = self._check_rpc_stubs_used(credentials, stubs,
-                                                request_type)
-        self.assertEqual(request_pb.name, 'projects/PROJECT_ID')
+        self._grpc_call_helper(call_method, 'ListClusters', request_obj)
 
     def test_create_cluster(self):
         from gcloud_bigtable._generated import (
             bigtable_cluster_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster_connection as MUT
 
         PROJECT_ID = 'PROJECT_ID'
         ZONE = 'ZONE'
         CLUSTER_ID = 'CLUSTER_ID'
-        DEFAULT_CLUSTER = data_pb2.Cluster()
-        prepare_cluster_kwargs = []
 
-        def rpc_method(connection):
+        def call_method(connection):
             return connection.create_cluster(PROJECT_ID, ZONE, CLUSTER_ID)
 
-        def mock_prepare_cluster(**kwargs):
-            prepare_cluster_kwargs.append(kwargs)
-            return DEFAULT_CLUSTER
+        cluster_obj = data_pb2.Cluster()
+        mock_prepare_cluster = _MockCalled(cluster_obj)
+        request_obj = messages_pb2.CreateClusterRequest(
+            name='projects/%s/zones/%s' % (PROJECT_ID, ZONE),
+            cluster_id=CLUSTER_ID,
+            cluster=cluster_obj,
+        )
 
-        method_name = 'CreateCluster'
         with _Monkey(MUT, _prepare_cluster=mock_prepare_cluster):
-            credentials, stubs = self._rpc_method_test_helper(rpc_method,
-                                                              method_name)
-        request_type = messages_pb2.CreateClusterRequest
-        request_pb = self._check_rpc_stubs_used(credentials, stubs,
-                                                request_type)
-        self.assertEqual(request_pb.name, 'projects/PROJECT_ID/zones/ZONE')
-        self.assertEqual(request_pb.cluster_id, CLUSTER_ID)
-        self.assertEqual(request_pb.cluster, DEFAULT_CLUSTER)
-        self.assertEqual(prepare_cluster_kwargs, [{
-            'display_name': None,
-            'serve_nodes': None,
-        }])
+            self._grpc_call_helper(call_method, 'CreateCluster', request_obj)
+
+        mock_prepare_cluster.check_called(
+            self,
+            [()],  # No positional args.
+            [{'display_name': None, 'serve_nodes': None}],
+        )
 
     def test_update_cluster(self):
-        from gcloud_bigtable._generated import (
-            bigtable_cluster_data_pb2 as data_pb2)
+        from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster_connection as MUT
 
         PROJECT_ID = 'PROJECT_ID'
         ZONE = 'ZONE'
         CLUSTER_ID = 'CLUSTER_ID'
-        DEFAULT_CLUSTER = data_pb2.Cluster()
-        prepare_cluster_kwargs = []
 
-        def rpc_method(connection):
+        def call_method(connection):
             return connection.update_cluster(PROJECT_ID, ZONE, CLUSTER_ID)
 
-        def mock_prepare_cluster(**kwargs):
-            prepare_cluster_kwargs.append(kwargs)
-            return DEFAULT_CLUSTER
-
-        method_name = 'UpdateCluster'
+        request_obj = object()
+        mock_prepare_cluster = _MockCalled(request_obj)
         with _Monkey(MUT, _prepare_cluster=mock_prepare_cluster):
-            credentials, stubs = self._rpc_method_test_helper(rpc_method,
-                                                              method_name)
-        request_type = data_pb2.Cluster
-        request_pb = self._check_rpc_stubs_used(credentials, stubs,
-                                                request_type)
-        self.assertEqual(request_pb, DEFAULT_CLUSTER)
-        self.assertEqual(prepare_cluster_kwargs, [{
-            'display_name': None,
-            'name': 'projects/PROJECT_ID/zones/ZONE/clusters/CLUSTER_ID',
-            'serve_nodes': None,
-        }])
+            self._grpc_call_helper(call_method, 'UpdateCluster', request_obj)
+
+        project_name = 'projects/%s/zones/%s/clusters/%s' % (
+            PROJECT_ID, ZONE, CLUSTER_ID)
+        mock_prepare_cluster.check_called(
+            self,
+            [()],  # No positional args.
+            [{
+                'display_name': None,
+                'name': project_name,
+                'serve_nodes': None,
+            }],
+        )
 
     def test_delete_cluster(self):
         from gcloud_bigtable._generated import (
@@ -306,17 +257,14 @@ class TestClusterConnection(unittest2.TestCase):
         ZONE = 'ZONE'
         CLUSTER_ID = 'CLUSTER_ID'
 
-        def rpc_method(connection):
+        cluster_name = 'projects/%s/zones/%s/clusters/%s' % (
+            PROJECT_ID, ZONE, CLUSTER_ID)
+        request_obj = messages_pb2.DeleteClusterRequest(name=cluster_name)
+
+        def call_method(connection):
             return connection.delete_cluster(PROJECT_ID, ZONE, CLUSTER_ID)
 
-        method_name = 'DeleteCluster'
-        credentials, stubs = self._rpc_method_test_helper(rpc_method,
-                                                          method_name)
-        request_type = messages_pb2.DeleteClusterRequest
-        request_pb = self._check_rpc_stubs_used(credentials, stubs,
-                                                request_type)
-        self.assertEqual(request_pb.name,
-                         'projects/PROJECT_ID/zones/ZONE/clusters/CLUSTER_ID')
+        self._grpc_call_helper(call_method, 'DeleteCluster', request_obj)
 
     def test_undelete_cluster(self):
         from gcloud_bigtable._generated import (
@@ -326,17 +274,14 @@ class TestClusterConnection(unittest2.TestCase):
         ZONE = 'ZONE'
         CLUSTER_ID = 'CLUSTER_ID'
 
-        def rpc_method(connection):
+        cluster_name = 'projects/%s/zones/%s/clusters/%s' % (
+            PROJECT_ID, ZONE, CLUSTER_ID)
+        request_obj = messages_pb2.UndeleteClusterRequest(name=cluster_name)
+
+        def call_method(connection):
             return connection.undelete_cluster(PROJECT_ID, ZONE, CLUSTER_ID)
 
-        method_name = 'UndeleteCluster'
-        credentials, stubs = self._rpc_method_test_helper(rpc_method,
-                                                          method_name)
-        request_type = messages_pb2.UndeleteClusterRequest
-        request_pb = self._check_rpc_stubs_used(credentials, stubs,
-                                                request_type)
-        self.assertEqual(request_pb.name,
-                         'projects/PROJECT_ID/zones/ZONE/clusters/CLUSTER_ID')
+        self._grpc_call_helper(call_method, 'UndeleteCluster', request_obj)
 
 
 class Test__prepare_cluster(unittest2.TestCase):

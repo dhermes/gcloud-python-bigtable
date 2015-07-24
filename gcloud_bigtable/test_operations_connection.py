@@ -103,6 +103,12 @@ class TestOperationsConnection(unittest2.TestCase):
         with _Monkey(MUT, _prepare_list_request=mock_prepare_list_request):
             self._grpc_call_helper(call_method, 'ListOperations', request_obj)
 
+        mock_prepare_list_request.check_called(
+            self,
+            [()],  # No positional args.
+            [{'filter': None, 'page_size': None, 'page_token': None}],
+        )
+
     def test_cancel_operation(self):
         from gcloud_bigtable._testing import _Credentials
         credentials = _Credentials()

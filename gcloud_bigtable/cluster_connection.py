@@ -22,9 +22,8 @@ from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._generated import bigtable_cluster_service_pb2
 from gcloud_bigtable.connection import Connection
-from gcloud_bigtable.connection import MetadataTransformer
 from gcloud_bigtable.connection import TIMEOUT_SECONDS
-from gcloud_bigtable.connection import get_certs
+from gcloud_bigtable.connection import make_stub
 from gcloud_bigtable.operations_connection import OperationsConnection
 
 
@@ -33,25 +32,6 @@ CLUSTER_STUB_FACTORY = (bigtable_cluster_service_pb2.
 CLUSTER_ADMIN_HOST = 'bigtableclusteradmin.googleapis.com'
 """Cluster Admin API request host."""
 PORT = 443
-
-
-def make_cluster_stub(credentials):
-    """Makes a stub for the Cluster Admin API.
-
-    :type credentials: :class:`oauth2client.client.OAuth2Credentials`
-    :param credentials: The OAuth2 Credentials to use for access tokens
-                        to authorize requests.
-
-    :rtype: :class:`grpc.early_adopter.implementations._Stub`
-    :returns: The stub object used to make gRPC requests to the
-              Cluster Admin API.
-    """
-    custom_metadata_transformer = MetadataTransformer(credentials)
-    return CLUSTER_STUB_FACTORY(
-        CLUSTER_ADMIN_HOST, PORT,
-        metadata_transformer=custom_metadata_transformer,
-        secure=True,
-        root_certificates=get_certs())
 
 
 def _prepare_cluster(name=None, display_name=None, serve_nodes=None):
@@ -162,7 +142,9 @@ class ClusterConnection(Connection):
         project_name = 'projects/%s' % (project_id,)
         request_pb = messages_pb2.ListZonesRequest(name=project_name)
         result_pb = None
-        with make_cluster_stub(self._credentials) as stub:
+        stub = make_stub(self._credentials, CLUSTER_STUB_FACTORY,
+                         CLUSTER_ADMIN_HOST, PORT)
+        with stub:
             response = stub.ListZones.async(request_pb, timeout_seconds)
             result_pb = response.result()
 
@@ -192,7 +174,9 @@ class ClusterConnection(Connection):
             project_id, zone, cluster_id)
         request_pb = messages_pb2.GetClusterRequest(name=cluster_name)
         result_pb = None
-        with make_cluster_stub(self._credentials) as stub:
+        stub = make_stub(self._credentials, CLUSTER_STUB_FACTORY,
+                         CLUSTER_ADMIN_HOST, PORT)
+        with stub:
             response = stub.GetCluster.async(request_pb, timeout_seconds)
             result_pb = response.result()
 
@@ -214,7 +198,9 @@ class ClusterConnection(Connection):
         project_name = 'projects/%s' % (project_id,)
         request_pb = messages_pb2.ListClustersRequest(name=project_name)
         result_pb = None
-        with make_cluster_stub(self._credentials) as stub:
+        stub = make_stub(self._credentials, CLUSTER_STUB_FACTORY,
+                         CLUSTER_ADMIN_HOST, PORT)
+        with stub:
             response = stub.ListClusters.async(request_pb, timeout_seconds)
             result_pb = response.result()
 
@@ -265,7 +251,9 @@ class ClusterConnection(Connection):
             cluster=cluster,
         )
         result_pb = None
-        with make_cluster_stub(self._credentials) as stub:
+        stub = make_stub(self._credentials, CLUSTER_STUB_FACTORY,
+                         CLUSTER_ADMIN_HOST, PORT)
+        with stub:
             response = stub.CreateCluster.async(request_pb, timeout_seconds)
             result_pb = response.result()
 
@@ -310,7 +298,9 @@ class ClusterConnection(Connection):
                                    display_name=display_name,
                                    serve_nodes=serve_nodes)
         result_pb = None
-        with make_cluster_stub(self._credentials) as stub:
+        stub = make_stub(self._credentials, CLUSTER_STUB_FACTORY,
+                         CLUSTER_ADMIN_HOST, PORT)
+        with stub:
             response = stub.UpdateCluster.async(cluster, timeout_seconds)
             result_pb = response.result()
 
@@ -340,7 +330,9 @@ class ClusterConnection(Connection):
             project_id, zone, cluster_id)
         request_pb = messages_pb2.DeleteClusterRequest(name=cluster_name)
         result_pb = None
-        with make_cluster_stub(self._credentials) as stub:
+        stub = make_stub(self._credentials, CLUSTER_STUB_FACTORY,
+                         CLUSTER_ADMIN_HOST, PORT)
+        with stub:
             response = stub.DeleteCluster.async(request_pb, timeout_seconds)
             result_pb = response.result()
 
@@ -370,7 +362,9 @@ class ClusterConnection(Connection):
             project_id, zone, cluster_id)
         request_pb = messages_pb2.UndeleteClusterRequest(name=cluster_name)
         result_pb = None
-        with make_cluster_stub(self._credentials) as stub:
+        stub = make_stub(self._credentials, CLUSTER_STUB_FACTORY,
+                         CLUSTER_ADMIN_HOST, PORT)
+        with stub:
             response = stub.UndeleteCluster.async(request_pb, timeout_seconds)
             result_pb = response.result()
 

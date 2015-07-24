@@ -49,47 +49,6 @@ class _MockCalled(object):
         return self.result
 
 
-class _MockMethod(object):
-
-    def __init__(self, stub, result):
-        self.stub = stub
-        self.result = result
-        self.request_pbs = []
-        self.request_timeouts = []
-
-    def async(self, request_pb, timeout_seconds):
-        self.request_pbs.append(request_pb)
-        self.request_timeouts.append(timeout_seconds)
-        return _StubMockResponse(self, self.result)
-
-
-class _StubMock(object):
-
-    def __init__(self, credentials, result, method_name):
-        self._credentials = credentials
-        self._enter_calls = 0
-        self._exit_args = []
-        self._method = _MockMethod(self, result)
-        setattr(self, method_name, self._method)
-
-    def __enter__(self):
-        self._enter_calls += 1
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._exit_args.append((exc_type, exc_val, exc_tb))
-
-
-class _StubMockResponse(object):
-
-    def __init__(self, stub, result):
-        self.stub = stub
-        self._result = result
-
-    def result(self):
-        return self._result
-
-
 class _AttachedMethod(object):
 
     def __init__(self, parent, name):
