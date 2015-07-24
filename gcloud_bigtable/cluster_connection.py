@@ -74,7 +74,7 @@ def _prepare_cluster(name=None, display_name=None, serve_nodes=None):
 class ClusterConnection(Connection):
     """Connection to Google Cloud Bigtable Cluster API.
 
-    This only allows interacting with clusters in a project.
+    Enables interacting with clusters in a project.
 
     :type credentials: :class:`oauth2client.client.OAuth2Credentials` or
                        :class:`NoneType`

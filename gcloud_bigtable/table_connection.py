@@ -33,10 +33,7 @@ PORT = 443
 class TableConnection(Connection):
     """Connection to Google Cloud Bigtable Table API.
 
-    This only allows interacting with tables in a cluster.
-
-    The ``cluster_name`` value must take the form:
-        "projects/*/zones/*/clusters/*"
+    Enables interacting with tables in a cluster.
     """
 
     SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'

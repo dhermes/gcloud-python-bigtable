@@ -13,10 +13,28 @@
 # limitations under the License.
 
 
-import unittest2
+from gcloud_bigtable._grpc_mocks import GRPCMockTestMixin
 
 
-class TestDataConnection(unittest2.TestCase):
+TABLE_NAME = 'TABLE_NAME'
+
+
+class TestDataConnection(GRPCMockTestMixin):
+
+    @classmethod
+    def setUpClass(cls):
+        from gcloud_bigtable import data_connection as MUT
+        cls._MUT = MUT
+        cls._STUB_FACTORY_NAME = 'DATA_STUB_FACTORY'
+        cls._STUB_HOST = MUT.DATA_API_HOST
+        cls._STUB_PORT = MUT.PORT
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls._MUT
+        del cls._STUB_FACTORY_NAME
+        del cls._STUB_HOST
+        del cls._STUB_PORT
 
     @staticmethod
     def _getTargetClass():
@@ -48,13 +66,15 @@ class TestDataConnection(unittest2.TestCase):
                           table_name)
 
     def test_sample_row_keys(self):
-        from gcloud_bigtable._testing import _Credentials
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
 
-        table_name = object()
-        self.assertRaises(NotImplementedError, connection.sample_row_keys,
-                          table_name)
+        request_obj = messages_pb2.SampleRowKeysRequest(table_name=TABLE_NAME)
+
+        def call_method(connection):
+            return connection.sample_row_keys(TABLE_NAME)
+
+        self._grpc_call_helper(call_method, 'SampleRowKeys', request_obj)
 
     def test_mutate_row(self):
         from gcloud_bigtable._testing import _Credentials

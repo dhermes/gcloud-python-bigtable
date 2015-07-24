@@ -16,7 +16,11 @@
 
 
 from gcloud_bigtable._generated import bigtable_service_pb2
+from gcloud_bigtable._generated import (
+    bigtable_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable.connection import Connection
+from gcloud_bigtable.connection import TIMEOUT_SECONDS
+from gcloud_bigtable.connection import make_stub
 
 
 DATA_STUB_FACTORY = (bigtable_service_pb2.
@@ -29,10 +33,7 @@ PORT = 443
 class DataConnection(Connection):
     """Connection to Google Cloud Bigtable Data API.
 
-    This only allows interacting with data in an existing table.
-
-    The ``table_name`` value must take the form:
-        "projects/*/zones/*/clusters/*/tables/*"
+    Enables interaction with data in an existing table.
     """
 
     SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.data'
@@ -93,9 +94,37 @@ class DataConnection(Connection):
         """
         raise NotImplementedError
 
-    def sample_row_keys(self, table_name):
-        """Samples row keys."""
-        raise NotImplementedError
+    def sample_row_keys(self, table_name, timeout_seconds=TIMEOUT_SECONDS):
+        """Returns a sample of row keys in the table.
+
+        The returned row keys will delimit contiguous sections of the table of
+        approximately equal size, which can be used to break up the data for
+        distributed tasks like mapreduces.
+
+        :type table_name: string
+        :param table_name: The name of the table we are taking the sample from
+                           Must be of the form
+                               "projects/*/zones/*/clusters/*/tables/*"
+                           Since this is a low-level class, we don't check
+                           this, rather we expect callers to pass correctly
+                           formatted data.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+
+        :rtype: :class:`messages_pb2.SampleRowKeysResponse`
+        :returns: The sample row keys response returned.
+        """
+        request_pb = messages_pb2.SampleRowKeysRequest(table_name=table_name)
+        result_pb = None
+        stub = make_stub(self._credentials, DATA_STUB_FACTORY,
+                         DATA_API_HOST, PORT)
+        with stub:
+            response = stub.SampleRowKeys.async(request_pb, timeout_seconds)
+            result_pb = response.result()
+
+        return result_pb
 
     def mutate_row(self, table_name, row_key):
         """Mutates a row."""
