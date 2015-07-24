@@ -27,12 +27,16 @@ class TestDataConnection(unittest2.TestCase):
         return self._getTargetClass()(*args, **kwargs)
 
     def test_constructor(self):
-        from gcloud_bigtable._testing import _Credentials
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
         klass = self._getTargetClass()
-        credentials = _Credentials()
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(True, scoped_creds)
         connection = self._makeOne(credentials=credentials)
-        self.assertTrue(connection._credentials is credentials)
-        self.assertEqual(connection._credentials._scopes, (klass.SCOPE,))
+        self.assertTrue(connection._credentials is scoped_creds)
+        self.assertEqual(credentials._called, [
+            ('create_scoped_required', (), {}),
+            ('create_scoped', ((klass.SCOPE,),), {}),
+        ])
 
     def test_read_rows(self):
         from gcloud_bigtable._testing import _Credentials
