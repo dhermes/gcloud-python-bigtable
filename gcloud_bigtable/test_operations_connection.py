@@ -36,54 +36,7 @@ class TestOperationsConnection(unittest2.TestCase):
         self.assertTrue(connection._credentials is credentials)
         self.assertEqual(connection._credentials._scopes, (scope,))
 
-    def _rpc_method_test_helper(self, rpc_method, method_name):
-        from gcloud_bigtable._testing import _Credentials
-        from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable._testing import _StubMock
-        from gcloud_bigtable import operations_connection as MUT
-        credentials = _Credentials()
-        HOST = 'HOST'
-        connection = self._makeOne(HOST, credentials=credentials)
-        stubs = []
-        expected_result = object()
-
-        def mock_make_stub(creds, stub_factory, host, port):
-            if host != HOST:  # pragma: NO COVER
-                raise ValueError('Unexpected host value: %r' % (host,))
-            if port != MUT.PORT:  # pragma: NO COVER
-                raise ValueError('Unexpected port value: %r' % (port,))
-            if stub_factory != MUT.OPERATIONS_STUB_FACTORY:  # pragma: NO COVER
-                raise ValueError('Unexpected stub factory: %r' % (
-                    stub_factory,))
-            stub = _StubMock(creds, expected_result, method_name)
-            stubs.append(stub)
-            return stub
-
-        with _Monkey(MUT, make_stub=mock_make_stub):
-            result = rpc_method(connection)
-
-        self.assertTrue(result is expected_result)
-        return credentials, stubs
-
-    def _check_rpc_stubs_used(self, credentials, stubs, request_type):
-        # Asserting length 1 by unpacking.
-        stub_used, = stubs
-        self.assertTrue(stub_used._credentials is credentials)
-        self.assertEqual(stub_used._enter_calls, 1)
-
-        # Asserting length 1 (and a 3-tuple) by unpacking.
-        (exc_type, exc_val, _), = stub_used._exit_args
-        self.assertTrue(exc_type is None)
-        self.assertTrue(isinstance(exc_val, type(None)))
-
-        # Asserting length 1 by unpacking.
-        request_obj = stub_used._method
-        request_pb, = request_obj.request_pbs
-        self.assertTrue(isinstance(request_pb, request_type))
-        self.assertEqual(request_obj.request_timeouts, [10])
-        return request_pb
-
-    def test_get_operation_alt(self):
+    def test_get_operation(self):
         from gcloud_bigtable._generated import operations_pb2
         from gcloud_bigtable._grpc_mocks import StubMockFactory
         from gcloud_bigtable._testing import _MockWithAttachedMethods
@@ -129,47 +82,52 @@ class TestOperationsConnection(unittest2.TestCase):
         ]
         self.assertEqual(mock_make_stub.method_calls, method_calls)
 
-    def test_get_operation(self):
-        from gcloud_bigtable._generated import operations_pb2
-
-        OPERATION_NAME = 'OPERATION_NAME'
-
-        def rpc_method(connection):
-            return connection.get_operation(OPERATION_NAME)
-
-        method_name = 'GetOperation'
-        credentials, stubs = self._rpc_method_test_helper(
-            rpc_method, method_name)
-        request_type = operations_pb2.GetOperationRequest
-        request_pb = self._check_rpc_stubs_used(credentials, stubs,
-                                                request_type)
-        self.assertEqual(request_pb.name, OPERATION_NAME)
-        self.assertEqual(len(request_pb._fields), 1)
-
     def test_list_operations(self):
-        from gcloud_bigtable._generated import operations_pb2
+        from gcloud_bigtable._grpc_mocks import StubMockFactory
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import operations_connection as MUT
 
-        DEFAULT_REQUEST = operations_pb2.ListOperationsRequest()
-        prepare_list_request_kwargs = []
+        host = 'HOST'
+        credentials = _MockWithAttachedMethods(False)
+        connection = self._makeOne(host, credentials=credentials)
 
-        def rpc_method(connection):
-            return connection.list_operations()
+        expected_result = object()
+        mock_make_stub = StubMockFactory(expected_result)
+        request_obj = object()
+        mock_prepare_list_request = _MockCalled(request_obj)
+        with _Monkey(MUT, make_stub=mock_make_stub,
+                     _prepare_list_request=mock_prepare_list_request):
+            result = connection.list_operations()
 
-        def mock_prepare_list_request(**kwargs):
-            prepare_list_request_kwargs.append(kwargs)
-            return DEFAULT_REQUEST
+        self.assertTrue(result is expected_result)
+        self.assertEqual(credentials._called,
+                         [('create_scoped_required', (), {})])
 
-        method_name = 'ListOperations'
-        with _Monkey(MUT, _prepare_list_request=mock_prepare_list_request):
-            credentials, stubs = self._rpc_method_test_helper(
-                rpc_method, method_name)
-
-        request_type = operations_pb2.ListOperationsRequest
-        request_pb = self._check_rpc_stubs_used(credentials, stubs,
-                                                request_type)
-        self.assertEqual(request_pb, DEFAULT_REQUEST)
+        # Check all the stubs that were created and used as a context
+        # manager (should be just one).
+        factory_args = (
+            credentials,
+            MUT.OPERATIONS_STUB_FACTORY,
+            host,
+            MUT.PORT,
+        )
+        self.assertEqual(mock_make_stub.factory_calls,
+                         [(factory_args, {})])
+        stub, = mock_make_stub.stubs  # Asserts just one.
+        self.assertEqual(stub._enter_calls, 1)
+        self.assertEqual(stub._exit_args,
+                         [(None, None, None)])
+        # Check all the method calls.
+        method_calls = [
+            (
+                'ListOperations',
+                (request_obj, MUT.TIMEOUT_SECONDS),
+                {},
+            )
+        ]
+        self.assertEqual(mock_make_stub.method_calls, method_calls)
 
     def test_cancel_operation(self):
         from gcloud_bigtable._testing import _Credentials
