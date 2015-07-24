@@ -16,6 +16,14 @@
 import unittest2
 
 
+PROJECT_ID = 'PROJECT_ID'
+ZONE = 'ZONE'
+CLUSTER_ID = 'CLUSTER_ID'
+CLUSTER_NAME = 'projects/%s/zones/%s/clusters/%s' % (
+    PROJECT_ID, ZONE, CLUSTER_ID)
+TABLE_ID = 'TABLE_ID'
+
+
 class TestTableConnection(unittest2.TestCase):
 
     @staticmethod
@@ -38,14 +46,72 @@ class TestTableConnection(unittest2.TestCase):
             ('create_scoped', ((klass.SCOPE,),), {}),
         ])
 
-    def test_create_table(self):
-        from gcloud_bigtable._testing import _Credentials
-        credentials = _Credentials()
+    def _grpc_call_helper(self, call_method, method_name, request_obj,
+                          stub_factory=None):
+        from gcloud_bigtable._grpc_mocks import StubMockFactory
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import table_connection as MUT
+
+        credentials = _MockWithAttachedMethods(False)
         connection = self._makeOne(credentials=credentials)
 
-        cluster_name = object()
-        self.assertRaises(NotImplementedError, connection.create_table,
-                          cluster_name)
+        expected_result = object()
+        mock_make_stub = StubMockFactory(expected_result)
+        with _Monkey(MUT, make_stub=mock_make_stub):
+            result = call_method(connection)
+
+        self.assertTrue(result is expected_result)
+        self.assertEqual(credentials._called, [
+            ('create_scoped_required', (), {}),
+        ])
+
+        # Check all the stubs that were created and used as a context
+        # manager (should be just one).
+        factory_args = (
+            credentials,
+            stub_factory or MUT.TABLE_STUB_FACTORY,
+            MUT.TABLE_ADMIN_HOST,
+            MUT.PORT,
+        )
+        self.assertEqual(mock_make_stub.factory_calls,
+                         [(factory_args, {})])
+        stub, = mock_make_stub.stubs  # Asserts just one.
+        self.assertEqual(stub._enter_calls, 1)
+        self.assertEqual(stub._exit_args,
+                         [(None, None, None)])
+        # Check all the method calls.
+        method_calls = [
+            (
+                method_name,
+                (request_obj, MUT.TIMEOUT_SECONDS),
+                {},
+            )
+        ]
+        self.assertEqual(mock_make_stub.method_calls, method_calls)
+
+    def _create_table_test_helper(self, initial_split_keys=None):
+        from gcloud_bigtable._generated import (
+            bigtable_table_service_messages_pb2 as messages_pb2)
+
+        request_obj = messages_pb2.CreateTableRequest(
+            initial_split_keys=initial_split_keys,
+            name=CLUSTER_NAME,
+            table_id=TABLE_ID,
+        )
+
+        def call_method(connection):
+            return connection.create_table(
+                CLUSTER_NAME, TABLE_ID, initial_split_keys=initial_split_keys)
+
+        self._grpc_call_helper(call_method, 'CreateTable', request_obj)
+
+    def test_create_table(self):
+        initial_split_keys = ['foo', 'bar']
+        self._create_table_test_helper(initial_split_keys=initial_split_keys)
+
+    def test_create_table_without_split_keys(self):
+        self._create_table_test_helper()
 
     def test_list_tables(self):
         from gcloud_bigtable._testing import _Credentials
