@@ -16,6 +16,11 @@
 import unittest2
 
 
+PROJECT_ID = 'PROJECT_ID'
+ZONE = 'ZONE'
+CLUSTER_ID = 'CLUSTER_ID'
+
+
 class TestClusterConnection(unittest2.TestCase):
 
     @staticmethod
@@ -96,19 +101,15 @@ class TestClusterConnection(unittest2.TestCase):
         from gcloud_bigtable._generated import operations_pb2
         from gcloud_bigtable import cluster_connection as MUT
 
-        PROJECT_ID = 'PROJECT_ID'
-        ZONE = 'ZONE'
-        CLUSTER_ID = 'CLUSTER_ID'
-        OPERATION_ID = 'OPERATION_ID'
-
+        operation_id = 'OPERATION_ID'
         operation_name = (
             'operations/projects/%s/zones/%s/clusters/%s/operations/%s' % (
-                PROJECT_ID, ZONE, CLUSTER_ID, OPERATION_ID))
+                PROJECT_ID, ZONE, CLUSTER_ID, operation_id))
         request_obj = operations_pb2.GetOperationRequest(name=operation_name)
 
         def call_method(connection):
             return connection.get_operation(PROJECT_ID, ZONE,
-                                            CLUSTER_ID, OPERATION_ID)
+                                            CLUSTER_ID, operation_id)
 
         self._grpc_call_helper(call_method, 'GetOperation', request_obj,
                                stub_factory=MUT.OPERATIONS_STUB_FACTORY)
@@ -117,7 +118,6 @@ class TestClusterConnection(unittest2.TestCase):
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
 
-        PROJECT_ID = 'PROJECT_ID'
         request_obj = messages_pb2.ListZonesRequest(
             name='projects/%s' % (PROJECT_ID,),
         )
@@ -130,10 +130,6 @@ class TestClusterConnection(unittest2.TestCase):
     def test_get_cluster(self):
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
-
-        PROJECT_ID = 'PROJECT_ID'
-        ZONE = 'ZONE'
-        CLUSTER_ID = 'CLUSTER_ID'
 
         cluster_name = 'projects/%s/zones/%s/clusters/%s' % (
             PROJECT_ID, ZONE, CLUSTER_ID)
@@ -148,7 +144,6 @@ class TestClusterConnection(unittest2.TestCase):
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
 
-        PROJECT_ID = 'PROJECT_ID'
         request_obj = messages_pb2.ListClustersRequest(
             name='projects/%s' % (PROJECT_ID,),
         )
@@ -166,10 +161,6 @@ class TestClusterConnection(unittest2.TestCase):
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster_connection as MUT
-
-        PROJECT_ID = 'PROJECT_ID'
-        ZONE = 'ZONE'
-        CLUSTER_ID = 'CLUSTER_ID'
 
         def call_method(connection):
             return connection.create_cluster(PROJECT_ID, ZONE, CLUSTER_ID)
@@ -196,10 +187,6 @@ class TestClusterConnection(unittest2.TestCase):
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster_connection as MUT
 
-        PROJECT_ID = 'PROJECT_ID'
-        ZONE = 'ZONE'
-        CLUSTER_ID = 'CLUSTER_ID'
-
         def call_method(connection):
             return connection.update_cluster(PROJECT_ID, ZONE, CLUSTER_ID)
 
@@ -224,10 +211,6 @@ class TestClusterConnection(unittest2.TestCase):
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
 
-        PROJECT_ID = 'PROJECT_ID'
-        ZONE = 'ZONE'
-        CLUSTER_ID = 'CLUSTER_ID'
-
         cluster_name = 'projects/%s/zones/%s/clusters/%s' % (
             PROJECT_ID, ZONE, CLUSTER_ID)
         request_obj = messages_pb2.DeleteClusterRequest(name=cluster_name)
@@ -240,10 +223,6 @@ class TestClusterConnection(unittest2.TestCase):
     def test_undelete_cluster(self):
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
-
-        PROJECT_ID = 'PROJECT_ID'
-        ZONE = 'ZONE'
-        CLUSTER_ID = 'CLUSTER_ID'
 
         cluster_name = 'projects/%s/zones/%s/clusters/%s' % (
             PROJECT_ID, ZONE, CLUSTER_ID)
@@ -268,15 +247,15 @@ class Test__prepare_cluster(unittest2.TestCase):
         self.assertEqual(all_fields, set())
 
     def test_non_default_arguments(self):
-        NAME = 'NAME'
-        DISPLAY_NAME = 'DISPLAY_NAME'
-        SERVE_NODES = 8
+        name = 'NAME'
+        display_name = 'DISPLAY_NAME'
+        serve_nodes = 8
 
-        cluster = self._callFUT(name=NAME, display_name=DISPLAY_NAME,
-                                serve_nodes=SERVE_NODES)
+        cluster = self._callFUT(name=name, display_name=display_name,
+                                serve_nodes=serve_nodes)
         all_fields = set(field.name for field in cluster._fields.keys())
         self.assertEqual(all_fields,
                          set(['display_name', 'name', 'serve_nodes']))
 
-        self.assertEqual(cluster.display_name, DISPLAY_NAME)
-        self.assertEqual(cluster.serve_nodes, SERVE_NODES)
+        self.assertEqual(cluster.display_name, display_name)
+        self.assertEqual(cluster.serve_nodes, serve_nodes)
