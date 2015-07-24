@@ -16,45 +16,6 @@
 import unittest2
 
 
-class Test_make_operations_stub(unittest2.TestCase):
-
-    def _callFUT(self, host, credentials):
-        from gcloud_bigtable.operations_connection import make_operations_stub
-        return make_operations_stub(host, credentials)
-
-    def test_it(self):
-        from gcloud_bigtable._testing import _MockCalled
-        from gcloud_bigtable._testing import _MockWithAttachedMethods
-        from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable import operations_connection as MUT
-
-        host = 'HOST'
-        mock_result = object()
-        custom_factory = _MockCalled(mock_result)
-        transformed = object()
-        transformer = _MockCalled(transformed)
-
-        certs = 'FOOBAR'
-        credentials = _MockWithAttachedMethods()
-        with _Monkey(MUT, OPERATIONS_STUB_FACTORY=custom_factory,
-                     get_certs=lambda: certs,
-                     MetadataTransformer=transformer):
-            result = self._callFUT(host, credentials)
-
-        self.assertTrue(result is mock_result)
-        custom_factory.check_called(
-            self,
-            [(host, MUT.PORT)],
-            [{
-                'metadata_transformer': transformed,
-                'secure': True,
-                'root_certificates': certs,
-            }],
-        )
-        transformer.check_called(self, [(credentials,)])
-        self.assertEqual(credentials._called, [])
-
-
 class TestOperationsConnection(unittest2.TestCase):
 
     @staticmethod
@@ -86,14 +47,19 @@ class TestOperationsConnection(unittest2.TestCase):
         stubs = []
         expected_result = object()
 
-        def mock_make_stub(host, creds):
+        def mock_make_stub(creds, stub_factory, host, port):
             if host != HOST:  # pragma: NO COVER
                 raise ValueError('Unexpected host value: %r' % (host,))
+            if port != MUT.PORT:  # pragma: NO COVER
+                raise ValueError('Unexpected port value: %r' % (port,))
+            if stub_factory != MUT.OPERATIONS_STUB_FACTORY:  # pragma: NO COVER
+                raise ValueError('Unexpected stub factory: %r' % (
+                    stub_factory,))
             stub = _StubMock(creds, expected_result, method_name)
             stubs.append(stub)
             return stub
 
-        with _Monkey(MUT, make_operations_stub=mock_make_stub):
+        with _Monkey(MUT, make_stub=mock_make_stub):
             result = rpc_method(connection)
 
         self.assertTrue(result is expected_result)

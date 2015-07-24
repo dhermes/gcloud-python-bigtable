@@ -17,37 +17,12 @@
 
 from gcloud_bigtable._generated import operations_pb2
 from gcloud_bigtable.connection import Connection
-from gcloud_bigtable.connection import MetadataTransformer
 from gcloud_bigtable.connection import TIMEOUT_SECONDS
-from gcloud_bigtable.connection import get_certs
+from gcloud_bigtable.connection import make_stub
 
 
 OPERATIONS_STUB_FACTORY = operations_pb2.early_adopter_create_Operations_stub
 PORT = 443
-
-
-def make_operations_stub(host, credentials):
-    """Makes a stub for the Operations API.
-
-    :type host: string
-    :param host: The host for the operations service. This is not specified
-                 as a module level constant, since the host will correspond
-                 to the service which generated the long-running operation.
-
-    :type credentials: :class:`oauth2client.client.OAuth2Credentials`
-    :param credentials: The OAuth2 Credentials to use for access tokens
-                        to authorize requests.
-
-    :rtype: :class:`grpc.early_adopter.implementations._Stub`
-    :returns: The stub object used to make gRPC requests to the
-              Operations API.
-    """
-    custom_metadata_transformer = MetadataTransformer(credentials)
-    return OPERATIONS_STUB_FACTORY(
-        host, PORT,
-        metadata_transformer=custom_metadata_transformer,
-        secure=True,
-        root_certificates=get_certs())
 
 
 def _prepare_list_request(filter=None, page_size=None, page_token=None):
@@ -112,7 +87,9 @@ class OperationsConnection(Connection):
         """
         request_pb = operations_pb2.GetOperationRequest(name=operation_name)
         result_pb = None
-        with make_operations_stub(self._host, self._credentials) as stub:
+        stub = make_stub(self._credentials, OPERATIONS_STUB_FACTORY,
+                         self._host, PORT)
+        with stub:
             response = stub.GetOperation.async(request_pb, timeout_seconds)
             result_pb = response.result()
 
@@ -147,7 +124,9 @@ class OperationsConnection(Connection):
         request_pb = _prepare_list_request(filter=filter, page_size=page_size,
                                            page_token=page_token)
         result_pb = None
-        with make_operations_stub(self._host, self._credentials) as stub:
+        stub = make_stub(self._credentials, OPERATIONS_STUB_FACTORY,
+                         self._host, PORT)
+        with stub:
             response = stub.ListOperations.async(request_pb, timeout_seconds)
             result_pb = response.result()
 
