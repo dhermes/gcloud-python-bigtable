@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-import unittest2
+from gcloud_bigtable._grpc_mocks import GRPCMockTestMixin
 
 
 PROJECT_ID = 'PROJECT_ID'
@@ -24,7 +24,22 @@ CLUSTER_NAME = 'projects/%s/zones/%s/clusters/%s' % (
 TABLE_ID = 'TABLE_ID'
 
 
-class TestTableConnection(unittest2.TestCase):
+class TestTableConnection(GRPCMockTestMixin):
+
+    @classmethod
+    def setUpClass(cls):
+        from gcloud_bigtable import table_connection as MUT
+        cls._MUT = MUT
+        cls._STUB_FACTORY_NAME = 'TABLE_STUB_FACTORY'
+        cls._STUB_HOST = MUT.TABLE_ADMIN_HOST
+        cls._STUB_PORT = MUT.PORT
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls._MUT
+        del cls._STUB_FACTORY_NAME
+        del cls._STUB_HOST
+        del cls._STUB_PORT
 
     @staticmethod
     def _getTargetClass():
@@ -45,50 +60,6 @@ class TestTableConnection(unittest2.TestCase):
             ('create_scoped_required', (), {}),
             ('create_scoped', ((klass.SCOPE,),), {}),
         ])
-
-    def _grpc_call_helper(self, call_method, method_name, request_obj,
-                          stub_factory=None):
-        from gcloud_bigtable._grpc_mocks import StubMockFactory
-        from gcloud_bigtable._testing import _MockWithAttachedMethods
-        from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable import table_connection as MUT
-
-        credentials = _MockWithAttachedMethods(False)
-        connection = self._makeOne(credentials=credentials)
-
-        expected_result = object()
-        mock_make_stub = StubMockFactory(expected_result)
-        with _Monkey(MUT, make_stub=mock_make_stub):
-            result = call_method(connection)
-
-        self.assertTrue(result is expected_result)
-        self.assertEqual(credentials._called, [
-            ('create_scoped_required', (), {}),
-        ])
-
-        # Check all the stubs that were created and used as a context
-        # manager (should be just one).
-        factory_args = (
-            credentials,
-            stub_factory or MUT.TABLE_STUB_FACTORY,
-            MUT.TABLE_ADMIN_HOST,
-            MUT.PORT,
-        )
-        self.assertEqual(mock_make_stub.factory_calls,
-                         [(factory_args, {})])
-        stub, = mock_make_stub.stubs  # Asserts just one.
-        self.assertEqual(stub._enter_calls, 1)
-        self.assertEqual(stub._exit_args,
-                         [(None, None, None)])
-        # Check all the method calls.
-        method_calls = [
-            (
-                method_name,
-                (request_obj, MUT.TIMEOUT_SECONDS),
-                {},
-            )
-        ]
-        self.assertEqual(mock_make_stub.method_calls, method_calls)
 
     def _create_table_test_helper(self, initial_split_keys=None):
         from gcloud_bigtable._generated import (

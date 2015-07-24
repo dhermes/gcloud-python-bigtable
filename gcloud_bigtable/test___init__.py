@@ -28,6 +28,10 @@ class TestGRPCImportFailure(unittest2.TestCase):
         # H/T: http://pymotw.com/2/imp/
         cls._load_module_args = (mod_name,) + imp.find_module(mod_name)
 
+    @classmethod
+    def tearDownClass(cls):
+        del cls._load_module_args
+
     def _module_patch_helper(self, test_method):
         import sys
 
