@@ -14,11 +14,16 @@
 
 """Connection to Google Cloud Bigtable Data API."""
 
+
+from gcloud_bigtable._generated import bigtable_service_pb2
 from gcloud_bigtable.connection import Connection
 
 
+DATA_STUB_FACTORY = (bigtable_service_pb2.
+                     early_adopter_create_BigtableService_stub)
 DATA_API_HOST = 'bigtable.googleapis.com'
-"""Base URL for API requests."""
+"""Data API request host."""
+PORT = 443
 
 
 class DataConnection(Connection):

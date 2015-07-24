@@ -193,3 +193,42 @@ class Test_get_certs(unittest2.TestCase):
 
         self.assertEqual(call_kwargs, [{'reset': False}])
         self.assertTrue(result is return_val)
+
+
+class Test_make_stub(unittest2.TestCase):
+
+    def _callFUT(self, credentials, stub_factory, host, port):
+        from gcloud_bigtable.connection import make_stub
+        return make_stub(credentials, stub_factory, host, port)
+
+    def test_it(self):
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import connection as MUT
+
+        mock_result = object()
+        custom_factory = _MockCalled(mock_result)
+        transformed = object()
+        transformer = _MockCalled(transformed)
+
+        host = 'HOST'
+        port = 1025
+        certs = 'FOOBAR'
+        credentials = _MockWithAttachedMethods()
+        with _Monkey(MUT, get_certs=lambda: certs,
+                     MetadataTransformer=transformer):
+            result = self._callFUT(credentials, custom_factory, host, port)
+
+        self.assertTrue(result is mock_result)
+        custom_factory.check_called(
+            self,
+            [(host, port)],
+            [{
+                'metadata_transformer': transformed,
+                'secure': True,
+                'root_certificates': certs,
+            }],
+        )
+        transformer.check_called(self, [(credentials,)])
+        self.assertEqual(credentials._called, [])

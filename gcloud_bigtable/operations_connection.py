@@ -14,6 +14,7 @@
 
 """Connection to Google Cloud Operations API."""
 
+
 from gcloud_bigtable._generated import operations_pb2
 from gcloud_bigtable.connection import Connection
 from gcloud_bigtable.connection import MetadataTransformer

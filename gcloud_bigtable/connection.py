@@ -114,3 +114,31 @@ def get_certs():
     """
     set_certs(reset=False)
     return AuthInfo.ROOT_CERTIFICATES
+
+
+def make_stub(credentials, stub_factory, host, port):
+    """Makes a stub for the an API.
+
+    :type credentials: :class:`oauth2client.client.OAuth2Credentials`
+    :param credentials: The OAuth2 Credentials to use for access tokens
+                        to authorize requests.
+
+    :type stub_factory: callable
+    :param stub_factory: A factory which will create a gRPC stub for
+                         a given service.
+
+    :type host: string
+    :param host: The host for the service.
+
+    :type port: integer
+    :param port: The port for the service.
+
+    :rtype: :class:`grpc.early_adopter.implementations._Stub`
+    :returns: The stub object used to make gRPC requests to the
+              Data API.
+    """
+    custom_metadata_transformer = MetadataTransformer(credentials)
+    return stub_factory(host, port,
+                        metadata_transformer=custom_metadata_transformer,
+                        secure=True,
+                        root_certificates=get_certs())
