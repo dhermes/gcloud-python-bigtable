@@ -85,13 +85,15 @@ class TestTableConnection(GRPCMockTestMixin):
         self._create_table_test_helper()
 
     def test_list_tables(self):
-        from gcloud_bigtable._testing import _Credentials
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
+        from gcloud_bigtable._generated import (
+            bigtable_table_service_messages_pb2 as messages_pb2)
 
-        cluster_name = object()
-        self.assertRaises(NotImplementedError, connection.list_tables,
-                          cluster_name)
+        request_obj = messages_pb2.ListTablesRequest(name=CLUSTER_NAME)
+
+        def call_method(connection):
+            return connection.list_tables(CLUSTER_NAME)
+
+        self._grpc_call_helper(call_method, 'ListTables', request_obj)
 
     def test_get_table(self):
         from gcloud_bigtable._testing import _Credentials
