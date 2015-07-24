@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Logging settings for Google Cloud BigTable API package."""
+"""Logging settings for Google Cloud Bigtable API package."""
 
 
 import argparse

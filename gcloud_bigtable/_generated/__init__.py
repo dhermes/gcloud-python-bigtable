@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Generated protobuf modules for Google Cloud BigTable API."""
+"""Generated protobuf modules for Google Cloud Bigtable API."""

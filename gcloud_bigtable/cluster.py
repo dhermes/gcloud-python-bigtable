@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""User friendly methods for calling the Google Cloud BigTable API."""
+"""User friendly methods for calling the Google Cloud Bigtable API."""
 
 
 import logging
@@ -49,7 +49,7 @@ _TYPE_URL_MAP = {
 
 
 class Cluster(object):
-    """Representation of a Google Cloud BigTable Cluster.
+    """Representation of a Google Cloud Bigtable Cluster.
 
     We can use a :class:`Cluster` to:
 

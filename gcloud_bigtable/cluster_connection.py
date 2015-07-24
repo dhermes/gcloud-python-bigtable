@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Connection to Google Cloud BigTable Cluster Admin API."""
+"""Connection to Google Cloud Bigtable Cluster Admin API."""
 
 from oauth2client.client import AssertionCredentials
 
@@ -90,7 +90,7 @@ def _prepare_cluster(name=None, display_name=None, serve_nodes=None):
 
 
 class ClusterConnection(Connection):
-    """Connection to Google Cloud BigTable Cluster API.
+    """Connection to Google Cloud Bigtable Cluster API.
 
     This only allows interacting with clusters in a project.
 

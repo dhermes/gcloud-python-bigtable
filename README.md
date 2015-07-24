@@ -1,8 +1,8 @@
-# Google Cloud BigTable Python Library (Alpha)
+# Google Cloud Bigtable Python Library (Alpha)
 
 ### An extension to [`gcloud-python`][1]
 
-The Google Cloud BigTable API only supports requests over HTTP/2.
+The Google Cloud Bigtable API only supports requests over HTTP/2.
 In order to support this, we'll rely on [`grpc`][2]. Unfortunately,
 the install story of gRPC is still developing. We are working with the
 gRPC team to rapidly make the install story more user-friendly.

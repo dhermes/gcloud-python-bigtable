@@ -19,7 +19,7 @@ REQUIREMENTS = [
 setup(
     name='gcloud-bigtable',
     version='0.0.1',
-    description='API Client library for Google Cloud BigTable',
+    description='API Client library for Google Cloud Bigtable',
     author='Google Cloud Platform',
     author_email='daniel.j.hermes@gmail.com',
     long_description=README,

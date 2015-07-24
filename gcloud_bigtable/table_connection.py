@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Connection to Google Cloud BigTable Table Admin API."""
+"""Connection to Google Cloud Bigtable Table Admin API."""
 
 from gcloud_bigtable.connection import Connection
 
@@ -22,7 +22,7 @@ TABLE_ADMIN_HOST = 'https://bigtabletableadmin.googleapis.com'
 
 
 class TableConnection(Connection):
-    """Connection to Google Cloud BigTable Table API.
+    """Connection to Google Cloud Bigtable Table API.
 
     This only allows interacting with tables in a cluster.
 

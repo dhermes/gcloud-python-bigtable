@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Connection to Google Cloud BigTable API servers."""
+"""Connection to Google Cloud Bigtable API servers."""
 
 
 # See https://gist.github.com/dhermes/bbc5b7be1932bfffae77
@@ -45,7 +45,7 @@ class MetadataTransformer(object):
 
 
 class Connection(object):
-    """HTTP-RPC Connection base class for Google Cloud BigTable.
+    """HTTP-RPC Connection base class for Google Cloud Bigtable.
 
     :type credentials: :class:`oauth2client.client.OAuth2Credentials` or
                        :class:`NoneType`

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Connection to Google Cloud BigTable Data API."""
+"""Connection to Google Cloud Bigtable Data API."""
 
 from gcloud_bigtable.connection import Connection
 
@@ -22,7 +22,7 @@ DATA_API_HOST = 'bigtable.googleapis.com'
 
 
 class DataConnection(Connection):
-    """Connection to Google Cloud BigTable Data API.
+    """Connection to Google Cloud Bigtable Data API.
 
     This only allows interacting with data in an existing table.
 

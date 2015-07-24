@@ -14,7 +14,7 @@
 
 """Build script for rewriting imports for protobuf generated modules.
 
-Intended to be used for Google Cloud BigTable protos (google/bigtable/v1)
+Intended to be used for Google Cloud Bigtable protos (google/bigtable/v1)
 and the dependent modules (google/api and google/protobuf).
 """
 
