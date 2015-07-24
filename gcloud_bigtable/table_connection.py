@@ -18,6 +18,7 @@
 from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._generated import bigtable_table_service_pb2
+from gcloud_bigtable._generated import operations_pb2
 from gcloud_bigtable.connection import Connection
 from gcloud_bigtable.connection import TIMEOUT_SECONDS
 from gcloud_bigtable.connection import make_stub
@@ -25,6 +26,7 @@ from gcloud_bigtable.connection import make_stub
 
 TABLE_STUB_FACTORY = (bigtable_table_service_pb2.
                       early_adopter_create_BigtableTableService_stub)
+OPERATIONS_STUB_FACTORY = operations_pb2.early_adopter_create_Operations_stub
 TABLE_ADMIN_HOST = 'bigtabletableadmin.googleapis.com'
 """Table Admin API request host."""
 PORT = 443
@@ -69,10 +71,6 @@ class TableConnection(Connection):
         :type table_id: string
         :param table_id: The name of the table within the cluster.
 
-        :type timeout_seconds: integer
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
-
         :type initial_split_keys: interable of strings
         :param initial_split_keys: (Optional) List of row keys that will be
                                    used to initially split the table into
@@ -81,6 +79,10 @@ class TableConnection(Connection):
                                    and "s2", three tablets will be created,
                                    spanning the key ranges:
                                    [, s1), [s1, s2), [s2, ).
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
 
         :rtype: :class:`data_pb2.Table`
         :returns: The table created.
@@ -127,9 +129,38 @@ class TableConnection(Connection):
 
         return result_pb
 
-    def get_table(self, cluster_name, table_name):
-        """Get table metadata."""
-        raise NotImplementedError
+    def get_table(self, cluster_name, table_id,
+                  timeout_seconds=TIMEOUT_SECONDS):
+        """Gets table metadata.
+
+        :type cluster_name: string
+        :param cluster_name: The name of the cluster where the table will be
+                             created. Must be of the form
+                                 "projects/*/zones/*/clusters/*"
+                             Since this is a low-level class, we don't check
+                             this, rather we expect callers to pass correctly
+                             formatted data.
+
+        :type table_id: string
+        :param table_id: The name of the table within the cluster.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+
+        :rtype: :class:`data_pb2.Table`
+        :returns: The response object for the get table request.
+        """
+        table_name = '%s/tables/%s' % (cluster_name, table_id)
+        request_pb = messages_pb2.GetTableRequest(name=table_name)
+        result_pb = None
+        stub = make_stub(self._credentials, TABLE_STUB_FACTORY,
+                         TABLE_ADMIN_HOST, PORT)
+        with stub:
+            response = stub.GetTable.async(request_pb, timeout_seconds)
+            result_pb = response.result()
+
+        return result_pb
 
     def delete_table(self, cluster_name, table_name):
         """Delete a table."""
