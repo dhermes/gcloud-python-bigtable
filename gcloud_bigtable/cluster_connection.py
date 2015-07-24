@@ -102,7 +102,7 @@ class ClusterConnection(Connection):
     """
 
     SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
-    """Scope for table and cluster API requests."""
+    """Scope for Table Admin and Cluster Admin API requests."""
 
     def __init__(self, credentials=None):
         if isinstance(credentials, AssertionCredentials):

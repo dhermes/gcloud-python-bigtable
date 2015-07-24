@@ -16,6 +16,44 @@
 import unittest2
 
 
+class Test_make_table_stub(unittest2.TestCase):
+
+    def _callFUT(self, credentials):
+        from gcloud_bigtable.table_connection import make_table_stub
+        return make_table_stub(credentials)
+
+    def test_it(self):
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import table_connection as MUT
+
+        mock_result = object()
+        custom_factory = _MockCalled(mock_result)
+        transformed = object()
+        transformer = _MockCalled(transformed)
+
+        certs = 'FOOBAR'
+        credentials = _MockWithAttachedMethods()
+        with _Monkey(MUT, TABLE_STUB_FACTORY=custom_factory,
+                     get_certs=lambda: certs,
+                     MetadataTransformer=transformer):
+            result = self._callFUT(credentials)
+
+        self.assertTrue(result is mock_result)
+        custom_factory.check_called(
+            self,
+            [(MUT.TABLE_ADMIN_HOST, MUT.PORT)],
+            [{
+                'metadata_transformer': transformed,
+                'secure': True,
+                'root_certificates': certs,
+            }],
+        )
+        transformer.check_called(self, [(credentials,)])
+        self.assertEqual(credentials._called, [])
+
+
 class TestTableConnection(unittest2.TestCase):
 
     @staticmethod
