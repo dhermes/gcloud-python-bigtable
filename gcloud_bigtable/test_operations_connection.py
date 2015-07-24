@@ -23,43 +23,36 @@ class Test_make_operations_stub(unittest2.TestCase):
         return make_operations_stub(host, credentials)
 
     def test_it(self):
-        from gcloud_bigtable._testing import _Credentials
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import operations_connection as MUT
 
         host = 'HOST'
-        called = []
-        creds_list = []
         mock_result = object()
+        custom_factory = _MockCalled(mock_result)
         transformed = object()
-
-        def custom_factory(*args, **kwargs):
-            called.append((args, kwargs))
-            return mock_result
-
-        def transformer(credentials):
-            creds_list.append(credentials)
-            return transformed
+        transformer = _MockCalled(transformed)
 
         certs = 'FOOBAR'
-        credentials = _Credentials()
+        credentials = _MockWithAttachedMethods()
         with _Monkey(MUT, OPERATIONS_STUB_FACTORY=custom_factory,
                      get_certs=lambda: certs,
                      MetadataTransformer=transformer):
             result = self._callFUT(host, credentials)
 
         self.assertTrue(result is mock_result)
-        self.assertEqual(creds_list, [credentials])
-        # Unpack single call.
-        (called_args, called_kwargs), = called
-        self.assertEqual(called_args,
-                         (host, MUT.PORT))
-        expected_kwargs = {
-            'metadata_transformer': transformed,
-            'secure': True,
-            'root_certificates': certs,
-        }
-        self.assertEqual(called_kwargs, expected_kwargs)
+        custom_factory.check_called(
+            self,
+            [(host, MUT.PORT)],
+            [{
+                'metadata_transformer': transformed,
+                'secure': True,
+                'root_certificates': certs,
+            }],
+        )
+        transformer.check_called(self, [(credentials,)])
+        self.assertEqual(credentials._called, [])
 
 
 class TestOperationsConnection(unittest2.TestCase):

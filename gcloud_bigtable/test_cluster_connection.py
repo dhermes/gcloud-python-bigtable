@@ -23,42 +23,35 @@ class Test_make_cluster_stub(unittest2.TestCase):
         return make_cluster_stub(credentials)
 
     def test_it(self):
-        from gcloud_bigtable._testing import _Credentials
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster_connection as MUT
 
-        called = []
-        creds_list = []
         mock_result = object()
+        custom_factory = _MockCalled(mock_result)
         transformed = object()
-
-        def custom_factory(*args, **kwargs):
-            called.append((args, kwargs))
-            return mock_result
-
-        def transformer(credentials):
-            creds_list.append(credentials)
-            return transformed
+        transformer = _MockCalled(transformed)
 
         certs = 'FOOBAR'
-        credentials = _Credentials()
+        credentials = _MockWithAttachedMethods()
         with _Monkey(MUT, CLUSTER_STUB_FACTORY=custom_factory,
                      get_certs=lambda: certs,
                      MetadataTransformer=transformer):
             result = self._callFUT(credentials)
 
         self.assertTrue(result is mock_result)
-        self.assertEqual(creds_list, [credentials])
-        # Unpack single call.
-        (called_args, called_kwargs), = called
-        self.assertEqual(called_args,
-                         (MUT.CLUSTER_ADMIN_HOST, MUT.PORT))
-        expected_kwargs = {
-            'metadata_transformer': transformed,
-            'secure': True,
-            'root_certificates': certs,
-        }
-        self.assertEqual(called_kwargs, expected_kwargs)
+        custom_factory.check_called(
+            self,
+            [(MUT.CLUSTER_ADMIN_HOST, MUT.PORT)],
+            [{
+                'metadata_transformer': transformed,
+                'secure': True,
+                'root_certificates': certs,
+            }],
+        )
+        transformer.check_called(self, [(credentials,)])
+        self.assertEqual(credentials._called, [])
 
 
 class TestClusterConnection(unittest2.TestCase):
@@ -72,12 +65,23 @@ class TestClusterConnection(unittest2.TestCase):
         return self._getTargetClass()(*args, **kwargs)
 
     def test_constructor(self):
-        from gcloud_bigtable._testing import _Credentials
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
         klass = self._getTargetClass()
-        credentials = _Credentials()
+        new_creds = object()
+        # Let the first Connection() constructor actually require scopes
+        # but not the second.
+        credentials = _MockWithAttachedMethods(True, new_creds, False)
         connection = self._makeOne(credentials=credentials)
-        self.assertTrue(connection._credentials is credentials)
-        self.assertEqual(connection._credentials._scopes, (klass.SCOPE,))
+        self.assertTrue(connection._credentials is new_creds)
+        self.assertEqual(credentials._called, [
+            ('create_scoped_required', (), {}),
+            (
+                'create_scoped',
+                ((klass.SCOPE,),),
+                {},
+            ),
+            ('create_scoped_required', (), {}),
+        ])
 
     def test_constructor_bad_type(self):
         from oauth2client.client import AssertionCredentials
@@ -86,11 +90,11 @@ class TestClusterConnection(unittest2.TestCase):
         self.assertRaises(TypeError, self._makeOne, credentials=credentials)
 
     def _rpc_method_test_helper(self, rpc_method, method_name):
-        from gcloud_bigtable._testing import _Credentials
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable._testing import _StubMock
         from gcloud_bigtable import cluster_connection as MUT
-        credentials = _Credentials()
+        credentials = _MockWithAttachedMethods(False, False)
         connection = self._makeOne(credentials=credentials)
         stubs = []
         expected_result = object()
@@ -125,15 +129,21 @@ class TestClusterConnection(unittest2.TestCase):
         return request_pb
 
     def test_get_operation(self):
-        from gcloud_bigtable._testing import _Credentials
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster_connection as MUT
-        credentials = _Credentials()
-        with _Monkey(MUT, OperationsConnection=_OperationsConnection):
-            connection = self._makeOne(credentials=credentials)
-
+        # Only need one return value since the OperationsConnection()
+        # constructor will not actually be used (a stub instead),
+        # hence we only have to deal with one create_scoped_required call.
+        credentials = _MockWithAttachedMethods(False)
+        # We need to stub out the OperationsConnection since that is
+        # what we'll be testing.
         expected_result = object()
-        connection._ops_connection._result = expected_result
+        op_conn = _MockWithAttachedMethods(expected_result)
+        op_conn_class = _MockCalled(op_conn)
+        with _Monkey(MUT, OperationsConnection=op_conn_class):
+            connection = self._makeOne(credentials=credentials)
 
         PROJECT_ID = 'PROJECT_ID'
         ZONE = 'ZONE'
@@ -141,12 +151,29 @@ class TestClusterConnection(unittest2.TestCase):
         OPERATION_ID = 'OPERATION_ID'
         result = connection.get_operation(PROJECT_ID, ZONE,
                                           CLUSTER_ID, OPERATION_ID)
+
+        # Make sure our mock returned the fake value.
         self.assertTrue(result is expected_result)
+        op_conn_class.check_called(
+            self,
+            [(MUT.CLUSTER_ADMIN_HOST,)],
+            [{
+                'credentials': credentials,
+                'scope': connection.SCOPE,
+            }],
+        )
         expected_op_name = ('operations/projects/PROJECT_ID/zones/ZONE/'
                             'clusters/CLUSTER_ID/operations/OPERATION_ID')
-        expected_timeout_seconds = 10
-        self.assertEqual(connection._ops_connection._get_ops_calls,
-                         [(expected_op_name, expected_timeout_seconds)])
+        self.assertEqual(
+            op_conn._called,
+            [
+                (
+                    'get_operation',
+                    (expected_op_name,),
+                    {'timeout_seconds': MUT.TIMEOUT_SECONDS},
+                ),
+            ],
+        )
 
     def test_list_zones(self):
         from gcloud_bigtable._generated import (
@@ -337,17 +364,3 @@ class Test__prepare_cluster(unittest2.TestCase):
 
         self.assertEqual(cluster.display_name, DISPLAY_NAME)
         self.assertEqual(cluster.serve_nodes, SERVE_NODES)
-
-
-class _OperationsConnection(object):
-
-    def __init__(self, host, scope=None, credentials=None):
-        self._host = host
-        self._scope = scope
-        self._credentials = credentials
-        self._get_ops_calls = []
-        self._result = None
-
-    def get_operation(self, operation_name, timeout_seconds=None):
-        self._get_ops_calls.append((operation_name, timeout_seconds))
-        return self._result
