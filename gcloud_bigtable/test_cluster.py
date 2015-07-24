@@ -39,8 +39,7 @@ class TestCluster(unittest2.TestCase):
 
         # Expected order of calls (on creds):
         # - create_scoped_required (via ClusterConnection)
-        # - create_scoped_required (via OperationsConnection)
-        credentials_result = _MockWithAttachedMethods(False, False)
+        credentials_result = _MockWithAttachedMethods(False)
         # Expected order of calls (on creds class):
         # - get_application_default
         mock_creds_class = _MockWithAttachedMethods(credentials_result)
@@ -62,7 +61,6 @@ class TestCluster(unittest2.TestCase):
                          [('get_application_default', (), {})])
         self.assertEqual(credentials_result._called, [
             ('create_scoped_required', (), {}),
-            ('create_scoped_required', (), {}),
         ])
 
     def test_constructor_explicit_credentials(self):
@@ -71,8 +69,7 @@ class TestCluster(unittest2.TestCase):
 
         # Expected order of calls (on creds):
         # - create_scoped_required (via ClusterConnection)
-        # - create_scoped_required (via OperationsConnection)
-        credentials = _MockWithAttachedMethods(False, False)
+        credentials = _MockWithAttachedMethods(False)
         cluster = self._makeOne(PROJECT_ID, ZONE, CLUSTER_ID,
                                 credentials=credentials)
 
@@ -87,7 +84,6 @@ class TestCluster(unittest2.TestCase):
         self.assertEqual(cluster._cluster_conn._credentials, credentials)
         self.assertEqual(credentials._called, [
             ('create_scoped_required', (), {}),
-            ('create_scoped_required', (), {}),
         ])
 
     def test_from_service_account_json(self):
@@ -100,8 +96,7 @@ class TestCluster(unittest2.TestCase):
         klass = self._getTargetClass()
         # Expected order of calls (on creds):
         # - create_scoped_required (via ClusterConnection)
-        # - create_scoped_required (via OperationsConnection)
-        credentials = _MockWithAttachedMethods(False, False)
+        credentials = _MockWithAttachedMethods(False)
         get_adc = _MockCalled(credentials)
         json_credentials_path = 'JSON_CREDENTIALS_PATH'
 
@@ -121,7 +116,6 @@ class TestCluster(unittest2.TestCase):
         self.assertEqual(cluster._cluster_conn._credentials, credentials)
         self.assertEqual(credentials._called, [
             ('create_scoped_required', (), {}),
-            ('create_scoped_required', (), {}),
         ])
         # _get_application_default_credential_from_file only has pos. args.
         get_adc.check_called(self, [(json_credentials_path,)])
@@ -136,8 +130,7 @@ class TestCluster(unittest2.TestCase):
         klass = self._getTargetClass()
         # Expected order of calls (on creds):
         # - create_scoped_required (via ClusterConnection)
-        # - create_scoped_required (via OperationsConnection)
-        credentials = _MockWithAttachedMethods(False, False)
+        credentials = _MockWithAttachedMethods(False)
         signed_creds = _MockCalled(credentials)
         private_key = 'PRIVATE_KEY'
         mock_get_contents = _MockCalled(private_key)
@@ -159,7 +152,6 @@ class TestCluster(unittest2.TestCase):
         self.assertTrue(isinstance(cluster._cluster_conn, ClusterConnection))
         self.assertEqual(cluster._cluster_conn._credentials, credentials)
         self.assertEqual(credentials._called, [
-            ('create_scoped_required', (), {}),
             ('create_scoped_required', (), {}),
         ])
         # SignedJwtAssertionCredentials() called with only kwargs

@@ -21,14 +21,15 @@ from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._generated import bigtable_cluster_service_pb2
+from gcloud_bigtable._generated import operations_pb2
 from gcloud_bigtable.connection import Connection
 from gcloud_bigtable.connection import TIMEOUT_SECONDS
 from gcloud_bigtable.connection import make_stub
-from gcloud_bigtable.operations_connection import OperationsConnection
 
 
 CLUSTER_STUB_FACTORY = (bigtable_cluster_service_pb2.
                         early_adopter_create_BigtableClusterService_stub)
+OPERATIONS_STUB_FACTORY = operations_pb2.early_adopter_create_Operations_stub
 CLUSTER_ADMIN_HOST = 'bigtableclusteradmin.googleapis.com'
 """Cluster Admin API request host."""
 PORT = 443
@@ -90,10 +91,6 @@ class ClusterConnection(Connection):
             raise TypeError('Service accounts are not able to use the Cluster '
                             'Admin API at this time.')
         super(ClusterConnection, self).__init__(credentials)
-        # We assume credentials.create_scoped_required() will be False
-        # so that the same credentials can be used.
-        self._ops_connection = OperationsConnection(
-            CLUSTER_ADMIN_HOST, scope=self.SCOPE, credentials=credentials)
 
     def get_operation(self, project_id, zone, cluster_id,
                       operation_id, timeout_seconds=TIMEOUT_SECONDS):
@@ -123,8 +120,15 @@ class ClusterConnection(Connection):
         operation_name = (
             'operations/projects/%s/zones/%s/clusters/%s/operations/%s' % (
                 project_id, zone, cluster_id, operation_id))
-        return self._ops_connection.get_operation(
-            operation_name, timeout_seconds=timeout_seconds)
+        request_pb = operations_pb2.GetOperationRequest(name=operation_name)
+        result_pb = None
+        stub = make_stub(self._credentials, OPERATIONS_STUB_FACTORY,
+                         CLUSTER_ADMIN_HOST, PORT)
+        with stub:
+            response = stub.GetOperation.async(request_pb, timeout_seconds)
+            result_pb = response.result()
+
+        return result_pb
 
     def list_zones(self, project_id, timeout_seconds=TIMEOUT_SECONDS):
         """Lists zones associated with project.
