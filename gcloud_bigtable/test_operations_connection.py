@@ -83,6 +83,52 @@ class TestOperationsConnection(unittest2.TestCase):
         self.assertEqual(request_obj.request_timeouts, [10])
         return request_pb
 
+    def test_get_operation_alt(self):
+        from gcloud_bigtable._generated import operations_pb2
+        from gcloud_bigtable._grpc_mocks import StubMockFactory
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import operations_connection as MUT
+
+        OPERATION_NAME = 'OPERATION_NAME'
+        host = 'HOST'
+        credentials = _MockWithAttachedMethods(False)
+        connection = self._makeOne(host, credentials=credentials)
+
+        expected_result = object()
+        mock_make_stub = StubMockFactory(expected_result)
+        with _Monkey(MUT, make_stub=mock_make_stub):
+            result = connection.get_operation(OPERATION_NAME)
+
+        self.assertTrue(result is expected_result)
+        self.assertEqual(credentials._called,
+                         [('create_scoped_required', (), {})])
+
+        # Check all the stubs that were created and used as a context
+        # manager (should be just one).
+        factory_args = (
+            credentials,
+            MUT.OPERATIONS_STUB_FACTORY,
+            host,
+            MUT.PORT,
+        )
+        self.assertEqual(mock_make_stub.factory_calls,
+                         [(factory_args, {})])
+        stub, = mock_make_stub.stubs  # Asserts just one.
+        self.assertEqual(stub._enter_calls, 1)
+        self.assertEqual(stub._exit_args,
+                         [(None, None, None)])
+        # Check all the method calls.
+        op = operations_pb2.GetOperationRequest(name=OPERATION_NAME)
+        method_calls = [
+            (
+                'GetOperation',
+                (op, MUT.TIMEOUT_SECONDS),
+                {},
+            )
+        ]
+        self.assertEqual(mock_make_stub.method_calls, method_calls)
+
     def test_get_operation(self):
         from gcloud_bigtable._generated import operations_pb2
 
