@@ -21,5 +21,10 @@ a 400 Bad Request:
 }
 ```
 
+## Development
+
+See [`CONTRIBUTING.md`][3] for instructions on development.
+
 [1]: https://github.com/GoogleCloudPlatform/gcloud-python
 [2]: https://www.grpc.io/
+[3]: https://github.com/dhermes/gcloud-python-bigtable/blob/master/CONTRIBUTING.md
