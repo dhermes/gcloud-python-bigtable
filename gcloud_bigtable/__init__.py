@@ -13,3 +13,14 @@
 # limitations under the License.
 
 """Google Cloud Bigtable API package."""
+
+try:
+    from grpc._adapter import _c
+except ImportError as exc:
+    if 'libgrpc.so' in exc.message:
+        raise ImportError('gRPC libraries could not be located. Please see '
+                          'instructions to locate these files. You\'ll want '
+                          'to set your LD_LIBRARY_PATH variable to help '
+                          'Python locate the libraries.')
+    else:
+        raise
