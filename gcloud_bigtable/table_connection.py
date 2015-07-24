@@ -17,8 +17,6 @@
 
 from gcloud_bigtable._generated import bigtable_table_service_pb2
 from gcloud_bigtable.connection import Connection
-from gcloud_bigtable.connection import MetadataTransformer
-from gcloud_bigtable.connection import get_certs
 
 
 TABLE_STUB_FACTORY = (bigtable_table_service_pb2.
@@ -26,25 +24,6 @@ TABLE_STUB_FACTORY = (bigtable_table_service_pb2.
 TABLE_ADMIN_HOST = 'bigtabletableadmin.googleapis.com'
 """Table Admin API request host."""
 PORT = 443
-
-
-def make_table_stub(credentials):
-    """Makes a stub for the Table Admin API.
-
-    :type credentials: :class:`oauth2client.client.OAuth2Credentials`
-    :param credentials: The OAuth2 Credentials to use for access tokens
-                        to authorize requests.
-
-    :rtype: :class:`grpc.early_adopter.implementations._Stub`
-    :returns: The stub object used to make gRPC requests to the
-              Table Admin API.
-    """
-    custom_metadata_transformer = MetadataTransformer(credentials)
-    return TABLE_STUB_FACTORY(
-        TABLE_ADMIN_HOST, PORT,
-        metadata_transformer=custom_metadata_transformer,
-        secure=True,
-        root_certificates=get_certs())
 
 
 class TableConnection(Connection):
