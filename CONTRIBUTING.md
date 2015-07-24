@@ -41,6 +41,22 @@ $ # May need to update dynamic linker config via:
 $ # [sudo] ldconfig
 ```
 
+## False Starts
+
+This library originally attempted to support HTTP-RPC requests
+over HTTP/1.1. This is not allowed by the backend, and results in
+a 400 Bad Request:
+
+```json
+{
+  "error": {
+    "code": 400,
+    "message": "Proto over HTTP is not allowed for service 'bigtableclusteradmin.googleapis.com'.",
+    "status": "FAILED_PRECONDITION"
+  }
+}
+```
+
 [1]: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/tree/master/bigtable-protos/src/main/proto/google/
 [2]: https://github.com/google/protobuf
 [3]: https://pypi.python.org/pypi/protobuf
