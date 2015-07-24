@@ -22,6 +22,7 @@ CLUSTER_ID = 'CLUSTER_ID'
 CLUSTER_NAME = 'projects/%s/zones/%s/clusters/%s' % (
     PROJECT_ID, ZONE, CLUSTER_ID)
 TABLE_ID = 'TABLE_ID'
+COLUMN_FAMILY_ID = 'COLUMN_FAMILY_ID'
 
 
 class TestTableConnection(GRPCMockTestMixin):
@@ -141,28 +142,28 @@ class TestTableConnection(GRPCMockTestMixin):
             bigtable_table_service_messages_pb2 as messages_pb2)
 
         table_name = '%s/tables/%s' % (CLUSTER_NAME, TABLE_ID)
-        column_family_id = 'COLUMN_FAMILY_ID'
         request_obj = messages_pb2.CreateColumnFamilyRequest(
-            column_family_id=column_family_id,
+            column_family_id=COLUMN_FAMILY_ID,
             name=table_name,
         )
 
         def call_method(connection):
             return connection.create_column_family(
-                CLUSTER_NAME, TABLE_ID, column_family_id)
+                CLUSTER_NAME, TABLE_ID, COLUMN_FAMILY_ID)
 
         self._grpc_call_helper(call_method, 'CreateColumnFamily', request_obj)
 
     def test_update_column_family(self):
-        from gcloud_bigtable._testing import _Credentials
-        credentials = _Credentials()
-        connection = self._makeOne(credentials=credentials)
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
 
-        cluster_name = object()
-        table_name = 'table_name'
-        column_family = 'column_family'
+        credentials = _MockWithAttachedMethods(False)
+        connection = self._makeOne(credentials=credentials)
+        self.assertEqual(credentials._called, [
+            ('create_scoped_required', (), {}),
+        ])
+
         self.assertRaises(NotImplementedError, connection.update_column_family,
-                          cluster_name, table_name, column_family)
+                          CLUSTER_NAME, TABLE_ID, COLUMN_FAMILY_ID)
 
     def test_delete_column_family(self):
         from gcloud_bigtable._testing import _Credentials
