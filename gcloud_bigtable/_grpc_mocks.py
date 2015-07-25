@@ -107,6 +107,7 @@ class GRPCMockTestMixin(unittest2.TestCase):
     class attributes will be set:
 
     * ``_MUT``: The module under test.
+    * ``_STUB_SCOPES``: Scopes used by ``MUT`` when creating a client.
     * ``_STUB_FACTORY_NAME``: Name of default factory used by ``MUT`` to create
                               a gRPC stub.
     * ``_STUB_HOST``: Host used by ``MUT`` to create a gRPC stub.
@@ -161,3 +162,46 @@ class GRPCMockTestMixin(unittest2.TestCase):
             )
         ]
         self.assertEqual(mock_make_stub.method_calls, method_calls)
+
+    def _grpc_client_test_helper(self, method_name, result_method, request_pb,
+                                 response_pb, expected_result, project_id):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable.client import Client
+
+        # Create the client.
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = Client(credentials, project_id=project_id)
+
+        # Create mocks to avoid HTTP/2 calls.
+        mock_make_stub = StubMockFactory(response_pb)
+
+        # Call the method with the mocks.
+        with _Monkey(self._MUT, make_stub=mock_make_stub):
+            result = result_method(client)
+        self.assertEqual(result, expected_result)
+
+        self.assertEqual(credentials._called, [
+            ('create_scoped', (self._STUB_SCOPES,), {}),
+        ])
+        factory_args = (
+            scoped_creds,
+            getattr(self._MUT, self._STUB_FACTORY_NAME),
+            self._STUB_HOST,
+            self._STUB_PORT,
+        )
+        self.assertEqual(mock_make_stub.factory_calls,
+                         [(factory_args, {})])
+        self.assertEqual(mock_make_stub.method_calls, [
+            (
+                method_name,
+                (request_pb, self._MUT.TIMEOUT_SECONDS),
+                {},
+            ),
+        ])
+        self.assertEqual(len(mock_make_stub.stubs), 1)
+        stub = mock_make_stub.stubs[0]
+        self.assertEqual(stub._enter_calls, 1)
+        self.assertEqual(stub._exit_args,
+                         [(None, None, None)])

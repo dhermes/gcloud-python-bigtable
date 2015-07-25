@@ -15,6 +15,8 @@
 
 import unittest2
 
+from gcloud_bigtable._grpc_mocks import GRPCMockTestMixin
+
 
 PROJECT_ID = 'project-id'
 
@@ -222,7 +224,24 @@ class Test__determine_project_id(unittest2.TestCase):
                      method_input=None)
 
 
-class TestClient(unittest2.TestCase):
+class TestClient(GRPCMockTestMixin):
+
+    @classmethod
+    def setUpClass(cls):
+        from gcloud_bigtable import client as MUT
+        cls._MUT = MUT
+        cls._STUB_SCOPES = [MUT.DATA_SCOPE]
+        cls._STUB_FACTORY_NAME = 'CLUSTER_STUB_FACTORY'
+        cls._STUB_HOST = MUT.CLUSTER_ADMIN_HOST
+        cls._STUB_PORT = MUT.CLUSTER_ADMIN_PORT
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls._MUT
+        del cls._STUB_SCOPES
+        del cls._STUB_FACTORY_NAME
+        del cls._STUB_HOST
+        del cls._STUB_PORT
 
     def _getTargetClass(self):
         from gcloud_bigtable.client import Client
@@ -302,50 +321,6 @@ class TestClient(unittest2.TestCase):
         client = self._makeOne(credentials, project_id=PROJECT_ID)
         self.assertEqual(client.project_name, project_name)
 
-    def _grpc_client_test_helper(self, method_name, result_method, request_pb,
-                                 response_pb, expected_result):
-        from gcloud_bigtable._grpc_mocks import StubMockFactory
-        from gcloud_bigtable._testing import _MockWithAttachedMethods
-        from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable import client as MUT
-
-        # Create the client.
-        scoped_creds = object()
-        credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID)
-
-        # Create mocks to avoid HTTP/2 calls.
-        mock_make_stub = StubMockFactory(response_pb)
-
-        # Call the method with the mocks.
-        with _Monkey(MUT, make_stub=mock_make_stub):
-            result = result_method(client)
-        self.assertEqual(result, expected_result)
-
-        self.assertEqual(credentials._called, [
-            ('create_scoped', ([MUT.DATA_SCOPE],), {}),
-        ])
-        factory_args = (
-            scoped_creds,
-            MUT.CLUSTER_STUB_FACTORY,
-            MUT.CLUSTER_ADMIN_HOST,
-            MUT.CLUSTER_ADMIN_PORT,
-        )
-        self.assertEqual(mock_make_stub.factory_calls,
-                         [(factory_args, {})])
-        self.assertEqual(mock_make_stub.method_calls, [
-            (
-                method_name,
-                (request_pb, MUT.TIMEOUT_SECONDS),
-                {},
-            ),
-        ])
-        self.assertEqual(len(mock_make_stub.stubs), 1)
-        stub = mock_make_stub.stubs[0]
-        self.assertEqual(stub._enter_calls, 1)
-        self.assertEqual(stub._exit_args,
-                         [(None, None, None)])
-
     def test_list_zones(self):
         from gcloud_bigtable._generated import (
             bigtable_cluster_data_pb2 as data_pb2)
@@ -369,7 +344,7 @@ class TestClient(unittest2.TestCase):
             return client.list_zones()
 
         self._grpc_client_test_helper('ListZones', result_method, request_pb,
-                                      response_pb, expected_result)
+                                      response_pb, expected_result, PROJECT_ID)
 
     def test_list_clusters(self):
         from gcloud_bigtable._generated import (
@@ -426,4 +401,5 @@ class TestClient(unittest2.TestCase):
             return client.list_clusters()
 
         self._grpc_client_test_helper('ListClusters', result_method,
-                                      request_pb, response_pb, expected_result)
+                                      request_pb, response_pb, expected_result,
+                                      PROJECT_ID)

@@ -34,8 +34,10 @@ except ImportError:
 
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
-from gcloud_bigtable._generated import bigtable_cluster_service_pb2
 from gcloud_bigtable.cluster_standalone import Cluster
+from gcloud_bigtable.cluster_standalone import CLUSTER_ADMIN_PORT
+from gcloud_bigtable.cluster_standalone import CLUSTER_ADMIN_HOST
+from gcloud_bigtable.cluster_standalone import CLUSTER_STUB_FACTORY
 from gcloud_bigtable.connection import TIMEOUT_SECONDS
 from gcloud_bigtable.connection import make_stub
 
@@ -50,13 +52,6 @@ READ_ONLY_SCOPE = ('https://www.googleapis.com/auth/'
 
 PROJECT_ENV_VAR = 'GCLOUD_PROJECT'
 """Environment variable used to provide an implicit project ID."""
-CLUSTER_ADMIN_HOST = 'bigtableclusteradmin.googleapis.com'
-"""Cluster Admin API request host."""
-CLUSTER_ADMIN_PORT = 443
-"""Cluster Admin API request port."""
-
-CLUSTER_STUB_FACTORY = (bigtable_cluster_service_pb2.
-                        early_adopter_create_BigtableClusterService_stub)
 
 
 def _project_id_from_environment():

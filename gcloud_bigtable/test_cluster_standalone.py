@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-import unittest2
+from gcloud_bigtable._grpc_mocks import GRPCMockTestMixin
 
 
 PROJECT_ID = 'project-id'
@@ -21,7 +21,25 @@ ZONE = 'zone'
 CLUSTER_ID = 'cluster-id'
 
 
-class TestCluster(unittest2.TestCase):
+class TestCluster(GRPCMockTestMixin):
+
+    @classmethod
+    def setUpClass(cls):
+        from gcloud_bigtable import client
+        from gcloud_bigtable import cluster_standalone as MUT
+        cls._MUT = MUT
+        cls._STUB_SCOPES = [client.DATA_SCOPE]
+        cls._STUB_FACTORY_NAME = 'CLUSTER_STUB_FACTORY'
+        cls._STUB_HOST = MUT.CLUSTER_ADMIN_HOST
+        cls._STUB_PORT = MUT.CLUSTER_ADMIN_PORT
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls._MUT
+        del cls._STUB_SCOPES
+        del cls._STUB_FACTORY_NAME
+        del cls._STUB_HOST
+        del cls._STUB_PORT
 
     def _getTargetClass(self):
         from gcloud_bigtable.cluster_standalone import Cluster
@@ -162,3 +180,33 @@ class TestCluster(unittest2.TestCase):
         cluster1 = self._makeOne('zone1', 'cluster_id1', 'client1')
         cluster2 = self._makeOne('zone2', 'cluster_id2', 'client2')
         self.assertNotEqual(cluster1, cluster2)
+
+    def test_reload(self):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_service_messages_pb2 as messages_pb2)
+
+        TEST_CASE = self
+
+        # Create request_pb
+        cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+                        '/clusters/' + CLUSTER_ID)
+        request_pb = messages_pb2.GetClusterRequest(name=cluster_name)
+
+        # Create response_pb
+        response_pb = data_pb2.Cluster(
+            display_name=CLUSTER_ID,
+            serve_nodes=3,
+        )
+        # Create expected_result.
+        expected_result = None  # reload() has no return value.
+
+        # We must create the cluster with the client passed in.
+        def result_method(client):
+            cluster = TEST_CASE._makeOne(ZONE, CLUSTER_ID, client)
+            return cluster.reload()
+
+        self._grpc_client_test_helper('GetCluster', result_method,
+                                      request_pb, response_pb, expected_result,
+                                      PROJECT_ID)
