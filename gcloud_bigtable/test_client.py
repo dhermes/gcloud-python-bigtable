@@ -16,6 +16,9 @@
 import unittest2
 
 
+PROJECT_ID = 'PROJECT_ID'
+
+
 class Test__project_id_from_environment(unittest2.TestCase):
 
     def _callFUT(self):
@@ -204,18 +207,18 @@ class Test__determine_project_id(unittest2.TestCase):
 
     def test_with_explicit_value(self):
         self._helper(num_mocks_called=0, mock_output=None,
-                     method_input='PROJECT_ID')
+                     method_input=PROJECT_ID)
 
     def test_from_environment(self):
-        self._helper(num_mocks_called=1, mock_output='PROJECT_ID',
+        self._helper(num_mocks_called=1, mock_output=PROJECT_ID,
                      method_input=None)
 
     def test_from_app_engine(self):
-        self._helper(num_mocks_called=2, mock_output='PROJECT_ID',
+        self._helper(num_mocks_called=2, mock_output=PROJECT_ID,
                      method_input=None)
 
     def test_from_compute_engine(self):
-        self._helper(num_mocks_called=3, mock_output='PROJECT_ID',
+        self._helper(num_mocks_called=3, mock_output=PROJECT_ID,
                      method_input=None)
 
 
@@ -258,8 +261,7 @@ class TestClient(unittest2.TestCase):
     def test_constructor_with_explicit_project_id(self):
         from gcloud_bigtable import client as MUT
         expected_scopes = [MUT.DATA_SCOPE]
-        project_id = 'PROJECT_ID'
-        self._constructor_test_helper(expected_scopes, project_id=project_id)
+        self._constructor_test_helper(expected_scopes, project_id=PROJECT_ID)
 
     def test_constructor_with_admin(self):
         from gcloud_bigtable import client as MUT
@@ -280,7 +282,7 @@ class TestClient(unittest2.TestCase):
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id='PROJECT_ID')
+        client = self._makeOne(credentials, project_id=PROJECT_ID)
         self.assertTrue(client.credentials is scoped_creds)
 
     def test_project_id_getter(self):
@@ -288,16 +290,74 @@ class TestClient(unittest2.TestCase):
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        project_id = 'PROJECT_ID'
-        client = self._makeOne(credentials, project_id=project_id)
-        self.assertEqual(client.project_id, project_id)
+        client = self._makeOne(credentials, project_id=PROJECT_ID)
+        self.assertEqual(client.project_id, PROJECT_ID)
 
     def test_project_name_property(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        project_id = 'PROJECT_ID'
-        project_name = 'projects/' + project_id
-        client = self._makeOne(credentials, project_id=project_id)
+        project_name = 'projects/' + PROJECT_ID
+        client = self._makeOne(credentials, project_id=PROJECT_ID)
         self.assertEqual(client.project_name, project_name)
+
+    def test_list_zones(self):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._grpc_mocks import StubMockFactory
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import client as MUT
+
+        request_pb = messages_pb2.ListZonesRequest(
+            name='projects/' + PROJECT_ID,
+        )
+        zone1 = 'foo'
+        zone2 = 'foo'
+        response_pb = messages_pb2.ListZonesResponse(
+            zones=[
+                data_pb2.Zone(display_name=zone1),
+                data_pb2.Zone(display_name=zone2),
+            ],
+        )
+        expected_result = [zone1, zone2]
+
+        # Create the client.
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID)
+
+        # Create mocks to avoid HTTP/2 calls.
+        mock_make_stub = StubMockFactory(response_pb)
+
+        # Call the method with the mocks.
+        with _Monkey(MUT, make_stub=mock_make_stub):
+            result = client.list_zones()
+        self.assertEqual(result, expected_result)
+
+        self.assertEqual(credentials._called, [
+            ('create_scoped', ([MUT.DATA_SCOPE],), {}),
+        ])
+        factory_args = (
+            scoped_creds,
+            MUT.CLUSTER_STUB_FACTORY,
+            MUT.CLUSTER_ADMIN_HOST,
+            MUT.CLUSTER_ADMIN_PORT,
+        )
+        self.assertEqual(mock_make_stub.factory_calls,
+                         [(factory_args, {})])
+        self.assertEqual(mock_make_stub.method_calls, [
+            (
+                'ListZones',
+                (request_pb, MUT.TIMEOUT_SECONDS),
+                {},
+            ),
+        ])
+        self.assertEqual(len(mock_make_stub.stubs), 1)
+        stub = mock_make_stub.stubs[0]
+        self.assertEqual(stub._enter_calls, 1)
+        self.assertEqual(stub._exit_args,
+                         [(None, None, None)])

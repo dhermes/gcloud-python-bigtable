@@ -32,6 +32,12 @@ try:
 except ImportError:
     app_identity = None
 
+from gcloud_bigtable._generated import (
+    bigtable_cluster_service_messages_pb2 as messages_pb2)
+from gcloud_bigtable._generated import bigtable_cluster_service_pb2
+from gcloud_bigtable.connection import TIMEOUT_SECONDS
+from gcloud_bigtable.connection import make_stub
+
 
 ADMIN_SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
 """Scope for interacting with the Cluster Admin and Table Admin APIs."""
@@ -43,6 +49,13 @@ READ_ONLY_SCOPE = ('https://www.googleapis.com/auth/'
 
 PROJECT_ENV_VAR = 'GCLOUD_PROJECT'
 """Environment variable used to provide an implicit project ID."""
+CLUSTER_ADMIN_HOST = 'bigtableclusteradmin.googleapis.com'
+"""Cluster Admin API request host."""
+CLUSTER_ADMIN_PORT = 443
+"""Cluster Admin API request port."""
+
+CLUSTER_STUB_FACTORY = (bigtable_cluster_service_pb2.
+                        early_adopter_create_BigtableClusterService_stub)
 
 
 def _project_id_from_environment():
@@ -207,3 +220,23 @@ class Client(object):
                   API RPC service.
         """
         return 'projects/' + self._project_id
+
+    def list_zones(self, timeout_seconds=TIMEOUT_SECONDS):
+        """Lists zones associated with project.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+
+        :rtype: list of strings
+        :returns: The names of the zones
+        """
+        request_pb = messages_pb2.ListZonesRequest(name=self.project_name)
+        stub = make_stub(self._credentials, CLUSTER_STUB_FACTORY,
+                         CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
+        with stub:
+            response = stub.ListZones.async(request_pb, timeout_seconds)
+            # We expect a `messages_pb2.ListZonesResponse`
+            list_zones_response = response.result()
+
+        return [zone.display_name for zone in list_zones_response.zones]
