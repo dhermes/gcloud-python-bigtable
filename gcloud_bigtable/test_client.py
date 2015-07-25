@@ -302,28 +302,12 @@ class TestClient(unittest2.TestCase):
         client = self._makeOne(credentials, project_id=PROJECT_ID)
         self.assertEqual(client.project_name, project_name)
 
-    def test_list_zones(self):
-        from gcloud_bigtable._generated import (
-            bigtable_cluster_data_pb2 as data_pb2)
-        from gcloud_bigtable._generated import (
-            bigtable_cluster_service_messages_pb2 as messages_pb2)
+    def _grpc_client_test_helper(self, method_name, result_method, request_pb,
+                                 response_pb, expected_result):
         from gcloud_bigtable._grpc_mocks import StubMockFactory
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import client as MUT
-
-        request_pb = messages_pb2.ListZonesRequest(
-            name='projects/' + PROJECT_ID,
-        )
-        zone1 = 'foo'
-        zone2 = 'foo'
-        response_pb = messages_pb2.ListZonesResponse(
-            zones=[
-                data_pb2.Zone(display_name=zone1),
-                data_pb2.Zone(display_name=zone2),
-            ],
-        )
-        expected_result = [zone1, zone2]
 
         # Create the client.
         scoped_creds = object()
@@ -335,7 +319,7 @@ class TestClient(unittest2.TestCase):
 
         # Call the method with the mocks.
         with _Monkey(MUT, make_stub=mock_make_stub):
-            result = client.list_zones()
+            result = result_method(client)
         self.assertEqual(result, expected_result)
 
         self.assertEqual(credentials._called, [
@@ -351,7 +335,7 @@ class TestClient(unittest2.TestCase):
                          [(factory_args, {})])
         self.assertEqual(mock_make_stub.method_calls, [
             (
-                'ListZones',
+                method_name,
                 (request_pb, MUT.TIMEOUT_SECONDS),
                 {},
             ),
@@ -362,19 +346,44 @@ class TestClient(unittest2.TestCase):
         self.assertEqual(stub._exit_args,
                          [(None, None, None)])
 
+    def test_list_zones(self):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_service_messages_pb2 as messages_pb2)
+
+        request_pb = messages_pb2.ListZonesRequest(
+            name='projects/' + PROJECT_ID,
+        )
+        zone1 = 'foo'
+        zone2 = 'foo'
+        response_pb = messages_pb2.ListZonesResponse(
+            zones=[
+                data_pb2.Zone(display_name=zone1),
+                data_pb2.Zone(display_name=zone2),
+            ],
+        )
+        expected_result = [zone1, zone2]
+
+        def result_method(client):
+            return client.list_zones()
+
+        self._grpc_client_test_helper('ListZones', result_method, request_pb,
+                                      response_pb, expected_result)
+
     def test_list_clusters(self):
         from gcloud_bigtable._generated import (
             bigtable_cluster_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
-        from gcloud_bigtable._grpc_mocks import StubMockFactory
-        from gcloud_bigtable._testing import _MockWithAttachedMethods
-        from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable import client as MUT
+        from gcloud_bigtable.cluster_standalone import Cluster
 
+        # Create request_pb
         request_pb = messages_pb2.ListClustersRequest(
             name='projects/' + PROJECT_ID,
         )
+
+        # Create response_pb
         zone = 'foo'
         failed_zone = 'bar'
         cluster_id1 = 'cluster-id1'
@@ -393,47 +402,20 @@ class TestClient(unittest2.TestCase):
             ],
         )
 
-        # Create the client.
-        scoped_creds = object()
-        credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID)
+        # Create expected_result.
+        failed_zones = [failed_zone]
+        clusters = [
+            Cluster(zone, cluster_id1, None),
+            Cluster(zone, cluster_id2, None),
+        ]
+        expected_result = (clusters, failed_zones)
 
-        # Create mocks to avoid HTTP/2 calls.
-        mock_make_stub = StubMockFactory(response_pb)
+        # We didn't have access to the client above when creating the clusters
+        # so we will patch it in the `result_method` closure.
+        def result_method(client):
+            clusters[0]._client = client
+            clusters[1]._client = client
+            return client.list_clusters()
 
-        # Call the method with the mocks.
-        with _Monkey(MUT, make_stub=mock_make_stub):
-            clusters, failed_zones = client.list_clusters()
-        self.assertEqual(failed_zones, [failed_zone])
-        self.assertEqual(len(clusters), 2)
-        cluster1, cluster2 = clusters
-        self.assertEqual(cluster1.cluster_id, cluster_id1)
-        self.assertEqual(cluster1.zone, zone)
-        self.assertTrue(cluster1.client is client)
-        self.assertEqual(cluster2.cluster_id, cluster_id2)
-        self.assertEqual(cluster2.zone, zone)
-        self.assertTrue(cluster2.client is client)
-
-        self.assertEqual(credentials._called, [
-            ('create_scoped', ([MUT.DATA_SCOPE],), {}),
-        ])
-        factory_args = (
-            scoped_creds,
-            MUT.CLUSTER_STUB_FACTORY,
-            MUT.CLUSTER_ADMIN_HOST,
-            MUT.CLUSTER_ADMIN_PORT,
-        )
-        self.assertEqual(mock_make_stub.factory_calls,
-                         [(factory_args, {})])
-        self.assertEqual(mock_make_stub.method_calls, [
-            (
-                'ListClusters',
-                (request_pb, MUT.TIMEOUT_SECONDS),
-                {},
-            ),
-        ])
-        self.assertEqual(len(mock_make_stub.stubs), 1)
-        stub = mock_make_stub.stubs[0]
-        self.assertEqual(stub._enter_calls, 1)
-        self.assertEqual(stub._exit_args,
-                         [(None, None, None)])
+        self._grpc_client_test_helper('ListClusters', result_method,
+                                      request_pb, response_pb, expected_result)
