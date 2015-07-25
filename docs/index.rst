@@ -35,11 +35,11 @@ If you would like more than the minimum number of nodes (``3``) in your cluster:
     ``create`` and ``display_name`` is mandatory in ``create`` since it is
     mandatory in ``CreateCluster``. However, we could easily set
 
-.. code:: python
+    .. code:: python
 
-    display_name = cluster.cluster_id
+        display_name = cluster.cluster_id
 
-if ``cluster.create()`` were called with no arguments.
+    if ``cluster.create()`` were called with no arguments.
 
 ************************************
 Get metadata for an existing Cluster
@@ -97,8 +97,10 @@ Low-level Methods
 *****************
 
 The `ListClusters`_, `UndeleteCluster`_, and `ListZones`_ methods
-have been implemented on the `ClusterConnection`_ class, but not on
-the :class:`Cluster <gcloud_bigtable.cluster.Cluster>` convenience class.
+have been implemented on the
+:class:`ClusterConnection <gcloud_bigtable.cluster_connection.ClusterConnection>`
+class, but not on the :class:`Cluster <gcloud_bigtable.cluster.Cluster>`
+convenience class.
 
 For now, you can access a cluster connection as a protected attribute of
 a :class:`Cluster <gcloud_bigtable.cluster.Cluster>`:
@@ -165,7 +167,6 @@ Indices and tables
 * :ref:`search`
 
 .. _Cluster Admin API: https://cloud.google.com/bigtable/docs/creating-cluster
-.. _Cluster: https://github.com/dhermes/gcloud-python-bigtable/blob/cluster-api-complete/gcloud_bigtable/cluster.py#L40
 .. _CreateCluster: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/bigtable/admin/cluster/v1/bigtable_cluster_service.proto#L66-L68
 .. _GetCluster: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/bigtable/admin/cluster/v1/bigtable_cluster_service.proto#L38-L40
 .. _UpdateCluster: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/bigtable/admin/cluster/v1/bigtable_cluster_service.proto#L93-L95
@@ -173,7 +174,6 @@ Indices and tables
 .. _ListClusters: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/bigtable/admin/cluster/v1/bigtable_cluster_service.proto#L44-L46
 .. _UndeleteCluster: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/bigtable/admin/cluster/v1/bigtable_cluster_service.proto#L126-L128
 .. _ListZones: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/bigtable/admin/cluster/v1/bigtable_cluster_service.proto#L33-L35
-.. _ClusterConnection: https://github.com/dhermes/gcloud-python-bigtable/blob/cluster-api-complete/gcloud_bigtable/cluster_connection.py#L92
 .. _ListClustersResponse: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/bigtable/admin/cluster/v1/bigtable_cluster_service_messages.proto#L56-L62
 .. _Operation: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/longrunning/operations.proto#L73-L102
 .. _ListZonesResponse: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/bigtable/admin/cluster/v1/bigtable_cluster_service_messages.proto#L36-L39
