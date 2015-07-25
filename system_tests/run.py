@@ -23,6 +23,7 @@ from oauth2client.client import GoogleCredentials
 from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
+from gcloud_bigtable.client import Client
 from gcloud_bigtable.cluster import Cluster
 from gcloud_bigtable.cluster_connection import ClusterConnection
 
@@ -172,3 +173,12 @@ class TestClusterAdminAPI(unittest2.TestCase):
 
         # Restore the original state of the cluster.
         self._cluster.update(display_name=curr_display_name)
+
+
+class TestClient(unittest2.TestCase):
+
+    def test_list_zones(self):
+        credentials = GoogleCredentials.get_application_default()
+        client = Client(credentials, project_id=PROJECT_ID)
+        zones = client.list_zones()
+        self.assertEqual(sorted(zones), list(EXPECTED_ZONES))
