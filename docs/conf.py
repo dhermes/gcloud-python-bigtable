@@ -16,6 +16,7 @@ import os
 from pkg_resources import get_distribution
 import sys
 import shlex
+import types
 
 import sphinx_rtd_theme
 
@@ -118,9 +119,37 @@ todo_include_todos = True
 
 # -- Options for HTML output ----------------------------------------------
 
+def add_grpc_mock(grpc_mod, subpackage, module_names):
+    full_subpackage = 'grpc.' + subpackage
+    subpackage_mod = types.ModuleType(full_subpackage)
+    sys.modules[full_subpackage] = subpackage_mod
+
+    setattr(grpc_mod, subpackage, subpackage_mod)
+
+    for module_name in module_names:
+        full_mod_name = full_subpackage + '.' + module_name
+        mod_obj = types.ModuleType(full_mod_name)
+        sys.modules[full_mod_name] = mod_obj
+
+        setattr(subpackage_mod, module_name, mod_obj)
+
+
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-if os.environ.get('READTHEDOCS', None) != 'True':
+if os.environ.get('READTHEDOCS', None) == 'True':
+    # Really nasty hack so that readthedocs.org can successfully build these
+    # docs even though gRPC can't be installed.
+    grpc_mod = types.ModuleType('grpc')
+    sys.modules['grpc'] = grpc_mod
+    add_grpc_mock(grpc_mod, '_adapter', ['_c'])
+    add_grpc_mock(grpc_mod, 'early_adopter', ['implementations'])
+    add_grpc_mock(grpc_mod, 'framework', ['alpha'])
+
+    name = 'grpc.framework.alpha.utilities'
+    util_mod = types.ModuleType(name)
+    sys.modules[name] = util_mod
+    sys.modules['grpc.framework.alpha'].utilities = util_mod
+else:
     html_theme = 'sphinx_rtd_theme'
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
