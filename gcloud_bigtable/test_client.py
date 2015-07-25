@@ -16,7 +16,7 @@
 import unittest2
 
 
-PROJECT_ID = 'PROJECT_ID'
+PROJECT_ID = 'project-id'
 
 
 class Test__project_id_from_environment(unittest2.TestCase):
@@ -375,10 +375,10 @@ class TestClient(unittest2.TestCase):
         request_pb = messages_pb2.ListClustersRequest(
             name='projects/' + PROJECT_ID,
         )
-        zone = 'FOO'
-        failed_zone = 'BAR'
-        cluster_id1 = 'CLUSTER_ID1'
-        cluster_id2 = 'CLUSTER_ID2'
+        zone = 'foo'
+        failed_zone = 'bar'
+        cluster_id1 = 'cluster-id1'
+        cluster_id2 = 'cluster-id2'
         cluster_name1 = ('projects/' + PROJECT_ID + '/zones/' + zone +
                          '/clusters/' + cluster_id1)
         cluster_name2 = ('projects/' + PROJECT_ID + '/zones/' + zone +

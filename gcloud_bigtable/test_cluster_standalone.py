@@ -16,9 +16,9 @@
 import unittest2
 
 
-PROJECT_ID = 'PROJECT_ID'
-ZONE = 'ZONE'
-CLUSTER_ID = 'CLUSTER_ID'
+PROJECT_ID = 'project-id'
+ZONE = 'zone'
+CLUSTER_ID = 'cluster-id'
 
 
 class TestCluster(unittest2.TestCase):
@@ -51,6 +51,18 @@ class TestCluster(unittest2.TestCase):
         client = Client(credentials, project_id=PROJECT_ID)
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
         self.assertEqual(cluster.project_id, PROJECT_ID)
+
+    def test_name_property(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable.client import Client
+
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = Client(credentials, project_id=PROJECT_ID)
+        cluster = self._makeOne(ZONE, CLUSTER_ID, client)
+        cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+                        '/clusters/' + CLUSTER_ID)
+        self.assertEqual(cluster.name, cluster_name)
 
     def test_from_pb_success(self):
         from gcloud_bigtable._generated import (

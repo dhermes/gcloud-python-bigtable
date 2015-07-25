@@ -18,8 +18,9 @@
 import re
 
 
-_CLUSTER_NAME_RE = re.compile(r'^projects/(?P<project_id>\w+)/zones/'
-                              r'(?P<zone>\w+)/clusters/(?P<cluster_id>\w+)$')
+_CLUSTER_NAME_RE = re.compile(r'^projects/(?P<project_id>[^/]+)/'
+                              r'zones/(?P<zone>[^/]+)/clusters/'
+                              r'(?P<cluster_id>[a-z][-a-z0-9]*)$')
 
 
 class Cluster(object):
@@ -60,7 +61,7 @@ class Cluster(object):
         match = _CLUSTER_NAME_RE.match(cluster_pb.name)
         if match is None:
             raise ValueError('Cluster protobuf name was not in the '
-                             'expected format.')
+                             'expected format.', cluster_pb.name)
         if match.group('project_id') != client.project_id:
             raise ValueError('Project ID on cluster does not match the '
                              'project ID on the client')
@@ -84,3 +85,20 @@ class Cluster(object):
         :returns: The project ID for the cluster (is stored on the client).
         """
         return self._client.project_id
+
+    @property
+    def name(self):
+        """Cluster name used in requests.
+
+        .. note::
+          This property will not change if ``zone`` and ``cluster_id`` do not,
+          but the return value is not cached.
+
+        The cluster name is of the form
+        "projects/{project_id}/zones/{zone}/clusters/{cluster_id}".
+
+        :rtype: string
+        :returns: The cluster name.
+        """
+        return (self.client.project_name + '/zones/' + self.zone +
+                '/clusters/' + self.cluster_id)

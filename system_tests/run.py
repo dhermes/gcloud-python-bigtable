@@ -177,8 +177,22 @@ class TestClusterAdminAPI(unittest2.TestCase):
 
 class TestClient(unittest2.TestCase):
 
-    def test_list_zones(self):
+    @classmethod
+    def setUpClass(cls):
         credentials = GoogleCredentials.get_application_default()
-        client = Client(credentials, project_id=PROJECT_ID)
-        zones = client.list_zones()
+        cls._client = Client(credentials, project_id=PROJECT_ID)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls._client
+
+    def test_list_zones(self):
+        zones = self._client.list_zones()
         self.assertEqual(sorted(zones), list(EXPECTED_ZONES))
+
+    def test_list_clusters(self):
+        clusters, failed_zones = self._client.list_clusters()
+        self.assertEqual(failed_zones, [])
+        self.assertEqual(len(clusters), len(EXISTING_CLUSTER_NAMES))
+        for cluster in clusters:
+            self.assertTrue(cluster.name in EXISTING_CLUSTER_NAMES)
