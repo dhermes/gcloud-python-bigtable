@@ -274,3 +274,30 @@ class TestClient(unittest2.TestCase):
     def test_constructor_both_admin_and_read_only(self):
         with self.assertRaises(ValueError):
             self._makeOne(None, admin=True, read_only=True)
+
+    def test_credentials_getter(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id='PROJECT_ID')
+        self.assertTrue(client.credentials is scoped_creds)
+
+    def test_project_id_getter(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        project_id = 'PROJECT_ID'
+        client = self._makeOne(credentials, project_id=project_id)
+        self.assertEqual(client.project_id, project_id)
+
+    def test_project_name_property(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        project_id = 'PROJECT_ID'
+        project_name = 'projects/' + project_id
+        client = self._makeOne(credentials, project_id=project_id)
+        self.assertEqual(client.project_name, project_name)

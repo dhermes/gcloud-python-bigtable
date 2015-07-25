@@ -177,3 +177,33 @@ class Client(object):
 
         self._credentials = credentials.create_scoped(scopes)
         self._project_id = _determine_project_id(project_id)
+
+    @property
+    def credentials(self):
+        """Getter for client's credentials.
+
+        :rtype: :class:`oauth2client.client.OAuth2Credentials`
+        :returns: The credentials stored on the client.
+        """
+        return self._credentials
+
+    @property
+    def project_id(self):
+        """Getter for client's project ID.
+
+        :rtype: string
+        :returns: The project ID stored on the client.
+        """
+        return self._project_id
+
+    @property
+    def project_name(self):
+        """Project name to be used with Cluster Admin API.
+
+        The project name is of the form "projects/{project_id}".
+
+        :rtype: string
+        :returns: The project name to be used with the Cloud Bigtable Admin
+                  API RPC service.
+        """
+        return 'projects/' + self._project_id
