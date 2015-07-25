@@ -116,3 +116,30 @@ class TestCluster(unittest2.TestCase):
         klass = self._getTargetClass()
         with self.assertRaises(ValueError):
             klass.from_pb(cluster_pb, client)
+
+    def test___eq__(self):
+        zone = 'zone'
+        cluster_id = 'cluster_id'
+        client = object()
+        cluster1 = self._makeOne(zone, cluster_id, client)
+        cluster2 = self._makeOne(zone, cluster_id, client)
+        self.assertEqual(cluster1, cluster2)
+
+    def test___eq__type_differ(self):
+        cluster1 = self._makeOne('zone', 'cluster_id', 'client')
+        cluster2 = object()
+        self.assertNotEqual(cluster1, cluster2)
+
+    def test___ne__same_value(self):
+        zone = 'zone'
+        cluster_id = 'cluster_id'
+        client = object()
+        cluster1 = self._makeOne(zone, cluster_id, client)
+        cluster2 = self._makeOne(zone, cluster_id, client)
+        comparison_val = (cluster1 != cluster2)
+        self.assertFalse(comparison_val)
+
+    def test___ne__(self):
+        cluster1 = self._makeOne('zone1', 'cluster_id1', 'client1')
+        cluster2 = self._makeOne('zone2', 'cluster_id2', 'client2')
+        self.assertNotEqual(cluster1, cluster2)

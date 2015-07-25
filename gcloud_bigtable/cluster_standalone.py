@@ -102,3 +102,13 @@ class Cluster(object):
         """
         return (self.client.project_name + '/zones/' + self.zone +
                 '/clusters/' + self.cluster_id)
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return (other.zone == self.zone and
+                other.cluster_id == self.cluster_id and
+                other.client == self.client)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)

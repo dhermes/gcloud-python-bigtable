@@ -256,8 +256,9 @@ class Client(object):
 
         :rtype: tuple
         :returns: A pair of results, the first is a list of
-                  :class:`.cluster_standalone.Cluster` s returned and the second
-                  is a list of strings (the failed zones in the request).
+                  :class:`.cluster_standalone.Cluster` s returned and the
+                  second is a list of strings (the failed zones in the
+                  request).
         """
         request_pb = messages_pb2.ListClustersRequest(name=self.project_name)
         stub = make_stub(self._credentials, CLUSTER_STUB_FACTORY,
