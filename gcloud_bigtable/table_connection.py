@@ -59,7 +59,7 @@ class TableConnection(Connection):
         :type cluster_name: string
         :param cluster_name: The name of the cluster where the table will be
                              created. Must be of the form
-                                 "projects/*/zones/*/clusters/*"
+                             "projects/../zones/../clusters/.."
                              Since this is a low-level class, we don't check
                              this, rather we expect callers to pass correctly
                              formatted data.
@@ -103,7 +103,7 @@ class TableConnection(Connection):
         :type cluster_name: string
         :param cluster_name: The name of the cluster containing the list of
                              tables. Must be of the form
-                                 "projects/*/zones/*/clusters/*"
+                             "projects/../zones/../clusters/.."
                              Since this is a low-level class, we don't check
                              this, rather we expect callers to pass correctly
                              formatted data.
@@ -132,7 +132,7 @@ class TableConnection(Connection):
         :type cluster_name: string
         :param cluster_name: The name of the cluster where the table will be
                              created. Must be of the form
-                                 "projects/*/zones/*/clusters/*"
+                             "projects/../zones/../clusters/.."
                              Since this is a low-level class, we don't check
                              this, rather we expect callers to pass correctly
                              formatted data.
@@ -165,7 +165,7 @@ class TableConnection(Connection):
         :type cluster_name: string
         :param cluster_name: The name of the cluster where the table will be
                              deleted. Must be of the form
-                                 "projects/*/zones/*/clusters/*"
+                             "projects/../zones/../clusters/.."
                              Since this is a low-level class, we don't check
                              this, rather we expect callers to pass correctly
                              formatted data.
@@ -202,7 +202,7 @@ class TableConnection(Connection):
         :type cluster_name: string
         :param cluster_name: The name of the cluster where the table will be
                              renamed. Must be of the form
-                                 "projects/*/zones/*/clusters/*"
+                             "projects/../zones/../clusters/.."
                              Since this is a low-level class, we don't check
                              this, rather we expect callers to pass correctly
                              formatted data.
@@ -249,7 +249,7 @@ class TableConnection(Connection):
         :type cluster_name: string
         :param cluster_name: The name of the cluster where the column family
                              will be created. Must be of the form
-                                 "projects/*/zones/*/clusters/*"
+                             "projects/../zones/../clusters/.."
                              Since this is a low-level class, we don't check
                              this, rather we expect callers to pass correctly
                              formatted data.
@@ -299,7 +299,7 @@ class TableConnection(Connection):
         :type cluster_name: string
         :param cluster_name: The name of the cluster where the column family
                              will be updated. Must be of the form
-                                 "projects/*/zones/*/clusters/*"
+                             "projects/../zones/../clusters/.."
                              Since this is a low-level class, we don't check
                              this, rather we expect callers to pass correctly
                              formatted data.
@@ -332,7 +332,7 @@ class TableConnection(Connection):
         :type cluster_name: string
         :param cluster_name: The name of the cluster where the column family
                              will be deleted. Must be of the form
-                                 "projects/*/zones/*/clusters/*"
+                             "projects/../zones/../clusters/.."
                              Since this is a low-level class, we don't check
                              this, rather we expect callers to pass correctly
                              formatted data.

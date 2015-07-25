@@ -97,7 +97,7 @@ cluster = Cluster(project_id, zone, cluster_id,
                   credentials=credentials)
 ```
 
-## Enabling the BigTable API
+## Enabling the Bigtable API
 
 1.  Visit [Google Cloud Console][14]
 1.  Either create a new project or visit an existing one

@@ -53,10 +53,10 @@ class Cluster(object):
 
     We can use a :class:`Cluster` to:
 
+    * :meth:`Cluster.reload` itself
     * :meth:`Cluster.create` itself
     * :meth:`Cluster.update` itself
     * :meth:`Cluster.delete` itself
-    * :meth:`Cluster.reload` itself
 
     :type project_id: string
     :param project_id: The ID of the project that owns the cluster.
@@ -278,7 +278,7 @@ def _get_operation_id(operation_name, project_id, zone, cluster_id):
     """Parse a returned name of a long-running operation.
 
     We expect names to be of the form
-        operations/projects/*/zones/*/clusters/*/operations/{OP_ID}
+    "operations/projects/../zones/../clusters/../operations/{OP_ID}"
 
     :type operation_name: string
     :param operation_name: The name of a long-running operation from the

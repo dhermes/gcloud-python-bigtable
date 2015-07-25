@@ -42,7 +42,7 @@ def _prepare_read(table_name, row_key=None, row_range=None,
     :type table_name: string
     :param table_name: The name of the table we are reading from.
                        Must be of the form
-                           "projects/*/zones/*/clusters/*/tables/*"
+                       "projects/../zones/../clusters/../tables/.."
                        Since this is a low-level class, we don't check
                        this, rather we expect callers to pass correctly
                        formatted data.
@@ -135,7 +135,7 @@ class DataConnection(Connection):
         :type table_name: string
         :param table_name: The name of the table we are reading from.
                            Must be of the form
-                               "projects/*/zones/*/clusters/*/tables/*"
+                           "projects/../zones/../clusters/../tables/.."
                            Since this is a low-level class, we don't check
                            this, rather we expect callers to pass correctly
                            formatted data.
@@ -202,7 +202,7 @@ class DataConnection(Connection):
         :type table_name: string
         :param table_name: The name of the table we are taking the sample from.
                            Must be of the form
-                               "projects/*/zones/*/clusters/*/tables/*"
+                           "projects/../zones/../clusters/../tables/.."
                            Since this is a low-level class, we don't check
                            this, rather we expect callers to pass correctly
                            formatted data.

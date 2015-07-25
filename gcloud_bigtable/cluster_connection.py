@@ -45,7 +45,7 @@ def _prepare_cluster(name=None, display_name=None, serve_nodes=None):
 
     :type name: string
     :param name: (Optional). The name of the cluster. Must be of the form
-                 "projects/*/zones/*/clusters/*".
+                 "projects/../zones/../clusters/..".
 
     :type display_name: string
     :param display_name: (Optional) The display name for the cluster in

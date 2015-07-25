@@ -41,3 +41,6 @@ pylintrc_reduced
 
 # Local config not intended to be uploaded
 system_tests/local_setup
+
+# Sphinx built docs
+docs/_build
