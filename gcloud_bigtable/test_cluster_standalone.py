@@ -30,11 +30,26 @@ class TestCluster(unittest2.TestCase):
     def _makeOne(self, *args, **kwargs):
         return self._getTargetClass()(*args, **kwargs)
 
-    def test_constructor(self):
+    def test_constructor_defaults(self):
         client = object()
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
         self.assertEqual(cluster.zone, ZONE)
         self.assertEqual(cluster.cluster_id, CLUSTER_ID)
+        self.assertEqual(cluster.display_name, CLUSTER_ID)
+        self.assertEqual(cluster.serve_nodes, 3)
+        self.assertTrue(cluster._client is client)
+
+    def test_constructor_non_default(self):
+        client = object()
+        display_name = 'display_name'
+        serve_nodes = 8
+        cluster = self._makeOne(ZONE, CLUSTER_ID, client,
+                                display_name=display_name,
+                                serve_nodes=serve_nodes)
+        self.assertEqual(cluster.zone, ZONE)
+        self.assertEqual(cluster.cluster_id, CLUSTER_ID)
+        self.assertEqual(cluster.display_name, display_name)
+        self.assertEqual(cluster.serve_nodes, serve_nodes)
         self.assertTrue(cluster._client is client)
 
     def test_client_getter(self):
