@@ -17,6 +17,8 @@
 
 import re
 
+from gcloud_bigtable.cluster import _require_pb_property
+
 
 _CLUSTER_NAME_RE = re.compile(r'^projects/(?P<project_id>[^/]+)/'
                               r'zones/(?P<zone>[^/]+)/clusters/'
@@ -35,11 +37,24 @@ class Cluster(object):
     :type client: :class:`.client.Client`
     :param client: The client that owns the cluster. Provides
                    authorization and a project ID.
+
+    :type display_name: string
+    :param display_name: (Optional) The display name for the cluster in the
+                         Cloud Console UI. (Must be between 4 and 30
+                         characters.) If this value is not set in the
+                         constructor, will fall back to the cluster ID.
+
+    :type serve_nodes: integer
+    :param serve_nodes: (Optional) The number of nodes in the cluster.
+                        Defaults to 3.
     """
 
-    def __init__(self, zone, cluster_id, client):
+    def __init__(self, zone, cluster_id, client,
+                 display_name=None, serve_nodes=3):
         self.zone = zone
         self.cluster_id = cluster_id
+        self.display_name = display_name or cluster_id
+        self.serve_nodes = serve_nodes
         self._client = client
 
     @classmethod
@@ -66,7 +81,10 @@ class Cluster(object):
             raise ValueError('Project ID on cluster does not match the '
                              'project ID on the client')
 
-        return cls(match.group('zone'), match.group('cluster_id'), client)
+        display_name = _require_pb_property(cluster_pb, 'display_name', None)
+        serve_nodes = _require_pb_property(cluster_pb, 'serve_nodes', None)
+        return cls(match.group('zone'), match.group('cluster_id'), client,
+                   display_name=display_name, serve_nodes=serve_nodes)
 
     @property
     def client(self):
@@ -106,6 +124,11 @@ class Cluster(object):
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
+        # NOTE: This does not compare the configuration values, such as
+        #       the serve_nodes or display_name. This is intentional, since
+        #       the same cluster can be in different states if not
+        #       synchronized. This suggests we should use `project_id`
+        #       instead of `client` for the third comparison.
         return (other.zone == self.zone and
                 other.cluster_id == self.cluster_id and
                 other.client == self.client)

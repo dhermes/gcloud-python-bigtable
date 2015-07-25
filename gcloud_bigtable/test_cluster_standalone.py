@@ -76,7 +76,11 @@ class TestCluster(unittest2.TestCase):
 
         cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
                         '/clusters/' + CLUSTER_ID)
-        cluster_pb = data_pb2.Cluster(name=cluster_name)
+        cluster_pb = data_pb2.Cluster(
+            name=cluster_name,
+            display_name=CLUSTER_ID,
+            serve_nodes=3,
+        )
 
         klass = self._getTargetClass()
         cluster = klass.from_pb(cluster_pb, client)

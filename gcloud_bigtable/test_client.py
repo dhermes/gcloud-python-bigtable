@@ -397,8 +397,16 @@ class TestClient(unittest2.TestCase):
                 data_pb2.Zone(display_name=failed_zone),
             ],
             clusters=[
-                data_pb2.Cluster(name=cluster_name1),
-                data_pb2.Cluster(name=cluster_name2),
+                data_pb2.Cluster(
+                    name=cluster_name1,
+                    display_name=cluster_name1,
+                    serve_nodes=3,
+                ),
+                data_pb2.Cluster(
+                    name=cluster_name2,
+                    display_name=cluster_name2,
+                    serve_nodes=3,
+                ),
             ],
         )
 
