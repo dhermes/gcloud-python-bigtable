@@ -213,6 +213,10 @@ class Client(object):
     def project_name(self):
         """Project name to be used with Cluster Admin API.
 
+        .. note::
+          This property will not change if ``project_id`` does not, but the
+          return value is not cached.
+
         The project name is of the form "projects/{project_id}".
 
         :rtype: string
