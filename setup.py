@@ -10,6 +10,7 @@ with open(os.path.join(HERE, 'README.md')) as file_obj:
 
 
 REQUIREMENTS = [
+    'grpcio >= 0.10.0a0',
     'httplib2 >= 0.9.1',
     'oauth2client >= 1.4.6',
     'protobuf >= 3.0.0a3',
