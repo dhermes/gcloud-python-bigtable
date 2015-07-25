@@ -32,6 +32,7 @@ IGNORED_DIRECTORIES = [
     'gcloud_bigtable/_generated',
 ]
 IGNORED_FILES = [
+    'docs/conf.py',
     'setup.py',
 ]
 PRODUCTION_RC = 'pylintrc_default'
