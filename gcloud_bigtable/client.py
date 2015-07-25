@@ -23,6 +23,16 @@ In the hierarchy of API concepts
 """
 
 
+import os
+import six
+import socket
+
+try:
+    from google.appengine.api import app_identity
+except ImportError:
+    app_identity = None
+
+
 ADMIN_SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
 """Scope for interacting with the Cluster Admin and Table Admin APIs."""
 DATA_SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.data'
@@ -31,6 +41,99 @@ READ_ONLY_SCOPE = ('https://www.googleapis.com/auth/'
                    'cloud-bigtable.data.readonly')
 """Scope for reading table data."""
 
+PROJECT_ENV_VAR = 'GCLOUD_PROJECT'
+"""Environment variable used to provide an implicit project ID."""
+
+
+def _project_id_from_environment():
+    """Attempts to get the project ID from an environment variable.
+
+    :rtype: string or :class:`NoneType`
+    :returns: The project ID provided or ``None``
+    """
+    return os.getenv(PROJECT_ENV_VAR)
+
+
+def _project_id_from_app_engine():
+    """Gets the App Engine application ID if it can be inferred.
+
+    :rtype: string or ``NoneType``
+    :returns: App Engine application ID if running in App Engine,
+              else ``None``.
+    """
+    if app_identity is None:
+        return None
+
+    return app_identity.get_application_id()
+
+
+def _project_id_from_compute_engine():
+    """Gets the Compute Engine project ID if it can be inferred.
+
+    Uses 169.254.169.254 for the metadata server to avoid request
+    latency from DNS lookup.
+
+    See https://cloud.google.com/compute/docs/metadata#metadataserver
+    for information about this IP address. (This IP is also used for
+    Amazon EC2 instances, so the metadata flavor is crucial.)
+
+    See https://github.com/google/oauth2client/issues/93 for context about
+    DNS latency.
+
+    :rtype: string or ``NoneType``
+    :returns: Compute Engine project ID if the metadata service is available,
+              else ``None``.
+    """
+    host = '169.254.169.254'
+    uri_path = '/computeMetadata/v1/project/project-id'
+    headers = {'Metadata-Flavor': 'Google'}
+    connection = six.moves.http_client.HTTPConnection(host, timeout=0.1)
+
+    try:
+        connection.request('GET', uri_path, headers=headers)
+        response = connection.getresponse()
+        if response.status == 200:
+            return response.read()
+    except socket.error:  # socket.timeout or socket.error(64, 'Host is down')
+        pass
+    finally:
+        connection.close()
+
+
+def _determine_project_id(project_id):
+    """Determine the project ID from the input or environment.
+
+    When checking the environment, the following precedence is observed:
+
+    * GCLOUD_PROJECT environment variable
+    * Google App Engine application ID
+    * Google Compute Engine project ID (from metadata server)
+
+    :type project_id: string or :class:`NoneType`
+    :param project_id: The ID of the project which owns the clusters, tables
+                       and data. If not provided, will attempt to
+                       determine from the environment.
+
+    :rtype: string
+    :returns: The project ID provided or inferred from the environment.
+    :raises: :class:`EnvironmentError` if the project ID was not
+             passed in and can't be inferred from the environment.
+    """
+    if project_id is None:
+        project_id = _project_id_from_environment()
+
+    if project_id is None:
+        project_id = _project_id_from_app_engine()
+
+    if project_id is None:
+        project_id = _project_id_from_compute_engine()
+
+    if project_id is None:
+        raise EnvironmentError('Project ID was not provided and could not '
+                               'be determined from environment.')
+
+    return project_id
+
 
 class Client(object):
     """Client for interacting with Google Cloud Bigtable API.
@@ -38,6 +141,11 @@ class Client(object):
     :type credentials: :class:`oauth2client.client.OAuth2Credentials` or
                        :class:`NoneType`
     :param credentials: The OAuth2 Credentials to use for this cluster.
+
+    :type project_id: string
+    :param project_id: The ID of the project which owns the clusters, tables
+                       and data. If not provided, will attempt to
+                       determine from the environment.
 
     :type read_only: boolean
     :param read_only: Boolean indicating if the data scope should be
@@ -48,12 +156,12 @@ class Client(object):
                   with the Cluster Admin or Table Admin APIs. This requires
                   the ``ADMIN_SCOPE``.
 
-    :raises: :class:`ValueError` if both ``read_only`` and ``admin`` are
-             ``True``
+    :raises: :class:`ValueError` if both ``read_only`` and
+             ``admin`` are ``True``
     """
 
-    def __init__(self, credentials, read_only=False,
-                 admin=False):
+    def __init__(self, credentials, project_id=None,
+                 read_only=False, admin=False):
         if read_only and admin:
             raise ValueError('A read-only client cannot also perform'
                              'administrative actions.')
@@ -68,3 +176,4 @@ class Client(object):
             scopes.append(ADMIN_SCOPE)
 
         self._credentials = credentials.create_scoped(scopes)
+        self._project_id = _determine_project_id(project_id)
