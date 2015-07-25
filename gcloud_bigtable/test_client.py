@@ -361,3 +361,79 @@ class TestClient(unittest2.TestCase):
         self.assertEqual(stub._enter_calls, 1)
         self.assertEqual(stub._exit_args,
                          [(None, None, None)])
+
+    def test_list_clusters(self):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._grpc_mocks import StubMockFactory
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import client as MUT
+
+        request_pb = messages_pb2.ListClustersRequest(
+            name='projects/' + PROJECT_ID,
+        )
+        zone = 'FOO'
+        failed_zone = 'BAR'
+        cluster_id1 = 'CLUSTER_ID1'
+        cluster_id2 = 'CLUSTER_ID2'
+        cluster_name1 = ('projects/' + PROJECT_ID + '/zones/' + zone +
+                         '/clusters/' + cluster_id1)
+        cluster_name2 = ('projects/' + PROJECT_ID + '/zones/' + zone +
+                         '/clusters/' + cluster_id2)
+        response_pb = messages_pb2.ListClustersResponse(
+            failed_zones=[
+                data_pb2.Zone(display_name=failed_zone),
+            ],
+            clusters=[
+                data_pb2.Cluster(name=cluster_name1),
+                data_pb2.Cluster(name=cluster_name2),
+            ],
+        )
+
+        # Create the client.
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID)
+
+        # Create mocks to avoid HTTP/2 calls.
+        mock_make_stub = StubMockFactory(response_pb)
+
+        # Call the method with the mocks.
+        with _Monkey(MUT, make_stub=mock_make_stub):
+            clusters, failed_zones = client.list_clusters()
+        self.assertEqual(failed_zones, [failed_zone])
+        self.assertEqual(len(clusters), 2)
+        cluster1, cluster2 = clusters
+        self.assertEqual(cluster1.cluster_id, cluster_id1)
+        self.assertEqual(cluster1.zone, zone)
+        self.assertTrue(cluster1.client is client)
+        self.assertEqual(cluster2.cluster_id, cluster_id2)
+        self.assertEqual(cluster2.zone, zone)
+        self.assertTrue(cluster2.client is client)
+
+        self.assertEqual(credentials._called, [
+            ('create_scoped', ([MUT.DATA_SCOPE],), {}),
+        ])
+        factory_args = (
+            scoped_creds,
+            MUT.CLUSTER_STUB_FACTORY,
+            MUT.CLUSTER_ADMIN_HOST,
+            MUT.CLUSTER_ADMIN_PORT,
+        )
+        self.assertEqual(mock_make_stub.factory_calls,
+                         [(factory_args, {})])
+        self.assertEqual(mock_make_stub.method_calls, [
+            (
+                'ListClusters',
+                (request_pb, MUT.TIMEOUT_SECONDS),
+                {},
+            ),
+        ])
+        self.assertEqual(len(mock_make_stub.stubs), 1)
+        stub = mock_make_stub.stubs[0]
+        self.assertEqual(stub._enter_calls, 1)
+        self.assertEqual(stub._exit_args,
+                         [(None, None, None)])

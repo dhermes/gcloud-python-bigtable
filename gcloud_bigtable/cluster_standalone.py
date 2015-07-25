@@ -15,6 +15,13 @@
 """User friendly container for Google Cloud Bigtable Cluster."""
 
 
+import re
+
+
+_CLUSTER_NAME_RE = re.compile(r'^projects/(?P<project_id>\w+)/zones/'
+                              r'(?P<zone>\w+)/clusters/(?P<cluster_id>\w+)$')
+
+
 class Cluster(object):
     """Representation of a Google Cloud Bigtable Cluster.
 
@@ -33,6 +40,32 @@ class Cluster(object):
         self.zone = zone
         self.cluster_id = cluster_id
         self._client = client
+
+    @classmethod
+    def from_pb(cls, cluster_pb, client):
+        """Creates a cluster instance from a protobuf.
+
+        :type cluster_pb: :class:`bigtable_cluster_data_pb2.Cluster`
+        :param cluster_pb: A cluster protobuf object.
+
+        :type client: :class:`.client.Client`
+        :param client: The client that owns the cluster.
+
+        :rtype: :class:`Cluster`
+        :returns: The cluster parsed from the protobuf response.
+        :raises: :class:`ValueError` if the cluster name does not match
+                 ``_CLUSTER_NAME_RE`` or if the parsed project ID does
+                 not match the project ID on the client.
+        """
+        match = _CLUSTER_NAME_RE.match(cluster_pb.name)
+        if match is None:
+            raise ValueError('Cluster protobuf name was not in the '
+                             'expected format.')
+        if match.group('project_id') != client.project_id:
+            raise ValueError('Project ID on cluster does not match the '
+                             'project ID on the client')
+
+        return cls(match.group('zone'), match.group('cluster_id'), client)
 
     @property
     def client(self):

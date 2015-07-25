@@ -35,6 +35,7 @@ except ImportError:
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._generated import bigtable_cluster_service_pb2
+from gcloud_bigtable.cluster_standalone import Cluster
 from gcloud_bigtable.connection import TIMEOUT_SECONDS
 from gcloud_bigtable.connection import make_stub
 
@@ -244,3 +245,30 @@ class Client(object):
             list_zones_response = response.result()
 
         return [zone.display_name for zone in list_zones_response.zones]
+
+    def list_clusters(self, timeout_seconds=TIMEOUT_SECONDS):
+        """Lists clusters owned by the project.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to
+                                ``TIMEOUT_SECONDS``.
+
+        :rtype: tuple
+        :returns: A pair of results, the first is a list of
+                  :class:`.cluster_standalone.Cluster`s returned and the second
+                  is a list of strings (the failed zones in the request).
+        """
+        request_pb = messages_pb2.ListClustersRequest(name=self.project_name)
+        stub = make_stub(self._credentials, CLUSTER_STUB_FACTORY,
+                         CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
+        with stub:
+            response = stub.ListClusters.async(request_pb, timeout_seconds)
+            # We expect a `messages_pb2.ListClustersResponse`
+            list_clusters_response = response.result()
+
+        failed_zones = [zone.display_name
+                        for zone in list_clusters_response.failed_zones]
+        clusters = [Cluster.from_pb(cluster_pb, self)
+                    for cluster_pb in list_clusters_response.clusters]
+        return clusters, failed_zones
