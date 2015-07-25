@@ -210,3 +210,30 @@ class TestCluster(GRPCMockTestMixin):
         self._grpc_client_test_helper('GetCluster', result_method,
                                       request_pb, response_pb, expected_result,
                                       PROJECT_ID)
+
+    def test_delete(self):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._generated import empty_pb2
+
+        TEST_CASE = self
+
+        # Create request_pb
+        cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+                        '/clusters/' + CLUSTER_ID)
+        request_pb = messages_pb2.DeleteClusterRequest(name=cluster_name)
+
+        # Create response_pb
+        response_pb = empty_pb2.Empty()
+
+        # Create expected_result.
+        expected_result = None  # delete() has no return value.
+
+        # We must create the cluster with the client passed in.
+        def result_method(client):
+            cluster = TEST_CASE._makeOne(ZONE, CLUSTER_ID, client)
+            return cluster.delete()
+
+        self._grpc_client_test_helper('DeleteCluster', result_method,
+                                      request_pb, response_pb, expected_result,
+                                      PROJECT_ID)

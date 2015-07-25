@@ -41,6 +41,11 @@ CLUSTER_STUB_FACTORY = (bigtable_cluster_service_pb2.
 class Cluster(object):
     """Representation of a Google Cloud Bigtable Cluster.
 
+    We can use a :class:`Cluster` to:
+
+    * :meth:`Cluster.reload` itself
+    * :meth:`Cluster.delete` itself
+
     :type zone: string
     :param zone: The name of the zone where the cluster resides.
 
@@ -172,3 +177,18 @@ class Cluster(object):
         # NOTE: _update_from_pb does not check that the project, zone and
         #       cluster ID on the response match the request.
         self._update_from_pb(cluster_pb)
+
+    def delete(self, timeout_seconds=TIMEOUT_SECONDS):
+        """Delete this cluster.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+        """
+        request_pb = messages_pb2.DeleteClusterRequest(name=self.name)
+        stub = make_stub(self.client._credentials, CLUSTER_STUB_FACTORY,
+                         CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
+        with stub:
+            response = stub.DeleteCluster.async(request_pb, timeout_seconds)
+            # We expect a `._generated.empty_pb2.Empty`
+            response.result()
