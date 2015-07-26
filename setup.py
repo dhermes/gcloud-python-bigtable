@@ -14,6 +14,7 @@ REQUIREMENTS = [
     'httplib2 >= 0.9.1',
     'oauth2client >= 1.4.6',
     'protobuf >= 3.0.0a3',
+    'pytz',
     'six >= 1.6.1',
 ]
 
