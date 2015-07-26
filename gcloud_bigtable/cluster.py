@@ -22,30 +22,19 @@ from oauth2client.client import GoogleCredentials
 from oauth2client.client import SignedJwtAssertionCredentials
 from oauth2client.client import _get_application_default_credential_from_file
 
-from gcloud_bigtable._generated import (
-    bigtable_cluster_service_messages_pb2 as messages_pb2)
-from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
+from gcloud_bigtable._helpers import _CLUSTER_TYPE_URL
+from gcloud_bigtable._helpers import _TYPE_URL_MAP
+from gcloud_bigtable._helpers import _parse_pb_any_to_native
+from gcloud_bigtable._helpers import _require_pb_property
 from gcloud_bigtable._logging import LOGGER
 from gcloud_bigtable.cluster_connection import ClusterConnection
 from gcloud_bigtable.connection import TIMEOUT_SECONDS
 
 
-_TYPE_URL_BASE = 'type.googleapis.com/google.bigtable.'
-_ADMIN_TYPE_URL_BASE = _TYPE_URL_BASE + 'admin.cluster.v1.'
-_CLUSTER_TYPE_URL = _ADMIN_TYPE_URL_BASE + 'Cluster'
 _MAX_OPERATION_WAITS = 5
 _BASE_OPERATION_WAIT_TIME = 1  # in seconds
 _DURATION_LOG_TEMPLATE = ('Long-running operation (metadata type: %s) '
                           'duration: %d.%09d seconds')
-_TYPE_URL_MAP = {
-    _CLUSTER_TYPE_URL: data_pb2.Cluster,
-    _ADMIN_TYPE_URL_BASE + 'CreateClusterMetadata': (
-        messages_pb2.CreateClusterMetadata),
-    _ADMIN_TYPE_URL_BASE + 'UndeleteClusterMetadata': (
-        messages_pb2.UndeleteClusterMetadata),
-    _ADMIN_TYPE_URL_BASE + 'UpdateClusterMetadata': (
-        messages_pb2.UpdateClusterMetadata),
-}
 
 
 class Cluster(object):
@@ -385,63 +374,6 @@ def _wait_for_operation(cluster_connection, project_id, zone, cluster_id,
     else:
         _log_operation_duration(op_result_pb)
         return op_result_pb
-
-
-def _parse_pb_any_to_native(any_val, expected_type=None):
-    """Convert a serialized "google.protobuf.Any" value to actual type.
-
-    :type any_val: :class:`gcloud_bigtable._generated.any_pb2.Any`
-    :param any_val: A serialized protobuf value container.
-
-    :type expected_type: string
-    :param expected_type: (Optional) The type URL we expect ``any_val``
-                          to have.
-
-    :rtype: object
-    :returns: The de-serialized object.
-    :raises: :class:`ValueError` if the ``expected_type`` does not match
-             the ``type_url`` on the input.
-    """
-    if expected_type is not None and expected_type != any_val.type_url:
-        raise ValueError('Expected type: %s, Received: %s' % (
-            expected_type, any_val.type_url))
-    container_class = _TYPE_URL_MAP[any_val.type_url]
-    return container_class.FromString(any_val.value)
-
-
-def _require_pb_property(message_pb, property_name, value):
-    """Check that a property agrees with the value on the message.
-
-    :type message_pb: :class:`google.protobuf.message.Message`
-    :param message_pb: The message to check for ``property_name``.
-
-    :type property_name: string
-    :param property_name: The property value to check against.
-
-    :type value: objector :class:`NoneType`
-    :param value: The value to check against the cluster. If ``None``,
-                  will not be checked.
-
-    :rtype: object
-    :returns: The value of ``property_name`` set on ``message_pb``.
-    :raises: :class:`ValueError` if the result returned from the
-             ``message_pb`` does not contain the ``property_name``
-             value or if the value returned disagrees with the ``value``
-             passed with the request (if that value is not null).
-    """
-    # Make sure `property_name` is set on the response.
-    # NOTE: HasField() doesn't work in protobuf>=3.0.0a3
-    all_fields = set([field.name for field in message_pb._fields])
-    if property_name not in all_fields:
-        raise ValueError('Message does not contain %s.' % (property_name,))
-    property_val = getattr(message_pb, property_name)
-    if value is None:
-        value = property_val
-    elif value != property_val:
-        raise ValueError('Message returned %s value disagreeing '
-                         'with value passed in.' % (property_name,))
-
-    return value
 
 
 def _get_contents(filename):

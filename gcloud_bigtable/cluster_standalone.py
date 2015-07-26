@@ -20,7 +20,7 @@ import re
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._generated import bigtable_cluster_service_pb2
-from gcloud_bigtable.cluster import _require_pb_property
+from gcloud_bigtable._helpers import _require_pb_property
 from gcloud_bigtable.connection import TIMEOUT_SECONDS
 from gcloud_bigtable.connection import make_stub
 

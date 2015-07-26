@@ -35,3 +35,98 @@ class Test__pb_timestamp_to_datetime(unittest2.TestCase):
         # microseconds is 1234000 nanoseconds.
         timestamp = Timestamp(seconds=61, nanos=1234000)
         self.assertEqual(self._callFUT(timestamp), dt_stamp)
+
+
+class Test__require_pb_property(unittest2.TestCase):
+
+    def _callFUT(self, message_pb, property_name, value):
+        from gcloud_bigtable._helpers import _require_pb_property
+        return _require_pb_property(message_pb, property_name, value)
+
+    def test_it(self):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+        serve_nodes = 119
+        cluster_pb = data_pb2.Cluster(serve_nodes=serve_nodes)
+        result = self._callFUT(cluster_pb, 'serve_nodes', serve_nodes)
+        self.assertEqual(result, serve_nodes)
+
+    def test_with_null_value_passed_in(self):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+        serve_nodes = None
+        actual_serve_nodes = 119
+        cluster_pb = data_pb2.Cluster(serve_nodes=actual_serve_nodes)
+        result = self._callFUT(cluster_pb, 'serve_nodes', serve_nodes)
+        self.assertEqual(result, actual_serve_nodes)
+
+    def test_with_value_unset_on_pb(self):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+        serve_nodes = 119
+        cluster_pb = data_pb2.Cluster()
+        with self.assertRaises(ValueError):
+            self._callFUT(cluster_pb, 'serve_nodes', serve_nodes)
+
+    def test_with_values_disagreeing(self):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+        serve_nodes = 119
+        other_serve_nodes = 1000
+        self.assertNotEqual(serve_nodes, other_serve_nodes)
+        cluster_pb = data_pb2.Cluster(serve_nodes=other_serve_nodes)
+        with self.assertRaises(ValueError):
+            self._callFUT(cluster_pb, 'serve_nodes', serve_nodes)
+
+
+class Test__parse_pb_any_to_native(unittest2.TestCase):
+
+    def _callFUT(self, any_val, expected_type=None):
+        from gcloud_bigtable._helpers import _parse_pb_any_to_native
+        return _parse_pb_any_to_native(any_val, expected_type=expected_type)
+
+    def test_it(self):
+        from gcloud_bigtable._generated import any_pb2
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import _helpers as MUT
+
+        type_url = 'type.googleapis.com/' + data_pb2._CELL.full_name
+        fake_type_url_map = {type_url: data_pb2.Cell}
+
+        cell = data_pb2.Cell(
+            timestamp_micros=0,
+            value=b'foobar',
+        )
+        any_val = any_pb2.Any(
+            type_url=type_url,
+            value=cell.SerializeToString(),
+        )
+        with _Monkey(MUT, _TYPE_URL_MAP=fake_type_url_map):
+            result = self._callFUT(any_val)
+
+        self.assertEqual(result, cell)
+
+    def test_unknown_type_url(self):
+        from gcloud_bigtable._generated import any_pb2
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import _helpers as MUT
+
+        fake_type_url_map = {}
+        any_val = any_pb2.Any()
+        with _Monkey(MUT, _TYPE_URL_MAP=fake_type_url_map):
+            with self.assertRaises(KeyError):
+                self._callFUT(any_val)
+
+    def test_disagreeing_type_url(self):
+        from gcloud_bigtable._generated import any_pb2
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import _helpers as MUT
+
+        type_url1 = 'foo'
+        type_url2 = 'bar'
+        fake_type_url_map = {type_url1: None}
+        any_val = any_pb2.Any(type_url=type_url2)
+        with _Monkey(MUT, _TYPE_URL_MAP=fake_type_url_map):
+            with self.assertRaises(ValueError):
+                self._callFUT(any_val, expected_type=type_url1)
