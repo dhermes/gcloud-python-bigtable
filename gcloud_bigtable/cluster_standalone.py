@@ -22,7 +22,6 @@ from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._generated import bigtable_cluster_service_pb2
 from gcloud_bigtable._generated import operations_pb2
-from gcloud_bigtable._helpers import _CLUSTER_CREATE_METADATA
 from gcloud_bigtable._helpers import _parse_pb_any_to_native
 from gcloud_bigtable._helpers import _pb_timestamp_to_datetime
 from gcloud_bigtable._helpers import _require_pb_property
@@ -68,11 +67,12 @@ def _prepare_create_request(cluster):
     )
 
 
-def _process_cluster_response(cluster_response):
+def _process_operation(operation_pb):
     """Processes a create protobuf response.
 
-    :type cluster_response: :class:`bigtable_cluster_data_pb2.Cluster`
-    :param cluster_response: The response from a CreateCluster request.
+    :type operation_pb: :class:`operations_pb2.Operation`
+    :param operation_pb: The long-running operation response from a
+                         Create/Update/Undelete cluster request.
 
     :rtype: tuple
     :returns: A pair of an integer and datetime stamp. The integer is the ID
@@ -81,16 +81,13 @@ def _process_cluster_response(cluster_response):
     :raises: :class:`ValueError` if the operation name doesn't match the
              ``_OPERATION_NAME_RE`` regex.
     """
-    match = _OPERATION_NAME_RE.match(cluster_response.current_operation.name)
+    match = _OPERATION_NAME_RE.match(operation_pb.name)
     if match is None:
         raise ValueError('Cluster create operation name was not in the '
-                         'expected format.',
-                         cluster_response.current_operation.name)
+                         'expected format.', operation_pb.name)
     operation_id = int(match.group('operation_id'))
 
-    request_metadata = _parse_pb_any_to_native(
-        cluster_response.current_operation.metadata,
-        expected_type=_CLUSTER_CREATE_METADATA)
+    request_metadata = _parse_pb_any_to_native(operation_pb.metadata)
     operation_begin = _pb_timestamp_to_datetime(
         request_metadata.request_time)
 
@@ -309,12 +306,12 @@ class Cluster(object):
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
             response = stub.CreateCluster.async(request_pb, timeout_seconds)
-            # We expect a `._generated.bigtable_cluster_data_pb2.Cluster`.
+            # We expect an `operations_pb2.Operation`.
             cluster_pb = response.result()
 
         self._operation_type = 'create'
-        self._operation_id, self._operation_begin = _process_cluster_response(
-            cluster_pb)
+        self._operation_id, self._operation_begin = _process_operation(
+            cluster_pb.current_operation)
 
     def update(self, timeout_seconds=TIMEOUT_SECONDS):
         """Update this cluster.
@@ -348,8 +345,8 @@ class Cluster(object):
             cluster_pb = response.result()
 
         self._operation_type = 'update'
-        self._operation_id, self._operation_begin = _process_cluster_response(
-            cluster_pb)
+        self._operation_id, self._operation_begin = _process_operation(
+            cluster_pb.current_operation)
 
     def delete(self, timeout_seconds=TIMEOUT_SECONDS):
         """Delete this cluster.
@@ -365,3 +362,22 @@ class Cluster(object):
             response = stub.DeleteCluster.async(request_pb, timeout_seconds)
             # We expect a `._generated.empty_pb2.Empty`
             response.result()
+
+    def undelete(self, timeout_seconds=TIMEOUT_SECONDS):
+        """Undelete this cluster.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+        """
+        request_pb = messages_pb2.UndeleteClusterRequest(name=self.name)
+        stub = make_stub(self.client._credentials, CLUSTER_STUB_FACTORY,
+                         CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
+        with stub:
+            response = stub.UndeleteCluster.async(request_pb, timeout_seconds)
+            # We expect a `._generated.operations_pb2.Operation`
+            operation_pb2 = response.result()
+
+        self._operation_type = 'undelete'
+        self._operation_id, self._operation_begin = _process_operation(
+            operation_pb2)
