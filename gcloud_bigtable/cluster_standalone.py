@@ -101,11 +101,12 @@ class Cluster(object):
 
     * :meth:`Cluster.reload` itself
     * :meth:`Cluster.create` itself
-    * Check if an :meth:`Cluster.operation_finished` (both
-      :meth:`Cluster.create` and :meth:`Cluster.update` return with
-      long-running operations
+    * Check if an :meth:`Cluster.operation_finished` (each of
+      :meth:`Cluster.create`, :meth:`Cluster.update` and
+      :meth:`Cluster.undelete` return with long-running operations
     * :meth:`Cluster.update` itself
     * :meth:`Cluster.delete` itself
+    * :meth:`Cluster.undelete` itself
 
     .. note::
 
