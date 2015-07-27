@@ -8,7 +8,10 @@ and creating other objects:
 .. code:: python
 
     from gcloud_bigtable.client import Client
-    cluster = Client(credentials)
+    cluster = Client()
+
+This will use the Google `Application Default Credentials`_ if
+you don't pass any credentials of your own.
 
 The `Cluster Admin API`_ has been fully implemented. Create a
 :class:`Cluster <gcloud_bigtable.cluster.Cluster>` to get
@@ -173,3 +176,4 @@ Indices and tables
 .. _ListClusters: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/bigtable/admin/cluster/v1/bigtable_cluster_service.proto#L44-L46
 .. _GetOperation: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/bfe4138f04bf3383a558152e4333112cdd13d5b0/bigtable-protos/src/main/proto/google/longrunning/operations.proto#L43-L45
 .. _UndeleteCluster: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/bigtable/admin/cluster/v1/bigtable_cluster_service.proto#L126-L128
+.. _Application Default Credentials: https://developers.google.com/identity/protocols/application-default-credentials
