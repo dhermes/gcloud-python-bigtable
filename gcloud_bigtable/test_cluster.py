@@ -26,7 +26,7 @@ CLUSTER_ID = 'cluster-id'
 class Test__prepare_create_request(unittest2.TestCase):
 
     def _callFUT(self, cluster):
-        from gcloud_bigtable.cluster_standalone import _prepare_create_request
+        from gcloud_bigtable.cluster import _prepare_create_request
         return _prepare_create_request(cluster)
 
     def test_it(self):
@@ -34,7 +34,7 @@ class Test__prepare_create_request(unittest2.TestCase):
             bigtable_cluster_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
-        from gcloud_bigtable.cluster_standalone import Cluster
+        from gcloud_bigtable.cluster import Cluster
         display_name = 'DISPLAY_NAME'
         serve_nodes = 8
 
@@ -57,7 +57,7 @@ class Test__prepare_create_request(unittest2.TestCase):
 class Test__process_operation(unittest2.TestCase):
 
     def _callFUT(self, operation_pb):
-        from gcloud_bigtable.cluster_standalone import _process_operation
+        from gcloud_bigtable.cluster import _process_operation
         return _process_operation(operation_pb)
 
     def test_it(self):
@@ -66,7 +66,7 @@ class Test__process_operation(unittest2.TestCase):
         from gcloud_bigtable._generated import operations_pb2
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable import cluster_standalone as MUT
+        from gcloud_bigtable import cluster as MUT
 
         expected_operation_id = 234
         operation_name = ('operations/projects/%s/zones/%s/clusters/%s/'
@@ -105,7 +105,7 @@ class TestCluster(GRPCMockTestMixin):
     @classmethod
     def setUpClass(cls):
         from gcloud_bigtable import client
-        from gcloud_bigtable import cluster_standalone as MUT
+        from gcloud_bigtable import cluster as MUT
         cls._MUT = MUT
         cls._STUB_SCOPES = [client.DATA_SCOPE]
         cls._STUB_FACTORY_NAME = 'CLUSTER_STUB_FACTORY'
@@ -121,7 +121,7 @@ class TestCluster(GRPCMockTestMixin):
         del cls._STUB_PORT
 
     def _getTargetClass(self):
-        from gcloud_bigtable.cluster_standalone import Cluster
+        from gcloud_bigtable.cluster import Cluster
         return Cluster
 
     def _makeOne(self, *args, **kwargs):
@@ -298,7 +298,7 @@ class TestCluster(GRPCMockTestMixin):
 
     def _operation_finished_helper(self, done):
         from gcloud_bigtable._generated import operations_pb2
-        from gcloud_bigtable import cluster_standalone as MUT
+        from gcloud_bigtable import cluster as MUT
 
         # Create request_pb
         op_id = 789
@@ -353,7 +353,7 @@ class TestCluster(GRPCMockTestMixin):
         from gcloud_bigtable._generated import operations_pb2
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable import cluster_standalone as MUT
+        from gcloud_bigtable import cluster as MUT
 
         # Create request_pb. Just a mock since we monkey patch
         # _prepare_create_request
@@ -398,7 +398,7 @@ class TestCluster(GRPCMockTestMixin):
         from gcloud_bigtable._generated import operations_pb2
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable import cluster_standalone as MUT
+        from gcloud_bigtable import cluster as MUT
 
         # Create request_pb
         cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
@@ -477,7 +477,7 @@ class TestCluster(GRPCMockTestMixin):
         from gcloud_bigtable._generated import operations_pb2
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable import cluster_standalone as MUT
+        from gcloud_bigtable import cluster as MUT
 
         # Create request_pb
         cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +

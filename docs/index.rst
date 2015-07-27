@@ -158,7 +158,7 @@ Documented Modules
    table-connection
    cluster-connection
    client
-   cluster-standalone
+   cluster
 
 Indices and tables
 ~~~~~~~~~~~~~~~~~~

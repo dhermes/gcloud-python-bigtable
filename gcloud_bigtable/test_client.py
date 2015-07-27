@@ -323,7 +323,7 @@ class TestClient(GRPCMockTestMixin):
 
     def test_cluster_factory(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
-        from gcloud_bigtable.cluster_standalone import Cluster
+        from gcloud_bigtable.cluster import Cluster
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
@@ -367,7 +367,7 @@ class TestClient(GRPCMockTestMixin):
             bigtable_cluster_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
-        from gcloud_bigtable.cluster_standalone import Cluster
+        from gcloud_bigtable.cluster import Cluster
 
         # Create request_pb
         request_pb = messages_pb2.ListClustersRequest(

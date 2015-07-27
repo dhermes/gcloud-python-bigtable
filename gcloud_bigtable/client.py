@@ -34,10 +34,10 @@ except ImportError:
 
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
-from gcloud_bigtable.cluster_standalone import Cluster
-from gcloud_bigtable.cluster_standalone import CLUSTER_ADMIN_PORT
-from gcloud_bigtable.cluster_standalone import CLUSTER_ADMIN_HOST
-from gcloud_bigtable.cluster_standalone import CLUSTER_STUB_FACTORY
+from gcloud_bigtable.cluster import Cluster
+from gcloud_bigtable.cluster import CLUSTER_ADMIN_PORT
+from gcloud_bigtable.cluster import CLUSTER_ADMIN_HOST
+from gcloud_bigtable.cluster import CLUSTER_STUB_FACTORY
 from gcloud_bigtable.connection import TIMEOUT_SECONDS
 from gcloud_bigtable.connection import make_stub
 
@@ -240,7 +240,7 @@ class Client(object):
         :param serve_nodes: (Optional) The number of nodes in the cluster.
                             Defaults to 3.
 
-        :rtype: :class:`.cluster_standalone.Cluster`
+        :rtype: :class:`Cluster`
         :returns: The cluster created owned by this client.
         """
         return Cluster(zone, cluster_id, self,
@@ -275,10 +275,9 @@ class Client(object):
                                 ``TIMEOUT_SECONDS``.
 
         :rtype: tuple
-        :returns: A pair of results, the first is a list of
-                  :class:`.cluster_standalone.Cluster` s returned and the
-                  second is a list of strings (the failed zones in the
-                  request).
+        :returns: A pair of results, the first is a list of :class:`Cluster` s
+                  returned and the second is a list of strings (the failed
+                  zones in the request).
         """
         request_pb = messages_pb2.ListClustersRequest(name=self.project_name)
         stub = make_stub(self._credentials, CLUSTER_STUB_FACTORY,
