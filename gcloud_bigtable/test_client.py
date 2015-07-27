@@ -321,6 +321,22 @@ class TestClient(GRPCMockTestMixin):
         client = self._makeOne(credentials, project_id=PROJECT_ID)
         self.assertEqual(client.project_name, project_name)
 
+    def test_cluster_factory(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable.cluster_standalone import Cluster
+
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID)
+
+        zone = 'zone'
+        cluster_id = 'cluster-id'
+        cluster = client.cluster(zone, cluster_id)
+        self.assertTrue(isinstance(cluster, Cluster))
+        self.assertTrue(cluster.client is client)
+        self.assertEqual(cluster.zone, zone)
+        self.assertEqual(cluster.cluster_id, cluster_id)
+
     def test_list_zones(self):
         from gcloud_bigtable._generated import (
             bigtable_cluster_data_pb2 as data_pb2)

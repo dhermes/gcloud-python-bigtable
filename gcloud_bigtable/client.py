@@ -221,6 +221,31 @@ class Client(object):
         """
         return 'projects/' + self._project_id
 
+    def cluster(self, zone, cluster_id, display_name=None, serve_nodes=3):
+        """Factory to create a cluster associated with this client.
+
+        :type zone: string
+        :param zone: The name of the zone where the cluster resides.
+
+        :type cluster_id: string
+        :param cluster_id: The ID of the cluster.
+
+        :type display_name: string
+        :param display_name: (Optional) The display name for the cluster in the
+                             Cloud Console UI. (Must be between 4 and 30
+                             characters.) If this value is not set in the
+                             constructor, will fall back to the cluster ID.
+
+        :type serve_nodes: integer
+        :param serve_nodes: (Optional) The number of nodes in the cluster.
+                            Defaults to 3.
+
+        :rtype: :class:`.cluster_standalone.Cluster`
+        :returns: The cluster created owned by this client.
+        """
+        return Cluster(zone, cluster_id, self,
+                       display_name=display_name, serve_nodes=serve_nodes)
+
     def list_zones(self, timeout_seconds=TIMEOUT_SECONDS):
         """Lists zones associated with project.
 
