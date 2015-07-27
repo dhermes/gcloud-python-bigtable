@@ -30,10 +30,10 @@ from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
 _TYPE_URL_BASE = 'type.googleapis.com/google.bigtable.'
 _ADMIN_TYPE_URL_BASE = _TYPE_URL_BASE + 'admin.cluster.v1.'
 _CLUSTER_TYPE_URL = _ADMIN_TYPE_URL_BASE + 'Cluster'
+_CLUSTER_CREATE_METADATA = _ADMIN_TYPE_URL_BASE + 'CreateClusterMetadata'
 _TYPE_URL_MAP = {
     _CLUSTER_TYPE_URL: data_pb2.Cluster,
-    _ADMIN_TYPE_URL_BASE + 'CreateClusterMetadata': (
-        messages_pb2.CreateClusterMetadata),
+    _CLUSTER_CREATE_METADATA: messages_pb2.CreateClusterMetadata,
     _ADMIN_TYPE_URL_BASE + 'UndeleteClusterMetadata': (
         messages_pb2.UndeleteClusterMetadata),
     _ADMIN_TYPE_URL_BASE + 'UpdateClusterMetadata': (

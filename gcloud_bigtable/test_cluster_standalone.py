@@ -13,12 +13,96 @@
 # limitations under the License.
 
 
+import unittest2
+
 from gcloud_bigtable._grpc_mocks import GRPCMockTestMixin
 
 
 PROJECT_ID = 'project-id'
 ZONE = 'zone'
 CLUSTER_ID = 'cluster-id'
+
+
+class Test__prepare_create_request(unittest2.TestCase):
+
+    def _callFUT(self, cluster):
+        from gcloud_bigtable.cluster_standalone import _prepare_create_request
+        return _prepare_create_request(cluster)
+
+    def test_it(self):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable.cluster_standalone import Cluster
+        display_name = 'DISPLAY_NAME'
+        serve_nodes = 8
+
+        class _Client(object):
+            project_id = PROJECT_ID
+
+        cluster = Cluster(ZONE, CLUSTER_ID, _Client,
+                          display_name=display_name, serve_nodes=serve_nodes)
+        request_pb = self._callFUT(cluster)
+        self.assertTrue(isinstance(request_pb,
+                                   messages_pb2.CreateClusterRequest))
+        self.assertEqual(request_pb.cluster_id, CLUSTER_ID)
+        self.assertEqual(request_pb.name,
+                         'projects/' + PROJECT_ID + '/zones/' + ZONE)
+        self.assertTrue(isinstance(request_pb.cluster, data_pb2.Cluster))
+        self.assertEqual(request_pb.cluster.display_name, display_name)
+        self.assertEqual(request_pb.cluster.serve_nodes, serve_nodes)
+
+
+class Test__process_create_response(unittest2.TestCase):
+
+    def _callFUT(self, cluster_response):
+        from gcloud_bigtable.cluster_standalone import _process_create_response
+        return _process_create_response(cluster_response)
+
+    def test_it(self):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._generated import operations_pb2
+        from gcloud_bigtable._helpers import _CLUSTER_CREATE_METADATA
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import cluster_standalone as MUT
+
+        expected_operation_id = 234
+        operation_name = ('operations/projects/%s/zones/%s/clusters/%s/'
+                          'operations/%d' % (PROJECT_ID, ZONE, CLUSTER_ID,
+                                             expected_operation_id))
+
+        current_op = operations_pb2.Operation(name=operation_name)
+        cluster = data_pb2.Cluster(current_operation=current_op)
+
+        request_metadata = messages_pb2.CreateClusterMetadata()
+        mock_parse_pb_any_to_native = _MockCalled(request_metadata)
+        expected_operation_begin = object()
+        mock_pb_timestamp_to_datetime = _MockCalled(expected_operation_begin)
+        with _Monkey(MUT, _parse_pb_any_to_native=mock_parse_pb_any_to_native,
+                     _pb_timestamp_to_datetime=mock_pb_timestamp_to_datetime):
+            operation_id, operation_begin = self._callFUT(cluster)
+
+        self.assertEqual(operation_id, expected_operation_id)
+        self.assertTrue(operation_begin is expected_operation_begin)
+
+        mock_parse_pb_any_to_native.check_called(
+            self, [(current_op.metadata,)],
+            [{'expected_type': _CLUSTER_CREATE_METADATA}])
+        mock_pb_timestamp_to_datetime.check_called(
+            self, [(request_metadata.request_time,)])
+
+    def test_failure(self):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+
+        cluster = data_pb2.Cluster()
+        with self.assertRaises(ValueError):
+            self._callFUT(cluster)
 
 
 class TestCluster(GRPCMockTestMixin):
@@ -237,3 +321,44 @@ class TestCluster(GRPCMockTestMixin):
         self._grpc_client_test_helper('DeleteCluster', result_method,
                                       request_pb, response_pb, expected_result,
                                       PROJECT_ID)
+
+    def test_create(self):
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import cluster_standalone as MUT
+
+        # Create request_pb. Just a mock since we monkey patch
+        # _prepare_create_request
+        request_pb = object()
+
+        # Create response_pb. Again just a mock since it is passed to
+        # _process_create_response, which we monkey patch.
+        response_pb = object()
+
+        # Create expected_result.
+        expected_result = None
+
+        # We must create the cluster with the client passed in.
+        TEST_CASE = self
+        CLUSTER_CREATED = []
+
+        def result_method(client):
+            cluster = TEST_CASE._makeOne(ZONE, CLUSTER_ID, client)
+            CLUSTER_CREATED.append(cluster)
+            return cluster.create()
+
+        mock_prepare_create_request = _MockCalled(request_pb)
+        op_id = 5678
+        op_begin = object()
+        mock_process_create_response = _MockCalled((op_id, op_begin))
+        with _Monkey(MUT, _prepare_create_request=mock_prepare_create_request,
+                     _process_create_response=mock_process_create_response):
+            self._grpc_client_test_helper('CreateCluster', result_method,
+                                          request_pb, response_pb,
+                                          expected_result, PROJECT_ID)
+
+        self.assertEqual(len(CLUSTER_CREATED), 1)
+        self.assertEqual(CLUSTER_CREATED[0]._operation_id, op_id)
+        self.assertTrue(CLUSTER_CREATED[0]._operation_begin is op_begin)
+        mock_prepare_create_request.check_called(self, [(CLUSTER_CREATED[0],)])
+        mock_process_create_response.check_called(self, [(response_pb,)])

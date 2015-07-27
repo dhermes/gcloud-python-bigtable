@@ -17,9 +17,13 @@
 
 import re
 
+from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._generated import bigtable_cluster_service_pb2
+from gcloud_bigtable._helpers import _CLUSTER_CREATE_METADATA
+from gcloud_bigtable._helpers import _parse_pb_any_to_native
+from gcloud_bigtable._helpers import _pb_timestamp_to_datetime
 from gcloud_bigtable._helpers import _require_pb_property
 from gcloud_bigtable.connection import TIMEOUT_SECONDS
 from gcloud_bigtable.connection import make_stub
@@ -28,6 +32,9 @@ from gcloud_bigtable.connection import make_stub
 _CLUSTER_NAME_RE = re.compile(r'^projects/(?P<project_id>[^/]+)/'
                               r'zones/(?P<zone>[^/]+)/clusters/'
                               r'(?P<cluster_id>[a-z][-a-z0-9]*)$')
+_OPERATION_NAME_RE = re.compile(r'^operations/projects/([^/]+)/zones/([^/]+)/'
+                                r'clusters/([a-z][-a-z0-9]*)/operations/'
+                                r'(?P<operation_id>\d+)$')
 
 CLUSTER_ADMIN_HOST = 'bigtableclusteradmin.googleapis.com'
 """Cluster Admin API request host."""
@@ -38,12 +45,63 @@ CLUSTER_STUB_FACTORY = (bigtable_cluster_service_pb2.
                         early_adopter_create_BigtableClusterService_stub)
 
 
+def _prepare_create_request(cluster):
+    """Creates a protobuf request for a CreateCluster request.
+
+    :type cluster: :class:`Cluster`
+    :param cluster: The cluster to be created.
+
+    :rtype: :class:`messages_pb2.CreateClusterRequest`
+    :returns: The CreateCluster request object containing the cluster info.
+    """
+    zone_full_name = ('projects/' + cluster.project_id +
+                      '/zones/' + cluster.zone)
+    return messages_pb2.CreateClusterRequest(
+        name=zone_full_name,
+        cluster_id=cluster.cluster_id,
+        cluster=data_pb2.Cluster(
+            display_name=cluster.display_name,
+            serve_nodes=cluster.serve_nodes,
+        ),
+    )
+
+
+def _process_create_response(cluster_response):
+    """Processes a create protobuf response.
+
+    :type cluster_response: :class:`bigtable_cluster_data_pb2.Cluster`
+    :param cluster_response: The response from a CreateCluster request.
+
+    :rtype: tuple
+    :returns: A pair of an integer and datetime stamp. The integer is the ID
+              of the operation (``operation_id``) and the timestamp when
+              the create operation began (``operation_begin``).
+    :raises: :class:`ValueError` if the operation name doesn't match the
+             ``_OPERATION_NAME_RE`` regex.
+    """
+    match = _OPERATION_NAME_RE.match(cluster_response.current_operation.name)
+    if match is None:
+        raise ValueError('Cluster create operation name was not in the '
+                         'expected format.',
+                         cluster_response.current_operation.name)
+    operation_id = int(match.group('operation_id'))
+
+    request_metadata = _parse_pb_any_to_native(
+        cluster_response.current_operation.metadata,
+        expected_type=_CLUSTER_CREATE_METADATA)
+    operation_begin = _pb_timestamp_to_datetime(
+        request_metadata.request_time)
+
+    return operation_id, operation_begin
+
+
 class Cluster(object):
     """Representation of a Google Cloud Bigtable Cluster.
 
     We can use a :class:`Cluster` to:
 
     * :meth:`Cluster.reload` itself
+    * :meth:`Cluster.create` itself
     * :meth:`Cluster.delete` itself
 
     :type zone: string
@@ -177,6 +235,39 @@ class Cluster(object):
         # NOTE: _update_from_pb does not check that the project, zone and
         #       cluster ID on the response match the request.
         self._update_from_pb(cluster_pb)
+
+    def create(self, timeout_seconds=TIMEOUT_SECONDS):
+        """Create this cluster.
+
+        .. note::
+
+            Uses the ``project_id``, ``zone`` and ``cluster_id`` on the current
+            :class:`Cluster` in addition to the ``display_name`` and
+            ``serve_nodes``. If you'd like to change them before creating,
+            reset the values via
+
+            .. code:: python
+
+                cluster.display_name = 'New display name'
+                cluster.cluster_id = 'i-changed-my-mind'
+
+            before calling :meth:`create`.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+        """
+        request_pb = _prepare_create_request(self)
+        stub = make_stub(self.client._credentials, CLUSTER_STUB_FACTORY,
+                         CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
+        with stub:
+            response = stub.CreateCluster.async(request_pb, timeout_seconds)
+            # We expect a `._generated.bigtable_cluster_data_pb2.Cluster`.
+            cluster_pb = response.result()
+
+        self._operation_type = 'create'
+        self._operation_id, self._operation_begin = _process_create_response(
+            cluster_pb)
 
     def delete(self, timeout_seconds=TIMEOUT_SECONDS):
         """Delete this cluster.
