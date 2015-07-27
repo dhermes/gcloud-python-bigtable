@@ -21,6 +21,7 @@ from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._generated import bigtable_cluster_service_pb2
+from gcloud_bigtable._generated import operations_pb2
 from gcloud_bigtable._helpers import _CLUSTER_CREATE_METADATA
 from gcloud_bigtable._helpers import _parse_pb_any_to_native
 from gcloud_bigtable._helpers import _pb_timestamp_to_datetime
@@ -43,6 +44,7 @@ CLUSTER_ADMIN_PORT = 443
 
 CLUSTER_STUB_FACTORY = (bigtable_cluster_service_pb2.
                         early_adopter_create_BigtableClusterService_stub)
+OPERATIONS_STUB_FACTORY = operations_pb2.early_adopter_create_Operations_stub
 
 
 def _prepare_create_request(cluster):
@@ -132,6 +134,9 @@ class Cluster(object):
         self.display_name = display_name or cluster_id
         self.serve_nodes = serve_nodes
         self._client = client
+        self._operation_type = None
+        self._operation_id = None
+        self._operation_begin = None
 
     def _update_from_pb(self, cluster_pb):
         self.display_name = _require_pb_property(
@@ -235,6 +240,38 @@ class Cluster(object):
         # NOTE: _update_from_pb does not check that the project, zone and
         #       cluster ID on the response match the request.
         self._update_from_pb(cluster_pb)
+
+    def operation_finished(self, timeout_seconds=TIMEOUT_SECONDS):
+        """Check if the current operation has finished.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+
+        :rtype: boolean
+        :returns: A boolean indicating if the current operation has completed.
+        :raises: :class:`ValueError` if there is no current operation set.
+        """
+        if self._operation_id is None:
+            raise ValueError('There is no current operation.')
+
+        operation_name = ('operations/' + self.name +
+                          '/operations/%d' % (self._operation_id,))
+        request_pb = operations_pb2.GetOperationRequest(name=operation_name)
+        stub = make_stub(self.client._credentials, OPERATIONS_STUB_FACTORY,
+                         CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
+        with stub:
+            response = stub.GetOperation.async(request_pb, timeout_seconds)
+            # We expact a `._generated.operations_pb2.Operation`.
+            operation_pb = response.result()
+
+        if operation_pb.done:
+            self._operation_type = None
+            self._operation_id = None
+            self._operation_begin = None
+            return True
+        else:
+            return False
 
     def create(self, timeout_seconds=TIMEOUT_SECONDS):
         """Create this cluster.
