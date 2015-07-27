@@ -68,7 +68,7 @@ def _prepare_create_request(cluster):
     )
 
 
-def _process_create_response(cluster_response):
+def _process_cluster_response(cluster_response):
     """Processes a create protobuf response.
 
     :type cluster_response: :class:`bigtable_cluster_data_pb2.Cluster`
@@ -104,7 +104,17 @@ class Cluster(object):
 
     * :meth:`Cluster.reload` itself
     * :meth:`Cluster.create` itself
+    * Check if an :meth:`Cluster.operation_finished` (both
+      :meth:`Cluster.create` and :meth:`Cluster.update` return with
+      long-running operations
+    * :meth:`Cluster.update` itself
     * :meth:`Cluster.delete` itself
+
+    .. note::
+
+        For now, we leave out the properties ``hdd_bytes`` and ``ssd_bytes``
+        (both integers) and also the ``default_storage_type`` (an enum)
+        which if not sent will end up as ``data_pb2.STORAGE_SSD``.
 
     :type zone: string
     :param zone: The name of the zone where the cluster resides.
@@ -303,7 +313,42 @@ class Cluster(object):
             cluster_pb = response.result()
 
         self._operation_type = 'create'
-        self._operation_id, self._operation_begin = _process_create_response(
+        self._operation_id, self._operation_begin = _process_cluster_response(
+            cluster_pb)
+
+    def update(self, timeout_seconds=TIMEOUT_SECONDS):
+        """Update this cluster.
+
+        .. note::
+
+            Updates the ``display_name`` and ``serve_nodes``. If you'd like to
+            change them before updating, reset the values via
+
+            .. code:: python
+
+                cluster.display_name = 'New display name'
+                cluster.serve_nodes = 3
+
+            before calling :meth:`update`.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+        """
+        request_pb = data_pb2.Cluster(
+            name=self.name,
+            display_name=self.display_name,
+            serve_nodes=self.serve_nodes,
+        )
+        stub = make_stub(self.client._credentials, CLUSTER_STUB_FACTORY,
+                         CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
+        with stub:
+            response = stub.UpdateCluster.async(request_pb, timeout_seconds)
+            # We expect a `._generated.bigtable_cluster_data_pb2.Cluster`.
+            cluster_pb = response.result()
+
+        self._operation_type = 'update'
+        self._operation_id, self._operation_begin = _process_cluster_response(
             cluster_pb)
 
     def delete(self, timeout_seconds=TIMEOUT_SECONDS):
