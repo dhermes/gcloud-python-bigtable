@@ -92,61 +92,6 @@ Make a `DeleteCluster`_ API request:
 
     cluster.delete()
 
-*****************
-Low-level Methods
-*****************
-
-The `ListClusters`_, `UndeleteCluster`_, and `ListZones`_ methods
-have been implemented on the
-:class:`ClusterConnection <gcloud_bigtable.cluster_connection.ClusterConnection>`
-class, but not on the :class:`Cluster <gcloud_bigtable.cluster.Cluster>`
-convenience class.
-
-For now, you can access a cluster connection as a protected attribute of
-a :class:`Cluster <gcloud_bigtable.cluster.Cluster>`:
-
-.. code:: python
-
-    cluster_connection = cluster._cluster_conn
-
-    # Returns a
-    # (gcloud_bigtable._generated.bigtable_cluster_service_messages_pb2.
-    #  ListClustersResponse)
-    list_of_clusters = cluster_connection.list_clusters(project_id)
-
-    # Returns a
-    # gcloud_bigtable._generated.operations_pb2.Operation
-    long_running_operation = cluster_connection.undelete_cluster(
-        project_id, zone, cluster_id)
-
-If you don't know which zone you want the cluster in, create a
-:class:`Cluster <gcloud_bigtable.cluster.Cluster>` without one and then
-make a `ListZones`_ request to choose one:
-
-.. code:: python
-
-    cluster = Cluster(project_id, None, cluster_id)
-    cluster_connection = cluster._cluster_conn
-
-    # Returns a
-    # (gcloud_bigtable._generated.bigtable_cluster_service_messages_pb2.
-    #  ListZonesResponse)
-    list_zones_response = cluster_connection.list_zones(
-        cluster.cluster_id)
-    zone_choices = [zone.display_name
-                    for zone in list_zones_response.zones]
-
-    # Found the best choice! The 4th zone.
-    cluster.zone = zone_choices[3]
-
-Low-level Responses
--------------------
-
-These are low-level because ``list_of_clusters`` will be a
-`ListClustersResponse`_, ``long_running_operation`` will be a
-long-running `Operation`_ and ``list_zones_response`` will be a
-`ListZonesResponse`_.
-
 Documented Modules
 ~~~~~~~~~~~~~~~~~~
 
@@ -156,7 +101,6 @@ Documented Modules
    base-connection
    data-connection
    table-connection
-   cluster-connection
    client
    cluster
 
@@ -172,9 +116,3 @@ Indices and tables
 .. _GetCluster: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/bigtable/admin/cluster/v1/bigtable_cluster_service.proto#L38-L40
 .. _UpdateCluster: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/bigtable/admin/cluster/v1/bigtable_cluster_service.proto#L93-L95
 .. _DeleteCluster: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/bigtable/admin/cluster/v1/bigtable_cluster_service.proto#L109-L111
-.. _ListClusters: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/bigtable/admin/cluster/v1/bigtable_cluster_service.proto#L44-L46
-.. _UndeleteCluster: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/bigtable/admin/cluster/v1/bigtable_cluster_service.proto#L126-L128
-.. _ListZones: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/bigtable/admin/cluster/v1/bigtable_cluster_service.proto#L33-L35
-.. _ListClustersResponse: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/bigtable/admin/cluster/v1/bigtable_cluster_service_messages.proto#L56-L62
-.. _Operation: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/longrunning/operations.proto#L73-L102
-.. _ListZonesResponse: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/bigtable/admin/cluster/v1/bigtable_cluster_service_messages.proto#L36-L39
