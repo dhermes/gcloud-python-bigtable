@@ -273,6 +273,27 @@ class TestClient(GRPCMockTestMixin):
         mock_determine_project_id.check_called(self, [(project_id,)])
 
     def test_constructor_default(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import client as MUT
+
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        mock_creds_class = _MockWithAttachedMethods(credentials)
+
+        with _Monkey(MUT, GoogleCredentials=mock_creds_class):
+            client = self._makeOne(project_id=PROJECT_ID)
+
+        self.assertEqual(client.project_id, PROJECT_ID)
+        self.assertTrue(client._credentials is scoped_creds)
+        self.assertEqual(mock_creds_class._called,
+                         [('get_application_default', (), {})])
+        expected_scopes = [MUT.DATA_SCOPE]
+        self.assertEqual(credentials._called, [
+            ('create_scoped', (expected_scopes,), {}),
+        ])
+
+    def test_constructor_explicit_credentials(self):
         from gcloud_bigtable import client as MUT
         expected_scopes = [MUT.DATA_SCOPE]
         self._constructor_test_helper(expected_scopes)
@@ -295,6 +316,69 @@ class TestClient(GRPCMockTestMixin):
     def test_constructor_both_admin_and_read_only(self):
         with self.assertRaises(ValueError):
             self._makeOne(None, admin=True, read_only=True)
+
+    def test_from_service_account_json(self):
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import client as MUT
+
+        klass = self._getTargetClass()
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        get_adc = _MockCalled(credentials)
+        json_credentials_path = 'JSON_CREDENTIALS_PATH'
+
+        with _Monkey(MUT,
+                     _get_application_default_credential_from_file=get_adc):
+            client = klass.from_service_account_json(
+                json_credentials_path, project_id=PROJECT_ID)
+
+        self.assertEqual(client.project_id, PROJECT_ID)
+        self.assertTrue(client._credentials is scoped_creds)
+
+        expected_scopes = [MUT.DATA_SCOPE]
+        self.assertEqual(credentials._called, [
+            ('create_scoped', (expected_scopes,), {}),
+        ])
+        # _get_application_default_credential_from_file only has pos. args.
+        get_adc.check_called(self, [(json_credentials_path,)])
+
+    def test_from_service_account_p12(self):
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import client as MUT
+
+        klass = self._getTargetClass()
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        signed_creds = _MockCalled(credentials)
+
+        private_key = 'PRIVATE_KEY'
+        mock_get_contents = _MockCalled(private_key)
+        client_email = 'CLIENT_EMAIL'
+        private_key_path = 'PRIVATE_KEY_PATH'
+
+        with _Monkey(MUT, SignedJwtAssertionCredentials=signed_creds,
+                     _get_contents=mock_get_contents):
+            client = klass.from_service_account_p12(
+                client_email, private_key_path, project_id=PROJECT_ID)
+
+        self.assertEqual(client.project_id, PROJECT_ID)
+        self.assertTrue(client._credentials is scoped_creds)
+        expected_scopes = [MUT.DATA_SCOPE]
+        self.assertEqual(credentials._called, [
+            ('create_scoped', (expected_scopes,), {}),
+        ])
+        # SignedJwtAssertionCredentials() called with only kwargs
+        signed_creds_kw = {
+            'private_key': private_key,
+            'service_account_name': client_email,
+        }
+        signed_creds.check_called(self, [()], [signed_creds_kw])
+        # Load private key (via _get_contents) from the key path.
+        mock_get_contents.check_called(self, [(private_key_path,)])
 
     def test_credentials_getter(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
@@ -419,3 +503,20 @@ class TestClient(GRPCMockTestMixin):
         self._grpc_client_test_helper('ListClusters', result_method,
                                       request_pb, response_pb, expected_result,
                                       PROJECT_ID)
+
+
+class Test__get_contents(unittest2.TestCase):
+
+    def _callFUT(self, filename):
+        from gcloud_bigtable.client import _get_contents
+        return _get_contents(filename)
+
+    def test_it(self):
+        import tempfile
+
+        filename = tempfile.mktemp()
+        contents = b'foobar'
+        with open(filename, 'wb') as file_obj:
+            file_obj.write(contents)
+
+        self.assertEqual(self._callFUT(filename), contents)

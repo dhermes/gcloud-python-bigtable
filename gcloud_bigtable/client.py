@@ -27,6 +27,10 @@ import os
 import six
 import socket
 
+from oauth2client.client import GoogleCredentials
+from oauth2client.client import SignedJwtAssertionCredentials
+from oauth2client.client import _get_application_default_credential_from_file
+
 try:
     from google.appengine.api import app_identity
 except ImportError:
@@ -149,31 +153,37 @@ class Client(object):
 
     :type credentials: :class:`oauth2client.client.OAuth2Credentials` or
                        :class:`NoneType`
-    :param credentials: The OAuth2 Credentials to use for this cluster.
+    :param credentials: (Optional) The OAuth2 Credentials to use for this
+                        cluster. If not provided, defaulst to the Google
+                        Application Default Credentials.
 
     :type project_id: string
-    :param project_id: The ID of the project which owns the clusters, tables
-                       and data. If not provided, will attempt to
-                       determine from the environment.
+    :param project_id: (Optional) The ID of the project which owns the
+                       clusters, tables and data. If not provided, will
+                       attempt to determine from the environment.
 
     :type read_only: boolean
-    :param read_only: Boolean indicating if the data scope should be
-                      for reading only (or for writing as well).
+    :param read_only: (Optional) Boolean indicating if the data scope should be
+                      for reading only (or for writing as well). Defaults to
+                      ``False``.
 
     :type admin: boolean
-    :param admin: Boolean indicating if the client will be used to interact
-                  with the Cluster Admin or Table Admin APIs. This requires
-                  the ``ADMIN_SCOPE``.
+    :param admin: (Optional) Boolean indicating if the client will be used to
+                  interact with the Cluster Admin or Table Admin APIs. This
+                  requires the ``ADMIN_SCOPE``. Defaults to ``False``.
 
     :raises: :class:`ValueError` if both ``read_only`` and
              ``admin`` are ``True``
     """
 
-    def __init__(self, credentials, project_id=None,
+    def __init__(self, credentials=None, project_id=None,
                  read_only=False, admin=False):
         if read_only and admin:
             raise ValueError('A read-only client cannot also perform'
                              'administrative actions.')
+
+        if credentials is None:
+            credentials = GoogleCredentials.get_application_default()
 
         scopes = []
         if read_only:
@@ -186,6 +196,84 @@ class Client(object):
 
         self._credentials = credentials.create_scoped(scopes)
         self._project_id = _determine_project_id(project_id)
+
+    @classmethod
+    def from_service_account_json(cls, json_credentials_path, project_id=None,
+                                  read_only=False, admin=False):
+        """Factory to retrieve JSON credentials while creating client object.
+
+        :type json_credentials_path: string
+        :param json_credentials_path: The path to a private key file (this file
+                                      was given to you when you created the
+                                      service account). This file must contain
+                                      a JSON object with a private key and
+                                      other credentials information (downloaded
+                                      from the Google APIs console).
+
+        :type project_id: string
+        :param project_id: The ID of the project which owns the clusters,
+                           tables and data. Will be passed to :class:`Client`
+                           constructor.
+
+        :type read_only: boolean
+        :param read_only: Boolean indicating if the data scope should be
+                          for reading only (or for writing as well). Will be
+                          passed to :class:`Client` constructor.
+
+        :type admin: boolean
+        :param admin: Boolean indicating if the client will be used to
+                      interact with the Cluster Admin or Table Admin APIs. Will
+                      be passed to :class:`Client` constructor.
+
+        :rtype: :class:`Client`
+        :returns: The client created with the retrieved JSON credentials.
+        """
+        credentials = _get_application_default_credential_from_file(
+            json_credentials_path)
+        return cls(credentials=credentials, project_id=project_id,
+                   read_only=read_only, admin=admin)
+
+    @classmethod
+    def from_service_account_p12(cls, client_email, private_key_path,
+                                 project_id=None, read_only=False,
+                                 admin=False):
+        """Factory to retrieve P12 credentials while creating client object.
+
+        .. note::
+          Unless you have an explicit reason to use a PKCS12 key for your
+          service account, we recommend using a JSON key.
+
+        :type client_email: string
+        :param client_email: The e-mail attached to the service account.
+
+        :type private_key_path: string
+        :param private_key_path: The path to a private key file (this file was
+                                 given to you when you created the service
+                                 account). This file must be in P12 format.
+
+        :type project_id: string
+        :param project_id: The ID of the project which owns the clusters,
+                           tables and data. Will be passed to :class:`Client`
+                           constructor.
+
+        :type read_only: boolean
+        :param read_only: Boolean indicating if the data scope should be
+                          for reading only (or for writing as well). Will be
+                          passed to :class:`Client` constructor.
+
+        :type admin: boolean
+        :param admin: Boolean indicating if the client will be used to
+                      interact with the Cluster Admin or Table Admin APIs. Will
+                      be passed to :class:`Client` constructor.
+
+        :rtype: :class:`Client`
+        :returns: The client created with the retrieved P12 credentials.
+        """
+        credentials = SignedJwtAssertionCredentials(
+            service_account_name=client_email,
+            private_key=_get_contents(private_key_path))
+        return cls(credentials=credentials, project_id=project_id,
+                   read_only=read_only, admin=admin)
 
     @property
     def credentials(self):
@@ -292,3 +380,18 @@ class Client(object):
         clusters = [Cluster.from_pb(cluster_pb, self)
                     for cluster_pb in list_clusters_response.clusters]
         return clusters, failed_zones
+
+
+def _get_contents(filename):
+    """Get the contents of a file.
+
+    This is just implemented so we can stub out while testing.
+
+    :type filename: string or bytes
+    :param filename: The name of a file to open.
+
+    :rtype: bytes
+    :returns: The bytes loaded from the file.
+    """
+    with open(filename, 'rb') as file_obj:
+        return file_obj.read()

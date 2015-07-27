@@ -15,7 +15,6 @@
 from __future__ import print_function
 
 import os
-import time
 import unittest2
 
 from oauth2client.client import GoogleCredentials
