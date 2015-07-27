@@ -157,7 +157,6 @@ Documented Modules
    data-connection
    table-connection
    cluster-connection
-   cluster
    client
    cluster-standalone
 
