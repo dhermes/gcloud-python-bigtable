@@ -246,6 +246,18 @@ class TestTable(GRPCMockTestMixin):
         table = self._makeOne(TABLE_ID, cluster)
         self.assertTrue(table.cluster is cluster)
 
+    def test_credentials_getter(self):
+        credentials = object()
+        cluster = _Cluster(None, credentials=credentials)
+        table = self._makeOne(TABLE_ID, cluster)
+        self.assertTrue(table.credentials is credentials)
+
+    def test_timeout_seconds_getter(self):
+        timeout_seconds = 1001
+        cluster = _Cluster(None, timeout_seconds=timeout_seconds)
+        table = self._makeOne(TABLE_ID, cluster)
+        self.assertEqual(table.timeout_seconds, timeout_seconds)
+
     def test_name_property(self):
         cluster_name = 'cluster_name'
         cluster = _Cluster(cluster_name)
@@ -542,5 +554,7 @@ class TestTable(GRPCMockTestMixin):
 
 class _Cluster(object):
 
-    def __init__(self, name):
+    def __init__(self, name, credentials=None, timeout_seconds=None):
         self.name = name
+        self.credentials = credentials
+        self.timeout_seconds = timeout_seconds

@@ -180,6 +180,15 @@ class Table(object):
         return self._cluster.credentials
 
     @property
+    def timeout_seconds(self):
+        """Getter for table's default timeout seconds.
+
+        :rtype: integer
+        :returns: The timeout seconds default stored on the table's client.
+        """
+        return self._cluster.timeout_seconds
+
+    @property
     def name(self):
         """Table name used in requests.
 

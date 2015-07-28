@@ -213,6 +213,15 @@ class Cluster(object):
         return self._client.credentials
 
     @property
+    def timeout_seconds(self):
+        """Getter for cluster's default timeout seconds.
+
+        :rtype: integer
+        :returns: The timeout seconds default stored on the cluster's client.
+        """
+        return self._client.timeout_seconds
+
+    @property
     def name(self):
         """Cluster name used in requests.
 

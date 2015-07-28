@@ -441,7 +441,9 @@ class TestClient(GRPCMockTestMixin):
         )
         expected_result = [zone1, zone2]
 
+        # Create the method to be performed on the client.
         timeout_seconds = 281330
+
         def result_method(client):
             return client.list_zones(timeout_seconds=timeout_seconds)
 
@@ -510,6 +512,7 @@ class TestClient(GRPCMockTestMixin):
         # We didn't have access to the client above when creating the clusters
         # so we will patch it in the `result_method` closure.
         timeout_seconds = 8004
+
         def result_method(client):
             clusters[0]._client = client
             clusters[1]._client = client
