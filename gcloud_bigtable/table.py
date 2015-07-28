@@ -45,7 +45,7 @@ class GarbageCollectionRule(object):
 
     .. note::
 
-        A string `gc_expression`` can also be used with API requests, but
+        A string ``gc_expression`` can also be used with API requests, but
         that value would be superceded by a ``gc_rule``. As a result, we
         don't support that feature and instead support via this native
         object.
