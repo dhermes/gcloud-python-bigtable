@@ -46,7 +46,27 @@ def setUpModule():
     EXISTING_CLUSTERS[:] = clusters
 
 
-class TestClient(unittest2.TestCase):
+class TestClusterAdminAPI(unittest2.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        # Create a cluster which will remain throughout tests.
+        cluster = CLIENT.cluster(TEST_ZONE, TEST_CLUSTER_ID,
+                                 display_name=TEST_CLUSTER_ID)
+        cluster.create()
+        cls._cluster = cluster
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._cluster.delete()
+        del cls._cluster
+
+    def setUp(self):
+        self.clusters_to_delete = []
+
+    def tearDown(self):
+        for cluster in self.clusters_to_delete:
+            cluster.delete()
 
     def test_list_zones(self):
         zones = CLIENT.list_zones()
@@ -55,6 +75,20 @@ class TestClient(unittest2.TestCase):
     def test_list_clusters(self):
         clusters, failed_zones = CLIENT.list_clusters()
         self.assertEqual(failed_zones, [])
-        self.assertEqual(len(clusters), len(EXISTING_CLUSTERS))
+        # We have added one new cluster in `setUpClass`.
+        self.assertEqual(len(clusters), len(EXISTING_CLUSTERS) + 1)
         for cluster in clusters:
-            self.assertTrue(cluster in EXISTING_CLUSTERS)
+            cluster_existence = (cluster in EXISTING_CLUSTERS or
+                                 cluster == self._cluster)
+            self.assertTrue(cluster_existence)
+
+    def test_reload(self):
+        # Use same arguments as self._cluster (created in `setUpClass`).
+        cluster = CLIENT.cluster(TEST_ZONE, TEST_CLUSTER_ID)
+        # Make sure metadata unset before reloading.
+        cluster.display_name = None
+        cluster.serve_nodes = None
+
+        cluster.reload()
+        self.assertEqual(cluster.display_name, self._cluster.display_name)
+        self.assertEqual(cluster.serve_nodes, self._cluster.serve_nodes)
