@@ -270,6 +270,7 @@ class TestClient(GRPCMockTestMixin):
             ('create_scoped', (expected_scopes,), {}),
         ])
         self.assertTrue(client._project_id is determined_project_id)
+        self.assertEqual(client.timeout_seconds, MUT.DEFAULT_TIMEOUT_SECONDS)
         mock_determine_project_id.check_called(self, [(project_id,)])
 
     def test_constructor_default(self):
@@ -440,11 +441,13 @@ class TestClient(GRPCMockTestMixin):
         )
         expected_result = [zone1, zone2]
 
+        timeout_seconds = 281330
         def result_method(client):
-            return client.list_zones()
+            return client.list_zones(timeout_seconds=timeout_seconds)
 
         self._grpc_client_test_helper('ListZones', result_method, request_pb,
-                                      response_pb, expected_result, PROJECT_ID)
+                                      response_pb, expected_result, PROJECT_ID,
+                                      timeout_seconds=timeout_seconds)
 
     def test_list_zones(self):
         from gcloud_bigtable._generated import (
@@ -506,14 +509,16 @@ class TestClient(GRPCMockTestMixin):
 
         # We didn't have access to the client above when creating the clusters
         # so we will patch it in the `result_method` closure.
+        timeout_seconds = 8004
         def result_method(client):
             clusters[0]._client = client
             clusters[1]._client = client
-            return client.list_clusters()
+            return client.list_clusters(timeout_seconds=timeout_seconds)
 
         self._grpc_client_test_helper('ListClusters', result_method,
                                       request_pb, response_pb, expected_result,
-                                      PROJECT_ID)
+                                      PROJECT_ID,
+                                      timeout_seconds=timeout_seconds)
 
 
 class Test__get_contents(unittest2.TestCase):

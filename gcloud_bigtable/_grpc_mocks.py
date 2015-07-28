@@ -163,7 +163,8 @@ class GRPCMockTestMixin(unittest2.TestCase):
 
     def _grpc_client_test_helper(self, method_name, result_method, request_pb,
                                  response_pb, expected_result, project_id,
-                                 stub_factory=None, stub_host=None):
+                                 stub_factory=None, stub_host=None,
+                                 timeout_seconds=None):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable.client import Client
@@ -195,7 +196,7 @@ class GRPCMockTestMixin(unittest2.TestCase):
         self.assertEqual(mock_make_stub.method_calls, [
             (
                 method_name,
-                (request_pb, self._MUT.TIMEOUT_SECONDS),
+                (request_pb, timeout_seconds or self._MUT.TIMEOUT_SECONDS),
                 {},
             ),
         ])

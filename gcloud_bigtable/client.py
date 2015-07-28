@@ -39,7 +39,6 @@ except ImportError:
 from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
-from gcloud_bigtable._helpers import TIMEOUT_SECONDS
 from gcloud_bigtable._helpers import make_stub
 from gcloud_bigtable.cluster import Cluster
 from gcloud_bigtable.cluster import CLUSTER_ADMIN_PORT
@@ -57,6 +56,8 @@ READ_ONLY_SCOPE = ('https://www.googleapis.com/auth/'
 
 PROJECT_ENV_VAR = 'GCLOUD_PROJECT'
 """Environment variable used to provide an implicit project ID."""
+
+DEFAULT_TIMEOUT_SECONDS = 10
 
 
 def _project_id_from_environment():
@@ -173,12 +174,17 @@ class Client(object):
                   interact with the Cluster Admin or Table Admin APIs. This
                   requires the ``ADMIN_SCOPE``. Defaults to ``False``.
 
+    :type timeout_seconds: integer
+    :param timeout_seconds: Number of seconds for request time-out. If not
+                            passed, defaults to ``DEFAULT_TIMEOUT_SECONDS``.
+
     :raises: :class:`ValueError` if both ``read_only`` and
              ``admin`` are ``True``
     """
 
     def __init__(self, credentials=None, project_id=None,
-                 read_only=False, admin=False):
+                 read_only=False, admin=False,
+                 timeout_seconds=DEFAULT_TIMEOUT_SECONDS):
         if read_only and admin:
             raise ValueError('A read-only client cannot also perform'
                              'administrative actions.')
@@ -197,6 +203,7 @@ class Client(object):
 
         self._credentials = credentials.create_scoped(scopes)
         self._project_id = _determine_project_id(project_id)
+        self.timeout_seconds = timeout_seconds
 
     @classmethod
     def from_service_account_json(cls, json_credentials_path, project_id=None,
@@ -335,12 +342,12 @@ class Client(object):
         return Cluster(zone, cluster_id, self,
                        display_name=display_name, serve_nodes=serve_nodes)
 
-    def list_zones(self, timeout_seconds=TIMEOUT_SECONDS):
+    def list_zones(self, timeout_seconds=None):
         """Lists zones associated with project.
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+                                If not passed, defaults to value set on client.
 
         :rtype: list of strings
         :returns: The names of the zones
@@ -351,6 +358,7 @@ class Client(object):
         stub = make_stub(self._credentials, CLUSTER_STUB_FACTORY,
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.ListZones.async(request_pb, timeout_seconds)
             # We expect a `messages_pb2.ListZonesResponse`
             list_zones_response = response.result()
@@ -363,13 +371,12 @@ class Client(object):
             result.append(zone.display_name)
         return result
 
-    def list_clusters(self, timeout_seconds=TIMEOUT_SECONDS):
+    def list_clusters(self, timeout_seconds=None):
         """Lists clusters owned by the project.
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to
-                                ``TIMEOUT_SECONDS``.
+                                If not passed, defaults to value set on client.
 
         :rtype: tuple
         :returns: A pair of results, the first is a list of :class:`Cluster` s
@@ -380,6 +387,7 @@ class Client(object):
         stub = make_stub(self._credentials, CLUSTER_STUB_FACTORY,
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.ListClusters.async(request_pb, timeout_seconds)
             # We expect a `messages_pb2.ListClustersResponse`
             list_clusters_response = response.result()
