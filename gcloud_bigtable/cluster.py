@@ -24,11 +24,11 @@ from gcloud_bigtable._generated import bigtable_cluster_service_pb2
 from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as table_messages_pb2)
 from gcloud_bigtable._generated import operations_pb2
+from gcloud_bigtable._helpers import TIMEOUT_SECONDS
 from gcloud_bigtable._helpers import _parse_pb_any_to_native
 from gcloud_bigtable._helpers import _pb_timestamp_to_datetime
 from gcloud_bigtable._helpers import _require_pb_property
-from gcloud_bigtable.connection import TIMEOUT_SECONDS
-from gcloud_bigtable.connection import make_stub
+from gcloud_bigtable._helpers import make_stub
 from gcloud_bigtable.table import TABLE_ADMIN_HOST
 from gcloud_bigtable.table import TABLE_ADMIN_PORT
 from gcloud_bigtable.table import TABLE_STUB_FACTORY

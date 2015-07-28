@@ -100,7 +100,7 @@ class StubMockFactory(object):
 class GRPCMockTestMixin(unittest2.TestCase):
     """Mix-in to allow easy mocking for gRPC methods.
 
-    Expects :func:`gcloud_bigtable.connection.make_stub` to be used
+    Expects :func:`gcloud_bigtable._helpers.make_stub` to be used
     for making API calls.
 
     Also expects that :meth:`setUpClass` will be called and the following

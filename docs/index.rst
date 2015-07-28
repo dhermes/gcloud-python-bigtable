@@ -154,7 +154,6 @@ Documented Modules
 .. toctree::
    :maxdepth: 2
 
-   base-connection
    data-connection
    client
    cluster

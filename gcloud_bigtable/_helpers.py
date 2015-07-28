@@ -44,6 +44,28 @@ _TYPE_URL_MAP = {
 # See https://gist.github.com/dhermes/bbc5b7be1932bfffae77
 # for appropriate values on other systems.
 SSL_CERT_FILE = '/etc/ssl/certs/ca-certificates.crt'
+TIMEOUT_SECONDS = 10
+USER_AGENT = 'gcloud-bigtable-python'
+
+
+class MetadataTransformer(object):
+    """Callable class to transform metadata for gRPC requests.
+
+    :type credentials: :class:`oauth2client.client.OAuth2Credentials`
+    :param credentials: The OAuth2 Credentials to use for access tokens
+                        to authorize requests.
+    """
+
+    def __init__(self, credentials):
+        self._credentials = credentials
+
+    def __call__(self, ignored_val):
+        """Adds authorization header to request metadata."""
+        access_token = self._credentials.get_access_token().access_token
+        return [
+            ('Authorization', 'Bearer ' + access_token),
+            ('User-agent', USER_AGENT),
+        ]
 
 
 class AuthInfo(object):
@@ -184,3 +206,31 @@ def get_certs():
     """
     set_certs(reset=False)
     return AuthInfo.ROOT_CERTIFICATES
+
+
+def make_stub(credentials, stub_factory, host, port):
+    """Makes a stub for the an API.
+
+    :type credentials: :class:`oauth2client.client.OAuth2Credentials`
+    :param credentials: The OAuth2 Credentials to use for access tokens
+                        to authorize requests.
+
+    :type stub_factory: callable
+    :param stub_factory: A factory which will create a gRPC stub for
+                         a given service.
+
+    :type host: string
+    :param host: The host for the service.
+
+    :type port: integer
+    :param port: The port for the service.
+
+    :rtype: :class:`grpc.early_adopter.implementations._Stub`
+    :returns: The stub object used to make gRPC requests to the
+              Data API.
+    """
+    custom_metadata_transformer = MetadataTransformer(credentials)
+    return stub_factory(host, port,
+                        metadata_transformer=custom_metadata_transformer,
+                        secure=True,
+                        root_certificates=get_certs())

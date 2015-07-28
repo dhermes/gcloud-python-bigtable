@@ -18,8 +18,8 @@
 from gcloud_bigtable._generated import bigtable_service_pb2
 from gcloud_bigtable._generated import (
     bigtable_service_messages_pb2 as messages_pb2)
-from gcloud_bigtable.connection import TIMEOUT_SECONDS
-from gcloud_bigtable.connection import make_stub
+from gcloud_bigtable._helpers import TIMEOUT_SECONDS
+from gcloud_bigtable._helpers import make_stub
 
 
 DATA_STUB_FACTORY = (bigtable_service_pb2.

@@ -39,12 +39,12 @@ except ImportError:
 from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
+from gcloud_bigtable._helpers import TIMEOUT_SECONDS
+from gcloud_bigtable._helpers import make_stub
 from gcloud_bigtable.cluster import Cluster
 from gcloud_bigtable.cluster import CLUSTER_ADMIN_PORT
 from gcloud_bigtable.cluster import CLUSTER_ADMIN_HOST
 from gcloud_bigtable.cluster import CLUSTER_STUB_FACTORY
-from gcloud_bigtable.connection import TIMEOUT_SECONDS
-from gcloud_bigtable.connection import make_stub
 
 
 ADMIN_SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
