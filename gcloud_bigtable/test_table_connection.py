@@ -85,29 +85,6 @@ class TestTableConnection(GRPCMockTestMixin):
     def test_create_table_without_split_keys(self):
         self._create_table_test_helper()
 
-    def test_list_tables(self):
-        from gcloud_bigtable._generated import (
-            bigtable_table_service_messages_pb2 as messages_pb2)
-
-        request_obj = messages_pb2.ListTablesRequest(name=CLUSTER_NAME)
-
-        def call_method(connection):
-            return connection.list_tables(CLUSTER_NAME)
-
-        self._grpc_call_helper(call_method, 'ListTables', request_obj)
-
-    def test_get_table(self):
-        from gcloud_bigtable._generated import (
-            bigtable_table_service_messages_pb2 as messages_pb2)
-
-        table_name = '%s/tables/%s' % (CLUSTER_NAME, TABLE_ID)
-        request_obj = messages_pb2.GetTableRequest(name=table_name)
-
-        def call_method(connection):
-            return connection.get_table(CLUSTER_NAME, TABLE_ID)
-
-        self._grpc_call_helper(call_method, 'GetTable', request_obj)
-
     def test_delete_table(self):
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as messages_pb2)

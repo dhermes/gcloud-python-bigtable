@@ -97,67 +97,6 @@ class TableConnection(Connection):
 
         return result_pb
 
-    def list_tables(self, cluster_name, timeout_seconds=TIMEOUT_SECONDS):
-        """List tables in an existing cluster.
-
-        :type cluster_name: string
-        :param cluster_name: The name of the cluster containing the list of
-                             tables. Must be of the form
-                             "projects/../zones/../clusters/.."
-                             Since this is a low-level class, we don't check
-                             this, rather we expect callers to pass correctly
-                             formatted data.
-
-        :type timeout_seconds: integer
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
-
-        :rtype: :class:`messages_pb2.ListTablesResponse`
-        :returns: The list of tables retrieved.
-        """
-        request_pb = messages_pb2.ListTablesRequest(name=cluster_name)
-        result_pb = None
-        stub = make_stub(self._credentials, TABLE_STUB_FACTORY,
-                         TABLE_ADMIN_HOST, PORT)
-        with stub:
-            response = stub.ListTables.async(request_pb, timeout_seconds)
-            result_pb = response.result()
-
-        return result_pb
-
-    def get_table(self, cluster_name, table_id,
-                  timeout_seconds=TIMEOUT_SECONDS):
-        """Gets table metadata.
-
-        :type cluster_name: string
-        :param cluster_name: The name of the cluster where the table will be
-                             created. Must be of the form
-                             "projects/../zones/../clusters/.."
-                             Since this is a low-level class, we don't check
-                             this, rather we expect callers to pass correctly
-                             formatted data.
-
-        :type table_id: string
-        :param table_id: The name of the table within the cluster.
-
-        :type timeout_seconds: integer
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
-
-        :rtype: :class:`._generated.bigtable_table_data_pb2.Table`
-        :returns: The response object for the get table request.
-        """
-        table_name = '%s/tables/%s' % (cluster_name, table_id)
-        request_pb = messages_pb2.GetTableRequest(name=table_name)
-        result_pb = None
-        stub = make_stub(self._credentials, TABLE_STUB_FACTORY,
-                         TABLE_ADMIN_HOST, PORT)
-        with stub:
-            response = stub.GetTable.async(request_pb, timeout_seconds)
-            result_pb = response.result()
-
-        return result_pb
-
     def delete_table(self, cluster_name, table_id,
                      timeout_seconds=TIMEOUT_SECONDS):
         """Deletes a table.
