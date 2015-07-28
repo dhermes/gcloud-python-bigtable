@@ -15,16 +15,10 @@
 """Connection to Google Cloud Bigtable API servers."""
 
 
-# See https://gist.github.com/dhermes/bbc5b7be1932bfffae77
-# for appropriate values on other systems.
-SSL_CERT_FILE = '/etc/ssl/certs/ca-certificates.crt'
+from gcloud_bigtable._helpers import get_certs
+
+
 TIMEOUT_SECONDS = 10
-
-
-class AuthInfo(object):
-    """Local namespace for caching auth information."""
-
-    ROOT_CERTIFICATES = None
 
 
 class MetadataTransformer(object):
@@ -88,32 +82,6 @@ class Connection(object):
         if credentials and credentials.create_scoped_required():
             credentials = credentials.create_scoped(scope)
         return credentials
-
-
-def _set_certs():
-    """Sets the cached root certificates locally."""
-    with open(SSL_CERT_FILE, mode='rb') as file_obj:
-        AuthInfo.ROOT_CERTIFICATES = file_obj.read()
-
-
-def set_certs(reset=False):
-    """Sets the cached root certificates locally.
-
-    If not manually told to reset or if the value is already set,
-    does nothing.
-    """
-    if AuthInfo.ROOT_CERTIFICATES is None or reset:
-        _set_certs()
-
-
-def get_certs():
-    """Gets the cached root certificates.
-
-    Calls set_certs() first in case the value has not been set, but
-    this will do nothing if the value is already set.
-    """
-    set_certs(reset=False)
-    return AuthInfo.ROOT_CERTIFICATES
 
 
 def make_stub(credentials, stub_factory, host, port):

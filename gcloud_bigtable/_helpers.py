@@ -41,6 +41,16 @@ _TYPE_URL_MAP = {
         messages_pb2.UpdateClusterMetadata),
 }
 
+# See https://gist.github.com/dhermes/bbc5b7be1932bfffae77
+# for appropriate values on other systems.
+SSL_CERT_FILE = '/etc/ssl/certs/ca-certificates.crt'
+
+
+class AuthInfo(object):
+    """Local namespace for caching auth information."""
+
+    ROOT_CERTIFICATES = None
+
 
 def _pb_timestamp_to_datetime(timestamp):
     """Convert a Timestamp protobuf to a datetime object.
@@ -142,3 +152,35 @@ def _timedelta_to_duration_pb(timedelta_val):
     # Convert nanoseconds to microseconds.
     nanos = 1000 * signed_micros
     return duration_pb2.Duration(seconds=seconds, nanos=nanos)
+
+
+def _set_certs():
+    """Sets the cached root certificates locally."""
+    with open(SSL_CERT_FILE, mode='rb') as file_obj:
+        AuthInfo.ROOT_CERTIFICATES = file_obj.read()
+
+
+def set_certs(reset=False):
+    """Sets the cached root certificates locally.
+
+    If not manually told to reset or if the value is already set,
+    does nothing.
+
+    :type reset: boolean
+    :param reset: Boolean indicating if the cached certs should be reset.
+    """
+    if AuthInfo.ROOT_CERTIFICATES is None or reset:
+        _set_certs()
+
+
+def get_certs():
+    """Gets the cached root certificates.
+
+    Calls set_certs() first in case the value has not been set, but
+    this will do nothing if the value is already set.
+
+    :rtype: string
+    :returns: The root certificates set on ``AuthInfo``.
+    """
+    set_certs(reset=False)
+    return AuthInfo.ROOT_CERTIFICATES
