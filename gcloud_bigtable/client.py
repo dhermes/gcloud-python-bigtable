@@ -19,6 +19,7 @@ This is the base from which all interactions with the API occur.
 In the hierarchy of API concepts
 * a client owns a cluster
 * a cluster owns a table
+* a table owns column families
 * a table owns data
 """
 

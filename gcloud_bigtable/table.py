@@ -19,7 +19,6 @@ from gcloud_bigtable._generated import bigtable_table_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._generated import bigtable_table_service_pb2
-from gcloud_bigtable._helpers import _timedelta_to_duration_pb
 from gcloud_bigtable._helpers import make_stub
 
 
@@ -29,102 +28,6 @@ TABLE_ADMIN_HOST = 'bigtabletableadmin.googleapis.com'
 """Table Admin API request host."""
 TABLE_ADMIN_PORT = 443
 """Table Admin API request port."""
-
-
-class GarbageCollectionRule(object):
-    """Table garbage collection rule.
-
-    Cells in the table fitting the rule will be deleted during
-    garbage collection.
-
-    These values can be combined via :class:`GarbageCollectionRuleUnion` and
-    :class:`GarbageCollectionRuleIntersection.`
-
-    .. note::
-
-        At most one of ``max_num_versions`` and ``max_age`` can be specified
-        at once.
-
-    .. note::
-
-        A string ``gc_expression`` can also be used with API requests, but
-        that value would be superceded by a ``gc_rule``. As a result, we
-        don't support that feature and instead support via this native
-        object.
-
-    :type max_num_versions: integer
-    :param max_num_versions: The maximum number of versions
-
-    :type max_age: :class:`datetime.timedelta`
-    :param max_age: The maximum age allowed for a cell in the table.
-
-    :raises: :class:`ValueError` if both ``max_num_versions`` and ``max_age``
-             are set.
-    """
-
-    def __init__(self, max_num_versions=None, max_age=None):
-        if max_num_versions is not None and max_age is not None:
-            raise ValueError('At most one of max_num_versions and '
-                             'max_age can be set')
-        self.max_num_versions = max_num_versions
-        self.max_age = max_age
-
-    def to_pb(self):
-        """Converts the :class:`GarbageCollectionRule` to a protobuf.
-
-        :rtype: :class:`data_pb2.GcRule`
-        :returns: The converted current object.
-        """
-        gc_rule_kwargs = {}
-        if self.max_num_versions is not None:
-            gc_rule_kwargs['max_num_versions'] = self.max_num_versions
-        if self.max_age is not None:
-            gc_rule_kwargs['max_age'] = _timedelta_to_duration_pb(self.max_age)
-        return data_pb2.GcRule(**gc_rule_kwargs)
-
-
-class GarbageCollectionRuleUnion(object):
-    """Union of garbage collection rules.
-
-    :type rules: list
-    :param rules: List of garbage collection rules, unions and/or
-                  intersections.
-    """
-
-    def __init__(self, rules=None):
-        self.rules = rules
-
-    def to_pb(self):
-        """Converts the union into a single gc rule as a protobuf.
-
-        :rtype: :class:`data_pb2.GcRule`
-        :returns: The converted current object.
-        """
-        union = data_pb2.GcRule.Union(
-            rules=[rule.to_pb() for rule in self.rules])
-        return data_pb2.GcRule(union=union)
-
-
-class GarbageCollectionRuleIntersection(object):
-    """Intersection of garbage collection rules.
-
-    :type rules: list
-    :param rules: List of garbage collection rules, unions and/or
-                  intersections.
-    """
-
-    def __init__(self, rules=None):
-        self.rules = rules
-
-    def to_pb(self):
-        """Converts the intersection into a single gc rule as a protobuf.
-
-        :rtype: :class:`data_pb2.GcRule`
-        :returns: The converted current object.
-        """
-        intersection = data_pb2.GcRule.Intersection(
-            rules=[rule.to_pb() for rule in self.rules])
-        return data_pb2.GcRule(intersection=intersection)
 
 
 class Table(object):
@@ -330,9 +233,9 @@ class Table(object):
         :type column_family_id: string
         :param column_family_id: The ID of the column family.
 
-        :type gc_rule: :class:`GarbageCollectionRule`,
-                       :class:`GarbageCollectionRuleUnion` or
-                       :class:`GarbageCollectionRuleIntersection`
+        :type gc_rule: :class:`.column_family.GarbageCollectionRule`,
+                       :class:`.column_family.GarbageCollectionRuleUnion` or
+                       :class:`.column_family.GarbageCollectionRuleIntersection`
         :param gc_rule: The garbage collection settings for the column family.
 
         :type timeout_seconds: integer
@@ -365,9 +268,9 @@ class Table(object):
         :type column_family_id: string
         :param column_family_id: The ID of the column family.
 
-        :type gc_rule: :class:`GarbageCollectionRule`,
-                       :class:`GarbageCollectionRuleUnion` or
-                       :class:`GarbageCollectionRuleIntersection`
+        :type gc_rule: :class:`.column_family.GarbageCollectionRule`,
+                       :class:`.column_family.GarbageCollectionRuleUnion` or
+                       :class:`.column_family.GarbageCollectionRuleIntersection`
         :param gc_rule: The garbage collection settings for the column family.
 
         :type timeout_seconds: integer

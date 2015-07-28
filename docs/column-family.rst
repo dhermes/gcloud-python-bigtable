@@ -1,5 +1,5 @@
-Table Garbage Collection
-========================
+Table Column Families
+=====================
 
 When creating a :class:`Table <gcloud_bigtable.table.Table>`, it is
 possible to set garbage collection rules for expired data.
@@ -37,20 +37,10 @@ at the lowest level of the nesting:
     rule4 = GarbageCollectionRule(max_num_versions=3)
     rule5 = GarbageCollectionUnion(rules=[rule3, rule4])
 
-Garbage Collection Classes
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Module
+~~~~~~
 
-.. autoclass:: gcloud_bigtable.table.GarbageCollectionRule
-  :members:
-  :undoc-members:
-  :show-inheritance:
-
-.. autoclass:: gcloud_bigtable.table.GarbageCollectionRuleUnion
-  :members:
-  :undoc-members:
-  :show-inheritance:
-
-.. autoclass:: gcloud_bigtable.table.GarbageCollectionRuleIntersection
+.. automodule:: gcloud_bigtable.column_family
   :members:
   :undoc-members:
   :show-inheritance:

@@ -158,7 +158,7 @@ Documented Modules
    client
    cluster
    table
-   garbage-collection
+   column-family
 
 Indices and tables
 ~~~~~~~~~~~~~~~~~~
