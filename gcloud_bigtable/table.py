@@ -94,6 +94,15 @@ class Table(object):
         """
         return self.cluster.name + '/tables/' + self.table_id
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return (other.table_id == self.table_id and
+                other.cluster == self.cluster)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def exists(self, timeout_seconds=TIMEOUT_SECONDS):
         """Reload the metadata for this table.
 

@@ -21,12 +21,17 @@ from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._generated import bigtable_cluster_service_pb2
+from gcloud_bigtable._generated import (
+    bigtable_table_service_messages_pb2 as table_messages_pb2)
 from gcloud_bigtable._generated import operations_pb2
 from gcloud_bigtable._helpers import _parse_pb_any_to_native
 from gcloud_bigtable._helpers import _pb_timestamp_to_datetime
 from gcloud_bigtable._helpers import _require_pb_property
 from gcloud_bigtable.connection import TIMEOUT_SECONDS
 from gcloud_bigtable.connection import make_stub
+from gcloud_bigtable.table import TABLE_ADMIN_HOST
+from gcloud_bigtable.table import TABLE_ADMIN_PORT
+from gcloud_bigtable.table import TABLE_STUB_FACTORY
 from gcloud_bigtable.table import Table
 
 
@@ -403,3 +408,34 @@ class Cluster(object):
         self._operation_type = 'undelete'
         self._operation_id, self._operation_begin = _process_operation(
             operation_pb2)
+
+    def list_tables(self, timeout_seconds=TIMEOUT_SECONDS):
+        """List the tables in this cluster.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+
+        :rtype: list of :class:`Table`
+        :returns: The list of tables owned by the cluster.
+        :raises: :class:`ValueError` if one of the returned tables has a name
+                 that is not of the expected format.
+        """
+        request_pb = table_messages_pb2.ListTablesRequest(name=self.name)
+        stub = make_stub(self.credentials, TABLE_STUB_FACTORY,
+                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
+        with stub:
+            response = stub.ListTables.async(request_pb, timeout_seconds)
+            # We expect a `table_messages_pb2.ListTablesResponse`
+            table_list_pb = response.result()
+
+        result = []
+        for table_pb in table_list_pb.tables:
+            before, table_id = table_pb.name.split(
+                self.name + '/tables/', 1)
+            if before != '':
+                raise ValueError('Table name %s not of expected format' % (
+                    table_pb.name,))
+            result.append(self.table(table_id))
+
+        return result

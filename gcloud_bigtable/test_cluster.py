@@ -523,3 +523,59 @@ class TestCluster(GRPCMockTestMixin):
         self.assertEqual(CLUSTER_CREATED[0]._operation_id, op_id)
         self.assertTrue(CLUSTER_CREATED[0]._operation_begin is op_begin)
         mock_process_operation.check_called(self, [(response_pb,)])
+
+    def _list_tables_helper(self, table_id, table_name=None):
+        from gcloud_bigtable._generated import (
+            bigtable_table_data_pb2 as table_data_pb2)
+        from gcloud_bigtable._generated import (
+            bigtable_table_service_messages_pb2 as table_messages_pb2)
+        from gcloud_bigtable import cluster as MUT
+
+        # Create request_
+        cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+                        '/clusters/' + CLUSTER_ID)
+        request_pb = table_messages_pb2.ListTablesRequest(name=cluster_name)
+
+        # Create response_pb
+        table_name = table_name or (cluster_name + '/tables/' + table_id)
+        response_pb = table_messages_pb2.ListTablesResponse(
+            tables=[
+                table_data_pb2.Table(name=table_name),
+            ],
+        )
+
+        # Create expected_result.
+        expected_result = []  # We'll add one below.
+
+        # We must create the cluster with the client passed in.
+        TEST_CASE = self
+        CLUSTER_CREATED = []
+
+        def result_method(client):
+            cluster = TEST_CASE._makeOne(ZONE, CLUSTER_ID, client)
+            CLUSTER_CREATED.append(cluster)
+            expected_result.append(cluster.table(table_id))
+            return cluster.list_tables()
+
+        self._grpc_client_test_helper('ListTables', result_method,
+                                      request_pb, response_pb, expected_result,
+                                      PROJECT_ID,
+                                      stub_factory=MUT.TABLE_STUB_FACTORY,
+                                      stub_host=MUT.TABLE_ADMIN_HOST)
+        self.assertEqual(len(CLUSTER_CREATED), 1)
+
+    def test_list_tables(self):
+        table_id = 'table_id'
+        self._list_tables_helper(table_id)
+
+    def test_list_tables_failure_bad_split(self):
+        with self.assertRaises(ValueError):
+            self._list_tables_helper(None, table_name='wrong-format')
+
+    def test_list_tables_failure_name_bad_before(self):
+        table_id = 'table_id'
+        bad_table_name = ('nonempty-section-before' +
+                          'projects/' + PROJECT_ID + '/zones/' + ZONE +
+                          '/clusters/' + CLUSTER_ID + '/tables/' + table_id)
+        with self.assertRaises(ValueError):
+            self._list_tables_helper(table_id, table_name=bad_table_name)
