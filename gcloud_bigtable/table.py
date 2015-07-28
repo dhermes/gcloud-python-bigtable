@@ -45,8 +45,10 @@ class GarbageCollectionRule(object):
 
     .. note::
 
-        At most one of ``max_num_versions`` and ``max_age`` can be specified
-        at once.
+        A string `gc_expression`` can also be used with API requests, but
+        that value would be superceded by a ``gc_rule``. As a result, we
+        don't support that feature and instead support via this native
+        object.
 
     :type max_num_versions: integer
     :param max_num_versions: The maximum number of versions
