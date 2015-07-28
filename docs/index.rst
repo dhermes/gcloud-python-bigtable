@@ -159,6 +159,7 @@ Documented Modules
    table-connection
    client
    cluster
+   table
 
 Indices and tables
 ~~~~~~~~~~~~~~~~~~

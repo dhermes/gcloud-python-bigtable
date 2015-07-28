@@ -83,11 +83,12 @@ class Table(object):
         """Table name used in requests.
 
         .. note::
+
           This property will not change if ``table_id`` does not, but the
           return value is not cached.
 
         The table name is of the form
-        "projects/*/zones/*/clusters/*/tables/{table_id}"
+        "projects/../zones/../clusters/../tables/{table_id}"
 
         :rtype: string
         :returns: The table name.
