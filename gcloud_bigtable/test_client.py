@@ -421,7 +421,7 @@ class TestClient(GRPCMockTestMixin):
         self.assertEqual(cluster.zone, zone)
         self.assertEqual(cluster.cluster_id, cluster_id)
 
-    def test_list_zones(self):
+    def _list_zones_helper(self, zone_status):
         from gcloud_bigtable._generated import (
             bigtable_cluster_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
@@ -434,8 +434,8 @@ class TestClient(GRPCMockTestMixin):
         zone2 = 'foo'
         response_pb = messages_pb2.ListZonesResponse(
             zones=[
-                data_pb2.Zone(display_name=zone1),
-                data_pb2.Zone(display_name=zone2),
+                data_pb2.Zone(display_name=zone1, status=zone_status),
+                data_pb2.Zone(display_name=zone2, status=zone_status),
             ],
         )
         expected_result = [zone1, zone2]
@@ -445,6 +445,17 @@ class TestClient(GRPCMockTestMixin):
 
         self._grpc_client_test_helper('ListZones', result_method, request_pb,
                                       response_pb, expected_result, PROJECT_ID)
+
+    def test_list_zones(self):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+        self._list_zones_helper(data_pb2.Zone.OK)
+
+    def test_list_zones_failure(self):
+        from gcloud_bigtable._generated import (
+            bigtable_cluster_data_pb2 as data_pb2)
+        with self.assertRaises(ValueError):
+            self._list_zones_helper(data_pb2.Zone.EMERGENCY_MAINENANCE)
 
     def test_list_clusters(self):
         from gcloud_bigtable._generated import (

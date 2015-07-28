@@ -36,6 +36,7 @@ try:
 except ImportError:
     app_identity = None
 
+from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable.cluster import Cluster
@@ -343,6 +344,8 @@ class Client(object):
 
         :rtype: list of strings
         :returns: The names of the zones
+        :raises: :class:`ValueError` if one of the zones is not in
+                 ``OK`` state.
         """
         request_pb = messages_pb2.ListZonesRequest(name=self.project_name)
         stub = make_stub(self._credentials, CLUSTER_STUB_FACTORY,
@@ -352,7 +355,13 @@ class Client(object):
             # We expect a `messages_pb2.ListZonesResponse`
             list_zones_response = response.result()
 
-        return [zone.display_name for zone in list_zones_response.zones]
+        result = []
+        for zone in list_zones_response.zones:
+            if zone.status != data_pb2.Zone.OK:
+                raise ValueError('Zone %s not in OK state' % (
+                    zone.display_name,))
+            result.append(zone.display_name)
+        return result
 
     def list_clusters(self, timeout_seconds=TIMEOUT_SECONDS):
         """Lists clusters owned by the project.
