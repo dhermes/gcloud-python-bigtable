@@ -49,6 +49,7 @@ class Table(object):
 
     * Check if it :meth:`exists`
     * :meth:`create` itself
+    * :meth:`rename` itself
     * :meth:`delete` itself
 
     :type table_id: string
@@ -171,8 +172,34 @@ class Table(object):
             # We expect a `._generated.bigtable_table_data_pb2.Table`
             response.result()
 
+    def rename(self, new_table_id, timeout_seconds=TIMEOUT_SECONDS):
+        """Rename this table.
+
+        .. note::
+
+            This cannot be used to move tables between clusters,
+            zones, or projects.
+
+        :type new_table_id: string
+        :param new_table_id: The new name table ID.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+        """
+        request_pb = messages_pb2.RenameTableRequest(
+            name=self.name,
+            new_id=new_table_id,
+        )
+        stub = make_stub(self.credentials, TABLE_STUB_FACTORY,
+                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
+        with stub:
+            response = stub.RenameTable.async(request_pb, timeout_seconds)
+            # We expect a `._generated.empty_pb2.Empty`
+            response.result()
+
     def delete(self, timeout_seconds=TIMEOUT_SECONDS):
-        """Delete the metadata for this table.
+        """Delete this table.
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.

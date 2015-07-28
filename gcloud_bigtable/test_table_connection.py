@@ -62,23 +62,6 @@ class TestTableConnection(GRPCMockTestMixin):
             ('create_scoped', ((klass.SCOPE,),), {}),
         ])
 
-    def test_rename_table(self):
-        from gcloud_bigtable._generated import (
-            bigtable_table_service_messages_pb2 as messages_pb2)
-
-        table_name = '%s/tables/%s' % (CLUSTER_NAME, TABLE_ID)
-        new_table_id = 'NEW_TABLE_ID'
-        request_obj = messages_pb2.RenameTableRequest(
-            name=table_name,
-            new_id=new_table_id,
-        )
-
-        def call_method(connection):
-            return connection.rename_table(CLUSTER_NAME, TABLE_ID,
-                                           new_table_id)
-
-        self._grpc_call_helper(call_method, 'RenameTable', request_obj)
-
     def test_create_column_family(self):
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as messages_pb2)

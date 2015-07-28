@@ -39,49 +39,6 @@ class TableConnection(Connection):
     SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
     """Scope for Table Admin and Cluster Admin API requests."""
 
-    def rename_table(self, cluster_name, old_table_id,
-                     new_table_id, timeout_seconds=TIMEOUT_SECONDS):
-        """Rename a table.
-
-        .. note::
-          This cannot be used to move tables between clusters,
-          zones, or projects.
-
-        :type cluster_name: string
-        :param cluster_name: The name of the cluster where the table will be
-                             renamed. Must be of the form
-                             "projects/../zones/../clusters/.."
-                             Since this is a low-level class, we don't check
-                             this, rather we expect callers to pass correctly
-                             formatted data.
-
-        :type old_table_id: string
-        :param old_table_id: The name of the table being renamed.
-
-        :type new_table_id: string
-        :param new_table_id: The new name of the table.
-
-        :type timeout_seconds: integer
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
-
-        :rtype: :class:`gcloud_bigtable._generated.empty_pb2.Empty`
-        :returns: The empty response object for the rename table request.
-        """
-        curr_table_name = '%s/tables/%s' % (cluster_name, old_table_id)
-        request_pb = messages_pb2.RenameTableRequest(
-            name=curr_table_name,
-            new_id=new_table_id,
-        )
-        result_pb = None
-        stub = make_stub(self._credentials, TABLE_STUB_FACTORY,
-                         TABLE_ADMIN_HOST, PORT)
-        with stub:
-            response = stub.RenameTable.async(request_pb, timeout_seconds)
-            result_pb = response.result()
-
-        return result_pb
-
     def create_column_family(self, cluster_name, table_id, column_family_id,
                              timeout_seconds=TIMEOUT_SECONDS):
         """Create a column family in a table.
