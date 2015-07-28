@@ -58,6 +58,7 @@ PROJECT_ENV_VAR = 'GCLOUD_PROJECT'
 """Environment variable used to provide an implicit project ID."""
 
 DEFAULT_TIMEOUT_SECONDS = 10
+DEFAULT_USER_AGENT = 'gcloud-bigtable-python'
 
 
 def _project_id_from_environment():
@@ -174,6 +175,10 @@ class Client(object):
                   interact with the Cluster Admin or Table Admin APIs. This
                   requires the ``ADMIN_SCOPE``. Defaults to ``False``.
 
+    :type user_agent: string
+    :param user_agent: (Optional) The user agent to be used with API request.
+                       Defaults to ``DEFAULT_USER_AGENT``.
+
     :type timeout_seconds: integer
     :param timeout_seconds: Number of seconds for request time-out. If not
                             passed, defaults to ``DEFAULT_TIMEOUT_SECONDS``.
@@ -183,7 +188,7 @@ class Client(object):
     """
 
     def __init__(self, credentials=None, project_id=None,
-                 read_only=False, admin=False,
+                 read_only=False, admin=False, user_agent=DEFAULT_USER_AGENT,
                  timeout_seconds=DEFAULT_TIMEOUT_SECONDS):
         if read_only and admin:
             raise ValueError('A read-only client cannot also perform'
@@ -203,6 +208,7 @@ class Client(object):
 
         self._credentials = credentials.create_scoped(scopes)
         self._project_id = _determine_project_id(project_id)
+        self.user_agent = user_agent
         self.timeout_seconds = timeout_seconds
 
     @classmethod

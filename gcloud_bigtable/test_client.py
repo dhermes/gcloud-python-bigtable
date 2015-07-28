@@ -251,7 +251,8 @@ class TestClient(GRPCMockTestMixin):
         return self._getTargetClass()(*args, **kwargs)
 
     def _constructor_test_helper(self, expected_scopes, project_id=None,
-                                 admin=False, read_only=False):
+                                 read_only=False, admin=False,
+                                 user_agent=None):
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable._testing import _Monkey
@@ -263,7 +264,8 @@ class TestClient(GRPCMockTestMixin):
         mock_determine_project_id = _MockCalled(determined_project_id)
         with _Monkey(MUT, _determine_project_id=mock_determine_project_id):
             client = self._makeOne(credentials, project_id=project_id,
-                                   admin=admin, read_only=read_only)
+                                   read_only=read_only, admin=admin,
+                                   user_agent=user_agent)
 
         self.assertTrue(client._credentials is scoped_creds)
         self.assertEqual(credentials._called, [
@@ -271,6 +273,7 @@ class TestClient(GRPCMockTestMixin):
         ])
         self.assertTrue(client._project_id is determined_project_id)
         self.assertEqual(client.timeout_seconds, MUT.DEFAULT_TIMEOUT_SECONDS)
+        self.assertEqual(client.user_agent, user_agent)
         mock_determine_project_id.check_called(self, [(project_id,)])
 
     def test_constructor_default(self):
@@ -287,6 +290,7 @@ class TestClient(GRPCMockTestMixin):
 
         self.assertEqual(client.project_id, PROJECT_ID)
         self.assertTrue(client._credentials is scoped_creds)
+        self.assertEqual(client.user_agent, MUT.DEFAULT_USER_AGENT)
         self.assertEqual(mock_creds_class._called,
                          [('get_application_default', (), {})])
         expected_scopes = [MUT.DATA_SCOPE]
@@ -303,6 +307,12 @@ class TestClient(GRPCMockTestMixin):
         from gcloud_bigtable import client as MUT
         expected_scopes = [MUT.DATA_SCOPE]
         self._constructor_test_helper(expected_scopes, project_id=PROJECT_ID)
+
+    def test_constructor_with_explicit_user_agent(self):
+        from gcloud_bigtable import client as MUT
+        user_agent = 'USER_AGENT'
+        expected_scopes = [MUT.DATA_SCOPE]
+        self._constructor_test_helper(expected_scopes, user_agent=user_agent)
 
     def test_constructor_with_admin(self):
         from gcloud_bigtable import client as MUT

@@ -33,18 +33,21 @@ class TestMetadataTransformer(unittest2.TestCase):
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
         project_id = 'PROJECT_ID'
-        client = Client(credentials, project_id=project_id)
+        user_agent = 'USER_AGENT'
+        client = Client(credentials, project_id=project_id,
+                        user_agent=user_agent)
         transformer = self._makeOne(client)
         self.assertTrue(transformer._credentials is scoped_creds)
+        self.assertEqual(transformer._user_agent, user_agent)
         self.assertEqual(credentials._called, [
             ('create_scoped', ([DATA_SCOPE],), {}),
         ])
 
     def test___call__(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
-        from gcloud_bigtable._helpers import USER_AGENT
         from gcloud_bigtable.client import Client
         from gcloud_bigtable.client import DATA_SCOPE
+        from gcloud_bigtable.client import DEFAULT_USER_AGENT
 
         access_token_expected = 'FOOBARBAZ'
 
@@ -62,7 +65,7 @@ class TestMetadataTransformer(unittest2.TestCase):
             result,
             [
                 ('Authorization', 'Bearer ' + access_token_expected),
-                ('User-agent', USER_AGENT),
+                ('User-agent', DEFAULT_USER_AGENT),
             ])
         self.assertEqual(credentials._called, [
             ('create_scoped', ([DATA_SCOPE],), {}),

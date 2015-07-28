@@ -44,7 +44,6 @@ _TYPE_URL_MAP = {
 # See https://gist.github.com/dhermes/bbc5b7be1932bfffae77
 # for appropriate values on other systems.
 SSL_CERT_FILE = '/etc/ssl/certs/ca-certificates.crt'
-USER_AGENT = 'gcloud-bigtable-python'
 
 
 class MetadataTransformer(object):
@@ -57,13 +56,14 @@ class MetadataTransformer(object):
 
     def __init__(self, client):
         self._credentials = client.credentials
+        self._user_agent = client.user_agent
 
     def __call__(self, ignored_val):
         """Adds authorization header to request metadata."""
         access_token = self._credentials.get_access_token().access_token
         return [
             ('Authorization', 'Bearer ' + access_token),
-            ('User-agent', USER_AGENT),
+            ('User-agent', self._user_agent),
         ]
 
 
