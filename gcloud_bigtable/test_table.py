@@ -120,6 +120,48 @@ class TestTable(GRPCMockTestMixin):
                                       request_pb, response_pb, expected_result,
                                       PROJECT_ID)
 
+    def _create_test_helper(self, initial_split_keys):
+        from gcloud_bigtable._generated import (
+            bigtable_table_data_pb2 as data_pb2)
+        from gcloud_bigtable._generated import (
+            bigtable_table_service_messages_pb2 as messages_pb2)
+
+        # Create request_pb
+        cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+                        '/clusters/' + CLUSTER_ID)
+        request_pb = messages_pb2.CreateTableRequest(
+            initial_split_keys=initial_split_keys,
+            name=cluster_name,
+            table_id=TABLE_ID,
+        )
+
+        # Create response_pb
+        response_pb = data_pb2.Table()
+
+        # Create expected_result.
+        expected_result = None  # create() has no return value.
+
+        # We must create the cluster with the client passed in
+        # and then the table with that cluster.
+        TEST_CASE = self
+
+        def result_method(client):
+            cluster = client.cluster(ZONE, CLUSTER_ID)
+            table = TEST_CASE._makeOne(TABLE_ID, cluster)
+            return table.create(initial_split_keys=initial_split_keys)
+
+        self._grpc_client_test_helper('CreateTable', result_method,
+                                      request_pb, response_pb, expected_result,
+                                      PROJECT_ID)
+
+    def test_create(self):
+        initial_split_keys = None
+        self._create_test_helper(initial_split_keys)
+
+    def test_create_with_split_keys(self):
+        initial_split_keys = ['s1', 's2']
+        self._create_test_helper(initial_split_keys)
+
     def test_delete(self):
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as messages_pb2)

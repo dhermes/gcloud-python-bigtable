@@ -48,6 +48,7 @@ class Table(object):
     We can use a :class:`Table` to:
 
     * Check if it :meth:`exists`
+    * :meth:`create` itself
     * :meth:`delete` itself
 
     :type table_id: string
@@ -125,6 +126,50 @@ class Table(object):
             response.result()
 
         return True
+
+    def create(self, initial_split_keys=None, timeout_seconds=TIMEOUT_SECONDS):
+        """Creates this table.
+
+        .. note::
+
+            Though a :class:`._generated.bigtable_table_data_pb2.Table` is also
+            allowed (as the ``table`` property) in a create table request, we
+            do not support it in this method. As mentioned in the
+            :class:`Table` docstring, the name is the only useful property in
+            the table proto.
+
+        .. note::
+
+            A create request returns a
+            :class:`._generated.bigtable_table_data_pb2.Table` but we don't use
+            this response. The proto definition allows for the inclusion of a
+            ``current_operation`` in the response, but in example usage so far,
+            it seems the Bigtable API does not return any operation.
+
+        :type initial_split_keys: interable of strings
+        :param initial_split_keys: (Optional) List of row keys that will be
+                                   used to initially split the table into
+                                   several tablets (Tablets are similar to H
+                                   Base regions). Given two split keys, "s1"
+                                   and "s2", three tablets will be created,
+                                   spanning the key ranges:
+                                   [, s1), [s1, s2), [s2, ).
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+        """
+        request_pb = messages_pb2.CreateTableRequest(
+            initial_split_keys=initial_split_keys or [],
+            name=self.cluster.name,
+            table_id=self.table_id,
+        )
+        stub = make_stub(self.credentials, TABLE_STUB_FACTORY,
+                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
+        with stub:
+            response = stub.CreateTable.async(request_pb, timeout_seconds)
+            # We expect a `._generated.bigtable_table_data_pb2.Table`
+            response.result()
 
     def delete(self, timeout_seconds=TIMEOUT_SECONDS):
         """Delete the metadata for this table.
