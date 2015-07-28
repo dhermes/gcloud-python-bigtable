@@ -73,13 +73,13 @@ class Table(object):
         return self._cluster
 
     @property
-    def credentials(self):
-        """Getter for table's credentials.
+    def client(self):
+        """Getter for table's client.
 
-        :rtype: :class:`oauth2client.client.OAuth2Credentials`
-        :returns: The credentials stored on the table's client.
+        :rtype: :class:`.client.Client`
+        :returns: The client that owns this table.
         """
-        return self._cluster.credentials
+        return self.cluster.client
 
     @property
     def timeout_seconds(self):
@@ -128,7 +128,7 @@ class Table(object):
                   exist, an exception will be thrown by the API call.
         """
         request_pb = messages_pb2.GetTableRequest(name=self.name)
-        stub = make_stub(self.cluster.client, TABLE_STUB_FACTORY,
+        stub = make_stub(self.client, TABLE_STUB_FACTORY,
                          TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
         with stub:
             timeout_seconds = timeout_seconds or self.timeout_seconds
@@ -175,7 +175,7 @@ class Table(object):
             name=self.cluster.name,
             table_id=self.table_id,
         )
-        stub = make_stub(self.cluster.client, TABLE_STUB_FACTORY,
+        stub = make_stub(self.client, TABLE_STUB_FACTORY,
                          TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
         with stub:
             timeout_seconds = timeout_seconds or self.timeout_seconds
@@ -202,7 +202,7 @@ class Table(object):
             name=self.name,
             new_id=new_table_id,
         )
-        stub = make_stub(self.cluster.client, TABLE_STUB_FACTORY,
+        stub = make_stub(self.client, TABLE_STUB_FACTORY,
                          TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
         with stub:
             timeout_seconds = timeout_seconds or self.timeout_seconds
@@ -218,7 +218,7 @@ class Table(object):
                                 If not passed, defaults to value set on table.
         """
         request_pb = messages_pb2.DeleteTableRequest(name=self.name)
-        stub = make_stub(self.cluster.client, TABLE_STUB_FACTORY,
+        stub = make_stub(self.client, TABLE_STUB_FACTORY,
                          TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
         with stub:
             timeout_seconds = timeout_seconds or self.timeout_seconds
@@ -252,7 +252,7 @@ class Table(object):
             column_family=column_family,
         )
 
-        stub = make_stub(self.cluster.client, TABLE_STUB_FACTORY,
+        stub = make_stub(self.client, TABLE_STUB_FACTORY,
                          TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
         with stub:
             timeout_seconds = timeout_seconds or self.timeout_seconds
@@ -283,7 +283,7 @@ class Table(object):
             request_kwargs['gc_rule'] = gc_rule.to_pb()
         request_pb = data_pb2.ColumnFamily(**request_kwargs)
 
-        stub = make_stub(self.cluster.client, TABLE_STUB_FACTORY,
+        stub = make_stub(self.client, TABLE_STUB_FACTORY,
                          TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
         with stub:
             timeout_seconds = timeout_seconds or self.timeout_seconds
@@ -305,7 +305,7 @@ class Table(object):
         column_family_name = self.name + '/columnFamilies/' + column_family_id
         request_pb = messages_pb2.DeleteColumnFamilyRequest(
             name=column_family_name)
-        stub = make_stub(self.cluster.client, TABLE_STUB_FACTORY,
+        stub = make_stub(self.client, TABLE_STUB_FACTORY,
                          TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
         with stub:
             timeout_seconds = timeout_seconds or self.timeout_seconds

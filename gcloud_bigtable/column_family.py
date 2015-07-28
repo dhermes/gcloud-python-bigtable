@@ -113,3 +113,62 @@ class GarbageCollectionRuleIntersection(object):
         intersection = data_pb2.GcRule.Intersection(
             rules=[rule.to_pb() for rule in self.rules])
         return data_pb2.GcRule(intersection=intersection)
+
+
+class ColumnFamily(object):
+    """Representation of a Google Cloud Bigtable Column Family.
+
+    :type column_family_id: string
+    :param column_family_id: The ID of the column family.
+
+    :type table: :class:`.table.Table`
+    :param table: The table that owns the column family.
+    """
+
+    def __init__(self, column_family_id, table):
+        self.column_family_id = column_family_id
+        self._table = table
+
+    @property
+    def table(self):
+        """Getter for column family's table.
+
+        :rtype: :class:`.table.Table`
+        :returns: The table stored on the column family.
+        """
+        return self._table
+
+    @property
+    def client(self):
+        """Getter for column family's client.
+
+        :rtype: :class:`.client.Client`
+        :returns: The client that owns this column family.
+        """
+        return self.table.client
+
+    @property
+    def timeout_seconds(self):
+        """Getter for column family's default timeout seconds.
+
+        :rtype: integer
+        :returns: The timeout seconds default.
+        """
+        return self.table.timeout_seconds
+
+    @property
+    def name(self):
+        """Column family name used in requests.
+
+        .. note::
+
+          This property will not change if ``column_family_id`` does not, but
+          the return value is not cached.
+
+        The table name is of the form
+        "projects/../zones/../clusters/../tables/../columnFamilies/.."
+
+        :rtype: string
+        :returns: The column family name.
+        """
+        return self.table.name + '/columnFamilies/' + self.column_family_id

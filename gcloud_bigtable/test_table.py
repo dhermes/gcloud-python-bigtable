@@ -60,11 +60,11 @@ class TestTable(GRPCMockTestMixin):
         table = self._makeOne(TABLE_ID, cluster)
         self.assertTrue(table.cluster is cluster)
 
-    def test_credentials_getter(self):
-        credentials = object()
-        cluster = _Cluster(None, credentials=credentials)
+    def test_client_getter(self):
+        client = object()
+        cluster = _Cluster(None, client=client)
         table = self._makeOne(TABLE_ID, cluster)
-        self.assertTrue(table.credentials is credentials)
+        self.assertTrue(table.client is client)
 
     def test_timeout_seconds_getter(self):
         timeout_seconds = 1001
@@ -386,7 +386,7 @@ class TestTable(GRPCMockTestMixin):
 
 class _Cluster(object):
 
-    def __init__(self, name, credentials=None, timeout_seconds=None):
+    def __init__(self, name, client=None, timeout_seconds=None):
         self.name = name
-        self.credentials = credentials
+        self.client = client
         self.timeout_seconds = timeout_seconds

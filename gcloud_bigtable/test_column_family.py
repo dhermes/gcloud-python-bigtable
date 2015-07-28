@@ -16,10 +16,7 @@
 import unittest2
 
 
-# PROJECT_ID = 'project-id'
-# ZONE = 'zone'
-# CLUSTER_ID = 'cluster-id'
-# TABLE_ID = 'table-id'
+COLUMN_FAMILY_ID = 'column-family-id'
 
 
 class TestGarbageCollectionRule(unittest2.TestCase):
@@ -205,3 +202,51 @@ class TestGarbageCollectionRuleIntersection(unittest2.TestCase):
 
         gc_rule_pb = rule5.to_pb()
         self.assertEqual(gc_rule_pb, pb_rule5)
+
+
+class TestColumnFamily(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.column_family import ColumnFamily
+        return ColumnFamily
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_constructor(self):
+        table = object()
+        column_family = self._makeOne(COLUMN_FAMILY_ID, table)
+        self.assertEqual(column_family.column_family_id, COLUMN_FAMILY_ID)
+        self.assertTrue(column_family._table is table)
+
+    def test_table_getter(self):
+        table = object()
+        column_family = self._makeOne(COLUMN_FAMILY_ID, table)
+        self.assertTrue(column_family.table is table)
+
+    def test_client_getter(self):
+        client = object()
+        table = _Table(None, client=client)
+        column_family = self._makeOne(COLUMN_FAMILY_ID, table)
+        self.assertTrue(column_family.client is client)
+
+    def test_timeout_seconds_getter(self):
+        timeout_seconds = 889
+        table = _Table(None, timeout_seconds=timeout_seconds)
+        column_family = self._makeOne(COLUMN_FAMILY_ID, table)
+        self.assertEqual(column_family.timeout_seconds, timeout_seconds)
+
+    def test_name_property(self):
+        table_name = 'table_name'
+        table = _Table(table_name)
+        column_family = self._makeOne(COLUMN_FAMILY_ID, table)
+        expected_name = table_name + '/columnFamilies/' + COLUMN_FAMILY_ID
+        self.assertEqual(column_family.name, expected_name)
+
+
+class _Table(object):
+
+    def __init__(self, name, client=None, timeout_seconds=None):
+        self.name = name
+        self.client = client
+        self.timeout_seconds = timeout_seconds
