@@ -200,6 +200,15 @@ class Cluster(object):
         return self._client.project_id
 
     @property
+    def credentials(self):
+        """Getter for cluster's credentials.
+
+        :rtype: :class:`oauth2client.client.OAuth2Credentials`
+        :returns: The credentials stored on the cluster's client.
+        """
+        return self._client.credentials
+
+    @property
     def name(self):
         """Cluster name used in requests.
 
@@ -250,7 +259,7 @@ class Cluster(object):
                                 If not passed, defaults to ``TIMEOUT_SECONDS``.
         """
         request_pb = messages_pb2.GetClusterRequest(name=self.name)
-        stub = make_stub(self.client._credentials, CLUSTER_STUB_FACTORY,
+        stub = make_stub(self.credentials, CLUSTER_STUB_FACTORY,
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
             response = stub.GetCluster.async(request_pb, timeout_seconds)
@@ -278,7 +287,7 @@ class Cluster(object):
         operation_name = ('operations/' + self.name +
                           '/operations/%d' % (self._operation_id,))
         request_pb = operations_pb2.GetOperationRequest(name=operation_name)
-        stub = make_stub(self.client._credentials, OPERATIONS_STUB_FACTORY,
+        stub = make_stub(self.credentials, OPERATIONS_STUB_FACTORY,
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
             response = stub.GetOperation.async(request_pb, timeout_seconds)
@@ -315,7 +324,7 @@ class Cluster(object):
                                 If not passed, defaults to ``TIMEOUT_SECONDS``.
         """
         request_pb = _prepare_create_request(self)
-        stub = make_stub(self.client._credentials, CLUSTER_STUB_FACTORY,
+        stub = make_stub(self.credentials, CLUSTER_STUB_FACTORY,
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
             response = stub.CreateCluster.async(request_pb, timeout_seconds)
@@ -350,7 +359,7 @@ class Cluster(object):
             display_name=self.display_name,
             serve_nodes=self.serve_nodes,
         )
-        stub = make_stub(self.client._credentials, CLUSTER_STUB_FACTORY,
+        stub = make_stub(self.credentials, CLUSTER_STUB_FACTORY,
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
             response = stub.UpdateCluster.async(request_pb, timeout_seconds)
@@ -369,7 +378,7 @@ class Cluster(object):
                                 If not passed, defaults to ``TIMEOUT_SECONDS``.
         """
         request_pb = messages_pb2.DeleteClusterRequest(name=self.name)
-        stub = make_stub(self.client._credentials, CLUSTER_STUB_FACTORY,
+        stub = make_stub(self.credentials, CLUSTER_STUB_FACTORY,
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
             response = stub.DeleteCluster.async(request_pb, timeout_seconds)
@@ -384,7 +393,7 @@ class Cluster(object):
                                 If not passed, defaults to ``TIMEOUT_SECONDS``.
         """
         request_pb = messages_pb2.UndeleteClusterRequest(name=self.name)
-        stub = make_stub(self.client._credentials, CLUSTER_STUB_FACTORY,
+        stub = make_stub(self.credentials, CLUSTER_STUB_FACTORY,
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
             response = stub.UndeleteCluster.async(request_pb, timeout_seconds)

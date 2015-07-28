@@ -13,13 +13,32 @@
 # limitations under the License.
 
 
-import unittest2
+from gcloud_bigtable._grpc_mocks import GRPCMockTestMixin
 
 
+PROJECT_ID = 'project-id'
 TABLE_ID = 'table-id'
 
 
-class TestTable(unittest2.TestCase):
+class TestTable(GRPCMockTestMixin):
+
+    @classmethod
+    def setUpClass(cls):
+        from gcloud_bigtable import client
+        from gcloud_bigtable import table as MUT
+        cls._MUT = MUT
+        cls._STUB_SCOPES = [client.DATA_SCOPE]
+        cls._STUB_FACTORY_NAME = 'TABLE_STUB_FACTORY'
+        cls._STUB_HOST = MUT.TABLE_ADMIN_HOST
+        cls._STUB_PORT = MUT.TABLE_ADMIN_PORT
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls._MUT
+        del cls._STUB_SCOPES
+        del cls._STUB_FACTORY_NAME
+        del cls._STUB_HOST
+        del cls._STUB_PORT
 
     def _getTargetClass(self):
         from gcloud_bigtable.table import Table
@@ -45,6 +64,36 @@ class TestTable(unittest2.TestCase):
         table = self._makeOne(TABLE_ID, cluster)
         expected_name = cluster_name + '/tables/' + TABLE_ID
         self.assertEqual(table.name, expected_name)
+
+    def test_exists(self):
+        from gcloud_bigtable._generated import (
+            bigtable_table_service_messages_pb2 as messages_pb2)
+
+        zone = 'zone'
+        cluster_id = 'cluster-id'
+
+        # Create request_pb
+        table_name = ('projects/' + PROJECT_ID + '/zones/' + zone +
+                      '/clusters/' + cluster_id + '/tables/' + TABLE_ID)
+        request_pb = messages_pb2.GetTableRequest(name=table_name)
+
+        # Create response_pb
+        response_pb = None
+
+        # Create expected_result.
+        expected_result = True
+
+        # We must create the cluster with the client passed in.
+        TEST_CASE = self
+
+        def result_method(client):
+            cluster = client.cluster(zone, cluster_id)
+            table = TEST_CASE._makeOne(TABLE_ID, cluster)
+            return table.exists()
+
+        self._grpc_client_test_helper('GetTable', result_method,
+                                      request_pb, response_pb, expected_result,
+                                      PROJECT_ID)
 
 
 class _Cluster(object):
