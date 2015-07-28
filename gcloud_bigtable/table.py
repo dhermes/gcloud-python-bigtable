@@ -146,13 +146,13 @@ class Table(object):
             ``current_operation`` in the response, but in example usage so far,
             it seems the Bigtable API does not return any operation.
 
-        :type initial_split_keys: interable of strings
+        :type initial_split_keys: iterable of strings
         :param initial_split_keys: (Optional) List of row keys that will be
                                    used to initially split the table into
-                                   several tablets (Tablets are similar to H
-                                   Base regions). Given two split keys, "s1"
-                                   and "s2", three tablets will be created,
-                                   spanning the key ranges:
+                                   several tablets (Tablets are similar to
+                                   HBase regions). Given two split keys,
+                                   ``"s1"`` and ``"s2"``, three tablets will be
+                                   created, spanning the key ranges:
                                    [, s1), [s1, s2), [s2, ).
 
         :type timeout_seconds: integer
