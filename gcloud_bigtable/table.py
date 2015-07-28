@@ -30,6 +30,40 @@ TABLE_ADMIN_PORT = 443
 """Table Admin API request port."""
 
 
+class GarbageCollectionRule(object):
+    """Table garbage collection rule.
+
+    Cells in the table fitting the rule will be deleted during
+    garbage collection.
+
+    .. note::
+
+        At most one of ``max_num_versions`` and ``max_age`` can be specified
+        at once.
+
+    .. note::
+
+        At most one of ``max_num_versions`` and ``max_age`` can be specified
+        at once.
+
+    :type max_num_versions: integer
+    :param max_num_versions: The maximum number of versions
+
+    :type max_age: :class:`datetime.timedelta`
+    :param max_age: The maximum age allowed for a cell in the table.
+
+    :raises: :class:`ValueError` if both ``max_num_versions`` and ``max_age``
+             are set.
+    """
+
+    def __init__(self, max_num_versions=None, max_age=None):
+        if max_num_versions is not None and max_age is not None:
+            raise ValueError('At most one of max_num_versions and '
+                             'max_age can be set')
+        self.max_num_versions = max_num_versions
+        self.max_age = max_age
+
+
 class Table(object):
     """Representation of a Google Cloud Bigtable Table.
 

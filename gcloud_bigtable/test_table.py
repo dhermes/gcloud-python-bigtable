@@ -13,6 +13,8 @@
 # limitations under the License.
 
 
+import unittest2
+
 from gcloud_bigtable._grpc_mocks import GRPCMockTestMixin
 
 
@@ -20,6 +22,25 @@ PROJECT_ID = 'project-id'
 ZONE = 'zone'
 CLUSTER_ID = 'cluster-id'
 TABLE_ID = 'table-id'
+
+
+class TestGarbageCollectionRule(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.table import GarbageCollectionRule
+        return GarbageCollectionRule
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_constructor_defaults(self):
+        gc_rule = self._makeOne()
+        self.assertEqual(gc_rule.max_num_versions, None)
+        self.assertEqual(gc_rule.max_age, None)
+
+    def test_constructor_failure(self):
+        with self.assertRaises(ValueError):
+            self._makeOne(max_num_versions=1, max_age=object())
 
 
 class TestTable(GRPCMockTestMixin):
