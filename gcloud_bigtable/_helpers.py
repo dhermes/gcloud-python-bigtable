@@ -25,6 +25,7 @@ import pytz
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
+from gcloud_bigtable._generated import duration_pb2
 
 
 _TYPE_URL_BASE = 'type.googleapis.com/google.bigtable.'
@@ -115,3 +116,29 @@ def _parse_pb_any_to_native(any_val, expected_type=None):
             expected_type, any_val.type_url))
     container_class = _TYPE_URL_MAP[any_val.type_url]
     return container_class.FromString(any_val.value)
+
+
+def _timedelta_to_duration_pb(timedelta_val):
+    """Convert a Python timedelta object to a duration protobuf.
+
+    .. note::
+
+        The Python timedelta has a granularity of microseconds while
+        the protobuf duration type has a duration of nanoseconds.
+
+    :type timedelta_val: :class:`datetime.timedelta`
+    :param timedelta_val: A timedelta object.
+
+    :rtype: :class:`duration_pb2.Duration`
+    :returns: A duration object equivalent to the time delta.
+    """
+    seconds_decimal = timedelta_val.total_seconds()
+    # Truncate the parts other than the integer.
+    seconds = int(seconds_decimal)
+    if seconds_decimal < 0:
+        signed_micros = timedelta_val.microseconds - 10**6
+    else:
+        signed_micros = timedelta_val.microseconds
+    # Convert nanoseconds to microseconds.
+    nanos = 1000 * signed_micros
+    return duration_pb2.Duration(seconds=seconds, nanos=nanos)

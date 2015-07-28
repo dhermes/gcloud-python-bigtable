@@ -15,9 +15,11 @@
 """User friendly container for Google Cloud Bigtable Table."""
 
 
+from gcloud_bigtable._generated import bigtable_table_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._generated import bigtable_table_service_pb2
+from gcloud_bigtable._helpers import _timedelta_to_duration_pb
 from gcloud_bigtable.connection import TIMEOUT_SECONDS
 from gcloud_bigtable.connection import make_stub
 
@@ -62,6 +64,19 @@ class GarbageCollectionRule(object):
                              'max_age can be set')
         self.max_num_versions = max_num_versions
         self.max_age = max_age
+
+    def to_pb(self):
+        """Converts the :class:`GarbageCollectionRule` to a protobuf.
+
+        :rtype: :class:`data_pb2.GcRule`
+        :returns: The convert current object.
+        """
+        gc_rule_kwargs = {}
+        if self.max_num_versions is not None:
+            gc_rule_kwargs['max_num_versions'] = self.max_num_versions
+        if self.max_age is not None:
+            gc_rule_kwargs['max_age'] = _timedelta_to_duration_pb(self.max_age)
+        return data_pb2.GcRule(**gc_rule_kwargs)
 
 
 class Table(object):

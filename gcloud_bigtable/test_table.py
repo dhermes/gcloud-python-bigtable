@@ -42,6 +42,34 @@ class TestGarbageCollectionRule(unittest2.TestCase):
         with self.assertRaises(ValueError):
             self._makeOne(max_num_versions=1, max_age=object())
 
+    def test_to_pb_no_value(self):
+        from gcloud_bigtable._generated import (
+            bigtable_table_data_pb2 as data_pb2)
+        gc_rule = self._makeOne()
+        pb_val = gc_rule.to_pb()
+        self.assertEqual(pb_val, data_pb2.GcRule())
+
+    def test_to_pb_with_max_num_versions(self):
+        from gcloud_bigtable._generated import (
+            bigtable_table_data_pb2 as data_pb2)
+        max_num_versions = 1337
+        gc_rule = self._makeOne(max_num_versions=max_num_versions)
+        pb_val = gc_rule.to_pb()
+        self.assertEqual(pb_val,
+                         data_pb2.GcRule(max_num_versions=max_num_versions))
+
+    def test_to_pb_with_max_age(self):
+        import datetime
+        from gcloud_bigtable._generated import (
+            bigtable_table_data_pb2 as data_pb2)
+        from gcloud_bigtable._generated import duration_pb2
+
+        max_age = datetime.timedelta(seconds=1)
+        duration = duration_pb2.Duration(seconds=1)
+        gc_rule = self._makeOne(max_age=max_age)
+        pb_val = gc_rule.to_pb()
+        self.assertEqual(pb_val, data_pb2.GcRule(max_age=duration))
+
 
 class TestTable(GRPCMockTestMixin):
 

@@ -130,3 +130,48 @@ class Test__parse_pb_any_to_native(unittest2.TestCase):
         with _Monkey(MUT, _TYPE_URL_MAP=fake_type_url_map):
             with self.assertRaises(ValueError):
                 self._callFUT(any_val, expected_type=type_url1)
+
+
+class Test__timedelta_to_duration_pb(unittest2.TestCase):
+
+    def _callFUT(self, timedelta_val):
+        from gcloud_bigtable._helpers import _timedelta_to_duration_pb
+        return _timedelta_to_duration_pb(timedelta_val)
+
+    def test_it(self):
+        import datetime
+        from gcloud_bigtable._generated import duration_pb2
+
+        seconds = microseconds = 1
+        timedelta_val = datetime.timedelta(seconds=seconds,
+                                           microseconds=microseconds)
+        result = self._callFUT(timedelta_val)
+        self.assertTrue(isinstance(result, duration_pb2.Duration))
+        self.assertEqual(result.seconds, seconds)
+        self.assertEqual(result.nanos, 1000 * microseconds)
+
+    def test_with_negative_microseconds(self):
+        import datetime
+        from gcloud_bigtable._generated import duration_pb2
+
+        seconds = 1
+        microseconds = -5
+        timedelta_val = datetime.timedelta(seconds=seconds,
+                                           microseconds=microseconds)
+        result = self._callFUT(timedelta_val)
+        self.assertTrue(isinstance(result, duration_pb2.Duration))
+        self.assertEqual(result.seconds, seconds - 1)
+        self.assertEqual(result.nanos, 10**9 + 1000 * microseconds)
+
+    def test_with_negative_seconds(self):
+        import datetime
+        from gcloud_bigtable._generated import duration_pb2
+
+        seconds = -1
+        microseconds = 5
+        timedelta_val = datetime.timedelta(seconds=seconds,
+                                           microseconds=microseconds)
+        result = self._callFUT(timedelta_val)
+        self.assertTrue(isinstance(result, duration_pb2.Duration))
+        self.assertEqual(result.seconds, seconds + 1)
+        self.assertEqual(result.nanos, -(10**9 - 1000 * microseconds))
