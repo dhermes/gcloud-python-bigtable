@@ -156,7 +156,6 @@ Documented Modules
 
    base-connection
    data-connection
-   table-connection
    client
    cluster
    table
