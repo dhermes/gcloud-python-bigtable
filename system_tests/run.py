@@ -112,3 +112,29 @@ class TestClusterAdminAPI(unittest2.TestCase):
         self.assertEqual(cluster, cluster_alt)
         self.assertEqual(cluster.display_name, cluster_alt.display_name)
         self.assertEqual(cluster.serve_nodes, cluster_alt.serve_nodes)
+
+    def test_update(self):
+        curr_display_name = self._cluster.display_name
+        self._cluster.display_name = 'Foo Bar Baz'
+        self._cluster.update()
+
+        # We want to make sure the operation completes.
+        time.sleep(2)
+        self.assertTrue(self._cluster.operation_finished())
+
+        # Create a new cluster instance and make sure it is the same.
+        cluster_alt = CLIENT.cluster(TEST_ZONE, TEST_CLUSTER_ID)
+        self.assertNotEqual(cluster_alt.display_name,
+                            self._cluster.display_name)
+        cluster_alt.reload()
+        self.assertEqual(cluster_alt.display_name,
+                         self._cluster.display_name)
+
+        # Make sure to put the cluster back the way it was for the
+        # other test cases.
+        self._cluster.display_name = curr_display_name
+        self._cluster.update()
+
+        # We want to make sure the operation completes.
+        time.sleep(2)
+        self.assertTrue(self._cluster.operation_finished())
