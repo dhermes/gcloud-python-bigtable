@@ -24,7 +24,6 @@ from gcloud_bigtable._generated import bigtable_cluster_service_pb2
 from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as table_messages_pb2)
 from gcloud_bigtable._generated import operations_pb2
-from gcloud_bigtable._helpers import TIMEOUT_SECONDS
 from gcloud_bigtable._helpers import _parse_pb_any_to_native
 from gcloud_bigtable._helpers import _pb_timestamp_to_datetime
 from gcloud_bigtable._helpers import _require_pb_property
@@ -264,17 +263,19 @@ class Cluster(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def reload(self, timeout_seconds=TIMEOUT_SECONDS):
+    def reload(self, timeout_seconds=None):
         """Reload the metadata for this cluster.
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+                                If not passed, defaults to value set on
+                                cluster.
         """
         request_pb = messages_pb2.GetClusterRequest(name=self.name)
         stub = make_stub(self.credentials, CLUSTER_STUB_FACTORY,
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.GetCluster.async(request_pb, timeout_seconds)
             # We expect a `._generated.bigtable_cluster_data_pb2.Cluster`.
             cluster_pb = response.result()
@@ -283,12 +284,13 @@ class Cluster(object):
         #       cluster ID on the response match the request.
         self._update_from_pb(cluster_pb)
 
-    def operation_finished(self, timeout_seconds=TIMEOUT_SECONDS):
+    def operation_finished(self, timeout_seconds=None):
         """Check if the current operation has finished.
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+                                If not passed, defaults to value set on
+                                cluster.
 
         :rtype: boolean
         :returns: A boolean indicating if the current operation has completed.
@@ -303,6 +305,7 @@ class Cluster(object):
         stub = make_stub(self.credentials, OPERATIONS_STUB_FACTORY,
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.GetOperation.async(request_pb, timeout_seconds)
             # We expact a `._generated.operations_pb2.Operation`.
             operation_pb = response.result()
@@ -315,7 +318,7 @@ class Cluster(object):
         else:
             return False
 
-    def create(self, timeout_seconds=TIMEOUT_SECONDS):
+    def create(self, timeout_seconds=None):
         """Create this cluster.
 
         .. note::
@@ -334,12 +337,14 @@ class Cluster(object):
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+                                If not passed, defaults to value set on
+                                cluster.
         """
         request_pb = _prepare_create_request(self)
         stub = make_stub(self.credentials, CLUSTER_STUB_FACTORY,
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.CreateCluster.async(request_pb, timeout_seconds)
             # We expect an `operations_pb2.Operation`.
             cluster_pb = response.result()
@@ -348,7 +353,7 @@ class Cluster(object):
         self._operation_id, self._operation_begin = _process_operation(
             cluster_pb.current_operation)
 
-    def update(self, timeout_seconds=TIMEOUT_SECONDS):
+    def update(self, timeout_seconds=None):
         """Update this cluster.
 
         .. note::
@@ -365,7 +370,8 @@ class Cluster(object):
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+                                If not passed, defaults to value set on
+                                cluster.
         """
         request_pb = data_pb2.Cluster(
             name=self.name,
@@ -375,6 +381,7 @@ class Cluster(object):
         stub = make_stub(self.credentials, CLUSTER_STUB_FACTORY,
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.UpdateCluster.async(request_pb, timeout_seconds)
             # We expect a `._generated.bigtable_cluster_data_pb2.Cluster`.
             cluster_pb = response.result()
@@ -383,32 +390,36 @@ class Cluster(object):
         self._operation_id, self._operation_begin = _process_operation(
             cluster_pb.current_operation)
 
-    def delete(self, timeout_seconds=TIMEOUT_SECONDS):
+    def delete(self, timeout_seconds=None):
         """Delete this cluster.
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+                                If not passed, defaults to value set on
+                                cluster.
         """
         request_pb = messages_pb2.DeleteClusterRequest(name=self.name)
         stub = make_stub(self.credentials, CLUSTER_STUB_FACTORY,
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.DeleteCluster.async(request_pb, timeout_seconds)
             # We expect a `._generated.empty_pb2.Empty`
             response.result()
 
-    def undelete(self, timeout_seconds=TIMEOUT_SECONDS):
+    def undelete(self, timeout_seconds=None):
         """Undelete this cluster.
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+                                If not passed, defaults to value set on
+                                cluster.
         """
         request_pb = messages_pb2.UndeleteClusterRequest(name=self.name)
         stub = make_stub(self.credentials, CLUSTER_STUB_FACTORY,
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.UndeleteCluster.async(request_pb, timeout_seconds)
             # We expect a `._generated.operations_pb2.Operation`
             operation_pb2 = response.result()
@@ -417,12 +428,13 @@ class Cluster(object):
         self._operation_id, self._operation_begin = _process_operation(
             operation_pb2)
 
-    def list_tables(self, timeout_seconds=TIMEOUT_SECONDS):
+    def list_tables(self, timeout_seconds=None):
         """List the tables in this cluster.
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+                                If not passed, defaults to value set on
+                                cluster.
 
         :rtype: list of :class:`Table`
         :returns: The list of tables owned by the cluster.
@@ -433,6 +445,7 @@ class Cluster(object):
         stub = make_stub(self.credentials, TABLE_STUB_FACTORY,
                          TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
         with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.ListTables.async(request_pb, timeout_seconds)
             # We expect a `table_messages_pb2.ListTablesResponse`
             table_list_pb = response.result()

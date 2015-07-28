@@ -196,7 +196,7 @@ class GRPCMockTestMixin(unittest2.TestCase):
         self.assertEqual(mock_make_stub.method_calls, [
             (
                 method_name,
-                (request_pb, timeout_seconds or self._MUT.TIMEOUT_SECONDS),
+                (request_pb, timeout_seconds),
                 {},
             ),
         ])

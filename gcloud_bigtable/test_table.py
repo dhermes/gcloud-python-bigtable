@@ -308,15 +308,17 @@ class TestTable(GRPCMockTestMixin):
         # We must create the cluster with the client passed in
         # and then the table with that cluster.
         TEST_CASE = self
+        timeout_seconds = 654
 
         def result_method(client):
             cluster = client.cluster(ZONE, CLUSTER_ID)
             table = TEST_CASE._makeOne(TABLE_ID, cluster)
-            return table.exists()
+            return table.exists(timeout_seconds=timeout_seconds)
 
         self._grpc_client_test_helper('GetTable', result_method,
                                       request_pb, response_pb, expected_result,
-                                      PROJECT_ID)
+                                      PROJECT_ID,
+                                      timeout_seconds=timeout_seconds)
 
     def _create_test_helper(self, initial_split_keys):
         from gcloud_bigtable._generated import (
@@ -342,15 +344,18 @@ class TestTable(GRPCMockTestMixin):
         # We must create the cluster with the client passed in
         # and then the table with that cluster.
         TEST_CASE = self
+        timeout_seconds = 150
 
         def result_method(client):
             cluster = client.cluster(ZONE, CLUSTER_ID)
             table = TEST_CASE._makeOne(TABLE_ID, cluster)
-            return table.create(initial_split_keys=initial_split_keys)
+            return table.create(initial_split_keys=initial_split_keys,
+                                timeout_seconds=timeout_seconds)
 
         self._grpc_client_test_helper('CreateTable', result_method,
                                       request_pb, response_pb, expected_result,
-                                      PROJECT_ID)
+                                      PROJECT_ID,
+                                      timeout_seconds=timeout_seconds)
 
     def test_create(self):
         initial_split_keys = None
@@ -385,15 +390,17 @@ class TestTable(GRPCMockTestMixin):
         # We must create the cluster with the client passed in
         # and then the table with that cluster.
         TEST_CASE = self
+        timeout_seconds = 97
 
         def result_method(client):
             cluster = client.cluster(ZONE, CLUSTER_ID)
             table = TEST_CASE._makeOne(TABLE_ID, cluster)
-            return table.rename(new_table_id)
+            return table.rename(new_table_id, timeout_seconds=timeout_seconds)
 
         self._grpc_client_test_helper('RenameTable', result_method,
                                       request_pb, response_pb, expected_result,
-                                      PROJECT_ID)
+                                      PROJECT_ID,
+                                      timeout_seconds=timeout_seconds)
 
     def test_delete(self):
         from gcloud_bigtable._generated import (
@@ -414,15 +421,17 @@ class TestTable(GRPCMockTestMixin):
         # We must create the cluster with the client passed in
         # and then the table with that cluster.
         TEST_CASE = self
+        timeout_seconds = 871
 
         def result_method(client):
             cluster = client.cluster(ZONE, CLUSTER_ID)
             table = TEST_CASE._makeOne(TABLE_ID, cluster)
-            return table.delete()
+            return table.delete(timeout_seconds=timeout_seconds)
 
         self._grpc_client_test_helper('DeleteTable', result_method,
                                       request_pb, response_pb, expected_result,
-                                      PROJECT_ID)
+                                      PROJECT_ID,
+                                      timeout_seconds=timeout_seconds)
 
     def _create_column_family_test_helper(self, gc_rule=None):
         from gcloud_bigtable._generated import (
@@ -453,16 +462,19 @@ class TestTable(GRPCMockTestMixin):
         # We must create the cluster with the client passed in
         # and then the table with that cluster.
         TEST_CASE = self
+        timeout_seconds = 4
 
         def result_method(client):
             cluster = client.cluster(ZONE, CLUSTER_ID)
             table = TEST_CASE._makeOne(TABLE_ID, cluster)
             return table.create_column_family(column_family_id,
-                                              gc_rule=gc_rule)
+                                              gc_rule=gc_rule,
+                                              timeout_seconds=timeout_seconds)
 
         self._grpc_client_test_helper('CreateColumnFamily', result_method,
                                       request_pb, response_pb, expected_result,
-                                      PROJECT_ID)
+                                      PROJECT_ID,
+                                      timeout_seconds=timeout_seconds)
 
     def test_create_column_family(self):
         self._create_column_family_test_helper(gc_rule=None)
@@ -499,16 +511,19 @@ class TestTable(GRPCMockTestMixin):
         # We must create the cluster with the client passed in
         # and then the table with that cluster.
         TEST_CASE = self
+        timeout_seconds = 28
 
         def result_method(client):
             cluster = client.cluster(ZONE, CLUSTER_ID)
             table = TEST_CASE._makeOne(TABLE_ID, cluster)
             return table.update_column_family(column_family_id,
-                                              gc_rule=gc_rule)
+                                              gc_rule=gc_rule,
+                                              timeout_seconds=timeout_seconds)
 
         self._grpc_client_test_helper('UpdateColumnFamily', result_method,
                                       request_pb, response_pb, expected_result,
-                                      PROJECT_ID)
+                                      PROJECT_ID,
+                                      timeout_seconds=timeout_seconds)
 
     def test_update_column_family(self):
         self._update_column_family_test_helper(gc_rule=None)
@@ -541,15 +556,18 @@ class TestTable(GRPCMockTestMixin):
         # We must create the cluster with the client passed in
         # and then the table with that cluster.
         TEST_CASE = self
+        timeout_seconds = 7
 
         def result_method(client):
             cluster = client.cluster(ZONE, CLUSTER_ID)
             table = TEST_CASE._makeOne(TABLE_ID, cluster)
-            return table.delete_column_family(column_family_id)
+            return table.delete_column_family(column_family_id,
+                                              timeout_seconds=timeout_seconds)
 
         self._grpc_client_test_helper('DeleteColumnFamily', result_method,
                                       request_pb, response_pb, expected_result,
-                                      PROJECT_ID)
+                                      PROJECT_ID,
+                                      timeout_seconds=timeout_seconds)
 
 
 class _Cluster(object):

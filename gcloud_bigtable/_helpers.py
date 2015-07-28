@@ -44,7 +44,6 @@ _TYPE_URL_MAP = {
 # See https://gist.github.com/dhermes/bbc5b7be1932bfffae77
 # for appropriate values on other systems.
 SSL_CERT_FILE = '/etc/ssl/certs/ca-certificates.crt'
-TIMEOUT_SECONDS = 10
 USER_AGENT = 'gcloud-bigtable-python'
 
 

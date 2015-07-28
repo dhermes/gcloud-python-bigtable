@@ -304,13 +304,16 @@ class TestCluster(GRPCMockTestMixin):
         expected_result = None  # reload() has no return value.
 
         # We must create the cluster with the client passed in.
+        timeout_seconds = 123
+
         def result_method(client):
             cluster = TEST_CASE._makeOne(ZONE, CLUSTER_ID, client)
-            return cluster.reload()
+            return cluster.reload(timeout_seconds=timeout_seconds)
 
         self._grpc_client_test_helper('GetCluster', result_method,
                                       request_pb, response_pb, expected_result,
-                                      PROJECT_ID)
+                                      PROJECT_ID,
+                                      timeout_seconds=timeout_seconds)
 
     def test_operation_finished_without_operation(self):
         cluster = self._makeOne(ZONE, CLUSTER_ID, None)
@@ -340,6 +343,7 @@ class TestCluster(GRPCMockTestMixin):
         CLUSTER_CREATED = []
         op_begin = object()
         op_type = object()
+        timeout_seconds = 1
 
         def result_method(client):
             cluster = TEST_CASE._makeOne(ZONE, CLUSTER_ID, client)
@@ -347,12 +351,13 @@ class TestCluster(GRPCMockTestMixin):
             cluster._operation_begin = op_begin
             cluster._operation_type = op_type
             CLUSTER_CREATED.append(cluster)
-            return cluster.operation_finished()
+            return cluster.operation_finished(timeout_seconds=timeout_seconds)
 
         self._grpc_client_test_helper('GetOperation', result_method,
                                       request_pb, response_pb, expected_result,
                                       PROJECT_ID,
-                                      stub_factory=MUT.OPERATIONS_STUB_FACTORY)
+                                      stub_factory=MUT.OPERATIONS_STUB_FACTORY,
+                                      timeout_seconds=timeout_seconds)
         self.assertEqual(len(CLUSTER_CREATED), 1)
         if done:
             self.assertEqual(CLUSTER_CREATED[0]._operation_type, None)
@@ -391,11 +396,12 @@ class TestCluster(GRPCMockTestMixin):
         # We must create the cluster with the client passed in.
         TEST_CASE = self
         CLUSTER_CREATED = []
+        timeout_seconds = 578
 
         def result_method(client):
             cluster = TEST_CASE._makeOne(ZONE, CLUSTER_ID, client)
             CLUSTER_CREATED.append(cluster)
-            return cluster.create()
+            return cluster.create(timeout_seconds=timeout_seconds)
 
         mock_prepare_create_request = _MockCalled(request_pb)
         op_id = 5678
@@ -405,7 +411,8 @@ class TestCluster(GRPCMockTestMixin):
                      _process_operation=mock_process_operation):
             self._grpc_client_test_helper('CreateCluster', result_method,
                                           request_pb, response_pb,
-                                          expected_result, PROJECT_ID)
+                                          expected_result, PROJECT_ID,
+                                          timeout_seconds=timeout_seconds)
 
         self.assertEqual(len(CLUSTER_CREATED), 1)
         self.assertEqual(CLUSTER_CREATED[0]._operation_type, 'create')
@@ -443,13 +450,14 @@ class TestCluster(GRPCMockTestMixin):
         # We must create the cluster object with the client passed in.
         TEST_CASE = self
         CLUSTER_CREATED = []
+        timeout_seconds = 9
 
         def result_method(client):
             cluster = TEST_CASE._makeOne(ZONE, CLUSTER_ID, client,
                                          display_name=display_name,
                                          serve_nodes=serve_nodes)
             CLUSTER_CREATED.append(cluster)
-            return cluster.update()
+            return cluster.update(timeout_seconds=timeout_seconds)
 
         op_id = 5678
         op_begin = object()
@@ -458,7 +466,8 @@ class TestCluster(GRPCMockTestMixin):
                      _process_operation=mock_process_operation):
             self._grpc_client_test_helper('UpdateCluster', result_method,
                                           request_pb, response_pb,
-                                          expected_result, PROJECT_ID)
+                                          expected_result, PROJECT_ID,
+                                          timeout_seconds=timeout_seconds)
 
         self.assertEqual(len(CLUSTER_CREATED), 1)
         self.assertEqual(CLUSTER_CREATED[0]._operation_type, 'update')
@@ -485,13 +494,16 @@ class TestCluster(GRPCMockTestMixin):
         expected_result = None  # delete() has no return value.
 
         # We must create the cluster with the client passed in.
+        timeout_seconds = 57
+
         def result_method(client):
             cluster = TEST_CASE._makeOne(ZONE, CLUSTER_ID, client)
-            return cluster.delete()
+            return cluster.delete(timeout_seconds=timeout_seconds)
 
         self._grpc_client_test_helper('DeleteCluster', result_method,
                                       request_pb, response_pb, expected_result,
-                                      PROJECT_ID)
+                                      PROJECT_ID,
+                                      timeout_seconds=timeout_seconds)
 
     def test_undelete(self):
         from gcloud_bigtable._generated import (
@@ -515,11 +527,12 @@ class TestCluster(GRPCMockTestMixin):
         # We must create the cluster object with the client passed in.
         TEST_CASE = self
         CLUSTER_CREATED = []
+        timeout_seconds = 78
 
         def result_method(client):
             cluster = TEST_CASE._makeOne(ZONE, CLUSTER_ID, client)
             CLUSTER_CREATED.append(cluster)
-            return cluster.undelete()
+            return cluster.undelete(timeout_seconds=timeout_seconds)
 
         op_id = 5678
         op_begin = object()
@@ -528,7 +541,8 @@ class TestCluster(GRPCMockTestMixin):
                      _process_operation=mock_process_operation):
             self._grpc_client_test_helper('UndeleteCluster', result_method,
                                           request_pb, response_pb,
-                                          expected_result, PROJECT_ID)
+                                          expected_result, PROJECT_ID,
+                                          timeout_seconds=timeout_seconds)
 
         self.assertEqual(len(CLUSTER_CREATED), 1)
         self.assertEqual(CLUSTER_CREATED[0]._operation_type, 'undelete')
@@ -562,18 +576,20 @@ class TestCluster(GRPCMockTestMixin):
         # We must create the cluster with the client passed in.
         TEST_CASE = self
         CLUSTER_CREATED = []
+        timeout_seconds = 45
 
         def result_method(client):
             cluster = TEST_CASE._makeOne(ZONE, CLUSTER_ID, client)
             CLUSTER_CREATED.append(cluster)
             expected_result.append(cluster.table(table_id))
-            return cluster.list_tables()
+            return cluster.list_tables(timeout_seconds=timeout_seconds)
 
         self._grpc_client_test_helper('ListTables', result_method,
                                       request_pb, response_pb, expected_result,
                                       PROJECT_ID,
                                       stub_factory=MUT.TABLE_STUB_FACTORY,
-                                      stub_host=MUT.TABLE_ADMIN_HOST)
+                                      stub_host=MUT.TABLE_ADMIN_HOST,
+                                      timeout_seconds=timeout_seconds)
         self.assertEqual(len(CLUSTER_CREATED), 1)
 
     def test_list_tables(self):

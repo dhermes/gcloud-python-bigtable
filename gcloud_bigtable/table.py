@@ -19,7 +19,6 @@ from gcloud_bigtable._generated import bigtable_table_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._generated import bigtable_table_service_pb2
-from gcloud_bigtable._helpers import TIMEOUT_SECONDS
 from gcloud_bigtable._helpers import _timedelta_to_duration_pb
 from gcloud_bigtable._helpers import make_stub
 
@@ -214,12 +213,12 @@ class Table(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def exists(self, timeout_seconds=TIMEOUT_SECONDS):
+    def exists(self, timeout_seconds=None):
         """Check if this table exists.
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+                                If not passed, defaults to value set on table.
 
         :rtype: boolean
         :returns: Boolean indicating if this table exists. If it does not
@@ -229,13 +228,14 @@ class Table(object):
         stub = make_stub(self.credentials, TABLE_STUB_FACTORY,
                          TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
         with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.GetTable.async(request_pb, timeout_seconds)
             # We expect a `._generated.bigtable_table_data_pb2.Table`
             response.result()
 
         return True
 
-    def create(self, initial_split_keys=None, timeout_seconds=TIMEOUT_SECONDS):
+    def create(self, initial_split_keys=None, timeout_seconds=None):
         """Creates this table.
 
         .. note::
@@ -265,7 +265,7 @@ class Table(object):
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+                                If not passed, defaults to value set on table.
         """
         request_pb = messages_pb2.CreateTableRequest(
             initial_split_keys=initial_split_keys or [],
@@ -275,11 +275,12 @@ class Table(object):
         stub = make_stub(self.credentials, TABLE_STUB_FACTORY,
                          TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
         with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.CreateTable.async(request_pb, timeout_seconds)
             # We expect a `._generated.bigtable_table_data_pb2.Table`
             response.result()
 
-    def rename(self, new_table_id, timeout_seconds=TIMEOUT_SECONDS):
+    def rename(self, new_table_id, timeout_seconds=None):
         """Rename this table.
 
         .. note::
@@ -292,7 +293,7 @@ class Table(object):
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+                                If not passed, defaults to value set on table.
         """
         request_pb = messages_pb2.RenameTableRequest(
             name=self.name,
@@ -301,27 +302,29 @@ class Table(object):
         stub = make_stub(self.credentials, TABLE_STUB_FACTORY,
                          TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
         with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.RenameTable.async(request_pb, timeout_seconds)
             # We expect a `._generated.empty_pb2.Empty`
             response.result()
 
-    def delete(self, timeout_seconds=TIMEOUT_SECONDS):
+    def delete(self, timeout_seconds=None):
         """Delete this table.
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+                                If not passed, defaults to value set on table.
         """
         request_pb = messages_pb2.DeleteTableRequest(name=self.name)
         stub = make_stub(self.credentials, TABLE_STUB_FACTORY,
                          TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
         with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.DeleteTable.async(request_pb, timeout_seconds)
             # We expect a `._generated.empty_pb2.Empty`
             response.result()
 
     def create_column_family(self, column_family_id, gc_rule=None,
-                             timeout_seconds=TIMEOUT_SECONDS):
+                             timeout_seconds=None):
         """Create a column family in this table.
 
         :type column_family_id: string
@@ -334,7 +337,7 @@ class Table(object):
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+                                If not passed, defaults to value set on table.
         """
         if gc_rule is None:
             column_family = data_pb2.ColumnFamily()
@@ -349,13 +352,14 @@ class Table(object):
         stub = make_stub(self.credentials, TABLE_STUB_FACTORY,
                          TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
         with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.CreateColumnFamily.async(request_pb,
                                                      timeout_seconds)
             # We expect a `._generated.bigtable_table_data_pb2.ColumnFamily`
             response.result()
 
     def update_column_family(self, column_family_id, gc_rule=None,
-                             timeout_seconds=TIMEOUT_SECONDS):
+                             timeout_seconds=None):
         """Update a column family in this table.
 
         :type column_family_id: string
@@ -368,7 +372,7 @@ class Table(object):
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+                                If not passed, defaults to value set on table.
         """
         column_family_name = self.name + '/columnFamilies/' + column_family_id
         request_kwargs = {'name': column_family_name}
@@ -379,13 +383,13 @@ class Table(object):
         stub = make_stub(self.credentials, TABLE_STUB_FACTORY,
                          TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
         with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.UpdateColumnFamily.async(request_pb,
                                                      timeout_seconds)
             # We expect a `._generated.bigtable_table_data_pb2.ColumnFamily`
             response.result()
 
-    def delete_column_family(self, column_family_id,
-                             timeout_seconds=TIMEOUT_SECONDS):
+    def delete_column_family(self, column_family_id, timeout_seconds=None):
         """Delete a column family in this table.
 
         :type column_family_id: string
@@ -393,7 +397,7 @@ class Table(object):
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+                                If not passed, defaults to value set on table.
         """
         column_family_name = self.name + '/columnFamilies/' + column_family_id
         request_pb = messages_pb2.DeleteColumnFamilyRequest(
@@ -401,6 +405,7 @@ class Table(object):
         stub = make_stub(self.credentials, TABLE_STUB_FACTORY,
                          TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
         with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.DeleteColumnFamily.async(request_pb,
                                                      timeout_seconds)
             # We expect a `._generated.empty_pb2.Empty`
