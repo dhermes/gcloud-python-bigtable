@@ -27,22 +27,36 @@ class TestMetadataTransformer(unittest2.TestCase):
 
     def test_constructor(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
-        credentials = _MockWithAttachedMethods()
-        transformer = self._makeOne(credentials)
-        self.assertTrue(transformer._credentials is credentials)
-        self.assertEqual(credentials._called, [])
+        from gcloud_bigtable.client import Client
+        from gcloud_bigtable.client import DATA_SCOPE
+
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        project_id = 'PROJECT_ID'
+        client = Client(credentials, project_id=project_id)
+        transformer = self._makeOne(client)
+        self.assertTrue(transformer._credentials is scoped_creds)
+        self.assertEqual(credentials._called, [
+            ('create_scoped', ([DATA_SCOPE],), {}),
+        ])
 
     def test___call__(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable._helpers import USER_AGENT
+        from gcloud_bigtable.client import Client
+        from gcloud_bigtable.client import DATA_SCOPE
 
         access_token_expected = 'FOOBARBAZ'
 
         class _ReturnVal(object):
             access_token = access_token_expected
 
-        credentials = _MockWithAttachedMethods(_ReturnVal)
-        transformer = self._makeOne(credentials)
+        scoped_creds = _MockWithAttachedMethods(_ReturnVal)
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        project_id = 'PROJECT_ID'
+        client = Client(credentials, project_id=project_id)
+
+        transformer = self._makeOne(client)
         result = transformer(None)
         self.assertEqual(
             result,
@@ -50,7 +64,10 @@ class TestMetadataTransformer(unittest2.TestCase):
                 ('Authorization', 'Bearer ' + access_token_expected),
                 ('User-agent', USER_AGENT),
             ])
-        self.assertEqual(credentials._called, [('get_access_token', (), {})])
+        self.assertEqual(credentials._called, [
+            ('create_scoped', ([DATA_SCOPE],), {}),
+        ])
+        self.assertEqual(scoped_creds._called, [('get_access_token', (), {})])
 
 
 class Test__pb_timestamp_to_datetime(unittest2.TestCase):
@@ -334,10 +351,10 @@ class Test_make_stub(unittest2.TestCase):
         host = 'HOST'
         port = 1025
         certs = 'FOOBAR'
-        credentials = _MockWithAttachedMethods()
+        client = _MockWithAttachedMethods()
         with _Monkey(MUT, get_certs=lambda: certs,
                      MetadataTransformer=transformer):
-            result = self._callFUT(credentials, custom_factory, host, port)
+            result = self._callFUT(client, custom_factory, host, port)
 
         self.assertTrue(result is mock_result)
         custom_factory.check_called(
@@ -349,5 +366,5 @@ class Test_make_stub(unittest2.TestCase):
                 'root_certificates': certs,
             }],
         )
-        transformer.check_called(self, [(credentials,)])
-        self.assertEqual(credentials._called, [])
+        transformer.check_called(self, [(client,)])
+        self.assertEqual(client._called, [])

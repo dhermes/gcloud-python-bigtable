@@ -186,7 +186,7 @@ class GRPCMockTestMixin(unittest2.TestCase):
             ('create_scoped', (self._STUB_SCOPES,), {}),
         ])
         factory_args = (
-            scoped_creds,
+            client,
             stub_factory or getattr(self._MUT, self._STUB_FACTORY_NAME),
             stub_host or self._STUB_HOST,
             self._STUB_PORT,

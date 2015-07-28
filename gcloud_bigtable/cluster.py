@@ -272,7 +272,7 @@ class Cluster(object):
                                 cluster.
         """
         request_pb = messages_pb2.GetClusterRequest(name=self.name)
-        stub = make_stub(self.credentials, CLUSTER_STUB_FACTORY,
+        stub = make_stub(self.client, CLUSTER_STUB_FACTORY,
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
             timeout_seconds = timeout_seconds or self.timeout_seconds
@@ -302,7 +302,7 @@ class Cluster(object):
         operation_name = ('operations/' + self.name +
                           '/operations/%d' % (self._operation_id,))
         request_pb = operations_pb2.GetOperationRequest(name=operation_name)
-        stub = make_stub(self.credentials, OPERATIONS_STUB_FACTORY,
+        stub = make_stub(self.client, OPERATIONS_STUB_FACTORY,
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
             timeout_seconds = timeout_seconds or self.timeout_seconds
@@ -341,7 +341,7 @@ class Cluster(object):
                                 cluster.
         """
         request_pb = _prepare_create_request(self)
-        stub = make_stub(self.credentials, CLUSTER_STUB_FACTORY,
+        stub = make_stub(self.client, CLUSTER_STUB_FACTORY,
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
             timeout_seconds = timeout_seconds or self.timeout_seconds
@@ -378,7 +378,7 @@ class Cluster(object):
             display_name=self.display_name,
             serve_nodes=self.serve_nodes,
         )
-        stub = make_stub(self.credentials, CLUSTER_STUB_FACTORY,
+        stub = make_stub(self.client, CLUSTER_STUB_FACTORY,
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
             timeout_seconds = timeout_seconds or self.timeout_seconds
@@ -399,7 +399,7 @@ class Cluster(object):
                                 cluster.
         """
         request_pb = messages_pb2.DeleteClusterRequest(name=self.name)
-        stub = make_stub(self.credentials, CLUSTER_STUB_FACTORY,
+        stub = make_stub(self.client, CLUSTER_STUB_FACTORY,
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
             timeout_seconds = timeout_seconds or self.timeout_seconds
@@ -416,7 +416,7 @@ class Cluster(object):
                                 cluster.
         """
         request_pb = messages_pb2.UndeleteClusterRequest(name=self.name)
-        stub = make_stub(self.credentials, CLUSTER_STUB_FACTORY,
+        stub = make_stub(self.client, CLUSTER_STUB_FACTORY,
                          CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
         with stub:
             timeout_seconds = timeout_seconds or self.timeout_seconds
@@ -442,7 +442,7 @@ class Cluster(object):
                  that is not of the expected format.
         """
         request_pb = table_messages_pb2.ListTablesRequest(name=self.name)
-        stub = make_stub(self.credentials, TABLE_STUB_FACTORY,
+        stub = make_stub(self.client, TABLE_STUB_FACTORY,
                          TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
         with stub:
             timeout_seconds = timeout_seconds or self.timeout_seconds
