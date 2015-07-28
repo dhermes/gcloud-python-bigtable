@@ -15,6 +15,7 @@
 from __future__ import print_function
 
 import os
+import time
 import unittest2
 
 from oauth2client.client import GoogleCredentials
@@ -92,3 +93,22 @@ class TestClusterAdminAPI(unittest2.TestCase):
         cluster.reload()
         self.assertEqual(cluster.display_name, self._cluster.display_name)
         self.assertEqual(cluster.serve_nodes, self._cluster.serve_nodes)
+
+    def test_create_cluster(self):
+        cluster_id = '%s-%d' % (TEST_CLUSTER_ID, 1000 * time.time())
+        cluster = CLIENT.cluster(TEST_ZONE, cluster_id)
+        cluster.create()
+        # Make sure this cluster gets deleted after the test case.
+        self.clusters_to_delete.append(cluster)
+
+        # We want to make sure the operation completes.
+        time.sleep(2)
+        self.assertTrue(cluster.operation_finished())
+
+        # Create a new cluster instance and make sure it is the same.
+        cluster_alt = CLIENT.cluster(TEST_ZONE, cluster_id)
+        cluster_alt.reload()
+
+        self.assertEqual(cluster, cluster_alt)
+        self.assertEqual(cluster.display_name, cluster_alt.display_name)
+        self.assertEqual(cluster.serve_nodes, cluster_alt.serve_nodes)
