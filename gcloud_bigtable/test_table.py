@@ -71,6 +71,143 @@ class TestGarbageCollectionRule(unittest2.TestCase):
         self.assertEqual(pb_val, data_pb2.GcRule(max_age=duration))
 
 
+class TestGarbageCollectionRuleUnion(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.table import GarbageCollectionRuleUnion
+        return GarbageCollectionRuleUnion
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_constructor(self):
+        rules = object()
+        rule_union = self._makeOne(rules=rules)
+        self.assertTrue(rule_union.rules is rules)
+
+    def test_to_pb(self):
+        import datetime
+        from gcloud_bigtable._generated import (
+            bigtable_table_data_pb2 as data_pb2)
+        from gcloud_bigtable._generated import duration_pb2
+        from gcloud_bigtable.table import GarbageCollectionRule
+
+        max_num_versions = 42
+        rule1 = GarbageCollectionRule(max_num_versions=max_num_versions)
+        pb_rule1 = data_pb2.GcRule(max_num_versions=max_num_versions)
+
+        max_age = datetime.timedelta(seconds=1)
+        rule2 = GarbageCollectionRule(max_age=max_age)
+        pb_rule2 = data_pb2.GcRule(max_age=duration_pb2.Duration(seconds=1))
+
+        rule3 = self._makeOne(rules=[rule1, rule2])
+        pb_rule3 = data_pb2.GcRule(
+            union=data_pb2.GcRule.Union(rules=[pb_rule1, pb_rule2]))
+
+        gc_rule_pb = rule3.to_pb()
+        self.assertEqual(gc_rule_pb, pb_rule3)
+
+    def test_to_pb_nested(self):
+        import datetime
+        from gcloud_bigtable._generated import (
+            bigtable_table_data_pb2 as data_pb2)
+        from gcloud_bigtable._generated import duration_pb2
+        from gcloud_bigtable.table import GarbageCollectionRule
+
+        max_num_versions1 = 42
+        rule1 = GarbageCollectionRule(max_num_versions=max_num_versions1)
+        pb_rule1 = data_pb2.GcRule(max_num_versions=max_num_versions1)
+
+        max_age = datetime.timedelta(seconds=1)
+        rule2 = GarbageCollectionRule(max_age=max_age)
+        pb_rule2 = data_pb2.GcRule(max_age=duration_pb2.Duration(seconds=1))
+
+        rule3 = self._makeOne(rules=[rule1, rule2])
+        pb_rule3 = data_pb2.GcRule(
+            union=data_pb2.GcRule.Union(rules=[pb_rule1, pb_rule2]))
+
+        max_num_versions2 = 1337
+        rule4 = GarbageCollectionRule(max_num_versions=max_num_versions2)
+        pb_rule4 = data_pb2.GcRule(max_num_versions=max_num_versions2)
+
+        rule5 = self._makeOne(rules=[rule3, rule4])
+        pb_rule5 = data_pb2.GcRule(
+            union=data_pb2.GcRule.Union(rules=[pb_rule3, pb_rule4]))
+
+        gc_rule_pb = rule5.to_pb()
+        self.assertEqual(gc_rule_pb, pb_rule5)
+
+
+class TestGarbageCollectionRuleIntersection(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.table import GarbageCollectionRuleIntersection
+        return GarbageCollectionRuleIntersection
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_constructor(self):
+        rules = object()
+        rule_intersection = self._makeOne(rules=rules)
+        self.assertTrue(rule_intersection.rules is rules)
+
+    def test_to_pb(self):
+        import datetime
+        from gcloud_bigtable._generated import (
+            bigtable_table_data_pb2 as data_pb2)
+        from gcloud_bigtable._generated import duration_pb2
+        from gcloud_bigtable.table import GarbageCollectionRule
+
+        max_num_versions = 42
+        rule1 = GarbageCollectionRule(max_num_versions=max_num_versions)
+        pb_rule1 = data_pb2.GcRule(max_num_versions=max_num_versions)
+
+        max_age = datetime.timedelta(seconds=1)
+        rule2 = GarbageCollectionRule(max_age=max_age)
+        pb_rule2 = data_pb2.GcRule(max_age=duration_pb2.Duration(seconds=1))
+
+        rule3 = self._makeOne(rules=[rule1, rule2])
+        pb_rule3 = data_pb2.GcRule(
+            intersection=data_pb2.GcRule.Intersection(
+                rules=[pb_rule1, pb_rule2]))
+
+        gc_rule_pb = rule3.to_pb()
+        self.assertEqual(gc_rule_pb, pb_rule3)
+
+    def test_to_pb_nested(self):
+        import datetime
+        from gcloud_bigtable._generated import (
+            bigtable_table_data_pb2 as data_pb2)
+        from gcloud_bigtable._generated import duration_pb2
+        from gcloud_bigtable.table import GarbageCollectionRule
+
+        max_num_versions1 = 42
+        rule1 = GarbageCollectionRule(max_num_versions=max_num_versions1)
+        pb_rule1 = data_pb2.GcRule(max_num_versions=max_num_versions1)
+
+        max_age = datetime.timedelta(seconds=1)
+        rule2 = GarbageCollectionRule(max_age=max_age)
+        pb_rule2 = data_pb2.GcRule(max_age=duration_pb2.Duration(seconds=1))
+
+        rule3 = self._makeOne(rules=[rule1, rule2])
+        pb_rule3 = data_pb2.GcRule(
+            intersection=data_pb2.GcRule.Intersection(
+                rules=[pb_rule1, pb_rule2]))
+
+        max_num_versions2 = 1337
+        rule4 = GarbageCollectionRule(max_num_versions=max_num_versions2)
+        pb_rule4 = data_pb2.GcRule(max_num_versions=max_num_versions2)
+
+        rule5 = self._makeOne(rules=[rule3, rule4])
+        pb_rule5 = data_pb2.GcRule(
+            intersection=data_pb2.GcRule.Intersection(
+                rules=[pb_rule3, pb_rule4]))
+
+        gc_rule_pb = rule5.to_pb()
+        self.assertEqual(gc_rule_pb, pb_rule5)
+
+
 class TestTable(GRPCMockTestMixin):
 
     @classmethod
@@ -274,6 +411,54 @@ class TestTable(GRPCMockTestMixin):
         self._grpc_client_test_helper('DeleteTable', result_method,
                                       request_pb, response_pb, expected_result,
                                       PROJECT_ID)
+
+    def _create_column_family_test_helper(self, gc_rule=None):
+        from gcloud_bigtable._generated import (
+            bigtable_table_data_pb2 as data_pb2)
+        from gcloud_bigtable._generated import (
+            bigtable_table_service_messages_pb2 as messages_pb2)
+
+        # Create request_pb
+        column_family_id = 'column_family_id'
+        table_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+                      '/clusters/' + CLUSTER_ID + '/tables/' + TABLE_ID)
+        if gc_rule is None:
+            column_family = data_pb2.ColumnFamily()
+        else:
+            column_family = data_pb2.ColumnFamily(gc_rule=gc_rule.to_pb())
+        request_pb = messages_pb2.CreateColumnFamilyRequest(
+            name=table_name,
+            column_family_id=column_family_id,
+            column_family=column_family,
+        )
+
+        # Create response_pb
+        response_pb = data_pb2.ColumnFamily()
+
+        # Create expected_result.
+        expected_result = None  # create_column_family() has no return value.
+
+        # We must create the cluster with the client passed in
+        # and then the table with that cluster.
+        TEST_CASE = self
+
+        def result_method(client):
+            cluster = client.cluster(ZONE, CLUSTER_ID)
+            table = TEST_CASE._makeOne(TABLE_ID, cluster)
+            return table.create_column_family(column_family_id,
+                                              gc_rule=gc_rule)
+
+        self._grpc_client_test_helper('CreateColumnFamily', result_method,
+                                      request_pb, response_pb, expected_result,
+                                      PROJECT_ID)
+
+    def test_create_column_family(self):
+        self._create_column_family_test_helper(gc_rule=None)
+
+    def test_create_column_family_with_gc_rule(self):
+        from gcloud_bigtable.table import GarbageCollectionRule
+        gc_rule = GarbageCollectionRule(max_num_versions=1337)
+        self._create_column_family_test_helper(gc_rule=gc_rule)
 
 
 class _Cluster(object):

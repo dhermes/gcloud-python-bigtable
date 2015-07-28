@@ -39,55 +39,6 @@ class TableConnection(Connection):
     SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
     """Scope for Table Admin and Cluster Admin API requests."""
 
-    def create_column_family(self, cluster_name, table_id, column_family_id,
-                             timeout_seconds=TIMEOUT_SECONDS):
-        """Create a column family in a table.
-
-        .. note::
-          For now, we do not support passing in a custom column family in the
-          request. Aside from the ``column_family_id``, the fields being left
-          out are
-
-          * ``gc_expression``
-          * ``gc_rule``
-
-        :type cluster_name: string
-        :param cluster_name: The name of the cluster where the column family
-                             will be created. Must be of the form
-                             "projects/../zones/../clusters/.."
-                             Since this is a low-level class, we don't check
-                             this, rather we expect callers to pass correctly
-                             formatted data.
-
-        :type table_id: string
-        :param table_id: The name of the table within the cluster.
-
-        :type column_family_id: string
-        :param column_family_id: The name of the column family within
-                                 the table.
-
-        :type timeout_seconds: integer
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
-
-        :rtype: :class:`._generated.bigtable_table_data_pb2.ColumnFamily`
-        :returns: The column family created.
-        """
-        table_name = '%s/tables/%s' % (cluster_name, table_id)
-        request_pb = messages_pb2.CreateColumnFamilyRequest(
-            column_family_id=column_family_id,
-            name=table_name,
-        )
-        result_pb = None
-        stub = make_stub(self._credentials, TABLE_STUB_FACTORY,
-                         TABLE_ADMIN_HOST, PORT)
-        with stub:
-            response = stub.CreateColumnFamily.async(request_pb,
-                                                     timeout_seconds)
-            result_pb = response.result()
-
-        return result_pb
-
     def update_column_family(self, cluster_name, table_id, column_family_id,
                              timeout_seconds=TIMEOUT_SECONDS):
         """Update an existing column family in a table.

@@ -38,6 +38,9 @@ class GarbageCollectionRule(object):
     Cells in the table fitting the rule will be deleted during
     garbage collection.
 
+    These values can be combined via :class:`GarbageCollectionRuleUnion` and
+    :class:`GarbageCollectionRuleIntersection.`
+
     .. note::
 
         At most one of ``max_num_versions`` and ``max_age`` can be specified
@@ -71,7 +74,7 @@ class GarbageCollectionRule(object):
         """Converts the :class:`GarbageCollectionRule` to a protobuf.
 
         :rtype: :class:`data_pb2.GcRule`
-        :returns: The convert current object.
+        :returns: The converted current object.
         """
         gc_rule_kwargs = {}
         if self.max_num_versions is not None:
@@ -79,6 +82,50 @@ class GarbageCollectionRule(object):
         if self.max_age is not None:
             gc_rule_kwargs['max_age'] = _timedelta_to_duration_pb(self.max_age)
         return data_pb2.GcRule(**gc_rule_kwargs)
+
+
+class GarbageCollectionRuleUnion(object):
+    """Union of garbage collection rules.
+
+    :type rules: list
+    :param rules: List of garbage collection rules, unions and/or
+                  intersections.
+    """
+
+    def __init__(self, rules=None):
+        self.rules = rules
+
+    def to_pb(self):
+        """Converts the union into a single gc rule as a protobuf.
+
+        :rtype: :class:`data_pb2.GcRule`
+        :returns: The converted current object.
+        """
+        union = data_pb2.GcRule.Union(
+            rules=[rule.to_pb() for rule in self.rules])
+        return data_pb2.GcRule(union=union)
+
+
+class GarbageCollectionRuleIntersection(object):
+    """Intersection of garbage collection rules.
+
+    :type rules: list
+    :param rules: List of garbage collection rules, unions and/or
+                  intersections.
+    """
+
+    def __init__(self, rules=None):
+        self.rules = rules
+
+    def to_pb(self):
+        """Converts the intersection into a single gc rule as a protobuf.
+
+        :rtype: :class:`data_pb2.GcRule`
+        :returns: The converted current object.
+        """
+        intersection = data_pb2.GcRule.Intersection(
+            rules=[rule.to_pb() for rule in self.rules])
+        return data_pb2.GcRule(intersection=intersection)
 
 
 class Table(object):
@@ -262,4 +309,38 @@ class Table(object):
         with stub:
             response = stub.DeleteTable.async(request_pb, timeout_seconds)
             # We expect a `._generated.empty_pb2.Empty`
+            response.result()
+
+    def create_column_family(self, column_family_id, gc_rule=None,
+                             timeout_seconds=TIMEOUT_SECONDS):
+        """Create a column family in this table.
+
+        :type column_family_id: string
+        :param column_family_id: The ID of the column family.
+
+        :type gc_rule: :class:`GarbageCollectionRule`,
+                       :class:`GarbageCollectionRuleUnion` or
+                       :class:`GarbageCollectionRuleIntersection`
+        :param gc_rule: The garbage collection settings for the column family.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+        """
+        if gc_rule is None:
+            column_family = data_pb2.ColumnFamily()
+        else:
+            column_family = data_pb2.ColumnFamily(gc_rule=gc_rule.to_pb())
+        request_pb = messages_pb2.CreateColumnFamilyRequest(
+            name=self.name,
+            column_family_id=column_family_id,
+            column_family=column_family,
+        )
+
+        stub = make_stub(self.credentials, TABLE_STUB_FACTORY,
+                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
+        with stub:
+            response = stub.CreateColumnFamily.async(request_pb,
+                                                     timeout_seconds)
+            # We expect a `._generated.bigtable_table_data_pb2.ColumnFamily`
             response.result()
