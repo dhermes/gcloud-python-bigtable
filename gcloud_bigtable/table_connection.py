@@ -97,39 +97,6 @@ class TableConnection(Connection):
 
         return result_pb
 
-    def delete_table(self, cluster_name, table_id,
-                     timeout_seconds=TIMEOUT_SECONDS):
-        """Deletes a table.
-
-        :type cluster_name: string
-        :param cluster_name: The name of the cluster where the table will be
-                             deleted. Must be of the form
-                             "projects/../zones/../clusters/.."
-                             Since this is a low-level class, we don't check
-                             this, rather we expect callers to pass correctly
-                             formatted data.
-
-        :type table_id: string
-        :param table_id: The name of the table within the cluster.
-
-        :type timeout_seconds: integer
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
-
-        :rtype: :class:`gcloud_bigtable._generated.empty_pb2.Empty`
-        :returns: The empty response object for the delete table request.
-        """
-        table_name = '%s/tables/%s' % (cluster_name, table_id)
-        request_pb = messages_pb2.DeleteTableRequest(name=table_name)
-        result_pb = None
-        stub = make_stub(self._credentials, TABLE_STUB_FACTORY,
-                         TABLE_ADMIN_HOST, PORT)
-        with stub:
-            response = stub.DeleteTable.async(request_pb, timeout_seconds)
-            result_pb = response.result()
-
-        return result_pb
-
     def rename_table(self, cluster_name, old_table_id,
                      new_table_id, timeout_seconds=TIMEOUT_SECONDS):
         """Rename a table.

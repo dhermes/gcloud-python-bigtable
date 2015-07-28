@@ -17,6 +17,8 @@ from gcloud_bigtable._grpc_mocks import GRPCMockTestMixin
 
 
 PROJECT_ID = 'project-id'
+ZONE = 'zone'
+CLUSTER_ID = 'cluster-id'
 TABLE_ID = 'table-id'
 
 
@@ -94,12 +96,9 @@ class TestTable(GRPCMockTestMixin):
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as messages_pb2)
 
-        zone = 'zone'
-        cluster_id = 'cluster-id'
-
         # Create request_pb
-        table_name = ('projects/' + PROJECT_ID + '/zones/' + zone +
-                      '/clusters/' + cluster_id + '/tables/' + TABLE_ID)
+        table_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+                      '/clusters/' + CLUSTER_ID + '/tables/' + TABLE_ID)
         request_pb = messages_pb2.GetTableRequest(name=table_name)
 
         # Create response_pb
@@ -108,15 +107,45 @@ class TestTable(GRPCMockTestMixin):
         # Create expected_result.
         expected_result = True
 
-        # We must create the cluster with the client passed in.
+        # We must create the cluster with the client passed in
+        # and then the table with that cluster.
         TEST_CASE = self
 
         def result_method(client):
-            cluster = client.cluster(zone, cluster_id)
+            cluster = client.cluster(ZONE, CLUSTER_ID)
             table = TEST_CASE._makeOne(TABLE_ID, cluster)
             return table.exists()
 
         self._grpc_client_test_helper('GetTable', result_method,
+                                      request_pb, response_pb, expected_result,
+                                      PROJECT_ID)
+
+    def test_delete(self):
+        from gcloud_bigtable._generated import (
+            bigtable_table_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._generated import empty_pb2
+
+        # Create request_pb
+        table_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+                      '/clusters/' + CLUSTER_ID + '/tables/' + TABLE_ID)
+        request_pb = messages_pb2.DeleteTableRequest(name=table_name)
+
+        # Create response_pb
+        response_pb = empty_pb2.Empty()
+
+        # Create expected_result.
+        expected_result = None  # delete() has no return value.
+
+        # We must create the cluster with the client passed in
+        # and then the table with that cluster.
+        TEST_CASE = self
+
+        def result_method(client):
+            cluster = client.cluster(ZONE, CLUSTER_ID)
+            table = TEST_CASE._makeOne(TABLE_ID, cluster)
+            return table.delete()
+
+        self._grpc_client_test_helper('DeleteTable', result_method,
                                       request_pb, response_pb, expected_result,
                                       PROJECT_ID)
 

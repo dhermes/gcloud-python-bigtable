@@ -47,7 +47,8 @@ class Table(object):
 
     We can use a :class:`Table` to:
 
-    * Check if it :meth:`Table.exists`
+    * Check if it :meth:`exists`
+    * :meth:`delete` itself
 
     :type table_id: string
     :param table_id: The ID of the table.
@@ -105,7 +106,7 @@ class Table(object):
         return not self.__eq__(other)
 
     def exists(self, timeout_seconds=TIMEOUT_SECONDS):
-        """Reload the metadata for this table.
+        """Check if this table exists.
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
@@ -124,3 +125,18 @@ class Table(object):
             response.result()
 
         return True
+
+    def delete(self, timeout_seconds=TIMEOUT_SECONDS):
+        """Delete the metadata for this table.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+        """
+        request_pb = messages_pb2.DeleteTableRequest(name=self.name)
+        stub = make_stub(self.credentials, TABLE_STUB_FACTORY,
+                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
+        with stub:
+            response = stub.DeleteTable.async(request_pb, timeout_seconds)
+            # We expect a `._generated.empty_pb2.Empty`
+            response.result()

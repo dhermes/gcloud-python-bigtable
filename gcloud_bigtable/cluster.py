@@ -105,14 +105,13 @@ class Cluster(object):
 
     We can use a :class:`Cluster` to:
 
-    * :meth:`Cluster.reload` itself
-    * :meth:`Cluster.create` itself
-    * Check if an :meth:`Cluster.operation_finished` (each of
-      :meth:`Cluster.create`, :meth:`Cluster.update` and
-      :meth:`Cluster.undelete` return with long-running operations
-    * :meth:`Cluster.update` itself
-    * :meth:`Cluster.delete` itself
-    * :meth:`Cluster.undelete` itself
+    * :meth:`reload` itself
+    * :meth:`create` itself
+    * Check if an :meth:`operation_finished` (each of :meth:`create`,
+      :meth:`update` and :meth:`undelete` return with long-running operations)
+    * :meth:`update` itself
+    * :meth:`delete` itself
+    * :meth:`undelete` itself
 
     .. note::
 
