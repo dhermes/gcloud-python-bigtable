@@ -62,18 +62,6 @@ class TestTableConnection(GRPCMockTestMixin):
             ('create_scoped', ((klass.SCOPE,),), {}),
         ])
 
-    def test_update_column_family(self):
-        from gcloud_bigtable._testing import _MockWithAttachedMethods
-
-        credentials = _MockWithAttachedMethods(False)
-        connection = self._makeOne(credentials=credentials)
-        self.assertEqual(credentials._called, [
-            ('create_scoped_required', (), {}),
-        ])
-
-        self.assertRaises(NotImplementedError, connection.update_column_family,
-                          CLUSTER_NAME, TABLE_ID, COLUMN_FAMILY_ID)
-
     def test_delete_column_family(self):
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as messages_pb2)

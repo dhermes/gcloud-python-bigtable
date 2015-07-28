@@ -344,3 +344,33 @@ class Table(object):
                                                      timeout_seconds)
             # We expect a `._generated.bigtable_table_data_pb2.ColumnFamily`
             response.result()
+
+    def update_column_family(self, column_family_id, gc_rule=None,
+                             timeout_seconds=TIMEOUT_SECONDS):
+        """Update a column family in this table.
+
+        :type column_family_id: string
+        :param column_family_id: The ID of the column family.
+
+        :type gc_rule: :class:`GarbageCollectionRule`,
+                       :class:`GarbageCollectionRuleUnion` or
+                       :class:`GarbageCollectionRuleIntersection`
+        :param gc_rule: The garbage collection settings for the column family.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+        """
+        column_family_name = self.name + '/columnFamilies/' + column_family_id
+        request_kwargs = {'name': column_family_name}
+        if gc_rule is not None:
+            request_kwargs['gc_rule'] = gc_rule.to_pb()
+        request_pb = data_pb2.ColumnFamily(**request_kwargs)
+
+        stub = make_stub(self.credentials, TABLE_STUB_FACTORY,
+                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
+        with stub:
+            response = stub.UpdateColumnFamily.async(request_pb,
+                                                     timeout_seconds)
+            # We expect a `._generated.bigtable_table_data_pb2.ColumnFamily`
+            response.result()

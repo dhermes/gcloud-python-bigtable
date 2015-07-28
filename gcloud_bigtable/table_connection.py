@@ -39,44 +39,6 @@ class TableConnection(Connection):
     SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
     """Scope for Table Admin and Cluster Admin API requests."""
 
-    def update_column_family(self, cluster_name, table_id, column_family_id,
-                             timeout_seconds=TIMEOUT_SECONDS):
-        """Update an existing column family in a table.
-
-        .. note::
-          As in :meth:`create_column_family`, we don't currently support
-          setting
-
-          * ``gc_expression``
-          * ``gc_rule``
-
-          As a result, there is nothing else to be changed in this method.
-
-        :type cluster_name: string
-        :param cluster_name: The name of the cluster where the column family
-                             will be updated. Must be of the form
-                             "projects/../zones/../clusters/.."
-                             Since this is a low-level class, we don't check
-                             this, rather we expect callers to pass correctly
-                             formatted data.
-
-        :type table_id: string
-        :param table_id: The name of the table within the cluster.
-
-        :type column_family_id: string
-        :param column_family_id: The name of the column family within
-                                 the table.
-
-        :type timeout_seconds: integer
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to ``TIMEOUT_SECONDS``.
-
-        :raises: :class:`NotImplementedError`
-        """
-        raise NotImplementedError('UpdateColumnFamily is not currently '
-                                  'supported due to lack of support for '
-                                  'garbage colection settings.')
-
     def delete_column_family(self, cluster_name, table_id, column_family_id,
                              timeout_seconds=TIMEOUT_SECONDS):
         """Delete an existing column family in a table.
