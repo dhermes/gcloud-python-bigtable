@@ -61,18 +61,3 @@ class TestTableConnection(GRPCMockTestMixin):
             ('create_scoped_required', (), {}),
             ('create_scoped', ((klass.SCOPE,),), {}),
         ])
-
-    def test_delete_column_family(self):
-        from gcloud_bigtable._generated import (
-            bigtable_table_service_messages_pb2 as messages_pb2)
-
-        column_family_name = '%s/tables/%s/columnFamilies/%s' % (
-            CLUSTER_NAME, TABLE_ID, COLUMN_FAMILY_ID)
-        request_obj = messages_pb2.DeleteColumnFamilyRequest(
-            name=column_family_name)
-
-        def call_method(connection):
-            return connection.delete_column_family(
-                CLUSTER_NAME, TABLE_ID, COLUMN_FAMILY_ID)
-
-        self._grpc_call_helper(call_method, 'DeleteColumnFamily', request_obj)

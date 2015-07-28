@@ -374,3 +374,25 @@ class Table(object):
                                                      timeout_seconds)
             # We expect a `._generated.bigtable_table_data_pb2.ColumnFamily`
             response.result()
+
+    def delete_column_family(self, column_family_id,
+                             timeout_seconds=TIMEOUT_SECONDS):
+        """Delete a column family in this table.
+
+        :type column_family_id: string
+        :param column_family_id: The ID of the column family.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to ``TIMEOUT_SECONDS``.
+        """
+        column_family_name = self.name + '/columnFamilies/' + column_family_id
+        request_pb = messages_pb2.DeleteColumnFamilyRequest(
+            name=column_family_name)
+        stub = make_stub(self.credentials, TABLE_STUB_FACTORY,
+                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
+        with stub:
+            response = stub.DeleteColumnFamily.async(request_pb,
+                                                     timeout_seconds)
+            # We expect a `._generated.empty_pb2.Empty`
+            response.result()
