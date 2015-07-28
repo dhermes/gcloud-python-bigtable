@@ -329,7 +329,7 @@ class Client(object):
                             Defaults to 3.
 
         :rtype: :class:`Cluster`
-        :returns: The cluster created owned by this client.
+        :returns: The cluster owned by this client.
         """
         return Cluster(zone, cluster_id, self,
                        display_name=display_name, serve_nodes=serve_nodes)

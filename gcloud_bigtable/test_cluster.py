@@ -176,6 +176,16 @@ class TestCluster(GRPCMockTestMixin):
                         '/clusters/' + CLUSTER_ID)
         self.assertEqual(cluster.name, cluster_name)
 
+    def test_table_factory(self):
+        from gcloud_bigtable.table import Table
+
+        cluster = self._makeOne(ZONE, CLUSTER_ID, None)
+        table_id = 'table_id'
+        table = cluster.table(table_id)
+        self.assertTrue(isinstance(table, Table))
+        self.assertEqual(table.table_id, table_id)
+        self.assertEqual(table._cluster, cluster)
+
     def test_from_pb_success(self):
         from gcloud_bigtable._generated import (
             bigtable_cluster_data_pb2 as data_pb2)

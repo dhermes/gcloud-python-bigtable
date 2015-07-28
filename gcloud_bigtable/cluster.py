@@ -27,6 +27,7 @@ from gcloud_bigtable._helpers import _pb_timestamp_to_datetime
 from gcloud_bigtable._helpers import _require_pb_property
 from gcloud_bigtable.connection import TIMEOUT_SECONDS
 from gcloud_bigtable.connection import make_stub
+from gcloud_bigtable.table import Table
 
 
 _CLUSTER_NAME_RE = re.compile(r'^projects/(?P<project_id>[^/]+)/'
@@ -184,8 +185,8 @@ class Cluster(object):
     def client(self):
         """Getter for cluster's client.
 
-        :rtype: string
-        :returns: The project ID stored on the client.
+        :rtype: :class:`.client.Client`
+        :returns: The client stored on the cluster.
         """
         return self._client
 
@@ -214,6 +215,17 @@ class Cluster(object):
         """
         return (self.client.project_name + '/zones/' + self.zone +
                 '/clusters/' + self.cluster_id)
+
+    def table(self, table_id):
+        """Factory to create a table associated with this cluster.
+
+        :type table_id: string
+        :param table_id: The ID of the table.
+
+        :rtype: :class:`Table`
+        :returns: The table owned by this cluster.
+        """
+        return Table(table_id, self)
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
