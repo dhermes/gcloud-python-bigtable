@@ -134,9 +134,7 @@ class GRPCMockTestMixin(unittest2.TestCase):
             result = call_method(connection)
 
         self.assertTrue(result is expected_result)
-        self.assertEqual(credentials._called, [
-            ('create_scoped_required', (), {}),
-        ])
+        self.assertEqual(credentials._called, [])
 
         # Check all the stubs that were created and used as a context
         # manager (should be just one).

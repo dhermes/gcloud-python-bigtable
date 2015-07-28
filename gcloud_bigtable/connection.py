@@ -19,6 +19,7 @@ from gcloud_bigtable._helpers import get_certs
 
 
 TIMEOUT_SECONDS = 10
+USER_AGENT = 'gcloud-bigtable-python'
 
 
 class MetadataTransformer(object):
@@ -35,53 +36,10 @@ class MetadataTransformer(object):
     def __call__(self, ignored_val):
         """Adds authorization header to request metadata."""
         access_token = self._credentials.get_access_token().access_token
-        return [('Authorization', 'Bearer ' + access_token)]
-
-
-class Connection(object):
-    """HTTP-RPC Connection base class for Google Cloud Bigtable.
-
-    :type credentials: :class:`oauth2client.client.OAuth2Credentials` or
-                       :class:`NoneType`
-    :param credentials: The OAuth2 Credentials to use for this connection.
-    """
-
-    USER_AGENT = 'gcloud-bigtable-python'
-    SCOPE = None
-
-    def __init__(self, credentials=None):
-        credentials = self._create_scoped_credentials(
-            credentials, (self.SCOPE,))
-        self._credentials = credentials
-
-    @property
-    def credentials(self):
-        """Getter for current credentials.
-
-        :rtype: :class:`oauth2client.client.OAuth2Credentials` or
-                :class:`NoneType`
-        :returns: The credentials object associated with this connection.
-        """
-        return self._credentials
-
-    @staticmethod
-    def _create_scoped_credentials(credentials, scope):
-        """Create a scoped set of credentials if it is required.
-
-        :type credentials: :class:`oauth2client.client.OAuth2Credentials` or
-                           :class:`NoneType`
-        :param credentials: The OAuth2 Credentials to add a scope to.
-
-        :type scope: list of URLs
-        :param scope: the effective service auth scopes for the connection.
-
-        :rtype: :class:`oauth2client.client.OAuth2Credentials` or
-                :class:`NoneType`
-        :returns: A new credentials object that has a scope added (if needed).
-        """
-        if credentials and credentials.create_scoped_required():
-            credentials = credentials.create_scoped(scope)
-        return credentials
+        return [
+            ('Authorization', 'Bearer ' + access_token),
+            ('User-agent', USER_AGENT),
+        ]
 
 
 def make_stub(credentials, stub_factory, host, port):

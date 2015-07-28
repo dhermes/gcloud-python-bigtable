@@ -18,7 +18,6 @@
 from gcloud_bigtable._generated import bigtable_service_pb2
 from gcloud_bigtable._generated import (
     bigtable_service_messages_pb2 as messages_pb2)
-from gcloud_bigtable.connection import Connection
 from gcloud_bigtable.connection import TIMEOUT_SECONDS
 from gcloud_bigtable.connection import make_stub
 
@@ -104,10 +103,14 @@ def _prepare_read(table_name, row_key=None, row_range=None,
     return messages_pb2.ReadRowsRequest(**request_kwargs)
 
 
-class DataConnection(Connection):
+class DataConnection(object):
     """Connection to Google Cloud Bigtable Data API.
 
     Enables interaction with data in an existing table.
+
+    :type credentials: :class:`oauth2client.client.OAuth2Credentials` or
+                       :class:`NoneType`
+    :param credentials: The OAuth2 Credentials to use for this connection.
     """
 
     SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.data'
@@ -116,6 +119,9 @@ class DataConnection(Connection):
     READ_ONLY_SCOPE = ('https://www.googleapis.com/auth/'
                        'cloud-bigtable.data.readonly')
     """Read-only scope for data API requests."""
+
+    def __init__(self, credentials=None):
+        self._credentials = credentials
 
     def read_rows(self, table_name, row_key=None, row_range=None,
                   filter_=None, allow_row_interleaving=None,

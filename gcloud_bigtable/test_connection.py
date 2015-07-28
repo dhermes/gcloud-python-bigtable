@@ -34,6 +34,7 @@ class TestMetadataTransformer(unittest2.TestCase):
 
     def test___call__(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable.connection import USER_AGENT
 
         access_token_expected = 'FOOBARBAZ'
 
@@ -45,61 +46,11 @@ class TestMetadataTransformer(unittest2.TestCase):
         result = transformer(None)
         self.assertEqual(
             result,
-            [('Authorization', 'Bearer ' + access_token_expected)])
+            [
+                ('Authorization', 'Bearer ' + access_token_expected),
+                ('User-agent', USER_AGENT),
+            ])
         self.assertEqual(credentials._called, [('get_access_token', (), {})])
-
-
-class TestConnection(unittest2.TestCase):
-
-    def _getTargetClass(self):
-        from gcloud_bigtable.connection import Connection
-        return Connection
-
-    def _makeOne(self, *args, **kwargs):
-        return self._getTargetClass()(*args, **kwargs)
-
-    def test_constructor(self):
-        from gcloud_bigtable._testing import _MockWithAttachedMethods
-        scoped_creds = object()
-        credentials = _MockWithAttachedMethods(True, scoped_creds)
-        connection = self._makeOne(credentials=credentials)
-        self.assertTrue(connection._credentials is scoped_creds)
-        klass = self._getTargetClass()
-        self.assertEqual(credentials._called, [
-            ('create_scoped_required', (), {}),
-            ('create_scoped', ((klass.SCOPE,),), {}),
-        ])
-
-    def test__create_scoped_credentials_with_no_credentials(self):
-        klass = self._getTargetClass()
-        credentials = None
-        scope = object()
-
-        new_credentials = klass._create_scoped_credentials(credentials, scope)
-        self.assertTrue(new_credentials is credentials)
-
-    def test__create_scoped_credentials_with_credentials(self):
-        from gcloud_bigtable._testing import _MockWithAttachedMethods
-        klass = self._getTargetClass()
-        scoped_creds = object()
-        credentials = _MockWithAttachedMethods(True, scoped_creds)
-        scope = object()
-
-        new_credentials = klass._create_scoped_credentials(credentials, scope)
-        self.assertTrue(new_credentials is scoped_creds)
-        self.assertEqual(credentials._called, [
-            ('create_scoped_required', (), {}),
-            ('create_scoped', (scope,), {}),
-        ])
-
-    def test_credentials_property(self):
-        from gcloud_bigtable._testing import _MockWithAttachedMethods
-        credentials = _MockWithAttachedMethods(False)
-        connection = self._makeOne(credentials=credentials)
-        self.assertTrue(connection.credentials is credentials)
-        self.assertEqual(credentials._called, [
-            ('create_scoped_required', (), {}),
-        ])
 
 
 class Test_make_stub(unittest2.TestCase):

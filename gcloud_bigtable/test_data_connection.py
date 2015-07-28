@@ -47,16 +47,9 @@ class TestDataConnection(GRPCMockTestMixin):
         return self._getTargetClass()(*args, **kwargs)
 
     def test_constructor(self):
-        from gcloud_bigtable._testing import _MockWithAttachedMethods
-        klass = self._getTargetClass()
-        scoped_creds = object()
-        credentials = _MockWithAttachedMethods(True, scoped_creds)
+        credentials = object()
         connection = self._makeOne(credentials=credentials)
-        self.assertTrue(connection._credentials is scoped_creds)
-        self.assertEqual(credentials._called, [
-            ('create_scoped_required', (), {}),
-            ('create_scoped', ((klass.SCOPE,),), {}),
-        ])
+        self.assertTrue(connection._credentials is credentials)
 
     def test_read_rows(self):
         from gcloud_bigtable._testing import _MockCalled
@@ -96,8 +89,7 @@ class TestDataConnection(GRPCMockTestMixin):
         self._grpc_call_helper(call_method, 'SampleRowKeys', request_obj)
 
     def test_mutate_row(self):
-        from gcloud_bigtable._testing import _Credentials
-        credentials = _Credentials()
+        credentials = object()
         connection = self._makeOne(credentials=credentials)
 
         table_name = object()
@@ -106,8 +98,7 @@ class TestDataConnection(GRPCMockTestMixin):
                           table_name, row_key)
 
     def test_check_and_mutate_row(self):
-        from gcloud_bigtable._testing import _Credentials
-        credentials = _Credentials()
+        credentials = object()
         connection = self._makeOne(credentials=credentials)
 
         table_name = object()
@@ -116,8 +107,7 @@ class TestDataConnection(GRPCMockTestMixin):
                           table_name, row_key)
 
     def test_read_modify_write_row(self):
-        from gcloud_bigtable._testing import _Credentials
-        credentials = _Credentials()
+        credentials = object()
         connection = self._makeOne(credentials=credentials)
 
         table_name = object()
