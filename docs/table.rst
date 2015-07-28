@@ -5,3 +5,5 @@ Table
   :members:
   :undoc-members:
   :show-inheritance:
+  :exclude-members: GarbageCollectionRule,GarbageCollectionRuleUnion,
+                    GarbageCollectionRuleIntersection

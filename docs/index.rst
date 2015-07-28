@@ -158,13 +158,13 @@ Documented Modules
    client
    cluster
    table
+   garbage-collection
 
 Indices and tables
 ~~~~~~~~~~~~~~~~~~
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
 
 .. _Cluster Admin API: https://cloud.google.com/bigtable/docs/creating-cluster
 .. _CreateCluster: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/e6fc386d9adc821e1cf5c175c5bf5830b641eb3f/bigtable-protos/src/main/proto/google/bigtable/admin/cluster/v1/bigtable_cluster_service.proto#L66-L68
