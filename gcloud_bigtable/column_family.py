@@ -128,6 +128,7 @@ class ColumnFamily(object):
 
     * :meth:`create` itself
     * :meth:`update` itself
+    * :meth:`delete` itself
 
     :type column_family_id: string
     :param column_family_id: The ID of the column family.
@@ -245,4 +246,21 @@ class ColumnFamily(object):
             response = stub.UpdateColumnFamily.async(request_pb,
                                                      timeout_seconds)
             # We expect a `data_pb2.ColumnFamily`
+            response.result()
+
+    def delete(self, timeout_seconds=None):
+        """Delete this column family.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to value set on table.
+        """
+        request_pb = messages_pb2.DeleteColumnFamilyRequest(name=self.name)
+        stub = make_stub(self.client, TABLE_STUB_FACTORY,
+                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
+        with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
+            response = stub.DeleteColumnFamily.async(request_pb,
+                                                     timeout_seconds)
+            # We expect a `._generated.empty_pb2.Empty`
             response.result()
