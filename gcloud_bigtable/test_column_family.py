@@ -243,6 +243,31 @@ class TestColumnFamily(unittest2.TestCase):
         expected_name = table_name + '/columnFamilies/' + COLUMN_FAMILY_ID
         self.assertEqual(column_family.name, expected_name)
 
+    def test___eq__(self):
+        column_family_id = 'column_family_id'
+        table = object()
+        column_family1 = self._makeOne(column_family_id, table)
+        column_family2 = self._makeOne(column_family_id, table)
+        self.assertEqual(column_family1, column_family2)
+
+    def test___eq__type_differ(self):
+        column_family1 = self._makeOne('column_family_id', None)
+        column_family2 = object()
+        self.assertNotEqual(column_family1, column_family2)
+
+    def test___ne__same_value(self):
+        column_family_id = 'column_family_id'
+        table = object()
+        column_family1 = self._makeOne(column_family_id, table)
+        column_family2 = self._makeOne(column_family_id, table)
+        comparison_val = (column_family1 != column_family2)
+        self.assertFalse(comparison_val)
+
+    def test___ne__(self):
+        column_family1 = self._makeOne('column_family_id1', 'table1')
+        column_family2 = self._makeOne('column_family_id2', 'table2')
+        self.assertNotEqual(column_family1, column_family2)
+
 
 class _Table(object):
 

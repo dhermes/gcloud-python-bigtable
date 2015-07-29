@@ -172,3 +172,12 @@ class ColumnFamily(object):
         :returns: The column family name.
         """
         return self.table.name + '/columnFamilies/' + self.column_family_id
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return (other.column_family_id == self.column_family_id and
+                other.table == self.table)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
