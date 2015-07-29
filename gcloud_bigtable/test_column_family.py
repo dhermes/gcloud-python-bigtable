@@ -239,9 +239,11 @@ class TestColumnFamily(GRPCMockTestMixin):
 
     def test_constructor(self):
         table = object()
-        column_family = self._makeOne(COLUMN_FAMILY_ID, table)
+        gc_rule = object()
+        column_family = self._makeOne(COLUMN_FAMILY_ID, table, gc_rule=gc_rule)
         self.assertEqual(column_family.column_family_id, COLUMN_FAMILY_ID)
         self.assertTrue(column_family._table is table)
+        self.assertTrue(column_family.gc_rule is gc_rule)
 
     def test_table_getter(self):
         table = object()
@@ -325,9 +327,9 @@ class TestColumnFamily(GRPCMockTestMixin):
         def result_method(client):
             cluster = client.cluster(ZONE, CLUSTER_ID)
             table = cluster.table(TABLE_ID)
-            column_family = TEST_CASE._makeOne(COLUMN_FAMILY_ID, table)
-            return column_family.create(gc_rule=gc_rule,
-                                        timeout_seconds=timeout_seconds)
+            column_family = TEST_CASE._makeOne(COLUMN_FAMILY_ID, table,
+                                               gc_rule=gc_rule)
+            return column_family.create(timeout_seconds=timeout_seconds)
 
         self._grpc_client_test_helper('CreateColumnFamily', result_method,
                                       request_pb, response_pb, expected_result,

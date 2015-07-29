@@ -129,11 +129,18 @@ class ColumnFamily(object):
 
     :type table: :class:`.table.Table`
     :param table: The table that owns the column family.
+
+    :type gc_rule: :class:`GarbageCollectionRule`,
+                   :class:`GarbageCollectionRuleUnion` or
+                   :class:`GarbageCollectionRuleIntersection`
+    :param gc_rule: (Optional) The garbage collection settings for this
+                    column family.
     """
 
-    def __init__(self, column_family_id, table):
+    def __init__(self, column_family_id, table, gc_rule=None):
         self.column_family_id = column_family_id
         self._table = table
+        self.gc_rule = gc_rule
 
     @property
     def table(self):
@@ -188,22 +195,17 @@ class ColumnFamily(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def create(self, gc_rule=None, timeout_seconds=None):
+    def create(self, timeout_seconds=None):
         """Create this column family.
-
-        :type gc_rule: :class:`.column_family.GarbageCollectionRule`,
-                       :class:`.column_family.GarbageCollectionRuleUnion` or
-                       :class:`.column_family.GarbageCollectionRuleIntersection`
-        :param gc_rule: The garbage collection settings for the column family.
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on table.
         """
-        if gc_rule is None:
+        if self.gc_rule is None:
             column_family = data_pb2.ColumnFamily()
         else:
-            column_family = data_pb2.ColumnFamily(gc_rule=gc_rule.to_pb())
+            column_family = data_pb2.ColumnFamily(gc_rule=self.gc_rule.to_pb())
         request_pb = messages_pb2.CreateColumnFamilyRequest(
             name=self.table.name,
             column_family_id=self.column_family_id,
