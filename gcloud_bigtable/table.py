@@ -19,6 +19,7 @@ from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._helpers import make_stub
 from gcloud_bigtable.column_family import ColumnFamily
+from gcloud_bigtable.column_family import _gc_rule_from_pb
 from gcloud_bigtable.constants import TABLE_ADMIN_HOST
 from gcloud_bigtable.constants import TABLE_ADMIN_PORT
 from gcloud_bigtable.constants import TABLE_STUB_FACTORY
@@ -226,6 +227,9 @@ class Table(object):
         :rtype: dictionary with string as keys and
                 :class:`.column_family.ColumnFamily` as values
         :returns: List of column families attached to this table.
+        :raises: :class:`ValueError` if the column family name from the
+                 response does not agree with the computed name from the
+                 column family ID.
         """
         request_pb = messages_pb2.GetTableRequest(name=self.name)
         stub = make_stub(self.client, TABLE_STUB_FACTORY,
@@ -236,5 +240,14 @@ class Table(object):
             # We expect a `._generated.bigtable_table_data_pb2.Table`
             table_pb = response.result()
 
-        return {name: ColumnFamily.from_pb(value, self)
-                for name, value in table_pb.column_families.items()}
+        result = {}
+        for column_family_id, value_pb in table_pb.column_families.items():
+            gc_rule = _gc_rule_from_pb(value_pb.gc_rule)
+            column_family = self.column_family(column_family_id,
+                                               gc_rule=gc_rule)
+            if column_family.name != value_pb.name:
+                raise ValueError('Column family name %s does not agree with '
+                                 'name from request: %s.' % (
+                                     column_family.name, value_pb.name))
+            result[column_family_id] = column_family
+        return result

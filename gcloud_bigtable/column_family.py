@@ -174,36 +174,6 @@ class ColumnFamily(object):
         self._table = table
         self.gc_rule = gc_rule
 
-    @classmethod
-    def from_pb(cls, column_family_pb, table):
-        """Creates a column family instance from a protobuf.
-
-        .. NOTE::
-
-            We ignore ``gc_expression`` in ``column_family_pb`` since our
-            helper classes don't set this value. This means that if another
-            client has created the column family being parsed, some
-            information from the protobuf may be unused.
-
-        :type column_family_pb: :class:`data_pb2.ColumnFamily`
-        :param column_family_pb: A column family protobuf object.
-
-        :type table: :class:`.table.Table`
-        :param table: The table that owns the column_family.
-
-        :rtype: :class:`ColumnFamily`
-        :returns: The column family parsed from the protobuf response.
-        :raises: :class:`ValueError` if one of the column family name does not
-                 begin with the table name
-        """
-        before, column_family_id = column_family_pb.name.split(
-            table.name + '/columnFamilies/', 1)
-        if before != '':
-            raise ValueError('Column family name %s not of expected format' % (
-                column_family_pb.name,))
-        gc_rule = _gc_rule_from_pb(column_family_pb.gc_rule)
-        return cls(column_family_id, table, gc_rule=gc_rule)
-
     @property
     def table(self):
         """Getter for column family's table.

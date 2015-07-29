@@ -301,45 +301,6 @@ class TestColumnFamily(GRPCMockTestMixin):
         self.assertTrue(column_family._table is table)
         self.assertTrue(column_family.gc_rule is gc_rule)
 
-    def test_from_pb_success(self):
-        from gcloud_bigtable._generated import (
-            bigtable_table_data_pb2 as data_pb2)
-
-        klass = self._getTargetClass()
-        table_name = 'table_name'
-        table = _Table(table_name)
-        column_family_name = table_name + '/columnFamilies/' + COLUMN_FAMILY_ID
-        column_family_pb = data_pb2.ColumnFamily(name=column_family_name)
-        column_family = klass.from_pb(column_family_pb, table)
-        self.assertTrue(isinstance(column_family, klass))
-        self.assertEqual(column_family.column_family_id, COLUMN_FAMILY_ID)
-        self.assertEqual(column_family.gc_rule, None)
-
-    def test_from_pb_failure(self):
-        from gcloud_bigtable._generated import (
-            bigtable_table_data_pb2 as data_pb2)
-
-        klass = self._getTargetClass()
-        table_name = 'table_name'
-        table = _Table(table_name)
-        column_family_name = 'does-not-start-with-table-name'
-        column_family_pb = data_pb2.ColumnFamily(name=column_family_name)
-        with self.assertRaises(ValueError):
-            klass.from_pb(column_family_pb, table)
-
-    def test_from_pb_failure_bad_before(self):
-        from gcloud_bigtable._generated import (
-            bigtable_table_data_pb2 as data_pb2)
-
-        klass = self._getTargetClass()
-        table_name = 'table_name'
-        table = _Table(table_name)
-        column_family_name = ('nonempty-section-before' + table_name +
-                              '/columnFamilies/' + COLUMN_FAMILY_ID)
-        column_family_pb = data_pb2.ColumnFamily(name=column_family_name)
-        with self.assertRaises(ValueError):
-            klass.from_pb(column_family_pb, table)
-
     def test_table_getter(self):
         table = object()
         column_family = self._makeOne(COLUMN_FAMILY_ID, table)

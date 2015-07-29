@@ -229,7 +229,7 @@ class TestTable(GRPCMockTestMixin):
                                       PROJECT_ID,
                                       timeout_seconds=timeout_seconds)
 
-    def test_list_column_families(self):
+    def _list_column_families_helper(self, column_family_name=None):
         from gcloud_bigtable._generated import (
             bigtable_table_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
@@ -243,7 +243,9 @@ class TestTable(GRPCMockTestMixin):
 
         # Create response_pb
         column_family_id = 'foo'
-        column_family_name = table_name + '/columnFamilies/' + column_family_id
+        if column_family_name is None:
+            column_family_name = (table_name + '/columnFamilies/' +
+                                  column_family_id)
         column_family = data_pb2.ColumnFamily(name=column_family_name)
         response_pb = data_pb2.Table(
             column_families={column_family_id: column_family},
@@ -268,6 +270,15 @@ class TestTable(GRPCMockTestMixin):
                                       request_pb, response_pb, expected_result,
                                       PROJECT_ID,
                                       timeout_seconds=timeout_seconds)
+
+    def test_list_column_families(self):
+        self._list_column_families_helper()
+
+    def test_list_column_families_failure(self):
+        column_family_name = 'not-the-right-format'
+        with self.assertRaises(ValueError):
+            self._list_column_families_helper(
+                column_family_name=column_family_name)
 
 
 class _Cluster(object):
