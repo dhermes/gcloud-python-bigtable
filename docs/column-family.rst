@@ -9,15 +9,17 @@ during periodic garbage collection (which executes opportunistically in the
 background).
 
 The types
-:class:`GarbageCollectionRule <gcloud_bigtable.table.GarbageCollectionRule>`,
-:class:`GarbageCollectionRuleUnion <gcloud_bigtable.table.GarbageCollectionRuleUnion>` and
-:class:`GarbageCollectionRuleIntersection <gcloud_bigtable.table.GarbageCollectionRuleIntersection>`
-can all be used as the optional ``gc_rule`` argument in
-:meth:`Table.create_column_family <gcloud_bigtable.table.Table.create_column_family>` and
-:meth:`Table.update_column_family <gcloud_bigtable.table.Table.update_column_family>`.
+:class:`GarbageCollectionRule <gcloud_bigtable.column_family.GarbageCollectionRule>`,
+:class:`GarbageCollectionRuleUnion <gcloud_bigtable.column_family.GarbageCollectionRuleUnion>` and
+:class:`GarbageCollectionRuleIntersection <gcloud_bigtable.column_family.GarbageCollectionRuleIntersection>`
+can all be used as the optional ``gc_rule`` argument in the
+:class:`ColumnFamily <gcloud_bigtable.column_family.ColumnFamily>`
+constructor. This value is then used in the
+:meth:`create <gcloud_bigtable.column_family.ColumnFamily.create>` and
+:meth:`update <gcloud_bigtable.column_family.ColumnFamily.update>` methods.
 
 These rules can be nested arbitrarily, with
-:class:`GarbageCollectionRule <gcloud_bigtable.table.GarbageCollectionRule>`
+:class:`GarbageCollectionRule <gcloud_bigtable.column_family.GarbageCollectionRule>`
 at the lowest level of the nesting:
 
 .. code:: python

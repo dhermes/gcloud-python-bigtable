@@ -33,7 +33,7 @@ class GarbageCollectionRule(object):
     garbage collection.
 
     These values can be combined via :class:`GarbageCollectionRuleUnion` and
-    :class:`GarbageCollectionRuleIntersection.`
+    :class:`GarbageCollectionRuleIntersection`.
 
     .. note::
 
@@ -241,7 +241,7 @@ class ColumnFamily(object):
           the return value is not cached.
 
         The table name is of the form
-        "projects/../zones/../clusters/../tables/../columnFamilies/.."
+        ``"projects/../zones/../clusters/../tables/../columnFamilies/.."``
 
         :rtype: string
         :returns: The column family name.
@@ -262,7 +262,8 @@ class ColumnFamily(object):
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on table.
+                                If not passed, defaults to value set on
+                                column family.
         """
         if self.gc_rule is None:
             column_family = data_pb2.ColumnFamily()
@@ -288,7 +289,8 @@ class ColumnFamily(object):
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on table.
+                                If not passed, defaults to value set on
+                                column family.
         """
         request_kwargs = {'name': self.name}
         if self.gc_rule is not None:
@@ -309,7 +311,8 @@ class ColumnFamily(object):
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on table.
+                                If not passed, defaults to value set on
+                                column family.
         """
         request_pb = messages_pb2.DeleteColumnFamilyRequest(name=self.name)
         stub = make_stub(self.client, TABLE_STUB_FACTORY,
