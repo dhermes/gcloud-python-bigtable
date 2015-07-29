@@ -18,6 +18,7 @@
 from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._helpers import make_stub
+from gcloud_bigtable.column_family import ColumnFamily
 from gcloud_bigtable.constants import TABLE_ADMIN_HOST
 from gcloud_bigtable.constants import TABLE_ADMIN_PORT
 from gcloud_bigtable.constants import TABLE_STUB_FACTORY
@@ -40,10 +41,10 @@ class Table(object):
 
     We can use a :class:`Table` to:
 
-    * Check if it :meth:`exists`
     * :meth:`create` itself
     * :meth:`rename` itself
     * :meth:`delete` itself
+    * :meth:`list_column_families` in the table
 
     :type table_id: string
     :param table_id: The ID of the table.
@@ -108,28 +109,6 @@ class Table(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
-
-    def exists(self, timeout_seconds=None):
-        """Check if this table exists.
-
-        :type timeout_seconds: integer
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on table.
-
-        :rtype: boolean
-        :returns: Boolean indicating if this table exists. If it does not
-                  exist, an exception will be thrown by the API call.
-        """
-        request_pb = messages_pb2.GetTableRequest(name=self.name)
-        stub = make_stub(self.client, TABLE_STUB_FACTORY,
-                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.GetTable.async(request_pb, timeout_seconds)
-            # We expect a `._generated.bigtable_table_data_pb2.Table`
-            response.result()
-
-        return True
 
     def create(self, initial_split_keys=None, timeout_seconds=None):
         """Creates this table.
@@ -218,3 +197,26 @@ class Table(object):
             response = stub.DeleteTable.async(request_pb, timeout_seconds)
             # We expect a `._generated.empty_pb2.Empty`
             response.result()
+
+    def list_column_families(self, timeout_seconds=None):
+        """Check if this table exists.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to value set on table.
+
+        :rtype: dictionary with string as keys and :class:`ColumnFamily`
+                as values
+        :returns: List of column families attached to this table.
+        """
+        request_pb = messages_pb2.GetTableRequest(name=self.name)
+        stub = make_stub(self.client, TABLE_STUB_FACTORY,
+                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
+        with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
+            response = stub.GetTable.async(request_pb, timeout_seconds)
+            # We expect a `._generated.bigtable_table_data_pb2.Table`
+            table_pb = response.result()
+
+        return {name: ColumnFamily.from_pb(value, self)
+                for name, value in table_pb.column_families.items()}

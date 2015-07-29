@@ -234,6 +234,26 @@ class Test__timedelta_to_duration_pb(unittest2.TestCase):
         self.assertEqual(result.nanos, -(10**9 - 1000 * microseconds))
 
 
+class Test__duration_pb_to_timedelta(unittest2.TestCase):
+
+    def _callFUT(self, duration_pb):
+        from gcloud_bigtable._helpers import _duration_pb_to_timedelta
+        return _duration_pb_to_timedelta(duration_pb)
+
+    def test_it(self):
+        import datetime
+        from gcloud_bigtable._generated import duration_pb2
+
+        seconds = microseconds = 1
+        duration_pb = duration_pb2.Duration(seconds=seconds,
+                                            nanos=1000 * microseconds)
+        timedelta_val = datetime.timedelta(seconds=seconds,
+                                           microseconds=microseconds)
+        result = self._callFUT(duration_pb)
+        self.assertTrue(isinstance(result, datetime.timedelta))
+        self.assertEqual(result, timedelta_val)
+
+
 class Test__set_certs(unittest2.TestCase):
 
     def _callFUT(self):

@@ -175,6 +175,26 @@ def _timedelta_to_duration_pb(timedelta_val):
     return duration_pb2.Duration(seconds=seconds, nanos=nanos)
 
 
+def _duration_pb_to_timedelta(duration_pb):
+    """Convert a duration protobuf to a Python timedelta object.
+
+    .. note::
+
+        The Python timedelta has a granularity of microseconds while
+        the protobuf duration type has a duration of nanoseconds.
+
+    :type duration_pb: :class:`duration_pb2.Duration`
+    :param duration_pb: A protobuf duration object.
+
+    :rtype: :class:`datetime.timedelta`
+    :returns: The converted timedelta object.
+    """
+    return datetime.timedelta(
+        seconds=duration_pb.seconds,
+        microseconds=(duration_pb.nanos / 1000.0),
+    )
+
+
 def _set_certs():
     """Sets the cached root certificates locally."""
     with open(SSL_CERT_FILE, mode='rb') as file_obj:

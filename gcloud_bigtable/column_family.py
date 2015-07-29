@@ -18,6 +18,7 @@
 from gcloud_bigtable._generated import bigtable_table_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as messages_pb2)
+from gcloud_bigtable._helpers import _duration_pb_to_timedelta
 from gcloud_bigtable._helpers import _timedelta_to_duration_pb
 from gcloud_bigtable._helpers import make_stub
 from gcloud_bigtable.constants import TABLE_ADMIN_HOST
@@ -63,6 +64,15 @@ class GarbageCollectionRule(object):
         self.max_num_versions = max_num_versions
         self.max_age = max_age
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return (other.max_num_versions == self.max_num_versions and
+                other.max_age == self.max_age)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def to_pb(self):
         """Converts the :class:`GarbageCollectionRule` to a protobuf.
 
@@ -88,6 +98,14 @@ class GarbageCollectionRuleUnion(object):
     def __init__(self, rules=None):
         self.rules = rules
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return other.rules == self.rules
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def to_pb(self):
         """Converts the union into a single gc rule as a protobuf.
 
@@ -109,6 +127,14 @@ class GarbageCollectionRuleIntersection(object):
 
     def __init__(self, rules=None):
         self.rules = rules
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return other.rules == self.rules
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def to_pb(self):
         """Converts the intersection into a single gc rule as a protobuf.
@@ -147,6 +173,36 @@ class ColumnFamily(object):
         self.column_family_id = column_family_id
         self._table = table
         self.gc_rule = gc_rule
+
+    @classmethod
+    def from_pb(cls, column_family_pb, table):
+        """Creates a column family instance from a protobuf.
+
+        .. NOTE::
+
+            We ignore ``gc_expression`` in ``column_family_pb`` since our
+            helper classes don't set this value. This means that if another
+            client has created the column family being parsed, some
+            information from the protobuf may be unused.
+
+        :type column_family_pb: :class:`data_pb2.ColumnFamily`
+        :param column_family_pb: A column family protobuf object.
+
+        :type table: :class:`.table.Table`
+        :param table: The table that owns the column_family.
+
+        :rtype: :class:`ColumnFamily`
+        :returns: The column family parsed from the protobuf response.
+        :raises: :class:`ValueError` if one of the column family name does not
+                 begin with the table name
+        """
+        before, column_family_id = column_family_pb.name.split(
+            table.name + '/columnFamilies/', 1)
+        if before != '':
+            raise ValueError('Column family name %s not of expected format' % (
+                column_family_pb.name,))
+        gc_rule = _gc_rule_from_pb(column_family_pb.gc_rule)
+        return cls(column_family_id, table, gc_rule=gc_rule)
 
     @property
     def table(self):
@@ -264,3 +320,42 @@ class ColumnFamily(object):
                                                      timeout_seconds)
             # We expect a `._generated.empty_pb2.Empty`
             response.result()
+
+
+def _gc_rule_from_pb(gc_rule_pb):
+    """Convert a protobuf GC rule to a Python version.
+
+    :type gc_rule_pb: :class:`data_pb2.GcRule`
+    :param gc_rule_pb: The GC rule to convert.
+
+    :rtype: :class:`GarbageCollectionRule`,
+            :class:`GarbageCollectionRuleUnion`,
+            :class:`GarbageCollectionRuleIntersection` or
+            :class:`NoneType`
+    :returns: An instance of one of the native rules defined
+              in :module:`column_family` or ``None`` if no values were
+              set on the protobuf passed in.
+    :raises: :class:`ValueError` if more than one property has been set on
+             the GC rule.
+    """
+    all_fields = [field.name for field in gc_rule_pb._fields]
+    if len(all_fields) == 0:
+        return None
+    elif len(all_fields) > 1:
+        raise ValueError('At most one field can be set on a GC rule.')
+
+    field_name = all_fields[0]
+    if field_name == 'max_num_versions':
+        return GarbageCollectionRule(
+            max_num_versions=gc_rule_pb.max_num_versions)
+    elif field_name == 'max_age':
+        max_age = _duration_pb_to_timedelta(gc_rule_pb.max_age)
+        return GarbageCollectionRule(max_age=max_age)
+    elif field_name == 'union':
+        all_rules = gc_rule_pb.union.rules
+        return GarbageCollectionRuleUnion(
+            rules=[_gc_rule_from_pb(rule) for rule in all_rules])
+    elif field_name == 'intersection':
+        all_rules = gc_rule_pb.intersection.rules
+        return GarbageCollectionRuleIntersection(
+            rules=[_gc_rule_from_pb(rule) for rule in all_rules])

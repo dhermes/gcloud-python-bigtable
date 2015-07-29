@@ -43,6 +43,28 @@ class TestGarbageCollectionRule(unittest2.TestCase):
         with self.assertRaises(ValueError):
             self._makeOne(max_num_versions=1, max_age=object())
 
+    def test___eq__max_age(self):
+        max_age = object()
+        gc_rule1 = self._makeOne(max_age=max_age)
+        gc_rule2 = self._makeOne(max_age=max_age)
+        self.assertEqual(gc_rule1, gc_rule2)
+
+    def test___eq__max_num_versions(self):
+        gc_rule1 = self._makeOne(max_num_versions=2)
+        gc_rule2 = self._makeOne(max_num_versions=2)
+        self.assertEqual(gc_rule1, gc_rule2)
+
+    def test___eq__type_differ(self):
+        gc_rule1 = self._makeOne()
+        gc_rule2 = object()
+        self.assertNotEqual(gc_rule1, gc_rule2)
+
+    def test___ne__same_value(self):
+        gc_rule1 = self._makeOne()
+        gc_rule2 = self._makeOne()
+        comparison_val = (gc_rule1 != gc_rule2)
+        self.assertFalse(comparison_val)
+
     def test_to_pb_no_value(self):
         from gcloud_bigtable._generated import (
             bigtable_table_data_pb2 as data_pb2)
@@ -85,6 +107,23 @@ class TestGarbageCollectionRuleUnion(unittest2.TestCase):
         rules = object()
         rule_union = self._makeOne(rules=rules)
         self.assertTrue(rule_union.rules is rules)
+
+    def test___eq__(self):
+        rules = object()
+        gc_rule1 = self._makeOne(rules=rules)
+        gc_rule2 = self._makeOne(rules=rules)
+        self.assertEqual(gc_rule1, gc_rule2)
+
+    def test___eq__type_differ(self):
+        gc_rule1 = self._makeOne()
+        gc_rule2 = object()
+        self.assertNotEqual(gc_rule1, gc_rule2)
+
+    def test___ne__same_value(self):
+        gc_rule1 = self._makeOne()
+        gc_rule2 = self._makeOne()
+        comparison_val = (gc_rule1 != gc_rule2)
+        self.assertFalse(comparison_val)
 
     def test_to_pb(self):
         import datetime
@@ -153,6 +192,23 @@ class TestGarbageCollectionRuleIntersection(unittest2.TestCase):
         rules = object()
         rule_intersection = self._makeOne(rules=rules)
         self.assertTrue(rule_intersection.rules is rules)
+
+    def test___eq__(self):
+        rules = object()
+        gc_rule1 = self._makeOne(rules=rules)
+        gc_rule2 = self._makeOne(rules=rules)
+        self.assertEqual(gc_rule1, gc_rule2)
+
+    def test___eq__type_differ(self):
+        gc_rule1 = self._makeOne()
+        gc_rule2 = object()
+        self.assertNotEqual(gc_rule1, gc_rule2)
+
+    def test___ne__same_value(self):
+        gc_rule1 = self._makeOne()
+        gc_rule2 = self._makeOne()
+        comparison_val = (gc_rule1 != gc_rule2)
+        self.assertFalse(comparison_val)
 
     def test_to_pb(self):
         import datetime
@@ -244,6 +300,45 @@ class TestColumnFamily(GRPCMockTestMixin):
         self.assertEqual(column_family.column_family_id, COLUMN_FAMILY_ID)
         self.assertTrue(column_family._table is table)
         self.assertTrue(column_family.gc_rule is gc_rule)
+
+    def test_from_pb_success(self):
+        from gcloud_bigtable._generated import (
+            bigtable_table_data_pb2 as data_pb2)
+
+        klass = self._getTargetClass()
+        table_name = 'table_name'
+        table = _Table(table_name)
+        column_family_name = table_name + '/columnFamilies/' + COLUMN_FAMILY_ID
+        column_family_pb = data_pb2.ColumnFamily(name=column_family_name)
+        column_family = klass.from_pb(column_family_pb, table)
+        self.assertTrue(isinstance(column_family, klass))
+        self.assertEqual(column_family.column_family_id, COLUMN_FAMILY_ID)
+        self.assertEqual(column_family.gc_rule, None)
+
+    def test_from_pb_failure(self):
+        from gcloud_bigtable._generated import (
+            bigtable_table_data_pb2 as data_pb2)
+
+        klass = self._getTargetClass()
+        table_name = 'table_name'
+        table = _Table(table_name)
+        column_family_name = 'does-not-start-with-table-name'
+        column_family_pb = data_pb2.ColumnFamily(name=column_family_name)
+        with self.assertRaises(ValueError):
+            klass.from_pb(column_family_pb, table)
+
+    def test_from_pb_failure_bad_before(self):
+        from gcloud_bigtable._generated import (
+            bigtable_table_data_pb2 as data_pb2)
+
+        klass = self._getTargetClass()
+        table_name = 'table_name'
+        table = _Table(table_name)
+        column_family_name = ('nonempty-section-before' + table_name +
+                              '/columnFamilies/' + COLUMN_FAMILY_ID)
+        column_family_pb = data_pb2.ColumnFamily(name=column_family_name)
+        with self.assertRaises(ValueError):
+            klass.from_pb(column_family_pb, table)
 
     def test_table_getter(self):
         table = object()
@@ -424,6 +519,99 @@ class TestColumnFamily(GRPCMockTestMixin):
                                       request_pb, response_pb, expected_result,
                                       PROJECT_ID,
                                       timeout_seconds=timeout_seconds)
+
+
+class Test__gc_rule_from_pb(unittest2.TestCase):
+
+    def _callFUT(self, gc_rule_pb):
+        from gcloud_bigtable.column_family import _gc_rule_from_pb
+        return _gc_rule_from_pb(gc_rule_pb)
+
+    def test_empty(self):
+        from gcloud_bigtable._generated import (
+            bigtable_table_data_pb2 as data_pb2)
+
+        gc_rule_pb = data_pb2.GcRule()
+        self.assertEqual(self._callFUT(gc_rule_pb), None)
+
+    def test_failure(self):
+        from gcloud_bigtable._generated import (
+            bigtable_table_data_pb2 as data_pb2)
+        from gcloud_bigtable._generated import duration_pb2
+
+        gc_rule_pb1 = data_pb2.GcRule(max_num_versions=1)
+        gc_rule_pb2 = data_pb2.GcRule(
+            max_age=duration_pb2.Duration(seconds=1),
+        )
+        # Since a oneof field, google.protobuf doesn't allow both
+        # to be set, so we fake it.
+        gc_rule_pb3 = data_pb2.GcRule()
+        gc_rule_pb3._fields.update(gc_rule_pb1._fields)
+        gc_rule_pb3._fields.update(gc_rule_pb2._fields)
+
+        with self.assertRaises(ValueError):
+            self._callFUT(gc_rule_pb3)
+
+    def test_max_num_versions(self):
+        from gcloud_bigtable.column_family import GarbageCollectionRule
+
+        orig_rule = GarbageCollectionRule(max_num_versions=1)
+        gc_rule_pb = orig_rule.to_pb()
+        result = self._callFUT(gc_rule_pb)
+        self.assertTrue(isinstance(result, GarbageCollectionRule))
+        self.assertEqual(result, orig_rule)
+
+    def test_max_age(self):
+        import datetime
+        from gcloud_bigtable.column_family import GarbageCollectionRule
+
+        orig_rule = GarbageCollectionRule(
+            max_age=datetime.timedelta(seconds=1))
+        gc_rule_pb = orig_rule.to_pb()
+        result = self._callFUT(gc_rule_pb)
+        self.assertTrue(isinstance(result, GarbageCollectionRule))
+        self.assertEqual(result, orig_rule)
+
+    def test_union(self):
+        import datetime
+        from gcloud_bigtable.column_family import GarbageCollectionRule
+        from gcloud_bigtable.column_family import GarbageCollectionRuleUnion
+
+        rule1 = GarbageCollectionRule(max_num_versions=1)
+        rule2 = GarbageCollectionRule(
+            max_age=datetime.timedelta(seconds=1))
+        orig_rule = GarbageCollectionRuleUnion(rules=[rule1, rule2])
+        gc_rule_pb = orig_rule.to_pb()
+        result = self._callFUT(gc_rule_pb)
+        self.assertTrue(isinstance(result, GarbageCollectionRuleUnion))
+        self.assertEqual(result, orig_rule)
+
+    def test_intersection(self):
+        import datetime
+        from gcloud_bigtable.column_family import GarbageCollectionRule
+        from gcloud_bigtable.column_family import (
+            GarbageCollectionRuleIntersection)
+
+        rule1 = GarbageCollectionRule(max_num_versions=1)
+        rule2 = GarbageCollectionRule(
+            max_age=datetime.timedelta(seconds=1))
+        orig_rule = GarbageCollectionRuleIntersection(rules=[rule1, rule2])
+        gc_rule_pb = orig_rule.to_pb()
+        result = self._callFUT(gc_rule_pb)
+        self.assertTrue(isinstance(result, GarbageCollectionRuleIntersection))
+        self.assertEqual(result, orig_rule)
+
+    def test_unknown_field_name(self):
+        from google.protobuf.descriptor import FieldDescriptor
+        from gcloud_bigtable._generated import (
+            bigtable_table_data_pb2 as data_pb2)
+
+        gc_rule_pb = data_pb2.GcRule()
+        fake_descriptor_name = 'not-union'
+        descriptor_args = (fake_descriptor_name,) + (None,) * 12
+        fake_descriptor = FieldDescriptor(*descriptor_args)
+        gc_rule_pb._fields[fake_descriptor] = None
+        self.assertEqual(self._callFUT(gc_rule_pb), None)
 
 
 class _Table(object):

@@ -104,36 +104,6 @@ class TestTable(GRPCMockTestMixin):
         table2 = self._makeOne('table_id2', 'cluster2')
         self.assertNotEqual(table1, table2)
 
-    def test_exists(self):
-        from gcloud_bigtable._generated import (
-            bigtable_table_service_messages_pb2 as messages_pb2)
-
-        # Create request_pb
-        table_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
-                      '/clusters/' + CLUSTER_ID + '/tables/' + TABLE_ID)
-        request_pb = messages_pb2.GetTableRequest(name=table_name)
-
-        # Create response_pb
-        response_pb = None
-
-        # Create expected_result.
-        expected_result = True
-
-        # We must create the cluster with the client passed in
-        # and then the table with that cluster.
-        TEST_CASE = self
-        timeout_seconds = 654
-
-        def result_method(client):
-            cluster = client.cluster(ZONE, CLUSTER_ID)
-            table = TEST_CASE._makeOne(TABLE_ID, cluster)
-            return table.exists(timeout_seconds=timeout_seconds)
-
-        self._grpc_client_test_helper('GetTable', result_method,
-                                      request_pb, response_pb, expected_result,
-                                      PROJECT_ID,
-                                      timeout_seconds=timeout_seconds)
-
     def _create_test_helper(self, initial_split_keys):
         from gcloud_bigtable._generated import (
             bigtable_table_data_pb2 as data_pb2)
@@ -243,6 +213,46 @@ class TestTable(GRPCMockTestMixin):
             return table.delete(timeout_seconds=timeout_seconds)
 
         self._grpc_client_test_helper('DeleteTable', result_method,
+                                      request_pb, response_pb, expected_result,
+                                      PROJECT_ID,
+                                      timeout_seconds=timeout_seconds)
+
+    def test_list_column_families(self):
+        from gcloud_bigtable._generated import (
+            bigtable_table_data_pb2 as data_pb2)
+        from gcloud_bigtable._generated import (
+            bigtable_table_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable.column_family import ColumnFamily
+
+        # Create request_pb
+        table_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+                      '/clusters/' + CLUSTER_ID + '/tables/' + TABLE_ID)
+        request_pb = messages_pb2.GetTableRequest(name=table_name)
+
+        # Create response_pb
+        column_family_id = 'foo'
+        column_family_name = table_name + '/columnFamilies/' + column_family_id
+        column_family = data_pb2.ColumnFamily(name=column_family_name)
+        response_pb = data_pb2.Table(
+            column_families={column_family_id: column_family},
+        )
+
+        # Create expected_result.
+        expected_result = {}  # Will update this once test table is created.
+
+        # We must create the cluster with the client passed in
+        # and then the table with that cluster.
+        TEST_CASE = self
+        timeout_seconds = 502
+
+        def result_method(client):
+            cluster = client.cluster(ZONE, CLUSTER_ID)
+            table = TEST_CASE._makeOne(TABLE_ID, cluster)
+            expected_result[column_family_id] = ColumnFamily(
+                column_family_id, table)
+            return table.list_column_families(timeout_seconds=timeout_seconds)
+
+        self._grpc_client_test_helper('GetTable', result_method,
                                       request_pb, response_pb, expected_result,
                                       PROJECT_ID,
                                       timeout_seconds=timeout_seconds)
