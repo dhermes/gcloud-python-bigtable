@@ -15,7 +15,6 @@
 """User friendly container for Google Cloud Bigtable Table."""
 
 
-from gcloud_bigtable._generated import bigtable_table_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._helpers import make_stub
@@ -218,37 +217,6 @@ class Table(object):
             timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.DeleteTable.async(request_pb, timeout_seconds)
             # We expect a `._generated.empty_pb2.Empty`
-            response.result()
-
-    def update_column_family(self, column_family_id, gc_rule=None,
-                             timeout_seconds=None):
-        """Update a column family in this table.
-
-        :type column_family_id: string
-        :param column_family_id: The ID of the column family.
-
-        :type gc_rule: :class:`.column_family.GarbageCollectionRule`,
-                       :class:`.column_family.GarbageCollectionRuleUnion` or
-                       :class:`.column_family.GarbageCollectionRuleIntersection`
-        :param gc_rule: The garbage collection settings for the column family.
-
-        :type timeout_seconds: integer
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on table.
-        """
-        column_family_name = self.name + '/columnFamilies/' + column_family_id
-        request_kwargs = {'name': column_family_name}
-        if gc_rule is not None:
-            request_kwargs['gc_rule'] = gc_rule.to_pb()
-        request_pb = data_pb2.ColumnFamily(**request_kwargs)
-
-        stub = make_stub(self.client, TABLE_STUB_FACTORY,
-                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.UpdateColumnFamily.async(request_pb,
-                                                     timeout_seconds)
-            # We expect a `._generated.bigtable_table_data_pb2.ColumnFamily`
             response.result()
 
     def delete_column_family(self, column_family_id, timeout_seconds=None):

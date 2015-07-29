@@ -124,6 +124,11 @@ class GarbageCollectionRuleIntersection(object):
 class ColumnFamily(object):
     """Representation of a Google Cloud Bigtable Column Family.
 
+    We can use a :class:`ColumnFamily` to:
+
+    * :meth:`create` itself
+    * :meth:`update` itself
+
     :type column_family_id: string
     :param column_family_id: The ID of the column family.
 
@@ -218,5 +223,26 @@ class ColumnFamily(object):
             timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.CreateColumnFamily.async(request_pb,
                                                      timeout_seconds)
-            # We expect a `._generated.bigtable_table_data_pb2.ColumnFamily`
+            # We expect a `data_pb2.ColumnFamily`
+            response.result()
+
+    def update(self, timeout_seconds=None):
+        """Update this column family.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to value set on table.
+        """
+        request_kwargs = {'name': self.name}
+        if self.gc_rule is not None:
+            request_kwargs['gc_rule'] = self.gc_rule.to_pb()
+        request_pb = data_pb2.ColumnFamily(**request_kwargs)
+
+        stub = make_stub(self.client, TABLE_STUB_FACTORY,
+                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
+        with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
+            response = stub.UpdateColumnFamily.async(request_pb,
+                                                     timeout_seconds)
+            # We expect a `data_pb2.ColumnFamily`
             response.result()
