@@ -27,6 +27,7 @@ PROJECT_ID = os.getenv('GCLOUD_TESTS_PROJECT_ID')
 TEST_ZONE = 'us-central1-c'
 TEST_CLUSTER_ID = 'gcloud-python'
 TEST_SERVE_NODES = 3
+TEST_TABLE_ID = 'gcloud-python-test-table'
 EXPECTED_ZONES = (
     'asia-east1-b',
     'europe-west1-c',
@@ -134,3 +135,89 @@ class TestClusterAdminAPI(unittest2.TestCase):
         # We want to make sure the operation completes.
         time.sleep(2)
         self.assertTrue(CLUSTER.operation_finished())
+
+
+class TestTableAdminAPI(unittest2.TestCase):
+
+    @classmethod
+    def setUpClass(self):
+        self._table = CLUSTER.table(TEST_TABLE_ID)
+        self._table.create()
+
+    @classmethod
+    def tearDownClass(self):
+        self._table.delete()
+
+    def setUp(self):
+        self.tables_to_delete = []
+
+    def tearDown(self):
+        for table in self.tables_to_delete:
+            table.delete()
+
+    def test_list_tables(self):
+        # Since `CLUSTER` is newly created in `setUpModule`, the table
+        # created in `setUpClass` here will be the only one.
+        tables = CLUSTER.list_tables()
+        self.assertEqual(tables, [self._table])
+
+    def test_create_table(self):
+        temp_table_id = 'foo-bar-baz-table'
+        temp_table = CLUSTER.table(temp_table_id)
+        temp_table.create()
+        self.tables_to_delete.append(temp_table)
+
+        # First, create a sorted version of our expected result.
+        expected_tables = sorted([temp_table, self._table],
+                                 key=lambda value: value.name)
+
+        # Then query for the tables in the cluster and sort them by
+        # name as well.
+        tables = CLUSTER.list_tables()
+        sorted_tables = sorted(tables, key=lambda value: value.name)
+        self.assertEqual(sorted_tables, expected_tables)
+
+    def test_create_column_family(self):
+        from gcloud_bigtable.column_family import GarbageCollectionRule
+        temp_table_id = 'foo-bar-baz-table'
+        temp_table = CLUSTER.table(temp_table_id)
+        temp_table.create()
+        self.tables_to_delete.append(temp_table)
+
+        self.assertEqual(temp_table.list_column_families(), {})
+        column_family_id = u'my-column'
+        gc_rule = GarbageCollectionRule(max_num_versions=1)
+        column_family = temp_table.column_family(column_family_id,
+                                                 gc_rule=gc_rule)
+        column_family.create()
+
+        col_fams = temp_table.list_column_families()
+
+        self.assertEqual(len(col_fams), 1)
+        retrieved_col_fam = col_fams[column_family_id]
+        self.assertTrue(retrieved_col_fam.table is column_family.table)
+        self.assertEqual(retrieved_col_fam.column_family_id,
+                         column_family.column_family_id)
+        # Due to a quirk / bug in the API, the retrieved column family
+        # does not include the GC rule.
+        self.assertNotEqual(retrieved_col_fam.gc_rule, column_family.table)
+        self.assertEqual(retrieved_col_fam.gc_rule, None)
+
+    def test_delete_column_family(self):
+        temp_table_id = 'foo-bar-baz-table'
+        temp_table = CLUSTER.table(temp_table_id)
+        temp_table.create()
+        self.tables_to_delete.append(temp_table)
+
+        self.assertEqual(temp_table.list_column_families(), {})
+        column_family_id = u'my-column'
+        column_family = temp_table.column_family(column_family_id)
+        column_family.create()
+
+        # Make sure the family is there before deleting it.
+        col_fams = temp_table.list_column_families()
+        self.assertEqual(list(col_fams.keys()), [column_family_id])
+
+        column_family.delete()
+        # Make sure we have successfully deleted it.
+        self.assertEqual(temp_table.list_column_families(), {})

@@ -222,6 +222,7 @@ class ColumnFamily(object):
         if not isinstance(other, self.__class__):
             return False
         return (other.column_family_id == self.column_family_id and
+                other.gc_rule == self.gc_rule and
                 other.table == self.table)
 
     def __ne__(self, other):
@@ -256,6 +257,15 @@ class ColumnFamily(object):
 
     def update(self, timeout_seconds=None):
         """Update this column family.
+
+        .. note::
+
+            The Bigtable Table Admin API currently returns
+
+             ``BigtableTableService.UpdateColumnFamily is not yet implemented``
+
+            when this method is used. It's unclear when this method will
+            actually be supported by the API.
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.

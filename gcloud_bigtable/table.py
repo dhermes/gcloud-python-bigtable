@@ -182,6 +182,15 @@ class Table(object):
             This cannot be used to move tables between clusters,
             zones, or projects.
 
+        .. note::
+
+            The Bigtable Table Admin API currently returns
+
+                ``BigtableTableService.RenameTable is not yet implemented``
+
+            when this method is used. It's unclear when this method will
+            actually be supported by the API.
+
         :type new_table_id: string
         :param new_table_id: The new name table ID.
 
@@ -200,6 +209,8 @@ class Table(object):
             response = stub.RenameTable.async(request_pb, timeout_seconds)
             # We expect a `._generated.empty_pb2.Empty`
             response.result()
+
+        self.table_id = new_table_id
 
     def delete(self, timeout_seconds=None):
         """Delete this table.

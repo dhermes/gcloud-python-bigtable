@@ -186,17 +186,20 @@ class TestTable(GRPCMockTestMixin):
         # We must create the cluster with the client passed in
         # and then the table with that cluster.
         TEST_CASE = self
+        TABLE_CREATED = []
         timeout_seconds = 97
 
         def result_method(client):
             cluster = client.cluster(ZONE, CLUSTER_ID)
             table = TEST_CASE._makeOne(TABLE_ID, cluster)
+            TABLE_CREATED.append(table)
             return table.rename(new_table_id, timeout_seconds=timeout_seconds)
 
         self._grpc_client_test_helper('RenameTable', result_method,
                                       request_pb, response_pb, expected_result,
                                       PROJECT_ID,
                                       timeout_seconds=timeout_seconds)
+        self.assertEqual(TABLE_CREATED[0].table_id, new_table_id)
 
     def test_delete(self):
         from gcloud_bigtable._generated import (
