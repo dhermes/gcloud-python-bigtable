@@ -32,8 +32,8 @@ class Table(object):
         We don't define any properties on a table other than the name. As
         the proto says, in a request:
 
-          "The `name` field of the Table and all of its ColumnFamilies must
-           be left blank, and will be populated in the response."
+          The ``name`` field of the Table and all of its ColumnFamilies must
+          be left blank, and will be populated in the response.
 
         This leaves only the ``current_operation`` and ``granularity``
         fields. The ``current_operation`` is only used for responses while
@@ -41,9 +41,9 @@ class Table(object):
 
     We can use a :class:`Table` to:
 
-    * :meth:`create` itself
-    * :meth:`rename` itself
-    * :meth:`delete` itself
+    * :meth:`create` the table
+    * :meth:`rename` the table
+    * :meth:`delete` the table
     * :meth:`list_column_families` in the table
 
     :type table_id: string
@@ -94,12 +94,30 @@ class Table(object):
           return value is not cached.
 
         The table name is of the form
-        "projects/../zones/../clusters/../tables/{table_id}"
+
+            ``"projects/../zones/../clusters/../tables/{table_id}"``
 
         :rtype: string
         :returns: The table name.
         """
         return self.cluster.name + '/tables/' + self.table_id
+
+    def column_family(self, column_family_id, gc_rule=None):
+        """Factory to create a column family associated with this table.
+
+        :type column_family_id: string
+        :param column_family_id: The ID of the column family.
+
+        :type gc_rule: :class:`.column_family.GarbageCollectionRule`,
+                       :class:`.column_family.GarbageCollectionRuleUnion` or
+                       :class:`.column_family.GarbageCollectionRuleIntersection`
+        :param gc_rule: (Optional) The garbage collection settings for this
+                        column family.
+
+        :rtype: :class:`.column_family.ColumnFamily`
+        :returns: A column family owned by this table.
+        """
+        return ColumnFamily(column_family_id, self, gc_rule=gc_rule)
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -136,7 +154,7 @@ class Table(object):
                                    HBase regions). Given two split keys,
                                    ``"s1"`` and ``"s2"``, three tablets will be
                                    created, spanning the key ranges:
-                                   [, s1), [s1, s2), [s2, ).
+                                   ``[, s1)``, ``[s1, s2)``, ``[s2, )``.
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
@@ -205,8 +223,8 @@ class Table(object):
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on table.
 
-        :rtype: dictionary with string as keys and :class:`ColumnFamily`
-                as values
+        :rtype: dictionary with string as keys and
+                :class:`.column_family.ColumnFamily` as values
         :returns: List of column families attached to this table.
         """
         request_pb = messages_pb2.GetTableRequest(name=self.name)

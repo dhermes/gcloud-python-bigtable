@@ -79,6 +79,18 @@ class TestTable(GRPCMockTestMixin):
         expected_name = cluster_name + '/tables/' + TABLE_ID
         self.assertEqual(table.name, expected_name)
 
+    def test_column_family_factory(self):
+        from gcloud_bigtable.column_family import ColumnFamily
+
+        table = self._makeOne(TABLE_ID, None)
+        gc_rule = object()
+        column_family_id = 'column_family_id'
+        column_family = table.column_family(column_family_id, gc_rule=gc_rule)
+        self.assertTrue(isinstance(column_family, ColumnFamily))
+        self.assertEqual(column_family.column_family_id, column_family_id)
+        self.assertTrue(column_family.gc_rule is gc_rule)
+        self.assertEqual(column_family._table, table)
+
     def test___eq__(self):
         table_id = 'table_id'
         cluster = object()
