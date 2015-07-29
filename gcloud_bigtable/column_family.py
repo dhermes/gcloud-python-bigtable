@@ -16,7 +16,13 @@
 
 
 from gcloud_bigtable._generated import bigtable_table_data_pb2 as data_pb2
+from gcloud_bigtable._generated import (
+    bigtable_table_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._helpers import _timedelta_to_duration_pb
+from gcloud_bigtable._helpers import make_stub
+from gcloud_bigtable.constants import TABLE_ADMIN_HOST
+from gcloud_bigtable.constants import TABLE_ADMIN_PORT
+from gcloud_bigtable.constants import TABLE_STUB_FACTORY
 
 
 class GarbageCollectionRule(object):
@@ -181,3 +187,34 @@ class ColumnFamily(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def create(self, gc_rule=None, timeout_seconds=None):
+        """Create this column family.
+
+        :type gc_rule: :class:`.column_family.GarbageCollectionRule`,
+                       :class:`.column_family.GarbageCollectionRuleUnion` or
+                       :class:`.column_family.GarbageCollectionRuleIntersection`
+        :param gc_rule: The garbage collection settings for the column family.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to value set on table.
+        """
+        if gc_rule is None:
+            column_family = data_pb2.ColumnFamily()
+        else:
+            column_family = data_pb2.ColumnFamily(gc_rule=gc_rule.to_pb())
+        request_pb = messages_pb2.CreateColumnFamilyRequest(
+            name=self.table.name,
+            column_family_id=self.column_family_id,
+            column_family=column_family,
+        )
+
+        stub = make_stub(self.client, TABLE_STUB_FACTORY,
+                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
+        with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
+            response = stub.CreateColumnFamily.async(request_pb,
+                                                     timeout_seconds)
+            # We expect a `._generated.bigtable_table_data_pb2.ColumnFamily`
+            response.result()

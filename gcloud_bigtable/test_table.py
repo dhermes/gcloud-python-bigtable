@@ -247,57 +247,6 @@ class TestTable(GRPCMockTestMixin):
                                       PROJECT_ID,
                                       timeout_seconds=timeout_seconds)
 
-    def _create_column_family_test_helper(self, gc_rule=None):
-        from gcloud_bigtable._generated import (
-            bigtable_table_data_pb2 as data_pb2)
-        from gcloud_bigtable._generated import (
-            bigtable_table_service_messages_pb2 as messages_pb2)
-
-        # Create request_pb
-        column_family_id = 'column_family_id'
-        table_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
-                      '/clusters/' + CLUSTER_ID + '/tables/' + TABLE_ID)
-        if gc_rule is None:
-            column_family = data_pb2.ColumnFamily()
-        else:
-            column_family = data_pb2.ColumnFamily(gc_rule=gc_rule.to_pb())
-        request_pb = messages_pb2.CreateColumnFamilyRequest(
-            name=table_name,
-            column_family_id=column_family_id,
-            column_family=column_family,
-        )
-
-        # Create response_pb
-        response_pb = data_pb2.ColumnFamily()
-
-        # Create expected_result.
-        expected_result = None  # create_column_family() has no return value.
-
-        # We must create the cluster with the client passed in
-        # and then the table with that cluster.
-        TEST_CASE = self
-        timeout_seconds = 4
-
-        def result_method(client):
-            cluster = client.cluster(ZONE, CLUSTER_ID)
-            table = TEST_CASE._makeOne(TABLE_ID, cluster)
-            return table.create_column_family(column_family_id,
-                                              gc_rule=gc_rule,
-                                              timeout_seconds=timeout_seconds)
-
-        self._grpc_client_test_helper('CreateColumnFamily', result_method,
-                                      request_pb, response_pb, expected_result,
-                                      PROJECT_ID,
-                                      timeout_seconds=timeout_seconds)
-
-    def test_create_column_family(self):
-        self._create_column_family_test_helper(gc_rule=None)
-
-    def test_create_column_family_with_gc_rule(self):
-        from gcloud_bigtable.column_family import GarbageCollectionRule
-        gc_rule = GarbageCollectionRule(max_num_versions=1337)
-        self._create_column_family_test_helper(gc_rule=gc_rule)
-
     def _update_column_family_test_helper(self, gc_rule=None):
         from gcloud_bigtable._generated import (
             bigtable_table_data_pb2 as data_pb2)

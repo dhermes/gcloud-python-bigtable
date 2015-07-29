@@ -15,7 +15,13 @@
 
 import unittest2
 
+from gcloud_bigtable._grpc_mocks import GRPCMockTestMixin
 
+
+PROJECT_ID = 'project-id'
+ZONE = 'zone'
+CLUSTER_ID = 'cluster-id'
+TABLE_ID = 'table-id'
 COLUMN_FAMILY_ID = 'column-family-id'
 
 
@@ -204,7 +210,25 @@ class TestGarbageCollectionRuleIntersection(unittest2.TestCase):
         self.assertEqual(gc_rule_pb, pb_rule5)
 
 
-class TestColumnFamily(unittest2.TestCase):
+class TestColumnFamily(GRPCMockTestMixin):
+
+    @classmethod
+    def setUpClass(cls):
+        from gcloud_bigtable import client
+        from gcloud_bigtable import column_family as MUT
+        cls._MUT = MUT
+        cls._STUB_SCOPES = [client.DATA_SCOPE]
+        cls._STUB_FACTORY_NAME = 'TABLE_STUB_FACTORY'
+        cls._STUB_HOST = MUT.TABLE_ADMIN_HOST
+        cls._STUB_PORT = MUT.TABLE_ADMIN_PORT
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls._MUT
+        del cls._STUB_SCOPES
+        del cls._STUB_FACTORY_NAME
+        del cls._STUB_HOST
+        del cls._STUB_PORT
 
     def _getTargetClass(self):
         from gcloud_bigtable.column_family import ColumnFamily
@@ -267,6 +291,56 @@ class TestColumnFamily(unittest2.TestCase):
         column_family1 = self._makeOne('column_family_id1', 'table1')
         column_family2 = self._makeOne('column_family_id2', 'table2')
         self.assertNotEqual(column_family1, column_family2)
+
+    def _create_test_helper(self, gc_rule=None):
+        from gcloud_bigtable._generated import (
+            bigtable_table_data_pb2 as data_pb2)
+        from gcloud_bigtable._generated import (
+            bigtable_table_service_messages_pb2 as messages_pb2)
+
+        # Create request_pb
+        table_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+                      '/clusters/' + CLUSTER_ID + '/tables/' + TABLE_ID)
+        if gc_rule is None:
+            column_family = data_pb2.ColumnFamily()
+        else:
+            column_family = data_pb2.ColumnFamily(gc_rule=gc_rule.to_pb())
+        request_pb = messages_pb2.CreateColumnFamilyRequest(
+            name=table_name,
+            column_family_id=COLUMN_FAMILY_ID,
+            column_family=column_family,
+        )
+
+        # Create response_pb
+        response_pb = data_pb2.ColumnFamily()
+
+        # Create expected_result.
+        expected_result = None  # create() has no return value.
+
+        # We must create the cluster with the client passed in
+        # and then the table with that cluster.
+        TEST_CASE = self
+        timeout_seconds = 4
+
+        def result_method(client):
+            cluster = client.cluster(ZONE, CLUSTER_ID)
+            table = cluster.table(TABLE_ID)
+            column_family = TEST_CASE._makeOne(COLUMN_FAMILY_ID, table)
+            return column_family.create(gc_rule=gc_rule,
+                                        timeout_seconds=timeout_seconds)
+
+        self._grpc_client_test_helper('CreateColumnFamily', result_method,
+                                      request_pb, response_pb, expected_result,
+                                      PROJECT_ID,
+                                      timeout_seconds=timeout_seconds)
+
+    def test_create(self):
+        self._create_test_helper(gc_rule=None)
+
+    def test_create_with_gc_rule(self):
+        from gcloud_bigtable.column_family import GarbageCollectionRule
+        gc_rule = GarbageCollectionRule(max_num_versions=1337)
+        self._create_test_helper(gc_rule=gc_rule)
 
 
 class _Table(object):

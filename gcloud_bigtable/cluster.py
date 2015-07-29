@@ -20,7 +20,6 @@ import re
 from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
-from gcloud_bigtable._generated import bigtable_cluster_service_pb2
 from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as table_messages_pb2)
 from gcloud_bigtable._generated import operations_pb2
@@ -28,9 +27,13 @@ from gcloud_bigtable._helpers import _parse_pb_any_to_native
 from gcloud_bigtable._helpers import _pb_timestamp_to_datetime
 from gcloud_bigtable._helpers import _require_pb_property
 from gcloud_bigtable._helpers import make_stub
-from gcloud_bigtable.table import TABLE_ADMIN_HOST
-from gcloud_bigtable.table import TABLE_ADMIN_PORT
-from gcloud_bigtable.table import TABLE_STUB_FACTORY
+from gcloud_bigtable.constants import CLUSTER_ADMIN_HOST
+from gcloud_bigtable.constants import CLUSTER_ADMIN_PORT
+from gcloud_bigtable.constants import CLUSTER_STUB_FACTORY
+from gcloud_bigtable.constants import OPERATIONS_STUB_FACTORY
+from gcloud_bigtable.constants import TABLE_ADMIN_HOST
+from gcloud_bigtable.constants import TABLE_ADMIN_PORT
+from gcloud_bigtable.constants import TABLE_STUB_FACTORY
 from gcloud_bigtable.table import Table
 
 
@@ -40,15 +43,6 @@ _CLUSTER_NAME_RE = re.compile(r'^projects/(?P<project_id>[^/]+)/'
 _OPERATION_NAME_RE = re.compile(r'^operations/projects/([^/]+)/zones/([^/]+)/'
                                 r'clusters/([a-z][-a-z0-9]*)/operations/'
                                 r'(?P<operation_id>\d+)$')
-
-CLUSTER_ADMIN_HOST = 'bigtableclusteradmin.googleapis.com'
-"""Cluster Admin API request host."""
-CLUSTER_ADMIN_PORT = 443
-"""Cluster Admin API request port."""
-
-CLUSTER_STUB_FACTORY = (bigtable_cluster_service_pb2.
-                        early_adopter_create_BigtableClusterService_stub)
-OPERATIONS_STUB_FACTORY = operations_pb2.early_adopter_create_Operations_stub
 
 
 def _prepare_create_request(cluster):
