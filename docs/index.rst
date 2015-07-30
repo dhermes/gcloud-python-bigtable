@@ -159,6 +159,7 @@ Documented Modules
    cluster
    table
    column-family
+   row
 
 Indices and tables
 ~~~~~~~~~~~~~~~~~~

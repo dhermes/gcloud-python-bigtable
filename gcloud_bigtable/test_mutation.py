@@ -16,11 +16,11 @@
 import unittest2
 
 
-class TestMutation(unittest2.TestCase):
+class TestRowMutation(unittest2.TestCase):
 
     def _getTargetClass(self):
-        from gcloud_bigtable.mutation import Mutation
-        return Mutation
+        from gcloud_bigtable.mutation import RowMutation
+        return RowMutation
 
     def _makeOne(self, *args, **kwargs):
         return self._getTargetClass()(*args, **kwargs)

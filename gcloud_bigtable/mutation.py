@@ -25,7 +25,7 @@ from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
 _EPOCH = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=pytz.utc)
 
 
-class Mutation(object):
+class RowMutation(object):
     """Accumulator class for Bigtable cell mutations.
 
     Expected to be used in ``MutateRow`` and ``CheckAndMutateRow`` requests.
