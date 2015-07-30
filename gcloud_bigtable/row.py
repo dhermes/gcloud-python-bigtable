@@ -15,10 +15,9 @@
 """User friendly container for Google Cloud Bigtable Row."""
 
 
-import six
-
 from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-from gcloud_bigtable._helpers import EPOCH as _EPOCH
+from gcloud_bigtable._helpers import _timestamp_to_microseconds
+from gcloud_bigtable._helpers import _to_bytes
 
 
 class Row(object):
@@ -29,19 +28,13 @@ class Row(object):
 
     :type table: :class:`.table.Table`
     :param table: The table that owns the row.
-
-    :raises: :class:`TypeError` if the ``row_key`` is not bytes or string.
     """
 
     ALL_COLUMNS = object()
     """Sentinel value used to indicate all columns in a column family."""
 
     def __init__(self, row_key, table):
-        if isinstance(row_key, six.text_type):
-            row_key = row_key.encode('utf-8')
-        if not isinstance(row_key, bytes):
-            raise TypeError('Row key must be bytes.')
-        self._row_key = row_key
+        self._row_key = _to_bytes(row_key)
         self._table = table
         self._pb_mutations = []
 
@@ -85,20 +78,13 @@ class Row(object):
 
         :raises: :class:`TypeError` if the ``value`` is not bytes.
         """
-        if isinstance(column, six.text_type):
-            column = column.encode('utf-8')
-        if not isinstance(value, bytes):
-            raise TypeError('Value for a cell must be bytes.')
+        column = _to_bytes(column)
+        value = _to_bytes(value)
         if timestamp is None:
             # Use -1 for current Bigtable server time.
             timestamp_micros = -1
         else:
-            timestamp_seconds = (timestamp - _EPOCH).total_seconds()
-            timestamp_micros = int(10**6 * timestamp_seconds)
-            # Truncate to millisecond resolution, since the the only value of
-            # `._generated.bigtable_table_data_pb2.Table.TimestampGranularity`
-            # is `._generated.bigtable_table_data_pb2.Table.MILLIS`.
-            timestamp_micros -= (timestamp_micros % 1000)
+            timestamp_micros = _timestamp_to_microseconds(timestamp)
 
         mutation_val = data_pb2.Mutation.SetCell(
             family_name=column_family_id,
@@ -128,12 +114,14 @@ class Row(object):
                         the entire column family will be deleted from the row.
 
         :type start: :class:`datetime.datetime`
-        :param start: (Optional) The beginning of the timestamp range within
-                      which cells should be deleted.
+        :param start: (Optional) The (inclusive) lower bound of the timestamp
+                      range within which cells should be deleted. If omitted,
+                      defaults to Unix epoch.
 
         :type end: :class:`datetime.datetime`
-        :param end: (Optional) The end of the timestamp range within which
-                    cells should be deleted.
+        :param end: (Optional) The (exclusive) upper bound of the timestamp
+                    range within which cells should be deleted. If omitted,
+                    defaults to "infinity" (no upper bound).
         """
         if columns is self.ALL_COLUMNS:
             mutation_val = data_pb2.Mutation.DeleteFromFamily(
@@ -142,5 +130,29 @@ class Row(object):
             mutation_pb = data_pb2.Mutation(delete_from_family=mutation_val)
             self._pb_mutations.append(mutation_pb)
         else:
-            time_range = [start, end]
-            raise NotImplementedError(time_range)
+            timestamp_range_kwargs = {}
+            if start is not None:
+                timestamp_range_kwargs['start_timestamp_micros'] = (
+                    _timestamp_to_microseconds(start))
+            if end is not None:
+                timestamp_range_kwargs['end_timestamp_micros'] = (
+                    _timestamp_to_microseconds(end))
+            # NOTE: If start == end == None, this will just be empty. It seems
+            #       this is equivalent to not passing ``time_range`` to the
+            #       ``DeleteFromColumn`` constructor (we are assuming that).
+            time_range = data_pb2.TimestampRange(**timestamp_range_kwargs)
+            to_append = []
+            for column in columns:
+                column = _to_bytes(column)
+                mutation_val = data_pb2.Mutation.DeleteFromColumn(
+                    family_name=column_family_id,
+                    column_qualifier=column,
+                    time_range=time_range,
+                )
+                mutation_pb = data_pb2.Mutation(
+                    delete_from_column=mutation_val)
+                to_append.append(mutation_pb)
+
+            # We don't add the mutations until all columns have been
+            # processed without error.
+            self._pb_mutations.extend(to_append)

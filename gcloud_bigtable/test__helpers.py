@@ -254,6 +254,69 @@ class Test__duration_pb_to_timedelta(unittest2.TestCase):
         self.assertEqual(result, timedelta_val)
 
 
+class Test__timestamp_to_microseconds(unittest2.TestCase):
+
+    def _callFUT(self, timestamp, granularity=1000):
+        from gcloud_bigtable._helpers import _timestamp_to_microseconds
+        return _timestamp_to_microseconds(timestamp, granularity=granularity)
+
+    def test_default_granularity(self):
+        import datetime
+        from gcloud_bigtable import _helpers as MUT
+
+        microseconds = 898294371
+        millis_granularity = microseconds - (microseconds % 1000)
+        timestamp = MUT.EPOCH + datetime.timedelta(microseconds=microseconds)
+        self.assertEqual(millis_granularity, self._callFUT(timestamp))
+
+    def test_no_granularity(self):
+        import datetime
+        from gcloud_bigtable import _helpers as MUT
+
+        microseconds = 11122205067
+        timestamp = MUT.EPOCH + datetime.timedelta(microseconds=microseconds)
+        self.assertEqual(microseconds, self._callFUT(timestamp, granularity=1))
+
+    def test_non_utc_timestamp(self):
+        import datetime
+
+        epoch_no_tz = datetime.datetime.utcfromtimestamp(0)
+        with self.assertRaises(TypeError):
+            self._callFUT(epoch_no_tz)
+
+    def test_non_datetime_timestamp(self):
+        timestamp = object()  # Not a datetime object.
+        with self.assertRaises(TypeError):
+            self._callFUT(timestamp)
+
+
+class Test__to_bytes(unittest2.TestCase):
+
+    def _callFUT(self, value):
+        from gcloud_bigtable._helpers import _to_bytes
+        return _to_bytes(value)
+
+    def test_with_bytes(self):
+        value = b'value'
+        result = self._callFUT(value)
+        # Only necessary in Py2
+        self.assertEqual(type(result), type(value))
+        self.assertEqual(result, value)
+
+    def test_with_string(self):
+        value = u'value'
+        bytes_val = b'value'
+        result = self._callFUT(value)
+        # Only necessary in Py2
+        self.assertNotEqual(type(result), type(value))
+        self.assertEqual(result, bytes_val)
+
+    def test_with_non_string_types(self):
+        value = object()
+        with self.assertRaises(TypeError):
+            self._callFUT(value)
+
+
 class Test__set_certs(unittest2.TestCase):
 
     def _callFUT(self):

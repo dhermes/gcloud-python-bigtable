@@ -113,34 +113,20 @@ class TestRow(unittest2.TestCase):
 
     def test_set_cell_with_non_null_timestamp(self):
         import datetime
-        from gcloud_bigtable import row as MUT
+        from gcloud_bigtable. _helpers import EPOCH
 
         microseconds = 898294371
         millis_granularity = microseconds - (microseconds % 1000)
-        timestamp = MUT._EPOCH + datetime.timedelta(microseconds=microseconds)
+        timestamp = EPOCH + datetime.timedelta(microseconds=microseconds)
         self._set_cell_helper(timestamp=timestamp,
                               timestamp_micros=millis_granularity)
-
-    def test_set_cell_with_non_utc_timestamp(self):
-        import datetime
-
-        microseconds = 0
-        epoch_no_tz = datetime.datetime.utcfromtimestamp(0)
-        with self.assertRaises(TypeError):
-            self._set_cell_helper(timestamp=epoch_no_tz,
-                                  timestamp_micros=microseconds)
-
-    def test_set_cell_with_non_datetime_timestamp(self):
-        timestamp = object()  # Not a datetime object.
-        with self.assertRaises(TypeError):
-            self._set_cell_helper(timestamp=timestamp)
 
     def test_delete_cells_non_iterable(self):
         table = object()
         row = self._makeOne(b'row_key', table)
         column_family_id = u'column_family_id'
         columns = object()  # Not iterable
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(TypeError):
             row.delete_cells(column_family_id, columns)
 
     def test_delete_cells_all_columns(self):
@@ -159,3 +145,102 @@ class TestRow(unittest2.TestCase):
             ),
         )
         self.assertEqual(row._pb_mutations, [expected_pb])
+
+    def test_delete_cells_no_columns(self):
+        table = object()
+        row = self._makeOne(b'row_key', table)
+        column_family_id = u'column_family_id'
+        columns = []
+        self.assertEqual(row._pb_mutations, [])
+        row.delete_cells(column_family_id, columns)
+        self.assertEqual(row._pb_mutations, [])
+
+    def _delete_cells_helper(self, time_range, start=None, end=None):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        table = object()
+        row = self._makeOne(b'row_key', table)
+        column_family_id = u'column_family_id'
+        column = b'column'
+        columns = [column]
+        self.assertEqual(row._pb_mutations, [])
+        row.delete_cells(column_family_id, columns, start=start, end=end)
+
+        expected_pb = data_pb2.Mutation(
+            delete_from_column=data_pb2.Mutation.DeleteFromColumn(
+                family_name=column_family_id,
+                column_qualifier=column,
+                time_range=time_range,
+            ),
+        )
+        self.assertEqual(row._pb_mutations, [expected_pb])
+
+    def test_delete_cells_no_time_range(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        time_range = data_pb2.TimestampRange()
+        self._delete_cells_helper(time_range)
+
+    def test_delete_cells_with_start(self):
+        import datetime
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        from gcloud_bigtable. _helpers import EPOCH
+
+        microseconds = 30871000  # Makes sure already milliseconds granularity
+        start = EPOCH + datetime.timedelta(microseconds=microseconds)
+        time_range = data_pb2.TimestampRange(
+            start_timestamp_micros=microseconds)
+        self._delete_cells_helper(time_range, start=start)
+
+    def test_delete_cells_with_end(self):
+        import datetime
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        from gcloud_bigtable. _helpers import EPOCH
+
+        microseconds = 30871000  # Makes sure already milliseconds granularity
+        end = EPOCH + datetime.timedelta(microseconds=microseconds)
+        time_range = data_pb2.TimestampRange(
+            end_timestamp_micros=microseconds)
+        self._delete_cells_helper(time_range, end=end)
+
+    def test_delete_cells_with_bad_column(self):
+        # This makes sure a failure on one of the columns doesn't leave
+        # the row's mutations in a bad state.
+        table = object()
+        row = self._makeOne(b'row_key', table)
+        column_family_id = u'column_family_id'
+        columns = [b'column', object()]
+        self.assertEqual(row._pb_mutations, [])
+        with self.assertRaises(TypeError):
+            row.delete_cells(column_family_id, columns)
+        self.assertEqual(row._pb_mutations, [])
+
+    def test_delete_cells_with_string_columns(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        table = object()
+        row = self._makeOne(b'row_key', table)
+        column_family_id = u'column_family_id'
+        column1 = u'column1'
+        column1_bytes = b'column1'
+        column2 = u'column2'
+        column2_bytes = b'column2'
+        columns = [column1, column2]
+        self.assertEqual(row._pb_mutations, [])
+        row.delete_cells(column_family_id, columns)
+
+        expected_pb1 = data_pb2.Mutation(
+            delete_from_column=data_pb2.Mutation.DeleteFromColumn(
+                family_name=column_family_id,
+                column_qualifier=column1_bytes,
+                time_range=data_pb2.TimestampRange(),
+            ),
+        )
+        expected_pb2 = data_pb2.Mutation(
+            delete_from_column=data_pb2.Mutation.DeleteFromColumn(
+                family_name=column_family_id,
+                column_qualifier=column2_bytes,
+                time_range=data_pb2.TimestampRange(),
+            ),
+        )
+        self.assertEqual(row._pb_mutations, [expected_pb1, expected_pb2])

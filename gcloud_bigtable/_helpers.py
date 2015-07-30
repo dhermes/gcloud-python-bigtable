@@ -21,6 +21,7 @@ protobuf objects.
 
 import datetime
 import pytz
+import six
 
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
@@ -193,6 +194,53 @@ def _duration_pb_to_timedelta(duration_pb):
         seconds=duration_pb.seconds,
         microseconds=(duration_pb.nanos / 1000.0),
     )
+
+
+def _timestamp_to_microseconds(timestamp, granularity=1000):
+    """Converts a native datetime object to milliseconds.
+
+    .. note::
+
+        If ``timestamp`` does not have the same timezone as ``EPOCH``
+        (which is UTC), then subtracting the epoch from the timestamp
+        will raise a :class:`TypeError`.
+
+    :type timestamp: :class:`datetime.datetime`
+    :param timestamp: A timestamp to be converted to microseconds.
+
+    :type granularity: integer
+    :param granularity: The resolution (relative to milliseconds) that the
+                        timestamp should be truncated to. Defaults to 1000
+                        and no other value is likely needed. The only value of
+                        the enum :class:`data_pb2.Table.TimestampGranularity`
+                        is `data_pb2.Table.MILLIS`.
+
+    :rtype: integer
+    :returns: The ``timestamp`` as milliseconds (with the appropriate
+              granularity).
+    """
+    timestamp_seconds = (timestamp - EPOCH).total_seconds()
+    timestamp_micros = int(10**6 * timestamp_seconds)
+    # Truncate to granularity.
+    timestamp_micros -= (timestamp_micros % granularity)
+    return timestamp_micros
+
+
+def _to_bytes(value):
+    """Converts a value to bytes (or checks that it already is).
+
+    :type value: bytes (or string)
+    :param value: The value to ensure is converted to bytes.
+
+    :rtype: bytes
+    :returns: The ``value`` as bytes.
+    :raises: :class:`TypeError` if the ``value`` is not bytes or string.
+    """
+    if isinstance(value, six.text_type):
+        value = value.encode('utf-8')
+    if not isinstance(value, bytes):
+        raise TypeError('Row key must be bytes.')
+    return value
 
 
 def _set_certs():
