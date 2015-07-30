@@ -13,10 +13,35 @@
 # limitations under the License.
 
 
-import unittest2
+from gcloud_bigtable._grpc_mocks import GRPCMockTestMixin
 
 
-class TestRow(unittest2.TestCase):
+ROW_KEY = b'row_key'
+ROW_KEY_NON_BYTES = u'row_key'
+COLUMN = b'column'
+COLUMN_NON_BYTES = u'column'
+COLUMN_FAMILY_ID = u'column_family_id'
+
+
+class TestRow(GRPCMockTestMixin):
+
+    @classmethod
+    def setUpClass(cls):
+        from gcloud_bigtable import client
+        from gcloud_bigtable import row as MUT
+        cls._MUT = MUT
+        cls._STUB_SCOPES = [client.DATA_SCOPE]
+        cls._STUB_FACTORY_NAME = 'DATA_STUB_FACTORY'
+        cls._STUB_HOST = MUT.DATA_API_HOST
+        cls._STUB_PORT = MUT.DATA_API_PORT
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls._MUT
+        del cls._STUB_SCOPES
+        del cls._STUB_FACTORY_NAME
+        del cls._STUB_HOST
+        del cls._STUB_PORT
 
     def _getTargetClass(self):
         from gcloud_bigtable.row import Row
@@ -36,13 +61,10 @@ class TestRow(unittest2.TestCase):
         self.assertEqual(row._pb_mutations, [])
 
     def test_constructor(self):
-        row_key = b'row_key'
-        self._constructor_helper(row_key)
+        self._constructor_helper(ROW_KEY)
 
     def test_constructor_with_unicode(self):
-        row_key = u'row_key'
-        row_key_expected = b'row_key'
-        self._constructor_helper(row_key, row_key_expected=row_key_expected)
+        self._constructor_helper(ROW_KEY_NON_BYTES, row_key_expected=ROW_KEY)
 
     def test_constructor_with_non_bytes(self):
         row_key = object()
@@ -51,18 +73,29 @@ class TestRow(unittest2.TestCase):
 
     def test_table_getter(self):
         table = object()
-        row = self._makeOne(b'row_key', table)
+        row = self._makeOne(ROW_KEY, table)
         self.assertTrue(row.table is table)
 
     def test_row_key_getter(self):
-        row_key = b'row_key'
-        row = self._makeOne(row_key, object())
-        self.assertEqual(row.row_key, row_key)
+        row = self._makeOne(ROW_KEY, object())
+        self.assertEqual(row.row_key, ROW_KEY)
+
+    def test_client_getter(self):
+        client = object()
+        table = _Table(None, client=client)
+        row = self._makeOne(ROW_KEY, table)
+        self.assertTrue(row.client is client)
+
+    def test_timeout_seconds_getter(self):
+        timeout_seconds = 889
+        table = _Table(None, timeout_seconds=timeout_seconds)
+        row = self._makeOne(ROW_KEY, table)
+        self.assertEqual(row.timeout_seconds, timeout_seconds)
 
     def test_delete(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
 
-        row = self._makeOne(b'row_key', object())
+        row = self._makeOne(ROW_KEY, object())
         self.assertEqual(row._pb_mutations, [])
         row.delete()
 
@@ -71,22 +104,21 @@ class TestRow(unittest2.TestCase):
         )
         self.assertEqual(row._pb_mutations, [expected_pb])
 
-    def _set_cell_helper(self, column=b'column',
+    def _set_cell_helper(self, column=COLUMN,
                          column_bytes=None, timestamp=None,
                          timestamp_micros=-1):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
 
         table = object()
-        row = self._makeOne(b'row_key', table)
-        column_family_id = u'column_family_id'
+        row = self._makeOne(ROW_KEY, table)
         value = b'foobar'
         self.assertEqual(row._pb_mutations, [])
-        row.set_cell(column_family_id, column,
+        row.set_cell(COLUMN_FAMILY_ID, column,
                      value, timestamp=timestamp)
 
         expected_pb = data_pb2.Mutation(
             set_cell=data_pb2.Mutation.SetCell(
-                family_name=column_family_id,
+                family_name=COLUMN_FAMILY_ID,
                 column_qualifier=column_bytes or column,
                 timestamp_micros=timestamp_micros,
                 value=value,
@@ -95,18 +127,14 @@ class TestRow(unittest2.TestCase):
         self.assertEqual(row._pb_mutations, [expected_pb])
 
     def test_set_cell(self):
-        column = b'column'
-        self._set_cell_helper(column=column)
+        self._set_cell_helper(column=COLUMN)
 
     def test_set_cell_with_string_column(self):
-        column = u'column'
-        column_bytes = b'column'
-        self._set_cell_helper(column=column,
-                              column_bytes=column_bytes)
+        self._set_cell_helper(column=COLUMN_NON_BYTES, column_bytes=COLUMN)
 
     def test_set_cell_with_non_bytes_value(self):
         table = object()
-        row = self._makeOne(b'row_key', table)
+        row = self._makeOne(ROW_KEY, table)
         value = object()  # Not bytes
         with self.assertRaises(TypeError):
             row.set_cell(None, None, value)
@@ -137,71 +165,64 @@ class TestRow(unittest2.TestCase):
                 self._kwargs.append(kwargs)
 
         table = object()
-        mock_row = MockRow(b'row_key', table)
+        mock_row = MockRow(ROW_KEY, table)
         # Make sure no values are set before calling the method.
         self.assertEqual(mock_row._pb_mutations, [])
         self.assertEqual(mock_row._args, [])
         self.assertEqual(mock_row._kwargs, [])
 
         # Actually make the request against the mock class.
-        column_family_id = u'column_family_id'
-        column = b'column'
         start = object()
         end = object()
-        mock_row.delete_cell(column_family_id, column, start=start, end=end)
+        mock_row.delete_cell(COLUMN_FAMILY_ID, COLUMN, start=start, end=end)
         self.assertEqual(mock_row._pb_mutations, [])
-        self.assertEqual(mock_row._args, [(column_family_id, [column])])
+        self.assertEqual(mock_row._args, [(COLUMN_FAMILY_ID, [COLUMN])])
         self.assertEqual(mock_row._kwargs, [{'end': end, 'start': start}])
 
     def test_delete_cells_non_iterable(self):
         table = object()
-        row = self._makeOne(b'row_key', table)
-        column_family_id = u'column_family_id'
+        row = self._makeOne(ROW_KEY, table)
         columns = object()  # Not iterable
         with self.assertRaises(TypeError):
-            row.delete_cells(column_family_id, columns)
+            row.delete_cells(COLUMN_FAMILY_ID, columns)
 
     def test_delete_cells_all_columns(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
 
         table = object()
-        row = self._makeOne(b'row_key', table)
+        row = self._makeOne(ROW_KEY, table)
         klass = self._getTargetClass()
-        column_family_id = u'column_family_id'
         self.assertEqual(row._pb_mutations, [])
-        row.delete_cells(column_family_id, klass.ALL_COLUMNS)
+        row.delete_cells(COLUMN_FAMILY_ID, klass.ALL_COLUMNS)
 
         expected_pb = data_pb2.Mutation(
             delete_from_family=data_pb2.Mutation.DeleteFromFamily(
-                family_name=column_family_id,
+                family_name=COLUMN_FAMILY_ID,
             ),
         )
         self.assertEqual(row._pb_mutations, [expected_pb])
 
     def test_delete_cells_no_columns(self):
         table = object()
-        row = self._makeOne(b'row_key', table)
-        column_family_id = u'column_family_id'
+        row = self._makeOne(ROW_KEY, table)
         columns = []
         self.assertEqual(row._pb_mutations, [])
-        row.delete_cells(column_family_id, columns)
+        row.delete_cells(COLUMN_FAMILY_ID, columns)
         self.assertEqual(row._pb_mutations, [])
 
     def _delete_cells_helper(self, time_range, start=None, end=None):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
 
         table = object()
-        row = self._makeOne(b'row_key', table)
-        column_family_id = u'column_family_id'
-        column = b'column'
-        columns = [column]
+        row = self._makeOne(ROW_KEY, table)
+        columns = [COLUMN]
         self.assertEqual(row._pb_mutations, [])
-        row.delete_cells(column_family_id, columns, start=start, end=end)
+        row.delete_cells(COLUMN_FAMILY_ID, columns, start=start, end=end)
 
         expected_pb = data_pb2.Mutation(
             delete_from_column=data_pb2.Mutation.DeleteFromColumn(
-                family_name=column_family_id,
-                column_qualifier=column,
+                family_name=COLUMN_FAMILY_ID,
+                column_qualifier=COLUMN,
                 time_range=time_range,
             ),
         )
@@ -239,40 +260,97 @@ class TestRow(unittest2.TestCase):
         # This makes sure a failure on one of the columns doesn't leave
         # the row's mutations in a bad state.
         table = object()
-        row = self._makeOne(b'row_key', table)
-        column_family_id = u'column_family_id'
-        columns = [b'column', object()]
+        row = self._makeOne(ROW_KEY, table)
+        columns = [COLUMN, object()]
         self.assertEqual(row._pb_mutations, [])
         with self.assertRaises(TypeError):
-            row.delete_cells(column_family_id, columns)
+            row.delete_cells(COLUMN_FAMILY_ID, columns)
         self.assertEqual(row._pb_mutations, [])
 
     def test_delete_cells_with_string_columns(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
 
         table = object()
-        row = self._makeOne(b'row_key', table)
-        column_family_id = u'column_family_id'
+        row = self._makeOne(ROW_KEY, table)
         column1 = u'column1'
         column1_bytes = b'column1'
         column2 = u'column2'
         column2_bytes = b'column2'
         columns = [column1, column2]
         self.assertEqual(row._pb_mutations, [])
-        row.delete_cells(column_family_id, columns)
+        row.delete_cells(COLUMN_FAMILY_ID, columns)
 
         expected_pb1 = data_pb2.Mutation(
             delete_from_column=data_pb2.Mutation.DeleteFromColumn(
-                family_name=column_family_id,
+                family_name=COLUMN_FAMILY_ID,
                 column_qualifier=column1_bytes,
                 time_range=data_pb2.TimestampRange(),
             ),
         )
         expected_pb2 = data_pb2.Mutation(
             delete_from_column=data_pb2.Mutation.DeleteFromColumn(
-                family_name=column_family_id,
+                family_name=COLUMN_FAMILY_ID,
                 column_qualifier=column2_bytes,
                 time_range=data_pb2.TimestampRange(),
             ),
         )
         self.assertEqual(row._pb_mutations, [expected_pb1, expected_pb2])
+
+    def test_commit(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._generated import empty_pb2
+
+        # Create request_pb
+        value = b'bytes-value'
+        project_id = 'project-id'
+        zone = 'zone'
+        cluster_id = 'cluster-id'
+        table_id = 'table-id'
+        table_name = ('projects/' + project_id + '/zones/' + zone +
+                      '/clusters/' + cluster_id + '/tables/' + table_id)
+        mutation = data_pb2.Mutation(
+            set_cell=data_pb2.Mutation.SetCell(
+                family_name=COLUMN_FAMILY_ID,
+                column_qualifier=COLUMN,
+                timestamp_micros=-1,  # Default value.
+                value=value,
+            ),
+        )
+        request_pb = messages_pb2.MutateRowRequest(
+            table_name=table_name,
+            row_key=ROW_KEY,
+            mutations=[mutation],
+        )
+
+        # Create response_pb
+        response_pb = empty_pb2.Empty()
+
+        # Create expected_result.
+        expected_result = None  # delete() has no return value.
+
+        # We must create the cluster with the client passed in
+        # and then the table with that cluster.
+        TEST_CASE = self
+        timeout_seconds = 711
+
+        def result_method(client):
+            cluster = client.cluster(zone, cluster_id)
+            table = cluster.table(table_id)
+            row = TEST_CASE._makeOne(ROW_KEY, table)
+            row.set_cell(COLUMN_FAMILY_ID, COLUMN, value)
+            return row.commit(timeout_seconds=timeout_seconds)
+
+        self._grpc_client_test_helper('MutateRow', result_method,
+                                      request_pb, response_pb, expected_result,
+                                      project_id,
+                                      timeout_seconds=timeout_seconds)
+
+
+class _Table(object):
+
+    def __init__(self, name, client=None, timeout_seconds=None):
+        self.name = name
+        self.client = client
+        self.timeout_seconds = timeout_seconds

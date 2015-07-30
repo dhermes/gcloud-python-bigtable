@@ -16,6 +16,7 @@
 
 
 from gcloud_bigtable._generated import bigtable_cluster_service_pb2
+from gcloud_bigtable._generated import bigtable_service_pb2
 from gcloud_bigtable._generated import bigtable_table_service_pb2
 from gcloud_bigtable._generated import operations_pb2
 
@@ -33,5 +34,12 @@ CLUSTER_ADMIN_HOST = 'bigtableclusteradmin.googleapis.com'
 """Cluster Admin API request host."""
 CLUSTER_ADMIN_PORT = 443
 """Cluster Admin API request port."""
+
+DATA_STUB_FACTORY = (bigtable_service_pb2.
+                     early_adopter_create_BigtableService_stub)
+DATA_API_HOST = 'bigtable.googleapis.com'
+"""Data API request host."""
+DATA_API_PORT = 443
+"""Data API request port."""
 
 OPERATIONS_STUB_FACTORY = operations_pb2.early_adopter_create_Operations_stub

@@ -16,12 +16,25 @@
 
 
 from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+from gcloud_bigtable._generated import (
+    bigtable_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._helpers import _timestamp_to_microseconds
 from gcloud_bigtable._helpers import _to_bytes
+from gcloud_bigtable._helpers import make_stub
+from gcloud_bigtable.constants import DATA_API_HOST
+from gcloud_bigtable.constants import DATA_API_PORT
+from gcloud_bigtable.constants import DATA_STUB_FACTORY
 
 
 class Row(object):
     """Representation of a Google Cloud Bigtable Column Row.
+
+    .. note::
+
+        A :class:`Row` accumulates mutations locally via the :meth:`set_cell`,
+        :meth:`delete`, :meth:`delete_cell` and :meth:`delete_cells` methods.
+        To actually send these mutations to the Google Cloud Bigtable API, you
+        must call :meth:`commit`.
 
     :type row_key: bytes (or string)
     :param row_key: The key for the current row.
@@ -56,12 +69,38 @@ class Row(object):
         """
         return self._row_key
 
+    @property
+    def client(self):
+        """Getter for row's client.
+
+        :rtype: :class:`.client.Client`
+        :returns: The client that owns this row.
+        """
+        return self.table.client
+
+    @property
+    def timeout_seconds(self):
+        """Getter for row's default timeout seconds.
+
+        :rtype: integer
+        :returns: The timeout seconds default.
+        """
+        return self.table.timeout_seconds
+
     def set_cell(self, column_family_id, column, value, timestamp=None):
         """Sets a value in this row.
 
         The cell is determined by the ``row_key`` of the :class:`Row` and the
         ``column``. The ``column`` must be in an existing
-        :class:`.column_family.ColumnFamily`.
+        :class:`.column_family.ColumnFamily` (as determined by
+        ``column_family_id``).
+
+        .. note::
+
+            This method adds a mutation to the accumulated mutations on this
+            :class:`Row`, but does not make an API request. To actually
+            send an API request (with the mutations) to the Google Cloud
+            Bigtable API, call :meth:`commit`.
 
         :type column_family_id: string
         :param column_family_id: The column family that contains the column.
@@ -96,13 +135,28 @@ class Row(object):
         self._pb_mutations.append(mutation_pb)
 
     def delete(self):
-        """Deletes this row from the table."""
+        """Deletes this row from the table.
+
+        .. note::
+
+            This method adds a mutation to the accumulated mutations on this
+            :class:`Row`, but does not make an API request. To actually
+            send an API request (with the mutations) to the Google Cloud
+            Bigtable API, call :meth:`commit`.
+        """
         mutation_val = data_pb2.Mutation.DeleteFromRow()
         mutation_pb = data_pb2.Mutation(delete_from_row=mutation_val)
         self._pb_mutations.append(mutation_pb)
 
     def delete_cell(self, column_family_id, column, start=None, end=None):
         """Deletes cell in this row.
+
+        .. note::
+
+            This method adds a mutation to the accumulated mutations on this
+            :class:`Row`, but does not make an API request. To actually
+            send an API request (with the mutations) to the Google Cloud
+            Bigtable API, call :meth:`commit`.
 
         :type column_family_id: string
         :param column_family_id: The column family that contains the column
@@ -126,6 +180,13 @@ class Row(object):
 
     def delete_cells(self, column_family_id, columns, start=None, end=None):
         """Deletes cells in this row.
+
+        .. note::
+
+            This method adds a mutation to the accumulated mutations on this
+            :class:`Row`, but does not make an API request. To actually
+            send an API request (with the mutations) to the Google Cloud
+            Bigtable API, call :meth:`commit`.
 
         :type column_family_id: string
         :param column_family_id: The column family that contains the column
@@ -179,3 +240,31 @@ class Row(object):
             # We don't add the mutations until all columns have been
             # processed without error.
             self._pb_mutations.extend(to_append)
+
+    def commit(self, timeout_seconds=None):
+        """Makes a ``MutateRow`` API request.
+
+        .. note::
+
+            After committing the accumulated mutations, resets the local
+            mutations to an empty list.
+
+        :type timeout_seconds: integer
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to value set on row.
+        """
+        request_pb = messages_pb2.MutateRowRequest(
+            table_name=self.table.name,
+            row_key=self.row_key,
+            mutations=self._pb_mutations,
+        )
+        stub = make_stub(self.client, DATA_STUB_FACTORY,
+                         DATA_API_HOST, DATA_API_PORT)
+        with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
+            response = stub.MutateRow.async(request_pb, timeout_seconds)
+            # We expect a `._generated.empty_pb2.Empty`.
+            response.result()
+
+        # Reset mutations after commit-ing request.
+        self._pb_mutations = []
