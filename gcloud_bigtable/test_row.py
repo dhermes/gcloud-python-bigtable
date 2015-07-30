@@ -70,3 +70,66 @@ class TestRow(unittest2.TestCase):
             delete_from_row=data_pb2.Mutation.DeleteFromRow(),
         )
         self.assertEqual(row._pb_mutations, [expected_pb])
+
+    def _set_cell_helper(self, column=b'column',
+                         column_bytes=None, timestamp=None,
+                         timestamp_micros=-1):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        table = object()
+        row = self._makeOne(b'row_key', table)
+        column_family_id = u'column_family_id'
+        value = b'foobar'
+        row.set_cell(column_family_id, column,
+                     value, timestamp=timestamp)
+
+        expected_pb = data_pb2.Mutation(
+            set_cell=data_pb2.Mutation.SetCell(
+                family_name=column_family_id,
+                column_qualifier=column_bytes or column,
+                timestamp_micros=timestamp_micros,
+                value=value,
+            ),
+        )
+        self.assertEqual(row._pb_mutations, [expected_pb])
+
+    def test_set_cell(self):
+        column = b'column'
+        self._set_cell_helper(column=column)
+
+    def test_set_cell_with_string_column(self):
+        column = u'column'
+        column_bytes = b'column'
+        self._set_cell_helper(column=column,
+                              column_bytes=column_bytes)
+
+    def test_set_cell_with_non_bytes_value(self):
+        table = object()
+        row = self._makeOne(b'row_key', table)
+        value = object()  # Not bytes
+        with self.assertRaises(TypeError):
+            row.set_cell(None, None, value)
+
+    def test_set_cell_with_non_null_timestamp(self):
+        import datetime
+        from gcloud_bigtable import row as MUT
+
+        microseconds = 898294371
+        millis_granularity = microseconds - (microseconds % 1000)
+        timestamp = MUT._EPOCH + datetime.timedelta(microseconds=microseconds)
+        self._set_cell_helper(timestamp=timestamp,
+                              timestamp_micros=millis_granularity)
+
+    def test_set_cell_with_non_utc_timestamp(self):
+        import datetime
+
+        microseconds = 0
+        epoch_no_tz = datetime.datetime.utcfromtimestamp(0)
+        with self.assertRaises(TypeError):
+            self._set_cell_helper(timestamp=epoch_no_tz,
+                                  timestamp_micros=microseconds)
+
+    def test_set_cell_with_non_datetime_timestamp(self):
+        timestamp = object()  # Not a datetime object.
+        with self.assertRaises(TypeError):
+            self._set_cell_helper(timestamp=timestamp)

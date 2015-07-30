@@ -15,9 +15,14 @@
 """User friendly container for Google Cloud Bigtable Row."""
 
 
+import datetime
 import six
+import pytz
 
 from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+
+_EPOCH = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=pytz.utc)
 
 
 class Row(object):
@@ -58,6 +63,52 @@ class Row(object):
         :returns: The key for the row.
         """
         return self._row_key
+
+    def set_cell(self, column_family_id, column, value, timestamp=None):
+        """Sets a value in this row.
+
+        The cell is determined by the ``row_key`` of the :class:`Row` and the
+        ``column``. The ``column`` must be in an existing
+        :class:`.column_family.ColumnFamily`.
+
+        :type column_family_id: string
+        :param column_family_id: The column family that contains the column.
+
+        :type column: bytes (or string)
+        :param column: The column within the column family where the cell
+                       is located.
+
+        :type value: bytes
+        :param value: The value to set in the cell.
+
+        :type timestamp: :class:`datetime.datetime`
+        :param timestamp: (Optional) The timestamp of the operation.
+
+        :raises: :class:`TypeError` if the ``value`` is not bytes.
+        """
+        if isinstance(column, six.text_type):
+            column = column.encode('utf-8')
+        if not isinstance(value, bytes):
+            raise TypeError('Value for a cell must be bytes.')
+        if timestamp is None:
+            # Use -1 for current Bigtable server time.
+            timestamp_micros = -1
+        else:
+            timestamp_seconds = (timestamp - _EPOCH).total_seconds()
+            timestamp_micros = int(10**6 * timestamp_seconds)
+            # Truncate to millisecond resolution, since the the only value of
+            # `._generated.bigtable_table_data_pb2.Table.TimestampGranularity`
+            # is `._generated.bigtable_table_data_pb2.Table.MILLIS`.
+            timestamp_micros -= (timestamp_micros % 1000)
+
+        mutation_val = data_pb2.Mutation.SetCell(
+            family_name=column_family_id,
+            column_qualifier=column,
+            timestamp_micros=timestamp_micros,
+            value=value,
+        )
+        mutation_pb = data_pb2.Mutation(set_cell=mutation_val)
+        self._pb_mutations.append(mutation_pb)
 
     def delete(self):
         """Deletes this row from the table."""
