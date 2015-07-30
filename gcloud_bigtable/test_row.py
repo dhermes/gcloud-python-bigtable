@@ -58,3 +58,15 @@ class TestRow(unittest2.TestCase):
         row_key = b'row_key'
         row = self._makeOne(row_key, object())
         self.assertEqual(row.row_key, row_key)
+
+    def test_delete(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        row = self._makeOne(b'row_key', object())
+        self.assertEqual(row._pb_mutations, [])
+        row.delete()
+
+        expected_pb = data_pb2.Mutation(
+            delete_from_row=data_pb2.Mutation.DeleteFromRow(),
+        )
+        self.assertEqual(row._pb_mutations, [expected_pb])

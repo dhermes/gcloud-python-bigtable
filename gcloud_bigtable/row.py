@@ -17,6 +17,8 @@
 
 import six
 
+from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
 
 class Row(object):
     """Representation of a Google Cloud Bigtable Column Row.
@@ -56,3 +58,9 @@ class Row(object):
         :returns: The key for the row.
         """
         return self._row_key
+
+    def delete(self):
+        """Deletes this row from the table."""
+        mutation_val = data_pb2.Mutation.DeleteFromRow()
+        mutation_pb = data_pb2.Mutation(delete_from_row=mutation_val)
+        self._pb_mutations.append(mutation_pb)
