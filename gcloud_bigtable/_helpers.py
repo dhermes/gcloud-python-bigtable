@@ -41,6 +41,7 @@ _TYPE_URL_MAP = {
         messages_pb2.UpdateClusterMetadata),
 }
 
+EPOCH = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=pytz.utc)
 # See https://gist.github.com/dhermes/bbc5b7be1932bfffae77
 # for appropriate values on other systems.
 SSL_CERT_FILE = '/etc/ssl/certs/ca-certificates.crt'
@@ -82,14 +83,13 @@ def _pb_timestamp_to_datetime(timestamp):
     :rtype: :class:`datetime.datetime`
     :returns: A UTC datetime object converted from a protobuf timestamp.
     """
-    naive_dt = (
-        datetime.datetime.utcfromtimestamp(0) +
+    return (
+        EPOCH +
         datetime.timedelta(
             seconds=timestamp.seconds,
             microseconds=(timestamp.nanos / 1000.0),
         )
     )
-    return naive_dt.replace(tzinfo=pytz.utc)
 
 
 def _require_pb_property(message_pb, property_name, value):

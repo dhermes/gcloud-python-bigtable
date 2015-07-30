@@ -80,6 +80,7 @@ class TestRow(unittest2.TestCase):
         row = self._makeOne(b'row_key', table)
         column_family_id = u'column_family_id'
         value = b'foobar'
+        self.assertEqual(row._pb_mutations, [])
         row.set_cell(column_family_id, column,
                      value, timestamp=timestamp)
 
@@ -133,3 +134,28 @@ class TestRow(unittest2.TestCase):
         timestamp = object()  # Not a datetime object.
         with self.assertRaises(TypeError):
             self._set_cell_helper(timestamp=timestamp)
+
+    def test_delete_cells_non_iterable(self):
+        table = object()
+        row = self._makeOne(b'row_key', table)
+        column_family_id = u'column_family_id'
+        columns = object()  # Not iterable
+        with self.assertRaises(NotImplementedError):
+            row.delete_cells(column_family_id, columns)
+
+    def test_delete_cells_all_columns(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        table = object()
+        row = self._makeOne(b'row_key', table)
+        klass = self._getTargetClass()
+        column_family_id = u'column_family_id'
+        self.assertEqual(row._pb_mutations, [])
+        row.delete_cells(column_family_id, klass.ALL_COLUMNS)
+
+        expected_pb = data_pb2.Mutation(
+            delete_from_family=data_pb2.Mutation.DeleteFromFamily(
+                family_name=column_family_id,
+            ),
+        )
+        self.assertEqual(row._pb_mutations, [expected_pb])

@@ -15,14 +15,10 @@
 """User friendly container for Google Cloud Bigtable Row."""
 
 
-import datetime
 import six
-import pytz
 
 from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-
-
-_EPOCH = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=pytz.utc)
+from gcloud_bigtable._helpers import EPOCH as _EPOCH
 
 
 class Row(object):
@@ -36,6 +32,9 @@ class Row(object):
 
     :raises: :class:`TypeError` if the ``row_key`` is not bytes or string.
     """
+
+    ALL_COLUMNS = object()
+    """Sentinel value used to indicate all columns in a column family."""
 
     def __init__(self, row_key, table):
         if isinstance(row_key, six.text_type):
@@ -115,3 +114,33 @@ class Row(object):
         mutation_val = data_pb2.Mutation.DeleteFromRow()
         mutation_pb = data_pb2.Mutation(delete_from_row=mutation_val)
         self._pb_mutations.append(mutation_pb)
+
+    def delete_cells(self, column_family_id, columns, start=None, end=None):
+        """Deletes cells in this row.
+
+        :type column_family_id: string
+        :param column_family_id: The column family that contains the column
+                                 or columns with cells being deleted.
+
+        :type columns: iterable of bytes (or strings) or object
+        :param columns: The columns within the column family that will have
+                        cells deleted. If :attr:`Row.ALL_COLUMNS` is used then
+                        the entire column family will be deleted from the row.
+
+        :type start: :class:`datetime.datetime`
+        :param start: (Optional) The beginning of the timestamp range within
+                      which cells should be deleted.
+
+        :type end: :class:`datetime.datetime`
+        :param end: (Optional) The end of the timestamp range within which
+                    cells should be deleted.
+        """
+        if columns is self.ALL_COLUMNS:
+            mutation_val = data_pb2.Mutation.DeleteFromFamily(
+                family_name=column_family_id,
+            )
+            mutation_pb = data_pb2.Mutation(delete_from_family=mutation_val)
+            self._pb_mutations.append(mutation_pb)
+        else:
+            time_range = [start, end]
+            raise NotImplementedError(time_range)
