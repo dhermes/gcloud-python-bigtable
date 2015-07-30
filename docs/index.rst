@@ -155,7 +155,6 @@ Documented Modules
    :maxdepth: 2
 
    constants
-   data-connection
    client
    cluster
    table

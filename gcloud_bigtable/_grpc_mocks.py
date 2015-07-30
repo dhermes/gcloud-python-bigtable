@@ -120,47 +120,6 @@ class GRPCMockTestMixin(unittest2.TestCase):
     from an instance returns a "bound method", rather than the value we want.
     """
 
-    def _grpc_call_helper(self, call_method, method_name, request_obj,
-                          stub_factory=None):
-        from gcloud_bigtable._testing import _MockWithAttachedMethods
-        from gcloud_bigtable._testing import _Monkey
-
-        credentials = _MockWithAttachedMethods(False)
-        connection = self._makeOne(credentials=credentials)
-
-        expected_result = object()
-        mock_make_stub = StubMockFactory(expected_result)
-        with _Monkey(self._MUT, make_stub=mock_make_stub):
-            result = call_method(connection)
-
-        self.assertTrue(result is expected_result)
-        self.assertEqual(credentials._called, [])
-
-        # Check all the stubs that were created and used as a context
-        # manager (should be just one).
-        factory_args = (
-            credentials,
-            stub_factory or getattr(self._MUT, self._STUB_FACTORY_NAME),
-            self._STUB_HOST,
-            self._STUB_PORT,
-        )
-        self.assertEqual(mock_make_stub.factory_calls,
-                         [(factory_args, {})])
-        self.assertEqual(len(mock_make_stub.stubs), 1)
-        stub = mock_make_stub.stubs[0]
-        self.assertEqual(stub._enter_calls, 1)
-        self.assertEqual(stub._exit_args,
-                         [(None, None, None)])
-        # Check all the method calls.
-        method_calls = [
-            (
-                method_name,
-                (request_obj, self._MUT.TIMEOUT_SECONDS),
-                {},
-            )
-        ]
-        self.assertEqual(mock_make_stub.method_calls, method_calls)
-
     def _grpc_client_test_helper(self, method_name, result_method, request_pb,
                                  response_pb, expected_result, project_id,
                                  stub_factory=None, stub_host=None,
