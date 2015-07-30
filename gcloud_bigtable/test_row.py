@@ -121,6 +121,38 @@ class TestRow(unittest2.TestCase):
         self._set_cell_helper(timestamp=timestamp,
                               timestamp_micros=millis_granularity)
 
+    def test_delete_cell(self):
+        klass = self._getTargetClass()
+
+        class MockRow(klass):
+
+            def __init__(self, *args, **kwargs):
+                super(MockRow, self).__init__(*args, **kwargs)
+                self._args = []
+                self._kwargs = []
+
+            # Replace the called method with one that logs arguments.
+            def delete_cells(self, *args, **kwargs):
+                self._args.append(args)
+                self._kwargs.append(kwargs)
+
+        table = object()
+        mock_row = MockRow(b'row_key', table)
+        # Make sure no values are set before calling the method.
+        self.assertEqual(mock_row._pb_mutations, [])
+        self.assertEqual(mock_row._args, [])
+        self.assertEqual(mock_row._kwargs, [])
+
+        # Actually make the request against the mock class.
+        column_family_id = u'column_family_id'
+        column = b'column'
+        start = object()
+        end = object()
+        mock_row.delete_cell(column_family_id, column, start=start, end=end)
+        self.assertEqual(mock_row._pb_mutations, [])
+        self.assertEqual(mock_row._args, [(column_family_id, [column])])
+        self.assertEqual(mock_row._kwargs, [{'end': end, 'start': start}])
+
     def test_delete_cells_non_iterable(self):
         table = object()
         row = self._makeOne(b'row_key', table)

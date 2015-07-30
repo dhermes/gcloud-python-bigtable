@@ -101,6 +101,29 @@ class Row(object):
         mutation_pb = data_pb2.Mutation(delete_from_row=mutation_val)
         self._pb_mutations.append(mutation_pb)
 
+    def delete_cell(self, column_family_id, column, start=None, end=None):
+        """Deletes cell in this row.
+
+        :type column_family_id: string
+        :param column_family_id: The column family that contains the column
+                                 or columns with cells being deleted.
+
+        :type column: bytes (or string)
+        :param column: The column within the column family that will have a
+                       cell deleted.
+
+        :type start: :class:`datetime.datetime`
+        :param start: (Optional) The (inclusive) lower bound of the timestamp
+                      range within which cells should be deleted. If omitted,
+                      defaults to Unix epoch.
+
+        :type end: :class:`datetime.datetime`
+        :param end: (Optional) The (exclusive) upper bound of the timestamp
+                    range within which cells should be deleted. If omitted,
+                    defaults to "infinity" (no upper bound).
+        """
+        self.delete_cells(column_family_id, [column], start=start, end=end)
+
     def delete_cells(self, column_family_id, columns, start=None, end=None):
         """Deletes cells in this row.
 
