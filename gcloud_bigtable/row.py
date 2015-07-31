@@ -286,6 +286,11 @@ class Row(object):
         self._pb_mutations = []
 
 
+# NOTE: For developers, this class may seem to be a bit verbose, i.e.
+#       a list of property names and **kwargs may do the trick better
+#       than actually listing every single argument. However, for the sake
+#       of users and documentation, listing every single argument is more
+#       useful.
 class RowFilter(object):
     """Basic filter to apply to cells in a row.
 
