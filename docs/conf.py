@@ -15,7 +15,6 @@
 import os
 from pkg_resources import get_distribution
 import sys
-import shlex
 import types
 
 import sphinx_rtd_theme
