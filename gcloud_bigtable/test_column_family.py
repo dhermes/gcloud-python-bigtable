@@ -40,7 +40,7 @@ class TestGarbageCollectionRule(unittest2.TestCase):
         self.assertEqual(gc_rule.max_age, None)
 
     def test_constructor_failure(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             self._makeOne(max_num_versions=1, max_age=object())
 
     def test___eq__max_age(self):

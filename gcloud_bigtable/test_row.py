@@ -13,6 +13,8 @@
 # limitations under the License.
 
 
+import unittest2
+
 from gcloud_bigtable._grpc_mocks import GRPCMockTestMixin
 
 
@@ -372,6 +374,99 @@ class TestRow(GRPCMockTestMixin):
             row.commit()
         # Make sure no stub was ever created, i.e. no request was sent.
         mock_make_stub.check_called(self, [])
+
+
+class TestRowFilter(unittest2.TestCase):
+
+    _PROPERTIES = (
+        'row_key_regex_filter',
+        'family_name_regex_filter',
+        'column_qualifier_regex_filter',
+        'value_regex_filter',
+        'cells_per_row_offset_filter',
+        'cells_per_row_limit_filter',
+        'cells_per_column_limit_filter',
+        'row_sample_filter',
+        'strip_value_transformer',
+    )
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import RowFilter
+        return RowFilter
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_constructor_defaults(self):
+        # Fails unless exactly one property is passed.
+        with self.assertRaises(TypeError):
+            self._makeOne()
+
+    def test_constructor_too_many_values(self):
+        # Fails unless exactly one property is passed.
+        with self.assertRaises(TypeError):
+            self._makeOne(row_key_regex_filter=b'value',
+                          cells_per_column_limit_filter=10)
+
+    def _row_filter_values_check(self, row_filter, value_name, value):
+        for prop_name in self._PROPERTIES:
+            prop_value = getattr(row_filter, prop_name)
+            if prop_name == value_name:
+                self.assertEqual(prop_value, value)
+            else:
+                self.assertTrue(prop_value is None)
+
+    def test_constructor_row_key_regex_filter(self):
+        value = b'row-key-regex'
+        row_filter = self._makeOne(row_key_regex_filter=value)
+        self._row_filter_values_check(
+            row_filter, 'row_key_regex_filter', value)
+
+    def test_constructor_family_name_regex_filter(self):
+        value = u'family-regex'
+        row_filter = self._makeOne(family_name_regex_filter=value)
+        self._row_filter_values_check(
+            row_filter, 'family_name_regex_filter', value)
+
+    def test_constructor_column_qualifier_regex_filter(self):
+        value = b'column-regex'
+        row_filter = self._makeOne(column_qualifier_regex_filter=value)
+        self._row_filter_values_check(
+            row_filter, 'column_qualifier_regex_filter', value)
+
+    def test_constructor_value_regex_filter(self):
+        value = b'value-regex'
+        row_filter = self._makeOne(value_regex_filter=value)
+        self._row_filter_values_check(row_filter, 'value_regex_filter', value)
+
+    def test_constructor_cells_per_row_offset_filter(self):
+        value = 76
+        row_filter = self._makeOne(cells_per_row_offset_filter=value)
+        self._row_filter_values_check(
+            row_filter, 'cells_per_row_offset_filter', value)
+
+    def test_constructor_cells_per_row_limit_filter(self):
+        value = 189
+        row_filter = self._makeOne(cells_per_row_limit_filter=value)
+        self._row_filter_values_check(
+            row_filter, 'cells_per_row_limit_filter', value)
+
+    def test_constructor_cells_per_column_limit_filter(self):
+        value = 10
+        row_filter = self._makeOne(cells_per_column_limit_filter=value)
+        self._row_filter_values_check(
+            row_filter, 'cells_per_column_limit_filter', value)
+
+    def test_constructor_row_sample_filter(self):
+        value = 0.25
+        row_filter = self._makeOne(row_sample_filter=value)
+        self._row_filter_values_check(row_filter, 'row_sample_filter', value)
+
+    def test_constructor_strip_value_transformer(self):
+        value = True
+        row_filter = self._makeOne(strip_value_transformer=value)
+        self._row_filter_values_check(row_filter, 'strip_value_transformer',
+                                      value)
 
 
 class _Table(object):

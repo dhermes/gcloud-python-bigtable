@@ -53,14 +53,14 @@ class GarbageCollectionRule(object):
     :type max_age: :class:`datetime.timedelta`
     :param max_age: The maximum age allowed for a cell in the table.
 
-    :raises: :class:`ValueError` if both ``max_num_versions`` and ``max_age``
+    :raises: :class:`TypeError` if both ``max_num_versions`` and ``max_age``
              are set.
     """
 
     def __init__(self, max_num_versions=None, max_age=None):
         if max_num_versions is not None and max_age is not None:
-            raise ValueError('At most one of max_num_versions and '
-                             'max_age can be set')
+            raise TypeError('At most one of max_num_versions and '
+                            'max_age can be set')
         self.max_num_versions = max_num_versions
         self.max_age = max_age
 

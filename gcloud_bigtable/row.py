@@ -284,3 +284,113 @@ class Row(object):
 
         # Reset mutations after commit-ing request.
         self._pb_mutations = []
+
+
+class RowFilter(object):
+    """Basic filter to apply to cells in a row.
+
+    These values can be combined via :class:`RowFilterChain`,
+    :class:`RowFilterInterleave` and :class:`RowFilterTernary`.
+
+    The regex filters must be valid RE2 patterns. See
+    https://github.com/google/re2/wiki/Syntax for the accepted syntax.
+
+    .. note::
+
+        At most one of the keyword arguments can be specified at once.
+
+    .. note::
+
+        For ``bytes`` regex filters (``row_key``, ``column_qualifier`` and
+        ``value``), special care need be used with the expression used. Since
+        each of these properties can contain arbitrary bytes, the ``\\C``
+        escape sequence must be used if a true wildcard is desired. The ``.``
+        character will not match the new line character ``\\n``, which may be
+        present in a binary value.
+
+    :type row_key_regex_filter: bytes (or string)
+    :param row_key_regex_filter: A regular expression (RE2) to match cells from
+                                 rows with row keys that satisfy this regex.
+                                 For a ``CheckAndMutateRowRequest``, this
+                                 filter is unnecessary since the row key is
+                                 already specified.
+
+    :type family_name_regex_filter: string
+    :param family_name_regex_filter: A regular expression (RE2) to match cells
+                                     from columns in a given column family. For
+                                     technical reasons, the regex must not
+                                     contain the ':' character, even if it is
+                                     not being uses as a literal.
+
+    :type column_qualifier_regex_filter: bytes (or string)
+    :param column_qualifier_regex_filter: A regular expression (RE2) to match
+                                          cells from column that match this
+                                          regex (irrespective of column
+                                          family).
+
+    :type value_regex_filter: bytes (or string)
+    :param value_regex_filter: A regular expression (RE2) to match cells with
+                               values that match this regex.
+
+    :type cells_per_row_offset_filter: integer
+    :param cells_per_row_offset_filter: Skips the first N cells of the row.
+
+    :type cells_per_row_limit_filter: integer
+    :param cells_per_row_limit_filter: Matches only the first N cells of the
+                                       row.
+
+    :type cells_per_column_limit_filter: integer
+    :param cells_per_column_limit_filter: Matches only the most recent N cells
+                                          within each column. This filters a
+                                          (family name, column) pair, based on
+                                          timestamps of each cell.
+
+    :type row_sample_filter: float
+    :param row_sample_filter: Non-deterministic filter. Matches all cells from
+                              a row with probability p, and matches no cells
+                              from the row with probability 1-p. (Here, the
+                              probability p is ``row_sample_filter``.)
+
+    :type strip_value_transformer: boolean
+    :param strip_value_transformer: If ``True``, replaces each cell's value
+                                    with the empty string. As the name
+                                    indicates, this is more useful as a
+                                    transformer than a generic query / filter.
+
+    :raises: :class:`TypeError` if not exactly one value set in the
+             constructor.
+    """
+
+    def __init__(self,
+                 row_key_regex_filter=None,
+                 family_name_regex_filter=None,
+                 column_qualifier_regex_filter=None,
+                 value_regex_filter=None,
+                 cells_per_row_offset_filter=None,
+                 cells_per_row_limit_filter=None,
+                 cells_per_column_limit_filter=None,
+                 row_sample_filter=None,
+                 strip_value_transformer=None):
+        values_set = (
+            int(row_key_regex_filter is not None) +
+            int(family_name_regex_filter is not None) +
+            int(column_qualifier_regex_filter is not None) +
+            int(value_regex_filter is not None) +
+            int(cells_per_row_offset_filter is not None) +
+            int(cells_per_row_limit_filter is not None) +
+            int(cells_per_column_limit_filter is not None) +
+            int(row_sample_filter is not None) +
+            int(strip_value_transformer is not None)
+        )
+        if values_set != 1:
+            raise TypeError('Exactly one value must be set in a row filter')
+
+        self.row_key_regex_filter = row_key_regex_filter
+        self.family_name_regex_filter = family_name_regex_filter
+        self.column_qualifier_regex_filter = column_qualifier_regex_filter
+        self.value_regex_filter = value_regex_filter
+        self.cells_per_row_offset_filter = cells_per_row_offset_filter
+        self.cells_per_row_limit_filter = cells_per_row_limit_filter
+        self.cells_per_column_limit_filter = cells_per_column_limit_filter
+        self.row_sample_filter = row_sample_filter
+        self.strip_value_transformer = strip_value_transformer
