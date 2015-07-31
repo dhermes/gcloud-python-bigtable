@@ -23,6 +23,7 @@ from gcloud_bigtable.column_family import _gc_rule_from_pb
 from gcloud_bigtable.constants import TABLE_ADMIN_HOST
 from gcloud_bigtable.constants import TABLE_ADMIN_PORT
 from gcloud_bigtable.constants import TABLE_STUB_FACTORY
+from gcloud_bigtable.row import Row
 
 
 class Table(object):
@@ -119,6 +120,17 @@ class Table(object):
         :returns: A column family owned by this table.
         """
         return ColumnFamily(column_family_id, self, gc_rule=gc_rule)
+
+    def row(self, row_key):
+        """Factory to create a row associated with this table.
+
+        :type row_key: bytes (or string)
+        :param row_key: The key for the row being created.
+
+        :rtype: :class:`.row.Row`
+        :returns: A row owned by this table.
+        """
+        return Row(row_key, self)
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):

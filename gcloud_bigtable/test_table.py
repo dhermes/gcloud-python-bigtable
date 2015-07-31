@@ -91,6 +91,16 @@ class TestTable(GRPCMockTestMixin):
         self.assertTrue(column_family.gc_rule is gc_rule)
         self.assertEqual(column_family._table, table)
 
+    def test_row_factory(self):
+        from gcloud_bigtable.row import Row
+
+        table = self._makeOne(TABLE_ID, None)
+        row_key = 'row_key'
+        row = table.row(row_key)
+        self.assertTrue(isinstance(row, Row))
+        self.assertEqual(row.row_key, row_key)
+        self.assertEqual(row._table, table)
+
     def test___eq__(self):
         table_id = 'table_id'
         cluster = object()
