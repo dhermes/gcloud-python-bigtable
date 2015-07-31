@@ -468,6 +468,62 @@ class TestRowFilter(unittest2.TestCase):
         self._row_filter_values_check(row_filter, 'strip_value_transformer',
                                       value)
 
+    def test_to_pb_empty(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        # Fool the constructor by passing exactly 1 value.
+        row_filter = self._makeOne(strip_value_transformer=True)
+        # Make it artificially empty after the fact.
+        row_filter.strip_value_transformer = None
+
+        pb_val = row_filter.to_pb()
+        self.assertEqual(pb_val, data_pb2.RowFilter())
+
+    def _to_pb_test_helper(self, **kwargs):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        row_filter = self._makeOne(**kwargs)
+
+        pb_val = row_filter.to_pb()
+        expected_pb = data_pb2.RowFilter(**kwargs)
+        self.assertEqual(pb_val, expected_pb)
+
+    def test_to_pb_with_row_key_regex_filter(self):
+        value = b'row-key-regex'
+        self._to_pb_test_helper(row_key_regex_filter=value)
+
+    def test_to_pb_with_family_name_regex_filter(self):
+        value = u'family-regex'
+        self._to_pb_test_helper(family_name_regex_filter=value)
+
+    def test_to_pb_with_column_qualifier_regex_filter(self):
+        value = b'column-regex'
+        self._to_pb_test_helper(column_qualifier_regex_filter=value)
+
+    def test_to_pb_with_value_regex_filter(self):
+        value = b'value-regex'
+        self._to_pb_test_helper(value_regex_filter=value)
+
+    def test_to_pb_with_cells_per_row_offset_filter(self):
+        value = 76
+        self._to_pb_test_helper(cells_per_row_offset_filter=value)
+
+    def test_to_pb_with_cells_per_row_limit_filter(self):
+        value = 189
+        self._to_pb_test_helper(cells_per_row_limit_filter=value)
+
+    def test_to_pb_with_cells_per_column_limit_filter(self):
+        value = 10
+        self._to_pb_test_helper(cells_per_column_limit_filter=value)
+
+    def test_to_pb_with_row_sample_filter(self):
+        value = 0.25
+        self._to_pb_test_helper(row_sample_filter=value)
+
+    def test_to_pb_with_strip_value_transformer(self):
+        value = True
+        self._to_pb_test_helper(strip_value_transformer=value)
+
 
 class _Table(object):
 

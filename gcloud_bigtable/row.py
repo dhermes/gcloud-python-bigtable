@@ -394,3 +394,39 @@ class RowFilter(object):
         self.cells_per_column_limit_filter = cells_per_column_limit_filter
         self.row_sample_filter = row_sample_filter
         self.strip_value_transformer = strip_value_transformer
+
+    def to_pb(self):
+        """Converts the :class:`RowFilter` to a protobuf.
+
+        :rtype: :class:`data_pb2.RowFilter`
+        :returns: The converted current object.
+        """
+        row_filter_kwargs = {}
+        if self.row_key_regex_filter is not None:
+            row_filter_kwargs['row_key_regex_filter'] = _to_bytes(
+                self.row_key_regex_filter)
+        if self.family_name_regex_filter is not None:
+            row_filter_kwargs['family_name_regex_filter'] = (
+                self.family_name_regex_filter)
+        if self.column_qualifier_regex_filter is not None:
+            row_filter_kwargs['column_qualifier_regex_filter'] = _to_bytes(
+                self.column_qualifier_regex_filter)
+        if self.value_regex_filter is not None:
+            row_filter_kwargs['value_regex_filter'] = _to_bytes(
+                self.value_regex_filter)
+        if self.cells_per_row_offset_filter is not None:
+            row_filter_kwargs['cells_per_row_offset_filter'] = (
+                self.cells_per_row_offset_filter)
+        if self.cells_per_row_limit_filter is not None:
+            row_filter_kwargs['cells_per_row_limit_filter'] = (
+                self.cells_per_row_limit_filter)
+        if self.cells_per_column_limit_filter is not None:
+            row_filter_kwargs['cells_per_column_limit_filter'] = (
+                self.cells_per_column_limit_filter)
+        if self.row_sample_filter is not None:
+            row_filter_kwargs['row_sample_filter'] = (
+                self.row_sample_filter)
+        if self.strip_value_transformer is not None:
+            row_filter_kwargs['strip_value_transformer'] = (
+                self.strip_value_transformer)
+        return data_pb2.RowFilter(**row_filter_kwargs)
