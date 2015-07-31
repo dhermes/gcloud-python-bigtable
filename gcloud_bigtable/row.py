@@ -400,6 +400,28 @@ class RowFilter(object):
         self.row_sample_filter = row_sample_filter
         self.strip_value_transformer = strip_value_transformer
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return (
+            other.row_key_regex_filter == self.row_key_regex_filter and
+            other.family_name_regex_filter == self.family_name_regex_filter and
+            (other.column_qualifier_regex_filter ==
+             self.column_qualifier_regex_filter) and
+            other.value_regex_filter == self.value_regex_filter and
+            (other.cells_per_row_offset_filter ==
+             self.cells_per_row_offset_filter) and
+            (other.cells_per_row_limit_filter ==
+             self.cells_per_row_limit_filter) and
+            (other.cells_per_column_limit_filter ==
+             self.cells_per_column_limit_filter) and
+            other.row_sample_filter == self.row_sample_filter and
+            other.strip_value_transformer == self.strip_value_transformer
+        )
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def to_pb(self):
         """Converts the :class:`RowFilter` to a protobuf.
 

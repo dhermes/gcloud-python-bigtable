@@ -468,6 +468,30 @@ class TestRowFilter(unittest2.TestCase):
         self._row_filter_values_check(row_filter, 'strip_value_transformer',
                                       value)
 
+    def test___eq__(self):
+        # Fool the constructor by passing exactly 1 value.
+        row_filter1 = self._makeOne(strip_value_transformer=True)
+        row_filter2 = self._makeOne(strip_value_transformer=True)
+        # Set every value so we can compare them all.
+        for prop_name in self._PROPERTIES:
+            fake_val = object()
+            setattr(row_filter1, prop_name, fake_val)
+            setattr(row_filter2, prop_name, fake_val)
+        self.assertEqual(row_filter1, row_filter2)
+
+    def test___eq__type_differ(self):
+        # Fool the constructor by passing exactly 1 value.
+        row_filter1 = self._makeOne(strip_value_transformer=True)
+        row_filter2 = object()
+        self.assertNotEqual(row_filter1, row_filter2)
+
+    def test___ne__same_value(self):
+        # Fool the constructor by passing exactly 1 value.
+        row_filter1 = self._makeOne(strip_value_transformer=True)
+        row_filter2 = self._makeOne(strip_value_transformer=True)
+        comparison_val = (row_filter1 != row_filter2)
+        self.assertFalse(comparison_val)
+
     def test_to_pb_empty(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
 
