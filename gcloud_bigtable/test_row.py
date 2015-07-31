@@ -347,6 +347,32 @@ class TestRow(GRPCMockTestMixin):
                                       project_id,
                                       timeout_seconds=timeout_seconds)
 
+    def test_commit_too_many_mutations(self):
+        from gcloud_bigtable import row as MUT
+        from gcloud_bigtable._testing import _Monkey
+
+        table = object()
+        row = self._makeOne(ROW_KEY, table)
+        row._pb_mutations = [1, 2, 3]
+        num_mutations = len(row._pb_mutations)
+        with _Monkey(MUT, _MAX_MUTATIONS=num_mutations - 1):
+            with self.assertRaises(ValueError):
+                row.commit()
+
+    def test_commit_no_mutations(self):
+        from gcloud_bigtable import row as MUT
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _Monkey
+
+        table = object()
+        row = self._makeOne(ROW_KEY, table)
+        self.assertEqual(row._pb_mutations, [])
+        mock_make_stub = _MockCalled()
+        with _Monkey(MUT, make_stub=mock_make_stub):
+            row.commit()
+        # Make sure no stub was ever created, i.e. no request was sent.
+        mock_make_stub.check_called(self, [])
+
 
 class _Table(object):
 

@@ -26,6 +26,9 @@ from gcloud_bigtable.constants import DATA_API_PORT
 from gcloud_bigtable.constants import DATA_STUB_FACTORY
 
 
+_MAX_MUTATIONS = 100000
+
+
 class Row(object):
     """Representation of a Google Cloud Bigtable Column Row.
 
@@ -244,15 +247,28 @@ class Row(object):
     def commit(self, timeout_seconds=None):
         """Makes a ``MutateRow`` API request.
 
-        .. note::
+        If no mutations have been created in the row, no request is made.
 
-            After committing the accumulated mutations, resets the local
-            mutations to an empty list.
+        Mutations are applied atomically and in order, meaning that earlier
+        mutations can be masked / negated by later ones. Cells already present
+        in the row are left unchanged unless explicitly changed by a mutation.
+
+        After committing the accumulated mutations, resets the local
+        mutations to an empty list.
 
         :type timeout_seconds: integer
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on row.
+
+        :raises: :class:`ValueError` if the number of mutations exceeds the
+                 ``_MAX_MUTATIONS``.
         """
+        num_mutations = len(self._pb_mutations)
+        if num_mutations == 0:
+            return
+        if num_mutations > _MAX_MUTATIONS:
+            raise ValueError('%d total mutations exceed the maximum allowable '
+                             '%d.' % (num_mutations, _MAX_MUTATIONS))
         request_pb = messages_pb2.MutateRowRequest(
             table_name=self.table.name,
             row_key=self.row_key,
