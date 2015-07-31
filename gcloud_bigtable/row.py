@@ -295,7 +295,7 @@ class RowFilter(object):
     """Basic filter to apply to cells in a row.
 
     These values can be combined via :class:`RowFilterChain`,
-    :class:`RowFilterUnion` and :class:`RowFilterTernary`.
+    :class:`RowFilterUnion` and :class:`ConditionalRowFilter`.
 
     The regex filters must be valid RE2 patterns. See
     https://github.com/google/re2/wiki/Syntax for the accepted syntax.
@@ -468,7 +468,8 @@ class RowFilterChain(object):
 
     :type filters: list
     :param filters: List of :class:`RowFilter`, :class:`RowFilterChain`,
-                    :class:`RowFilterUnion` and/or :class:`RowFilterTernary`
+                    :class:`RowFilterUnion` and/or
+                    :class:`ConditionalRowFilter`
     """
 
     def __init__(self, filters=None):
@@ -504,7 +505,8 @@ class RowFilterUnion(object):
 
     :type filters: list
     :param filters: List of :class:`RowFilter`, :class:`RowFilterChain`,
-                    :class:`RowFilterUnion` and/or :class:`RowFilterTernary`
+                    :class:`RowFilterUnion` and/or
+                    :class:`ConditionalRowFilter`
     """
 
     def __init__(self, filters=None):
@@ -527,3 +529,73 @@ class RowFilterUnion(object):
         interleave = data_pb2.RowFilter.Interleave(
             filters=[row_filter.to_pb() for row_filter in self.filters])
         return data_pb2.RowFilter(interleave=interleave)
+
+
+class ConditionalRowFilter(object):
+    """Conditional filter
+
+    Executes one of two filters based on another filter. If the ``base_filter``
+    returns any cells in the row, then ``true_filter`` is executed. If not,
+    then ``false_filter`` is executed.
+
+    .. note::
+
+        The ``base_filter`` does not execute atomically with the true and false
+        filters, which may lead to inconsistent or unexpected results.
+
+        Additionally, executing a :class:`ConditionalRowFilter` has poor
+        performance on the server, especially when ``false_filter`` is set.
+
+    :type base_filter: :class:`RowFilter`, :class:`RowFilterChain`,
+                       :class:`RowFilterUnion` or :class:`ConditionalRowFilter`
+    :param base_filter: The filter to condition on before executing the
+                        true/false filters.
+
+    :type true_filter: :class:`RowFilter`, :class:`RowFilterChain`,
+                       :class:`RowFilterUnion` or :class:`ConditionalRowFilter`
+    :param true_filter: (Optional) The filter to execute if there are any cells
+                        matching ``base_filter``. If not provided, no results
+                        will be returned in the true case.
+
+    :type false_filter: :class:`RowFilter`, :class:`RowFilterChain`,
+                        :class:`RowFilterUnion` or
+                        :class:`ConditionalRowFilter`
+    :param false_filter: (Optional) The filter to execute if there are no cells
+                         matching ``base_filter``. If not provided, no results
+                         will be returned in the false case.
+
+    :raises: :class:`ValueError` if neither of ``true_filter`` or
+             ``false_filter`` is set
+    """
+
+    def __init__(self, base_filter, true_filter=None, false_filter=None):
+        self.base_filter = base_filter
+        if true_filter is None and false_filter is None:
+            raise ValueError('At least one of true_filter and false_filter '
+                             'must be set')
+        self.true_filter = true_filter
+        self.false_filter = false_filter
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return (other.base_filter == self.base_filter and
+                other.true_filter == self.true_filter and
+                other.false_filter == self.false_filter)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def to_pb(self):
+        """Converts the :class:`ConditionalRowFilter` to a protobuf.
+
+        :rtype: :class:`data_pb2.RowFilter`
+        :returns: The converted current object.
+        """
+        condition_kwargs = {'predicate_filter': self.base_filter.to_pb()}
+        if self.true_filter is not None:
+            condition_kwargs['true_filter'] = self.true_filter.to_pb()
+        if self.false_filter is not None:
+            condition_kwargs['false_filter'] = self.false_filter.to_pb()
+        condition = data_pb2.RowFilter.Condition(**condition_kwargs)
+        return data_pb2.RowFilter(condition=condition)
