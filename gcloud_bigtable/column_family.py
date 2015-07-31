@@ -91,8 +91,9 @@ class GarbageCollectionRuleUnion(object):
     """Union of garbage collection rules.
 
     :type rules: list
-    :param rules: List of garbage collection rules, unions and/or
-                  intersections.
+    :param rules: List of :class:`GarbageCollectionRule`,
+                  :class:`GarbageCollectionRuleUnion` and/or
+                  :class:`GarbageCollectionRuleIntersection`
     """
 
     def __init__(self, rules=None):
@@ -121,8 +122,9 @@ class GarbageCollectionRuleIntersection(object):
     """Intersection of garbage collection rules.
 
     :type rules: list
-    :param rules: List of garbage collection rules, unions and/or
-                  intersections.
+    :param rules: List of :class:`GarbageCollectionRule`,
+                  :class:`GarbageCollectionRuleUnion` and/or
+                  :class:`GarbageCollectionRuleIntersection`
     """
 
     def __init__(self, rules=None):

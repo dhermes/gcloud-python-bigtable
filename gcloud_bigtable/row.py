@@ -295,7 +295,7 @@ class RowFilter(object):
     """Basic filter to apply to cells in a row.
 
     These values can be combined via :class:`RowFilterChain`,
-    :class:`RowFilterInterleave` and :class:`RowFilterTernary`.
+    :class:`RowFilterUnion` and :class:`RowFilterTernary`.
 
     The regex filters must be valid RE2 patterns. See
     https://github.com/google/re2/wiki/Syntax for the accepted syntax.
@@ -457,3 +457,73 @@ class RowFilter(object):
             row_filter_kwargs['strip_value_transformer'] = (
                 self.strip_value_transformer)
         return data_pb2.RowFilter(**row_filter_kwargs)
+
+
+class RowFilterChain(object):
+    """Chain of row filters.
+
+    Sends rows through several filters in sequence. The filters are "chained"
+    together to process a row. After the first filter is applied, the second
+    is applied to the filtered output and so on for subsequent filters.
+
+    :type filters: list
+    :param filters: List of :class:`RowFilter`, :class:`RowFilterChain`,
+                    :class:`RowFilterUnion` and/or :class:`RowFilterTernary`
+    """
+
+    def __init__(self, filters=None):
+        self.filters = filters
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return other.filters == self.filters
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def to_pb(self):
+        """Converts the :class:`RowFilterChain` to a protobuf.
+
+        :rtype: :class:`data_pb2.RowFilter`
+        :returns: The converted current object.
+        """
+        chain = data_pb2.RowFilter.Chain(
+            filters=[row_filter.to_pb() for row_filter in self.filters])
+        return data_pb2.RowFilter(chain=chain)
+
+
+class RowFilterUnion(object):
+    """Union of row filters.
+
+    Sends rows through several filters simultaneously, then
+    merges / interleaves all the filtered results together.
+
+    If multiple cells are produced with the same column and timestamp,
+    they will all appear in the output row in an unspecified mutual order.
+
+    :type filters: list
+    :param filters: List of :class:`RowFilter`, :class:`RowFilterChain`,
+                    :class:`RowFilterUnion` and/or :class:`RowFilterTernary`
+    """
+
+    def __init__(self, filters=None):
+        self.filters = filters
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return other.filters == self.filters
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def to_pb(self):
+        """Converts the :class:`RowFilterUnion` to a protobuf.
+
+        :rtype: :class:`data_pb2.RowFilter`
+        :returns: The converted current object.
+        """
+        interleave = data_pb2.RowFilter.Interleave(
+            filters=[row_filter.to_pb() for row_filter in self.filters])
+        return data_pb2.RowFilter(interleave=interleave)
