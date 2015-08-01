@@ -64,7 +64,7 @@ def transform_old_to_new(line, old_module, new_module,
     :type new_module: string
     :param new_module: The new location of the re-written import.
 
-    :type ignore_import_from: boolean
+    :type ignore_import_from: bool
     :param ignore_import_from: Flag to determine if the "from * import"
                                statements should be ignored.
 

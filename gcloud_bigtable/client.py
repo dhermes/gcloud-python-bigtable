@@ -17,10 +17,12 @@
 This is the base from which all interactions with the API occur.
 
 In the hierarchy of API concepts
-* a client owns a cluster
-* a cluster owns a table
-* a table owns column families
-* a table owns data
+
+* a :class:`Client` owns a :class:`.Cluster`
+* a :class:`.Cluster` owns a :class:`.table.Table`
+* a :class:`.table.Table` owns a :class:`.column_family.ColumnFamily`
+* a :class:`.table.Table` owns a :class:`.row.Row` (and all the cells
+  in the row)
 """
 
 
@@ -166,12 +168,12 @@ class Client(object):
                        clusters, tables and data. If not provided, will
                        attempt to determine from the environment.
 
-    :type read_only: boolean
+    :type read_only: bool
     :param read_only: (Optional) Boolean indicating if the data scope should be
                       for reading only (or for writing as well). Defaults to
                       ``False``.
 
-    :type admin: boolean
+    :type admin: bool
     :param admin: (Optional) Boolean indicating if the client will be used to
                   interact with the Cluster Admin or Table Admin APIs. This
                   requires the ``ADMIN_SCOPE``. Defaults to ``False``.
@@ -180,7 +182,7 @@ class Client(object):
     :param user_agent: (Optional) The user agent to be used with API request.
                        Defaults to ``DEFAULT_USER_AGENT``.
 
-    :type timeout_seconds: integer
+    :type timeout_seconds: int
     :param timeout_seconds: Number of seconds for request time-out. If not
                             passed, defaults to ``DEFAULT_TIMEOUT_SECONDS``.
 
@@ -230,12 +232,12 @@ class Client(object):
                            tables and data. Will be passed to :class:`Client`
                            constructor.
 
-        :type read_only: boolean
+        :type read_only: bool
         :param read_only: Boolean indicating if the data scope should be
                           for reading only (or for writing as well). Will be
                           passed to :class:`Client` constructor.
 
-        :type admin: boolean
+        :type admin: bool
         :param admin: Boolean indicating if the client will be used to
                       interact with the Cluster Admin or Table Admin APIs. Will
                       be passed to :class:`Client` constructor.
@@ -271,12 +273,12 @@ class Client(object):
                            tables and data. Will be passed to :class:`Client`
                            constructor.
 
-        :type read_only: boolean
+        :type read_only: bool
         :param read_only: Boolean indicating if the data scope should be
                           for reading only (or for writing as well). Will be
                           passed to :class:`Client` constructor.
 
-        :type admin: boolean
+        :type admin: bool
         :param admin: Boolean indicating if the client will be used to
                       interact with the Cluster Admin or Table Admin APIs. Will
                       be passed to :class:`Client` constructor.
@@ -339,7 +341,7 @@ class Client(object):
                              characters.) If this value is not set in the
                              constructor, will fall back to the cluster ID.
 
-        :type serve_nodes: integer
+        :type serve_nodes: int
         :param serve_nodes: (Optional) The number of nodes in the cluster.
                             Defaults to 3.
 
@@ -352,7 +354,7 @@ class Client(object):
     def list_zones(self, timeout_seconds=None):
         """Lists zones associated with project.
 
-        :type timeout_seconds: integer
+        :type timeout_seconds: int
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on client.
 
@@ -381,12 +383,12 @@ class Client(object):
     def list_clusters(self, timeout_seconds=None):
         """Lists clusters owned by the project.
 
-        :type timeout_seconds: integer
+        :type timeout_seconds: int
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on client.
 
         :rtype: tuple
-        :returns: A pair of results, the first is a list of :class:`Cluster` s
+        :returns: A pair of results, the first is a list of :class:`.Cluster` s
                   returned and the second is a list of strings (the failed
                   zones in the request).
         """

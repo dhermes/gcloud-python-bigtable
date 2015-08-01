@@ -81,7 +81,7 @@ class Table(object):
     def timeout_seconds(self):
         """Getter for table's default timeout seconds.
 
-        :rtype: integer
+        :rtype: int
         :returns: The timeout seconds default stored on the table's client.
         """
         return self._cluster.timeout_seconds
@@ -169,7 +169,7 @@ class Table(object):
                                    created, spanning the key ranges:
                                    ``[, s1)``, ``[s1, s2)``, ``[s2, )``.
 
-        :type timeout_seconds: integer
+        :type timeout_seconds: int
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on table.
         """
@@ -206,7 +206,7 @@ class Table(object):
         :type new_table_id: string
         :param new_table_id: The new name table ID.
 
-        :type timeout_seconds: integer
+        :type timeout_seconds: int
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on table.
         """
@@ -227,7 +227,7 @@ class Table(object):
     def delete(self, timeout_seconds=None):
         """Delete this table.
 
-        :type timeout_seconds: integer
+        :type timeout_seconds: int
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on table.
         """
@@ -243,7 +243,7 @@ class Table(object):
     def list_column_families(self, timeout_seconds=None):
         """Check if this table exists.
 
-        :type timeout_seconds: integer
+        :type timeout_seconds: int
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on table.
 

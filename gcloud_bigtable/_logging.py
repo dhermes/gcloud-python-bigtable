@@ -45,7 +45,7 @@ def get_log_level(argv):
     :type argv: list of strings
     :param argv: Command line arguments from caller.
 
-    :rtype: integer
+    :rtype: int
     :returns: The logging level parsed from the command line flags.
     """
     parsed_args, _ = PARSER.parse_known_args(argv)

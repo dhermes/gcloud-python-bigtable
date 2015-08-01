@@ -85,7 +85,7 @@ class Row(object):
     def timeout_seconds(self):
         """Getter for row's default timeout seconds.
 
-        :rtype: integer
+        :rtype: int
         :returns: The timeout seconds default.
         """
         return self.table.timeout_seconds
@@ -240,7 +240,7 @@ class Row(object):
         After committing the accumulated mutations, resets the local
         mutations to an empty list.
 
-        :type timeout_seconds: integer
+        :type timeout_seconds: int
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on row.
 
@@ -325,14 +325,14 @@ class RowFilter(object):
     :param timestamp_range_filter: Range of time that cells should match
                                    against.
 
-    :type cells_per_row_offset_filter: integer
+    :type cells_per_row_offset_filter: int
     :param cells_per_row_offset_filter: Skips the first N cells of the row.
 
-    :type cells_per_row_limit_filter: integer
+    :type cells_per_row_limit_filter: int
     :param cells_per_row_limit_filter: Matches only the first N cells of the
                                        row.
 
-    :type cells_per_column_limit_filter: integer
+    :type cells_per_column_limit_filter: int
     :param cells_per_column_limit_filter: Matches only the most recent N cells
                                           within each column. This filters a
                                           (family name, column) pair, based on
@@ -344,7 +344,7 @@ class RowFilter(object):
                               from the row with probability 1-p. (Here, the
                               probability p is ``row_sample_filter``.)
 
-    :type strip_value_transformer: boolean
+    :type strip_value_transformer: bool
     :param strip_value_transformer: If ``True``, replaces each cell's value
                                     with the empty string. As the name
                                     indicates, this is more useful as a

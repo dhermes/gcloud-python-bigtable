@@ -128,7 +128,7 @@ class Cluster(object):
                          characters.) If this value is not set in the
                          constructor, will fall back to the cluster ID.
 
-    :type serve_nodes: integer
+    :type serve_nodes: int
     :param serve_nodes: (Optional) The number of nodes in the cluster.
                         Defaults to 3.
     """
@@ -209,7 +209,7 @@ class Cluster(object):
     def timeout_seconds(self):
         """Getter for cluster's default timeout seconds.
 
-        :rtype: integer
+        :rtype: int
         :returns: The timeout seconds default stored on the cluster's client.
         """
         return self._client.timeout_seconds
@@ -260,7 +260,7 @@ class Cluster(object):
     def reload(self, timeout_seconds=None):
         """Reload the metadata for this cluster.
 
-        :type timeout_seconds: integer
+        :type timeout_seconds: int
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on
                                 cluster.
@@ -281,12 +281,12 @@ class Cluster(object):
     def operation_finished(self, timeout_seconds=None):
         """Check if the current operation has finished.
 
-        :type timeout_seconds: integer
+        :type timeout_seconds: int
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on
                                 cluster.
 
-        :rtype: boolean
+        :rtype: bool
         :returns: A boolean indicating if the current operation has completed.
         :raises: :class:`ValueError` if there is no current operation set.
         """
@@ -329,7 +329,7 @@ class Cluster(object):
 
             before calling :meth:`create`.
 
-        :type timeout_seconds: integer
+        :type timeout_seconds: int
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on
                                 cluster.
@@ -362,7 +362,7 @@ class Cluster(object):
 
             before calling :meth:`update`.
 
-        :type timeout_seconds: integer
+        :type timeout_seconds: int
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on
                                 cluster.
@@ -387,7 +387,7 @@ class Cluster(object):
     def delete(self, timeout_seconds=None):
         """Delete this cluster.
 
-        :type timeout_seconds: integer
+        :type timeout_seconds: int
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on
                                 cluster.
@@ -404,7 +404,7 @@ class Cluster(object):
     def undelete(self, timeout_seconds=None):
         """Undelete this cluster.
 
-        :type timeout_seconds: integer
+        :type timeout_seconds: int
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on
                                 cluster.
@@ -425,7 +425,7 @@ class Cluster(object):
     def list_tables(self, timeout_seconds=None):
         """List the tables in this cluster.
 
-        :type timeout_seconds: integer
+        :type timeout_seconds: int
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on
                                 cluster.

@@ -47,7 +47,7 @@ class GarbageCollectionRule(object):
         don't support that feature and instead support via this native
         object.
 
-    :type max_num_versions: integer
+    :type max_num_versions: int
     :param max_num_versions: The maximum number of versions
 
     :type max_age: :class:`datetime.timedelta`
@@ -198,7 +198,7 @@ class ColumnFamily(object):
     def timeout_seconds(self):
         """Getter for column family's default timeout seconds.
 
-        :rtype: integer
+        :rtype: int
         :returns: The timeout seconds default.
         """
         return self.table.timeout_seconds
@@ -233,7 +233,7 @@ class ColumnFamily(object):
     def create(self, timeout_seconds=None):
         """Create this column family.
 
-        :type timeout_seconds: integer
+        :type timeout_seconds: int
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on
                                 column family.
@@ -269,7 +269,7 @@ class ColumnFamily(object):
             when this method is used. It's unclear when this method will
             actually be supported by the API.
 
-        :type timeout_seconds: integer
+        :type timeout_seconds: int
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on
                                 column family.
@@ -291,7 +291,7 @@ class ColumnFamily(object):
     def delete(self, timeout_seconds=None):
         """Delete this column family.
 
-        :type timeout_seconds: integer
+        :type timeout_seconds: int
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on
                                 column family.

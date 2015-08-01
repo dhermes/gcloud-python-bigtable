@@ -208,14 +208,14 @@ def _timestamp_to_microseconds(timestamp, granularity=1000):
     :type timestamp: :class:`datetime.datetime`
     :param timestamp: A timestamp to be converted to microseconds.
 
-    :type granularity: integer
+    :type granularity: int
     :param granularity: The resolution (relative to milliseconds) that the
                         timestamp should be truncated to. Defaults to 1000
                         and no other value is likely needed. The only value of
                         the enum :class:`data_pb2.Table.TimestampGranularity`
                         is `data_pb2.Table.MILLIS`.
 
-    :rtype: integer
+    :rtype: int
     :returns: The ``timestamp`` as milliseconds (with the appropriate
               granularity).
     """
@@ -255,7 +255,7 @@ def set_certs(reset=False):
     If not manually told to reset or if the value is already set,
     does nothing.
 
-    :type reset: boolean
+    :type reset: bool
     :param reset: Boolean indicating if the cached certs should be reset.
     """
     if AuthInfo.ROOT_CERTIFICATES is None or reset:
@@ -289,7 +289,7 @@ def make_stub(client, stub_factory, host, port):
     :type host: string
     :param host: The host for the service.
 
-    :type port: integer
+    :type port: int
     :param port: The port for the service.
 
     :rtype: :class:`grpc.early_adopter.implementations._Stub`
