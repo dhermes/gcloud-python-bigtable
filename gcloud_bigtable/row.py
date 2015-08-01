@@ -117,9 +117,6 @@ class Row(object):
 
         :type timestamp: :class:`datetime.datetime`
         :param timestamp: (Optional) The timestamp of the operation.
-
-        :raises: :class:`TypeError <exceptions.TypeError>` if the ``value``
-                 is not bytes.
         """
         column = _to_bytes(column)
         value = _to_bytes(value)
@@ -309,8 +306,8 @@ class RowFilter(object):
     :param family_name_regex_filter: A regular expression (RE2) to match cells
                                      from columns in a given column family. For
                                      technical reasons, the regex must not
-                                     contain the ':' character, even if it is
-                                     not being uses as a literal.
+                                     contain the ``':'`` character, even if it
+                                     isnot being uses as a literal.
 
     :type column_qualifier_regex_filter: bytes (or string)
     :param column_qualifier_regex_filter: A regular expression (RE2) to match
@@ -496,6 +493,77 @@ class TimestampRange(object):
         return data_pb2.TimestampRange(**timestamp_range_kwargs)
 
 
+class ColumnRange(object):
+    """A range of columns to restrict to in a row filter.
+
+    Both the start and end column can be included or excluded in the range.
+    By default, we include them both, but this can be changed with optional
+    flags.
+
+    :type column_family_id: string
+    :param column_family_id: The column family that contains the columns.
+
+    :type start_column: bytes (or string)
+    :param start_column: The start of the range of columns. If no value is
+                         used, it is interpreted as the empty string
+                         (inclusive) by the backend.
+
+    :type end_column: bytes (or string)
+    :param end_column: The end of the range of columns. If no value is used, it
+                       is interpreted as the infinite string (exclusive) by the
+                       backend.
+
+    :type inclusive_start: bool
+    :param inclusive_start: Boolean indicating if the start column should be
+                            included in the range (or excluded).
+
+    :type inclusive_end: bool
+    :param inclusive_end: Boolean indicating if the end column should be
+                          included in the range (or excluded).
+    """
+
+    def __init__(self, column_family_id, start_column=None, end_column=None,
+                 inclusive_start=True, inclusive_end=True):
+        self.column_family_id = column_family_id
+        self.start_column = start_column
+        self.end_column = end_column
+        self.inclusive_start = inclusive_start
+        self.inclusive_end = inclusive_end
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return (other.column_family_id == self.column_family_id and
+                other.start_column == self.start_column and
+                other.end_column == self.end_column and
+                other.inclusive_start == self.inclusive_start and
+                other.inclusive_end == self.inclusive_end)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def to_pb(self):
+        """Converts the :class:`ColumnRange` to a protobuf.
+
+        :rtype: :class:`data_pb2.ColumnRange`
+        :returns: The converted current object.
+        """
+        column_range_kwargs = {'family_name': self.column_family_id}
+        if self.start_column is not None:
+            if self.inclusive_start:
+                key = 'start_qualifier_inclusive'
+            else:
+                key = 'start_qualifier_exclusive'
+            column_range_kwargs[key] = _to_bytes(self.start_column)
+        if self.end_column is not None:
+            if self.inclusive_end:
+                key = 'end_qualifier_inclusive'
+            else:
+                key = 'end_qualifier_exclusive'
+            column_range_kwargs[key] = _to_bytes(self.end_column)
+        return data_pb2.ColumnRange(**column_range_kwargs)
+
+
 class RowFilterChain(object):
     """Chain of row filters.
 
@@ -601,8 +669,8 @@ class ConditionalRowFilter(object):
                          matching ``base_filter``. If not provided, no results
                          will be returned in the false case.
 
-    :raises: :class:`ValueError` if neither of ``true_filter`` or
-             ``false_filter`` is set
+    :raises: :class:`ValueError <exceptions.ValueError>` if neither of
+             ``true_filter`` or ``false_filter`` is set
     """
 
     def __init__(self, base_filter, true_filter=None, false_filter=None):

@@ -628,6 +628,119 @@ class TestTimestampRange(unittest2.TestCase):
         self._to_pb_helper(end_micros=end_micros)
 
 
+class TestColumnRange(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import ColumnRange
+        return ColumnRange
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_constructor_defaults(self):
+        column_family_id = object()
+        col_range = self._makeOne(column_family_id)
+        self.assertTrue(col_range.column_family_id is column_family_id)
+        self.assertEqual(col_range.start_column, None)
+        self.assertEqual(col_range.end_column, None)
+        self.assertTrue(col_range.inclusive_start)
+        self.assertTrue(col_range.inclusive_end)
+
+    def test_constructor_explicit(self):
+        column_family_id = object()
+        start_column = object()
+        end_column = object()
+        inclusive_start = object()
+        inclusive_end = object()
+        col_range = self._makeOne(column_family_id, start_column=start_column,
+                                  end_column=end_column,
+                                  inclusive_start=inclusive_start,
+                                  inclusive_end=inclusive_end)
+        self.assertTrue(col_range.column_family_id is column_family_id)
+        self.assertTrue(col_range.start_column is start_column)
+        self.assertTrue(col_range.end_column is end_column)
+        self.assertTrue(col_range.inclusive_start is inclusive_start)
+        self.assertTrue(col_range.inclusive_end is inclusive_end)
+
+    def test___eq__(self):
+        column_family_id = object()
+        start_column = object()
+        end_column = object()
+        inclusive_start = object()
+        inclusive_end = object()
+        col_range1 = self._makeOne(column_family_id, start_column=start_column,
+                                   end_column=end_column,
+                                   inclusive_start=inclusive_start,
+                                   inclusive_end=inclusive_end)
+        col_range2 = self._makeOne(column_family_id, start_column=start_column,
+                                   end_column=end_column,
+                                   inclusive_start=inclusive_start,
+                                   inclusive_end=inclusive_end)
+        self.assertEqual(col_range1, col_range2)
+
+    def test___eq__type_differ(self):
+        column_family_id = object()
+        col_range1 = self._makeOne(column_family_id)
+        col_range2 = object()
+        self.assertNotEqual(col_range1, col_range2)
+
+    def test___ne__same_value(self):
+        column_family_id = object()
+        col_range1 = self._makeOne(column_family_id)
+        col_range2 = self._makeOne(column_family_id)
+        comparison_val = (col_range1 != col_range2)
+        self.assertFalse(comparison_val)
+
+    def test_to_pb(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        col_range = self._makeOne(COLUMN_FAMILY_ID)
+        expected_pb = data_pb2.ColumnRange(family_name=COLUMN_FAMILY_ID)
+        self.assertEqual(col_range.to_pb(), expected_pb)
+
+    def test_to_pb_inclusive_start(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        col_range = self._makeOne(COLUMN_FAMILY_ID, start_column=COLUMN)
+        expected_pb = data_pb2.ColumnRange(
+            family_name=COLUMN_FAMILY_ID,
+            start_qualifier_inclusive=COLUMN,
+        )
+        self.assertEqual(col_range.to_pb(), expected_pb)
+
+    def test_to_pb_exclusive_start(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        col_range = self._makeOne(COLUMN_FAMILY_ID, start_column=COLUMN,
+                                  inclusive_start=False)
+        expected_pb = data_pb2.ColumnRange(
+            family_name=COLUMN_FAMILY_ID,
+            start_qualifier_exclusive=COLUMN,
+        )
+        self.assertEqual(col_range.to_pb(), expected_pb)
+
+    def test_to_pb_inclusive_end(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        col_range = self._makeOne(COLUMN_FAMILY_ID, end_column=COLUMN)
+        expected_pb = data_pb2.ColumnRange(
+            family_name=COLUMN_FAMILY_ID,
+            end_qualifier_inclusive=COLUMN,
+        )
+        self.assertEqual(col_range.to_pb(), expected_pb)
+
+    def test_to_pb_exclusive_end(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        col_range = self._makeOne(COLUMN_FAMILY_ID, end_column=COLUMN,
+                                  inclusive_end=False)
+        expected_pb = data_pb2.ColumnRange(
+            family_name=COLUMN_FAMILY_ID,
+            end_qualifier_exclusive=COLUMN,
+        )
+        self.assertEqual(col_range.to_pb(), expected_pb)
+
+
 class TestRowFilterChain(unittest2.TestCase):
 
     def _getTargetClass(self):
