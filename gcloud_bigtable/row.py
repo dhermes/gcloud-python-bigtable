@@ -574,6 +574,74 @@ class ColumnRange(object):
         return data_pb2.ColumnRange(**column_range_kwargs)
 
 
+class CellValueRange(object):
+    """A range of values to restrict to in a row filter.
+
+    With only match cells that have values in this range.
+
+    Both the start and end value can be included or excluded in the range.
+    By default, we include them both, but this can be changed with optional
+    flags.
+
+    :type start_value: bytes (or string)
+    :param start_value: The start of the range of values. If no value is
+                        used, it is interpreted as the empty string
+                        (inclusive) by the backend.
+
+    :type end_value: bytes (or string)
+    :param end_value: The end of the range of values. If no value is used, it
+                      is interpreted as the infinite string (exclusive) by the
+                      backend.
+
+    :type inclusive_start: bool
+    :param inclusive_start: Boolean indicating if the start value should be
+                            included in the range (or excluded).
+
+    :type inclusive_end: bool
+    :param inclusive_end: Boolean indicating if the end value should be
+                          included in the range (or excluded).
+    """
+
+    def __init__(self, start_value=None, end_value=None,
+                 inclusive_start=True, inclusive_end=True):
+        self.start_value = start_value
+        self.end_value = end_value
+        self.inclusive_start = inclusive_start
+        self.inclusive_end = inclusive_end
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return (other.start_value == self.start_value and
+                other.end_value == self.end_value and
+                other.inclusive_start == self.inclusive_start and
+                other.inclusive_end == self.inclusive_end)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def to_pb(self):
+        """Converts the :class:`CellValueRange` to a protobuf.
+
+        :rtype: :class:`data_pb2.ValueRange`
+        :returns: The converted current object.
+        """
+        value_range_kwargs = {}
+        if self.start_value is not None:
+            if self.inclusive_start:
+                key = 'start_value_inclusive'
+            else:
+                key = 'start_value_exclusive'
+            value_range_kwargs[key] = _to_bytes(self.start_value)
+        if self.end_value is not None:
+            if self.inclusive_end:
+                key = 'end_value_inclusive'
+            else:
+                key = 'end_value_exclusive'
+            value_range_kwargs[key] = _to_bytes(self.end_value)
+        return data_pb2.ValueRange(**value_range_kwargs)
+
+
 class RowFilterChain(object):
     """Chain of row filters.
 

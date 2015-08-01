@@ -760,6 +760,101 @@ class TestColumnRange(unittest2.TestCase):
         self.assertEqual(col_range.to_pb(), expected_pb)
 
 
+class TestCellValueRange(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import CellValueRange
+        return CellValueRange
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_constructor_defaults(self):
+        val_range = self._makeOne()
+        self.assertEqual(val_range.start_value, None)
+        self.assertEqual(val_range.end_value, None)
+        self.assertTrue(val_range.inclusive_start)
+        self.assertTrue(val_range.inclusive_end)
+
+    def test_constructor_explicit(self):
+        start_value = object()
+        end_value = object()
+        inclusive_start = object()
+        inclusive_end = object()
+        val_range = self._makeOne(start_value=start_value, end_value=end_value,
+                                  inclusive_start=inclusive_start,
+                                  inclusive_end=inclusive_end)
+        self.assertTrue(val_range.start_value is start_value)
+        self.assertTrue(val_range.end_value is end_value)
+        self.assertTrue(val_range.inclusive_start is inclusive_start)
+        self.assertTrue(val_range.inclusive_end is inclusive_end)
+
+    def test___eq__(self):
+        start_value = object()
+        end_value = object()
+        inclusive_start = object()
+        inclusive_end = object()
+        val_range1 = self._makeOne(start_value=start_value,
+                                   end_value=end_value,
+                                   inclusive_start=inclusive_start,
+                                   inclusive_end=inclusive_end)
+        val_range2 = self._makeOne(start_value=start_value,
+                                   end_value=end_value,
+                                   inclusive_start=inclusive_start,
+                                   inclusive_end=inclusive_end)
+        self.assertEqual(val_range1, val_range2)
+
+    def test___eq__type_differ(self):
+        val_range1 = self._makeOne()
+        val_range2 = object()
+        self.assertNotEqual(val_range1, val_range2)
+
+    def test___ne__same_value(self):
+        val_range1 = self._makeOne()
+        val_range2 = self._makeOne()
+        comparison_val = (val_range1 != val_range2)
+        self.assertFalse(comparison_val)
+
+    def test_to_pb(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        val_range = self._makeOne()
+        expected_pb = data_pb2.ValueRange()
+        self.assertEqual(val_range.to_pb(), expected_pb)
+
+    def test_to_pb_inclusive_start(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        value = b'some-value'
+        val_range = self._makeOne(start_value=value)
+        expected_pb = data_pb2.ValueRange(start_value_inclusive=value)
+        self.assertEqual(val_range.to_pb(), expected_pb)
+
+    def test_to_pb_exclusive_start(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        value = b'some-value'
+        val_range = self._makeOne(start_value=value, inclusive_start=False)
+        expected_pb = data_pb2.ValueRange(start_value_exclusive=value)
+        self.assertEqual(val_range.to_pb(), expected_pb)
+
+    def test_to_pb_inclusive_end(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        value = b'some-value'
+        val_range = self._makeOne(end_value=value)
+        expected_pb = data_pb2.ValueRange(end_value_inclusive=value)
+        self.assertEqual(val_range.to_pb(), expected_pb)
+
+    def test_to_pb_exclusive_end(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        value = b'some-value'
+        val_range = self._makeOne(end_value=value, inclusive_end=False)
+        expected_pb = data_pb2.ValueRange(end_value_exclusive=value)
+        self.assertEqual(val_range.to_pb(), expected_pb)
+
+
 class TestRowFilterChain(unittest2.TestCase):
 
     def _getTargetClass(self):
