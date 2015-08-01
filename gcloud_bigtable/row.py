@@ -459,6 +459,47 @@ class RowFilter(object):
         return data_pb2.RowFilter(**row_filter_kwargs)
 
 
+class TimestampRange(object):
+    """Range of time with inclusive lower and exclusive upper bounds.
+
+    :type start: :class:`datetime.datetime`
+    :param start: (Optional) The (inclusive) lower bound of the timestamp
+                  range. If omitted, defaults to Unix epoch.
+
+    :type end: :class:`datetime.datetime`
+    :param end: (Optional) The (exclusive) upper bound of the timestamp
+                range. If omitted, defaults to "infinity" (no upper bound).
+    """
+
+    def __init__(self, start=None, end=None):
+        self.start = start
+        self.end = end
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return (other.start == self.start and
+                other.end == self.end)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def to_pb(self):
+        """Converts the :class:`TimestampRange` to a protobuf.
+
+        :rtype: :class:`data_pb2.TimestampRange`
+        :returns: The converted current object.
+        """
+        timestamp_range_kwargs = {}
+        if self.start is not None:
+            timestamp_range_kwargs['start_timestamp_micros'] = (
+                _timestamp_to_microseconds(self.start))
+        if self.end is not None:
+            timestamp_range_kwargs['end_timestamp_micros'] = (
+                _timestamp_to_microseconds(self.end))
+        return data_pb2.TimestampRange(**timestamp_range_kwargs)
+
+
 class RowFilterChain(object):
     """Chain of row filters.
 
