@@ -328,6 +328,7 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'https://docs.python.org/': None,
-    'http://google.github.io/oauth2client/': None,
+    'python': ('https://docs.python.org/', None),
+    'pythonlocal': ('https://docs.python.org/2.7/', 'python-inv.txt'),
+    'oauth2client': ('http://google.github.io/oauth2client/', None),
 }

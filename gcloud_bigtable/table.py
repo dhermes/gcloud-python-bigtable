@@ -250,9 +250,9 @@ class Table(object):
         :rtype: dictionary with string as keys and
                 :class:`.column_family.ColumnFamily` as values
         :returns: List of column families attached to this table.
-        :raises: :class:`ValueError` if the column family name from the
-                 response does not agree with the computed name from the
-                 column family ID.
+        :raises: :class:`ValueError <exceptions.ValueError>` if the column
+                 family name from the response does not agree with the computed
+                 name from the column family ID.
         """
         request_pb = messages_pb2.GetTableRequest(name=self.name)
         stub = make_stub(self.client, TABLE_STUB_FACTORY,

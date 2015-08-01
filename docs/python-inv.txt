@@ -1,0 +1,12 @@
+# Sphinx inventory version 1
+# Project: Python
+# Version: 2.7
+types mod library/types.html
+types.NoneType data library/types.html
+types.NoneType class library/types.html
+True data library/constants.html
+False data library/constants.html
+None data library/constants.html
+exceptions mod library/exceptions.html
+exceptions.ValueError exception library/exceptions.html
+exceptions.TypeError exception library/exceptions.html

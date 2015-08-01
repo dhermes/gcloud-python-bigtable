@@ -118,7 +118,8 @@ class Row(object):
         :type timestamp: :class:`datetime.datetime`
         :param timestamp: (Optional) The timestamp of the operation.
 
-        :raises: :class:`TypeError` if the ``value`` is not bytes.
+        :raises: :class:`TypeError <exceptions.TypeError>` if the ``value``
+                 is not bytes.
         """
         column = _to_bytes(column)
         value = _to_bytes(value)
@@ -244,8 +245,8 @@ class Row(object):
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on row.
 
-        :raises: :class:`ValueError` if the number of mutations exceeds the
-                 ``_MAX_MUTATIONS``.
+        :raises: :class:`ValueError <exceptions.ValueError>` if the number of
+                 mutations exceeds the ``_MAX_MUTATIONS``.
         """
         num_mutations = len(self._pb_mutations)
         if num_mutations == 0:
@@ -290,7 +291,7 @@ class RowFilter(object):
 
     .. note::
 
-        For ``bytes`` regex filters (``row_key``, ``column_qualifier`` and
+        For :class:`bytes` regex filters (``row_key``, ``column_qualifier`` and
         ``value``), special care need be used with the expression used. Since
         each of these properties can contain arbitrary bytes, the ``\\C``
         escape sequence must be used if a true wildcard is desired. The ``.``
@@ -345,13 +346,13 @@ class RowFilter(object):
                               probability p is ``row_sample_filter``.)
 
     :type strip_value_transformer: bool
-    :param strip_value_transformer: If ``True``, replaces each cell's value
+    :param strip_value_transformer: If :data:`True`, replaces each cell's value
                                     with the empty string. As the name
                                     indicates, this is more useful as a
                                     transformer than a generic query / filter.
 
-    :raises: :class:`TypeError` if not exactly one value set in the
-             constructor.
+    :raises: :class:`TypeError <exceptions.TypeError>` if not exactly one
+             value set in the constructor.
     """
 
     def __init__(self,

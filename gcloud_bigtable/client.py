@@ -19,10 +19,11 @@ This is the base from which all interactions with the API occur.
 In the hierarchy of API concepts
 
 * a :class:`Client` owns a :class:`.Cluster`
-* a :class:`.Cluster` owns a :class:`.table.Table`
-* a :class:`.table.Table` owns a :class:`.column_family.ColumnFamily`
-* a :class:`.table.Table` owns a :class:`.row.Row` (and all the cells
-  in the row)
+* a :class:`.Cluster` owns a :class:`Table <.table.Table>`
+* a :class:`Table <.table.Table>` owns a
+  :class:`ColumnFamily <.column_family.ColumnFamily>`
+* a :class:`Table <.table.Table>` owns a :class:`Row <.row.Row>`
+  (and all the cells in the row)
 """
 
 
@@ -61,14 +62,17 @@ PROJECT_ENV_VAR = 'GCLOUD_PROJECT'
 """Environment variable used to provide an implicit project ID."""
 
 DEFAULT_TIMEOUT_SECONDS = 10
+"""The default timeout to use for API requests."""
+
 DEFAULT_USER_AGENT = 'gcloud-bigtable-python'
+"""The default user agent for API requests."""
 
 
 def _project_id_from_environment():
     """Attempts to get the project ID from an environment variable.
 
-    :rtype: string or :class:`NoneType`
-    :returns: The project ID provided or ``None``
+    :rtype: string or :class:`NoneType <types.NoneType>`
+    :returns: The project ID provided or :data:`None`
     """
     return os.getenv(PROJECT_ENV_VAR)
 
@@ -76,9 +80,9 @@ def _project_id_from_environment():
 def _project_id_from_app_engine():
     """Gets the App Engine application ID if it can be inferred.
 
-    :rtype: string or ``NoneType``
+    :rtype: string or :class:`NoneType <types.NoneType>`
     :returns: App Engine application ID if running in App Engine,
-              else ``None``.
+              else :data:`None`.
     """
     if app_identity is None:
         return None
@@ -99,9 +103,9 @@ def _project_id_from_compute_engine():
     See https://github.com/google/oauth2client/issues/93 for context about
     DNS latency.
 
-    :rtype: string or ``NoneType``
+    :rtype: string or :class:`NoneType <types.NoneType>`
     :returns: Compute Engine project ID if the metadata service is available,
-              else ``None``.
+              else :data:`None`.
     """
     host = '169.254.169.254'
     uri_path = '/computeMetadata/v1/project/project-id'
@@ -128,7 +132,7 @@ def _determine_project_id(project_id):
     * Google App Engine application ID
     * Google Compute Engine project ID (from metadata server)
 
-    :type project_id: string or :class:`NoneType`
+    :type project_id: string or :class:`NoneType <types.NoneType>`
     :param project_id: The ID of the project which owns the clusters, tables
                        and data. If not provided, will attempt to
                        determine from the environment.
@@ -158,7 +162,7 @@ class Client(object):
     """Client for interacting with Google Cloud Bigtable API.
 
     :type credentials: :class:`oauth2client.client.OAuth2Credentials` or
-                       :class:`NoneType`
+                       :class:`NoneType <types.NoneType>`
     :param credentials: (Optional) The OAuth2 Credentials to use for this
                         cluster. If not provided, defaulst to the Google
                         Application Default Credentials.
@@ -171,23 +175,24 @@ class Client(object):
     :type read_only: bool
     :param read_only: (Optional) Boolean indicating if the data scope should be
                       for reading only (or for writing as well). Defaults to
-                      ``False``.
+                      :data:`False`.
 
     :type admin: bool
     :param admin: (Optional) Boolean indicating if the client will be used to
                   interact with the Cluster Admin or Table Admin APIs. This
-                  requires the ``ADMIN_SCOPE``. Defaults to ``False``.
+                  requires the :const:`ADMIN_SCOPE`. Defaults to :data:`False`.
 
     :type user_agent: string
     :param user_agent: (Optional) The user agent to be used with API request.
-                       Defaults to ``DEFAULT_USER_AGENT``.
+                       Defaults to :const:`DEFAULT_USER_AGENT`.
 
     :type timeout_seconds: int
     :param timeout_seconds: Number of seconds for request time-out. If not
-                            passed, defaults to ``DEFAULT_TIMEOUT_SECONDS``.
+                            passed, defaults to
+                            :const:`DEFAULT_TIMEOUT_SECONDS`.
 
-    :raises: :class:`ValueError` if both ``read_only`` and
-             ``admin`` are ``True``
+    :raises: :class:`ValueError <exceptions.ValueError>` if both ``read_only``
+             and ``admin`` are :data:`True`
     """
 
     def __init__(self, credentials=None, project_id=None,
@@ -318,7 +323,9 @@ class Client(object):
           This property will not change if ``project_id`` does not, but the
           return value is not cached.
 
-        The project name is of the form "projects/{project_id}".
+        The project name is of the form
+
+            ``"projects/{project_id}"``
 
         :rtype: string
         :returns: The project name to be used with the Cloud Bigtable Admin
@@ -345,7 +352,7 @@ class Client(object):
         :param serve_nodes: (Optional) The number of nodes in the cluster.
                             Defaults to 3.
 
-        :rtype: :class:`Cluster`
+        :rtype: :class:`.Cluster`
         :returns: The cluster owned by this client.
         """
         return Cluster(zone, cluster_id, self,
@@ -360,8 +367,8 @@ class Client(object):
 
         :rtype: list of strings
         :returns: The names of the zones
-        :raises: :class:`ValueError` if one of the zones is not in
-                 ``OK`` state.
+        :raises: :class:`ValueError <exceptions.ValueError>` if one of the
+                 zones is not in ``OK`` state.
         """
         request_pb = messages_pb2.ListZonesRequest(name=self.project_name)
         stub = make_stub(self, CLUSTER_STUB_FACTORY,

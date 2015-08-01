@@ -77,8 +77,8 @@ def _process_operation(operation_pb):
     :returns: A pair of an integer and datetime stamp. The integer is the ID
               of the operation (``operation_id``) and the timestamp when
               the create operation began (``operation_begin``).
-    :raises: :class:`ValueError` if the operation name doesn't match the
-             ``_OPERATION_NAME_RE`` regex.
+    :raises: :class:`ValueError <exceptions.ValueError>` if the operation name
+             doesn't match the :data:`_OPERATION_NAME_RE` regex.
     """
     match = _OPERATION_NAME_RE.match(operation_pb.name)
     if match is None:
@@ -162,9 +162,9 @@ class Cluster(object):
 
         :rtype: :class:`Cluster`
         :returns: The cluster parsed from the protobuf response.
-        :raises: :class:`ValueError` if the cluster name does not match
-                 ``_CLUSTER_NAME_RE`` or if the parsed project ID does
-                 not match the project ID on the client.
+        :raises: :class:`ValueError <exceptions.ValueError>` if the cluster
+                 name does not match :data:`_CLUSTER_NAME_RE` or if the parsed
+                 project ID does not match the project ID on the client.
         """
         match = _CLUSTER_NAME_RE.match(cluster_pb.name)
         if match is None:
@@ -223,7 +223,8 @@ class Cluster(object):
           but the return value is not cached.
 
         The cluster name is of the form
-        "projects/{project_id}/zones/{zone}/clusters/{cluster_id}".
+
+            ``"projects/{project_id}/zones/{zone}/clusters/{cluster_id}"``
 
         :rtype: string
         :returns: The cluster name.
@@ -237,7 +238,7 @@ class Cluster(object):
         :type table_id: string
         :param table_id: The ID of the table.
 
-        :rtype: :class:`Table`
+        :rtype: :class:`.Table`
         :returns: The table owned by this cluster.
         """
         return Table(table_id, self)
@@ -288,7 +289,8 @@ class Cluster(object):
 
         :rtype: bool
         :returns: A boolean indicating if the current operation has completed.
-        :raises: :class:`ValueError` if there is no current operation set.
+        :raises: :class:`ValueError <exceptions.ValueError>` if there is no
+                 current operation set.
         """
         if self._operation_id is None:
             raise ValueError('There is no current operation.')
@@ -430,10 +432,10 @@ class Cluster(object):
                                 If not passed, defaults to value set on
                                 cluster.
 
-        :rtype: list of :class:`Table`
+        :rtype: list of :class:`.Table`
         :returns: The list of tables owned by the cluster.
-        :raises: :class:`ValueError` if one of the returned tables has a name
-                 that is not of the expected format.
+        :raises: :class:`ValueError <exceptions.ValueError>` if one of the
+                 returned tables has a name that is not of the expected format.
         """
         request_pb = table_messages_pb2.ListTablesRequest(name=self.name)
         stub = make_stub(self.client, TABLE_STUB_FACTORY,

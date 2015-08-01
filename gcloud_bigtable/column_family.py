@@ -53,8 +53,8 @@ class GarbageCollectionRule(object):
     :type max_age: :class:`datetime.timedelta`
     :param max_age: The maximum age allowed for a cell in the table.
 
-    :raises: :class:`TypeError` if both ``max_num_versions`` and ``max_age``
-             are set.
+    :raises: :class:`TypeError <exceptions.TypeError>` if both
+             ``max_num_versions`` and ``max_age`` are set.
     """
 
     def __init__(self, max_num_versions=None, max_age=None):
@@ -213,7 +213,8 @@ class ColumnFamily(object):
           the return value is not cached.
 
         The table name is of the form
-        ``"projects/../zones/../clusters/../tables/../columnFamilies/.."``
+
+            ``"projects/../zones/../clusters/../tables/../columnFamilies/.."``
 
         :rtype: string
         :returns: The column family name.

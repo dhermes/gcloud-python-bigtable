@@ -15,8 +15,8 @@ The types
 can all be used as the optional ``gc_rule`` argument in the
 :class:`ColumnFamily <gcloud_bigtable.column_family.ColumnFamily>`
 constructor. This value is then used in the
-:meth:`create <gcloud_bigtable.column_family.ColumnFamily.create>` and
-:meth:`update <gcloud_bigtable.column_family.ColumnFamily.update>` methods.
+:meth:`create() <gcloud_bigtable.column_family.ColumnFamily.create>` and
+:meth:`update() <gcloud_bigtable.column_family.ColumnFamily.update>` methods.
 
 These rules can be nested arbitrarily, with
 :class:`GarbageCollectionRule <gcloud_bigtable.column_family.GarbageCollectionRule>`
