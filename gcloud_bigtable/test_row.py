@@ -52,18 +52,29 @@ class TestRow(GRPCMockTestMixin):
     def _makeOne(self, *args, **kwargs):
         return self._getTargetClass()(*args, **kwargs)
 
-    def _constructor_helper(self, row_key, row_key_expected=None):
+    def _constructor_helper(self, row_key, row_key_expected=None, filter=None):
         table = object()
-        row = self._makeOne(row_key, table)
+        row = self._makeOne(row_key, table, filter=filter)
         row_key_val = row_key_expected or row_key
         # Only necessary in Py2
         self.assertEqual(type(row._row_key), type(row_key_val))
         self.assertEqual(row._row_key, row_key_val)
         self.assertTrue(row._table is table)
-        self.assertEqual(row._pb_mutations, [])
+        self.assertTrue(row._filter is filter)
+        if filter is None:
+            self.assertEqual(row._pb_mutations, [])
+            self.assertTrue(row._true_pb_mutations is None)
+            self.assertTrue(row._false_pb_mutations is None)
+        else:
+            self.assertTrue(row._pb_mutations is None)
+            self.assertEqual(row._true_pb_mutations, [])
+            self.assertEqual(row._false_pb_mutations, [])
 
     def test_constructor(self):
         self._constructor_helper(ROW_KEY)
+
+    def test_constructor_with_filter(self):
+        self._constructor_helper(ROW_KEY, filter=object())
 
     def test_constructor_with_unicode(self):
         self._constructor_helper(ROW_KEY_NON_BYTES, row_key_expected=ROW_KEY)

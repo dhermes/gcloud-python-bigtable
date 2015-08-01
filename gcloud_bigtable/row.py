@@ -30,29 +30,49 @@ _MAX_MUTATIONS = 100000
 
 
 class Row(object):
-    """Representation of a Google Cloud Bigtable Column Row.
+    """Representation of a Google Cloud Bigtable Row.
 
     .. note::
 
         A :class:`Row` accumulates mutations locally via the :meth:`set_cell`,
         :meth:`delete`, :meth:`delete_cell` and :meth:`delete_cells` methods.
         To actually send these mutations to the Google Cloud Bigtable API, you
-        must call :meth:`commit`.
+        must call :meth:`commit`. If a ``filter`` is set on the :class:`Row`,
+        the mutations must have an associated state: :data:`True` or
+        :data:`False`. The mutations will be applied conditionally, based on
+        whether the filter matches any cells in the :class:`Row` or not.
 
     :type row_key: bytes (or string)
     :param row_key: The key for the current row.
 
     :type table: :class:`.table.Table`
     :param table: The table that owns the row.
+
+    :type filter: :class:`RowFilter`, :class:`RowFilterChain`,
+                  :class:`RowFilterUnion` or :class:`ConditionalRowFilter`
+    :param filter: (Optional) Filter to be used for conditional mutations.
+                   If a filter is set, then the :class:`Row` will accumulate
+                   mutations for either a :data:`True` or :data:`False` state.
+                   When :meth:`commit`-ed, the mutations for the :data:`True`
+                   state will be applied if the filter matches any cells in the
+                   row, otherwise the :data:`False` state will be.
     """
 
     ALL_COLUMNS = object()
     """Sentinel value used to indicate all columns in a column family."""
 
-    def __init__(self, row_key, table):
+    def __init__(self, row_key, table, filter=None):
         self._row_key = _to_bytes(row_key)
         self._table = table
-        self._pb_mutations = []
+        self._filter = filter
+        if self._filter is None:
+            self._pb_mutations = []
+            self._true_pb_mutations = None
+            self._false_pb_mutations = None
+        else:
+            self._pb_mutations = None
+            self._true_pb_mutations = []
+            self._false_pb_mutations = []
 
     @property
     def table(self):
