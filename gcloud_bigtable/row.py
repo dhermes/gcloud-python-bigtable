@@ -319,6 +319,9 @@ class RowFilter(object):
     :param value_regex_filter: A regular expression (RE2) to match cells with
                                values that match this regex.
 
+    :type column_range_filter: :class:`ColumnRange`
+    :param column_range_filter: Range of columns to limit cells to.
+
     :type timestamp_range_filter: :class:`TimestampRange`
     :param timestamp_range_filter: Range of time that cells should match
                                    against.
@@ -357,6 +360,7 @@ class RowFilter(object):
                  family_name_regex_filter=None,
                  column_qualifier_regex_filter=None,
                  value_regex_filter=None,
+                 column_range_filter=None,
                  timestamp_range_filter=None,
                  cells_per_row_offset_filter=None,
                  cells_per_row_limit_filter=None,
@@ -368,6 +372,7 @@ class RowFilter(object):
             int(family_name_regex_filter is not None) +
             int(column_qualifier_regex_filter is not None) +
             int(value_regex_filter is not None) +
+            int(column_range_filter is not None) +
             int(timestamp_range_filter is not None) +
             int(cells_per_row_offset_filter is not None) +
             int(cells_per_row_limit_filter is not None) +
@@ -382,6 +387,7 @@ class RowFilter(object):
         self.family_name_regex_filter = family_name_regex_filter
         self.column_qualifier_regex_filter = column_qualifier_regex_filter
         self.value_regex_filter = value_regex_filter
+        self.column_range_filter = column_range_filter
         self.timestamp_range_filter = timestamp_range_filter
         self.cells_per_row_offset_filter = cells_per_row_offset_filter
         self.cells_per_row_limit_filter = cells_per_row_limit_filter
@@ -398,6 +404,7 @@ class RowFilter(object):
             (other.column_qualifier_regex_filter ==
              self.column_qualifier_regex_filter) and
             other.value_regex_filter == self.value_regex_filter and
+            other.column_range_filter == self.column_range_filter and
             other.timestamp_range_filter == self.timestamp_range_filter and
             (other.cells_per_row_offset_filter ==
              self.cells_per_row_offset_filter) and
@@ -431,6 +438,9 @@ class RowFilter(object):
         if self.value_regex_filter is not None:
             row_filter_kwargs['value_regex_filter'] = _to_bytes(
                 self.value_regex_filter)
+        if self.column_range_filter is not None:
+            row_filter_kwargs['column_range_filter'] = (
+                self.column_range_filter.to_pb())
         if self.timestamp_range_filter is not None:
             row_filter_kwargs['timestamp_range_filter'] = (
                 self.timestamp_range_filter.to_pb())

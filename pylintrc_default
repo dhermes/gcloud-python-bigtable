@@ -373,7 +373,7 @@ good-names = i, j, k, ex, Run, _,
 # Maximum number of arguments for function / method
 # DEFAULT:  max-args=5
 # RATIONALE:  RowFilter constructor
-max-args = 11
+max-args = 12
 
 # Argument names that match this expression will be ignored. Default to name
 # with leading underscore
