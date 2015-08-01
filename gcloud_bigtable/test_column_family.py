@@ -65,6 +65,16 @@ class TestGarbageCollectionRule(unittest2.TestCase):
         comparison_val = (gc_rule1 != gc_rule2)
         self.assertFalse(comparison_val)
 
+    def test_to_pb_too_many_values(self):
+        from gcloud_bigtable._generated import (
+            bigtable_table_data_pb2 as data_pb2)
+        # Fool the constructor by passing no values.
+        gc_rule = self._makeOne()
+        gc_rule.max_num_versions = object()
+        gc_rule.max_age = object()
+        with self.assertRaises(TypeError):
+            gc_rule.to_pb()
+
     def test_to_pb_no_value(self):
         from gcloud_bigtable._generated import (
             bigtable_table_data_pb2 as data_pb2)

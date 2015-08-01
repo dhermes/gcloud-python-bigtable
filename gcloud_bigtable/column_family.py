@@ -58,11 +58,19 @@ class GarbageCollectionRule(object):
     """
 
     def __init__(self, max_num_versions=None, max_age=None):
-        if max_num_versions is not None and max_age is not None:
-            raise TypeError('At most one of max_num_versions and '
-                            'max_age can be set')
         self.max_num_versions = max_num_versions
         self.max_age = max_age
+        self._check_single_value()
+
+    def _check_single_value(self):
+        """Checks that at most one value is set on the instance.
+
+        :raises: :class:`TypeError <exceptions.TypeError>` if not exactly one
+                 value set on the instance.
+        """
+        if self.max_num_versions is not None and self.max_age is not None:
+            raise TypeError('At most one of max_num_versions and '
+                            'max_age can be set')
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -79,6 +87,7 @@ class GarbageCollectionRule(object):
         :rtype: :class:`data_pb2.GcRule`
         :returns: The converted current object.
         """
+        self._check_single_value()
         gc_rule_kwargs = {}
         if self.max_num_versions is not None:
             gc_rule_kwargs['max_num_versions'] = self.max_num_versions
