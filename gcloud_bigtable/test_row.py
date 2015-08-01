@@ -174,12 +174,11 @@ class TestRow(GRPCMockTestMixin):
         self.assertEqual(mock_row._kwargs, [])
 
         # Actually make the request against the mock class.
-        start = object()
-        end = object()
-        mock_row.delete_cell(COLUMN_FAMILY_ID, COLUMN, start=start, end=end)
+        time_range = object()
+        mock_row.delete_cell(COLUMN_FAMILY_ID, COLUMN, time_range=time_range)
         self.assertEqual(mock_row._pb_mutations, [])
         self.assertEqual(mock_row._args, [(COLUMN_FAMILY_ID, [COLUMN])])
-        self.assertEqual(mock_row._kwargs, [{'end': end, 'start': start}])
+        self.assertEqual(mock_row._kwargs, [{'time_range': time_range}])
 
     def test_delete_cells_non_iterable(self):
         table = object()
@@ -212,51 +211,38 @@ class TestRow(GRPCMockTestMixin):
         row.delete_cells(COLUMN_FAMILY_ID, columns)
         self.assertEqual(row._pb_mutations, [])
 
-    def _delete_cells_helper(self, time_range, start=None, end=None):
+    def _delete_cells_helper(self, time_range=None):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
 
         table = object()
         row = self._makeOne(ROW_KEY, table)
         columns = [COLUMN]
         self.assertEqual(row._pb_mutations, [])
-        row.delete_cells(COLUMN_FAMILY_ID, columns, start=start, end=end)
+        row.delete_cells(COLUMN_FAMILY_ID, columns, time_range=time_range)
 
         expected_pb = data_pb2.Mutation(
             delete_from_column=data_pb2.Mutation.DeleteFromColumn(
                 family_name=COLUMN_FAMILY_ID,
                 column_qualifier=COLUMN,
-                time_range=time_range,
             ),
         )
+        if time_range is not None:
+            expected_pb.delete_from_column.time_range.CopyFrom(
+                time_range.to_pb())
         self.assertEqual(row._pb_mutations, [expected_pb])
 
     def test_delete_cells_no_time_range(self):
-        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        self._delete_cells_helper()
 
-        time_range = data_pb2.TimestampRange()
-        self._delete_cells_helper(time_range)
-
-    def test_delete_cells_with_start(self):
+    def test_delete_cells_with_time_range(self):
         import datetime
-        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
         from gcloud_bigtable. _helpers import EPOCH
+        from gcloud_bigtable.row import TimestampRange
 
         microseconds = 30871000  # Makes sure already milliseconds granularity
         start = EPOCH + datetime.timedelta(microseconds=microseconds)
-        time_range = data_pb2.TimestampRange(
-            start_timestamp_micros=microseconds)
-        self._delete_cells_helper(time_range, start=start)
-
-    def test_delete_cells_with_end(self):
-        import datetime
-        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-        from gcloud_bigtable. _helpers import EPOCH
-
-        microseconds = 30871000  # Makes sure already milliseconds granularity
-        end = EPOCH + datetime.timedelta(microseconds=microseconds)
-        time_range = data_pb2.TimestampRange(
-            end_timestamp_micros=microseconds)
-        self._delete_cells_helper(time_range, end=end)
+        time_range = TimestampRange(start=start)
+        self._delete_cells_helper(time_range=time_range)
 
     def test_delete_cells_with_bad_column(self):
         # This makes sure a failure on one of the columns doesn't leave
@@ -286,14 +272,12 @@ class TestRow(GRPCMockTestMixin):
             delete_from_column=data_pb2.Mutation.DeleteFromColumn(
                 family_name=COLUMN_FAMILY_ID,
                 column_qualifier=column1_bytes,
-                time_range=data_pb2.TimestampRange(),
             ),
         )
         expected_pb2 = data_pb2.Mutation(
             delete_from_column=data_pb2.Mutation.DeleteFromColumn(
                 family_name=COLUMN_FAMILY_ID,
                 column_qualifier=column2_bytes,
-                time_range=data_pb2.TimestampRange(),
             ),
         )
         self.assertEqual(row._pb_mutations, [expected_pb1, expected_pb2])

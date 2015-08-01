@@ -151,7 +151,7 @@ class Row(object):
         mutation_pb = data_pb2.Mutation(delete_from_row=mutation_val)
         self._pb_mutations.append(mutation_pb)
 
-    def delete_cell(self, column_family_id, column, start=None, end=None):
+    def delete_cell(self, column_family_id, column, time_range=None):
         """Deletes cell in this row.
 
         .. note::
@@ -169,19 +169,13 @@ class Row(object):
         :param column: The column within the column family that will have a
                        cell deleted.
 
-        :type start: :class:`datetime.datetime`
-        :param start: (Optional) The (inclusive) lower bound of the timestamp
-                      range within which cells should be deleted. If omitted,
-                      defaults to Unix epoch.
-
-        :type end: :class:`datetime.datetime`
-        :param end: (Optional) The (exclusive) upper bound of the timestamp
-                    range within which cells should be deleted. If omitted,
-                    defaults to "infinity" (no upper bound).
+        :type time_range: :class:`TimestampRange`
+        :param time_range: (Optional) The range of time within which cells
+                           should be deleted.
         """
-        self.delete_cells(column_family_id, [column], start=start, end=end)
+        self.delete_cells(column_family_id, [column], time_range=time_range)
 
-    def delete_cells(self, column_family_id, columns, start=None, end=None):
+    def delete_cells(self, column_family_id, columns, time_range=None):
         """Deletes cells in this row.
 
         .. note::
@@ -200,15 +194,9 @@ class Row(object):
                         cells deleted. If :attr:`Row.ALL_COLUMNS` is used then
                         the entire column family will be deleted from the row.
 
-        :type start: :class:`datetime.datetime`
-        :param start: (Optional) The (inclusive) lower bound of the timestamp
-                      range within which cells should be deleted. If omitted,
-                      defaults to Unix epoch.
-
-        :type end: :class:`datetime.datetime`
-        :param end: (Optional) The (exclusive) upper bound of the timestamp
-                    range within which cells should be deleted. If omitted,
-                    defaults to "infinity" (no upper bound).
+        :type time_range: :class:`TimestampRange`
+        :param time_range: (Optional) The range of time within which cells
+                           should be deleted.
         """
         if columns is self.ALL_COLUMNS:
             mutation_val = data_pb2.Mutation.DeleteFromFamily(
@@ -217,25 +205,21 @@ class Row(object):
             mutation_pb = data_pb2.Mutation(delete_from_family=mutation_val)
             self._pb_mutations.append(mutation_pb)
         else:
-            timestamp_range_kwargs = {}
-            if start is not None:
-                timestamp_range_kwargs['start_timestamp_micros'] = (
-                    _timestamp_to_microseconds(start))
-            if end is not None:
-                timestamp_range_kwargs['end_timestamp_micros'] = (
-                    _timestamp_to_microseconds(end))
-            # NOTE: If start == end == None, this will just be empty. It seems
-            #       this is equivalent to not passing ``time_range`` to the
-            #       ``DeleteFromColumn`` constructor (we are assuming that).
-            time_range = data_pb2.TimestampRange(**timestamp_range_kwargs)
+            delete_kwargs = {}
+            if time_range is not None:
+                delete_kwargs['time_range'] = time_range.to_pb()
+
             to_append = []
             for column in columns:
                 column = _to_bytes(column)
-                mutation_val = data_pb2.Mutation.DeleteFromColumn(
+                # time_range will never change if present, but the rest of
+                # delete_kwargs will
+                delete_kwargs.update(
                     family_name=column_family_id,
                     column_qualifier=column,
-                    time_range=time_range,
                 )
+                mutation_val = data_pb2.Mutation.DeleteFromColumn(
+                    **delete_kwargs)
                 mutation_pb = data_pb2.Mutation(
                     delete_from_column=mutation_val)
                 to_append.append(mutation_pb)
