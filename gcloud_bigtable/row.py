@@ -371,23 +371,6 @@ class RowFilter(object):
                  cells_per_column_limit_filter=None,
                  row_sample_filter=None,
                  strip_value_transformer=None):
-        values_set = (
-            int(row_key_regex_filter is not None) +
-            int(family_name_regex_filter is not None) +
-            int(column_qualifier_regex_filter is not None) +
-            int(value_regex_filter is not None) +
-            int(column_range_filter is not None) +
-            int(timestamp_range_filter is not None) +
-            int(value_range_filter is not None) +
-            int(cells_per_row_offset_filter is not None) +
-            int(cells_per_row_limit_filter is not None) +
-            int(cells_per_column_limit_filter is not None) +
-            int(row_sample_filter is not None) +
-            int(strip_value_transformer is not None)
-        )
-        if values_set != 1:
-            raise TypeError('Exactly one value must be set in a row filter')
-
         self.row_key_regex_filter = row_key_regex_filter
         self.family_name_regex_filter = family_name_regex_filter
         self.column_qualifier_regex_filter = column_qualifier_regex_filter
@@ -400,6 +383,30 @@ class RowFilter(object):
         self.cells_per_column_limit_filter = cells_per_column_limit_filter
         self.row_sample_filter = row_sample_filter
         self.strip_value_transformer = strip_value_transformer
+        self._check_single_value()
+
+    def _check_single_value(self):
+        """Checks that exactly one value is set on the instance.
+
+        :raises: :class:`TypeError <exceptions.TypeError>` if not exactly one
+                 value set on the instance.
+        """
+        values_set = (
+            int(self.row_key_regex_filter is not None) +
+            int(self.family_name_regex_filter is not None) +
+            int(self.column_qualifier_regex_filter is not None) +
+            int(self.value_regex_filter is not None) +
+            int(self.column_range_filter is not None) +
+            int(self.timestamp_range_filter is not None) +
+            int(self.value_range_filter is not None) +
+            int(self.cells_per_row_offset_filter is not None) +
+            int(self.cells_per_row_limit_filter is not None) +
+            int(self.cells_per_column_limit_filter is not None) +
+            int(self.row_sample_filter is not None) +
+            int(self.strip_value_transformer is not None)
+        )
+        if values_set != 1:
+            raise TypeError('Exactly one value must be set in a row filter')
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -432,6 +439,7 @@ class RowFilter(object):
         :rtype: :class:`data_pb2.RowFilter`
         :returns: The converted current object.
         """
+        self._check_single_value()
         row_filter_kwargs = {}
         if self.row_key_regex_filter is not None:
             row_filter_kwargs['row_key_regex_filter'] = _to_bytes(
@@ -756,16 +764,10 @@ class ConditionalRowFilter(object):
     :param false_filter: (Optional) The filter to execute if there are no cells
                          matching ``base_filter``. If not provided, no results
                          will be returned in the false case.
-
-    :raises: :class:`ValueError <exceptions.ValueError>` if neither of
-             ``true_filter`` or ``false_filter`` is set
     """
 
     def __init__(self, base_filter, true_filter=None, false_filter=None):
         self.base_filter = base_filter
-        if true_filter is None and false_filter is None:
-            raise ValueError('At least one of true_filter and false_filter '
-                             'must be set')
         self.true_filter = true_filter
         self.false_filter = false_filter
 

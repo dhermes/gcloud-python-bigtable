@@ -501,15 +501,13 @@ class TestRowFilter(unittest2.TestCase):
         self.assertFalse(comparison_val)
 
     def test_to_pb_empty(self):
-        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-
         # Fool the constructor by passing exactly 1 value.
         row_filter = self._makeOne(strip_value_transformer=True)
         # Make it artificially empty after the fact.
         row_filter.strip_value_transformer = None
 
-        pb_val = row_filter.to_pb()
-        self.assertEqual(pb_val, data_pb2.RowFilter())
+        with self.assertRaises(TypeError):
+            row_filter.to_pb()
 
     def _to_pb_test_helper(self, **kwargs):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
@@ -1047,10 +1045,6 @@ class TestConditionalRowFilter(unittest2.TestCase):
         self.assertTrue(cond_filter.base_filter is base_filter)
         self.assertTrue(cond_filter.true_filter is true_filter)
         self.assertTrue(cond_filter.false_filter is false_filter)
-
-    def test_constructor_failure(self):
-        with self.assertRaises(ValueError):
-            self._makeOne(None)
 
     def test___eq__(self):
         base_filter = object()
