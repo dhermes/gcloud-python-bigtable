@@ -197,15 +197,6 @@ class Cluster(object):
         return self._client.project_id
 
     @property
-    def credentials(self):
-        """Getter for cluster's credentials.
-
-        :rtype: :class:`oauth2client.client.OAuth2Credentials`
-        :returns: The credentials stored on the cluster's client.
-        """
-        return self._client.credentials
-
-    @property
     def timeout_seconds(self):
         """Getter for cluster's default timeout seconds.
 

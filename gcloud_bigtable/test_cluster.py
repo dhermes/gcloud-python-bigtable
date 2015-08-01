@@ -164,16 +164,6 @@ class TestCluster(GRPCMockTestMixin):
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
         self.assertEqual(cluster.project_id, PROJECT_ID)
 
-    def test_credentials_getter(self):
-        from gcloud_bigtable._testing import _MockWithAttachedMethods
-        from gcloud_bigtable.client import Client
-
-        scoped_creds = object()
-        credentials = _MockWithAttachedMethods(scoped_creds)
-        client = Client(credentials, project_id=PROJECT_ID)
-        cluster = self._makeOne(ZONE, CLUSTER_ID, client)
-        self.assertTrue(cluster.credentials is scoped_creds)
-
     def test_timeout_seconds_getter(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable.client import Client

@@ -68,7 +68,7 @@ def transform_old_to_new(line, old_module, new_module,
     :param ignore_import_from: Flag to determine if the "from * import"
                                statements should be ignored.
 
-    :rtype: string or ``NoneType``
+    :rtype: string or :class:`NoneType <types.NoneType>`
     :returns: The transformed line if the old module was found, otherwise
               does nothing.
     """

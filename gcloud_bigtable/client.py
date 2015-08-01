@@ -161,8 +161,9 @@ def _determine_project_id(project_id):
 class Client(object):
     """Client for interacting with Google Cloud Bigtable API.
 
-    :type credentials: :class:`oauth2client.client.OAuth2Credentials` or
-                       :class:`NoneType <types.NoneType>`
+    :type credentials:
+        :class:`OAuth2Credentials <oauth2client.client.OAuth2Credentials>` or
+        :class:`NoneType <types.NoneType>`
     :param credentials: (Optional) The OAuth2 Credentials to use for this
                         cluster. If not provided, defaulst to the Google
                         Application Default Credentials.
@@ -301,7 +302,8 @@ class Client(object):
     def credentials(self):
         """Getter for client's credentials.
 
-        :rtype: :class:`oauth2client.client.OAuth2Credentials`
+        :rtype:
+            :class:`OAuth2Credentials <oauth2client.client.OAuth2Credentials>`
         :returns: The credentials stored on the client.
         """
         return self._credentials

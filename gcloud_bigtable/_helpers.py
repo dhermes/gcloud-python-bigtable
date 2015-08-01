@@ -102,8 +102,8 @@ def _require_pb_property(message_pb, property_name, value):
     :type property_name: string
     :param property_name: The property value to check against.
 
-    :type value: objector :class:`NoneType`
-    :param value: The value to check against the cluster. If ``None``,
+    :type value: object or :class:`NoneType <types.NoneType>`
+    :param value: The value to check against the cluster. If :data:`None`,
                   will not be checked.
 
     :rtype: object

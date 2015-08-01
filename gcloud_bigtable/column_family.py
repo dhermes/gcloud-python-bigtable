@@ -326,9 +326,9 @@ def _gc_rule_from_pb(gc_rule_pb):
     :rtype: :class:`GarbageCollectionRule`,
             :class:`GarbageCollectionRuleUnion`,
             :class:`GarbageCollectionRuleIntersection` or
-            :class:`NoneType`
+            :class:`NoneType <types.NoneType>`
     :returns: An instance of one of the native rules defined
-              in :module:`column_family` or ``None`` if no values were
+              in :module:`column_family` or :data:`None` if no values were
               set on the protobuf passed in.
     :raises: :class:`ValueError` if more than one property has been set on
              the GC rule.
