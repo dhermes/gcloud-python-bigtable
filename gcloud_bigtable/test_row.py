@@ -367,6 +367,7 @@ class TestRowFilter(unittest2.TestCase):
         'family_name_regex_filter',
         'column_qualifier_regex_filter',
         'value_regex_filter',
+        'timestamp_range_filter',
         'cells_per_row_offset_filter',
         'cells_per_row_limit_filter',
         'cells_per_column_limit_filter',
@@ -422,6 +423,13 @@ class TestRowFilter(unittest2.TestCase):
         value = b'value-regex'
         row_filter = self._makeOne(value_regex_filter=value)
         self._row_filter_values_check(row_filter, 'value_regex_filter', value)
+
+    def test_constructor_timestamp_range_filter(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        value = data_pb2.TimestampRange()
+        row_filter = self._makeOne(timestamp_range_filter=value)
+        self._row_filter_values_check(row_filter, 'timestamp_range_filter',
+                                      value)
 
     def test_constructor_cells_per_row_offset_filter(self):
         value = 76
@@ -511,6 +519,17 @@ class TestRowFilter(unittest2.TestCase):
     def test_to_pb_with_value_regex_filter(self):
         value = b'value-regex'
         self._to_pb_test_helper(value_regex_filter=value)
+
+    def test_to_pb_with_timestamp_range_filter(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        from gcloud_bigtable.row import TimestampRange
+
+        value = TimestampRange()
+        row_filter = self._makeOne(timestamp_range_filter=value)
+
+        pb_val = row_filter.to_pb()
+        expected_pb = data_pb2.RowFilter(timestamp_range_filter=value.to_pb())
+        self.assertEqual(pb_val, expected_pb)
 
     def test_to_pb_with_cells_per_row_offset_filter(self):
         value = 76
