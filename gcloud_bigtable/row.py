@@ -189,7 +189,7 @@ class Row(object):
             value=value,
         )
         mutation_pb = data_pb2.Mutation(set_cell=mutation_val)
-        self._pb_mutations.append(mutation_pb)
+        self._get_mutations(None).append(mutation_pb)
 
     def delete(self):
         """Deletes this row from the table.
@@ -203,7 +203,7 @@ class Row(object):
         """
         mutation_val = data_pb2.Mutation.DeleteFromRow()
         mutation_pb = data_pb2.Mutation(delete_from_row=mutation_val)
-        self._pb_mutations.append(mutation_pb)
+        self._get_mutations(None).append(mutation_pb)
 
     def delete_cell(self, column_family_id, column, time_range=None):
         """Deletes cell in this row.
@@ -257,7 +257,7 @@ class Row(object):
                 family_name=column_family_id,
             )
             mutation_pb = data_pb2.Mutation(delete_from_family=mutation_val)
-            self._pb_mutations.append(mutation_pb)
+            self._get_mutations(None).append(mutation_pb)
         else:
             delete_kwargs = {}
             if time_range is not None:
@@ -280,7 +280,7 @@ class Row(object):
 
             # We don't add the mutations until all columns have been
             # processed without error.
-            self._pb_mutations.extend(to_append)
+            self._get_mutations(None).extend(to_append)
 
     def commit(self, timeout_seconds=None):
         """Makes a ``MutateRow`` API request.
@@ -301,7 +301,8 @@ class Row(object):
         :raises: :class:`ValueError <exceptions.ValueError>` if the number of
                  mutations exceeds the ``_MAX_MUTATIONS``.
         """
-        num_mutations = len(self._pb_mutations)
+        mutations_list = self._get_mutations(None)
+        num_mutations = len(mutations_list)
         if num_mutations == 0:
             return
         if num_mutations > _MAX_MUTATIONS:
@@ -310,7 +311,7 @@ class Row(object):
         request_pb = messages_pb2.MutateRowRequest(
             table_name=self.table.name,
             row_key=self.row_key,
-            mutations=self._pb_mutations,
+            mutations=mutations_list,
         )
         stub = make_stub(self.client, DATA_STUB_FACTORY,
                          DATA_API_HOST, DATA_API_PORT)
@@ -321,7 +322,7 @@ class Row(object):
             response.result()
 
         # Reset mutations after commit-ing request.
-        self._pb_mutations = []
+        mutations_list[:] = []
 
 
 # NOTE: For developers, this class may seem to be a bit verbose, i.e.
