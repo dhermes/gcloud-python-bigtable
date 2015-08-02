@@ -372,7 +372,7 @@ class TestRow(GRPCMockTestMixin):
         response_pb = empty_pb2.Empty()
 
         # Create expected_result.
-        expected_result = None  # delete() has no return value.
+        expected_result = None  # commit() has no return value when no filter.
 
         # We must create the cluster with the client passed in
         # and then the table with that cluster.
@@ -414,6 +414,94 @@ class TestRow(GRPCMockTestMixin):
         mock_make_stub = _MockCalled()
         with _Monkey(MUT, make_stub=mock_make_stub):
             row.commit()
+        # Make sure no stub was ever created, i.e. no request was sent.
+        mock_make_stub.check_called(self, [])
+
+    def test_commit_with_filter(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable.row import RowFilter
+
+        # Create request_pb
+        value = b'bytes-value'
+        project_id = 'project-id'
+        zone = 'zone'
+        cluster_id = 'cluster-id'
+        table_id = 'table-id'
+        table_name = ('projects/' + project_id + '/zones/' + zone +
+                      '/clusters/' + cluster_id + '/tables/' + table_id)
+        mutation = data_pb2.Mutation(
+            set_cell=data_pb2.Mutation.SetCell(
+                family_name=COLUMN_FAMILY_ID,
+                column_qualifier=COLUMN,
+                timestamp_micros=-1,  # Default value.
+                value=value,
+            ),
+        )
+        row_filter = RowFilter(row_sample_filter=0.33)
+        request_pb = messages_pb2.CheckAndMutateRowRequest(
+            table_name=table_name,
+            row_key=ROW_KEY,
+            predicate_filter=row_filter.to_pb(),
+            true_mutations=[mutation],
+            false_mutations=[],
+        )
+
+        # Create response_pb
+        predicate_matched = True
+        response_pb = messages_pb2.CheckAndMutateRowResponse(
+            predicate_matched=predicate_matched)
+
+        # Create expected_result.
+        expected_result = predicate_matched
+
+        # We must create the cluster with the client passed in
+        # and then the table with that cluster.
+        TEST_CASE = self
+        timeout_seconds = 262
+
+        def result_method(client):
+            cluster = client.cluster(zone, cluster_id)
+            table = cluster.table(table_id)
+            row = TEST_CASE._makeOne(ROW_KEY, table, filter=row_filter)
+            # Note in our expecte `request_pb` we set true_mutations, hence
+            # use the true state here.
+            row.set_cell(COLUMN_FAMILY_ID, COLUMN, value, state=True)
+            return row.commit(timeout_seconds=timeout_seconds)
+
+        self._grpc_client_test_helper('CheckAndMutateRow', result_method,
+                                      request_pb, response_pb, expected_result,
+                                      project_id,
+                                      timeout_seconds=timeout_seconds)
+
+    def test_commit_with_filter_too_many_mutations(self):
+        from gcloud_bigtable import row as MUT
+        from gcloud_bigtable._testing import _Monkey
+
+        table = object()
+        filter_ = object()
+        row = self._makeOne(ROW_KEY, table, filter=filter_)
+        row._true_pb_mutations = [1, 2, 3]
+        num_mutations = len(row._true_pb_mutations)
+        with _Monkey(MUT, _MAX_MUTATIONS=num_mutations - 1):
+            with self.assertRaises(ValueError):
+                row.commit()
+
+    def test_commit_with_filter_no_mutations(self):
+        from gcloud_bigtable import row as MUT
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _Monkey
+
+        table = object()
+        filter_ = object()
+        row = self._makeOne(ROW_KEY, table, filter=filter_)
+        self.assertEqual(row._true_pb_mutations, [])
+        self.assertEqual(row._false_pb_mutations, [])
+        mock_make_stub = _MockCalled()
+        with _Monkey(MUT, make_stub=mock_make_stub):
+            result = row.commit()
+            self.assertEqual(result, None)
         # Make sure no stub was ever created, i.e. no request was sent.
         mock_make_stub.check_called(self, [])
 
