@@ -93,6 +93,11 @@ class TestRow(GRPCMockTestMixin):
         row = self._makeOne(ROW_KEY, object())
         self.assertEqual(row.row_key, ROW_KEY)
 
+    def test_filter_getter(self):
+        filter_ = object()
+        row = self._makeOne(ROW_KEY, object(), filter=filter_)
+        self.assertTrue(row.filter is filter_)
+
     def test_client_getter(self):
         client = object()
         table = _Table(None, client=client)
@@ -116,6 +121,45 @@ class TestRow(GRPCMockTestMixin):
             delete_from_row=data_pb2.Mutation.DeleteFromRow(),
         )
         self.assertEqual(row._pb_mutations, [expected_pb])
+
+    def _get_mutations_helper(self, filter=None, state=None):
+        row = self._makeOne(ROW_KEY, None, filter=filter)
+        # Mock the mutations with unique objects so we can compare.
+        row._pb_mutations = no_bool = object()
+        row._true_pb_mutations = true_mutations = object()
+        row._false_pb_mutations = false_mutations = object()
+
+        mutations = row._get_mutations(state)
+        return (no_bool, true_mutations, false_mutations), mutations
+
+    def test__get_mutations_no_filter(self):
+        (no_bool, _, _), mutations = self._get_mutations_helper()
+        self.assertTrue(mutations is no_bool)
+
+    def test__get_mutations_no_filter_bad_state(self):
+        state = object()  # State should be null when no filter.
+        with self.assertRaises(ValueError):
+            self._get_mutations_helper(state=state)
+
+    def test__get_mutations_with_filter_true_state(self):
+        filter_ = object()
+        state = True
+        (_, true_filter, _), mutations = self._get_mutations_helper(
+            filter=filter_, state=state)
+        self.assertTrue(mutations is true_filter)
+
+    def test__get_mutations_with_filter_false_state(self):
+        filter_ = object()
+        state = False
+        (_, _, false_filter), mutations = self._get_mutations_helper(
+            filter=filter_, state=state)
+        self.assertTrue(mutations is false_filter)
+
+    def test__get_mutations_with_filter_bad_state(self):
+        filter_ = object()
+        state = None
+        with self.assertRaises(ValueError):
+            self._get_mutations_helper(filter=filter_, state=state)
 
     def _set_cell_helper(self, column=COLUMN,
                          column_bytes=None, timestamp=None,

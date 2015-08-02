@@ -93,6 +93,17 @@ class Row(object):
         return self._row_key
 
     @property
+    def filter(self):
+        """Getter for row's filter.
+
+        :rtype: :class:`RowFilter`, :class:`RowFilterChain`,
+                :class:`RowFilterUnion`, :class:`ConditionalRowFilter` or
+                :class:`NoneType <types.NoneType>`
+        :returns: The filter for the row.
+        """
+        return self._filter
+
+    @property
     def client(self):
         """Getter for row's client.
 
@@ -109,6 +120,31 @@ class Row(object):
         :returns: The timeout seconds default.
         """
         return self.table.timeout_seconds
+
+    def _get_mutations(self, state):
+        """Gets the list of mutations for a given state.
+
+        If the state is :data`None` but there is a filter set, then we've
+        reached an invalid state. Similarly if no filter is set but the
+        state is not :data:`None`.
+
+        :rtype: list
+        :returns: The list to add new mutations to (for the current state).
+        :raises: :class:`ValueError <exceptions.ValueError>`
+        """
+        if state is None:
+            if self._filter is not None:
+                raise ValueError('A filter is set on the current row, but no '
+                                 'state given for the mutation')
+            return self._pb_mutations
+        else:
+            if self._filter is None:
+                raise ValueError('No filter was set on the current row, but a '
+                                 'state was given for the mutation')
+            if state:
+                return self._true_pb_mutations
+            else:
+                return self._false_pb_mutations
 
     def set_cell(self, column_family_id, column, value, timestamp=None):
         """Sets a value in this row.
