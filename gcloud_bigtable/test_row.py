@@ -233,7 +233,10 @@ class TestRow(GRPCMockTestMixin):
         mock_row.delete_cell(COLUMN_FAMILY_ID, COLUMN, time_range=time_range)
         self.assertEqual(mock_row._pb_mutations, [])
         self.assertEqual(mock_row._args, [(COLUMN_FAMILY_ID, [COLUMN])])
-        self.assertEqual(mock_row._kwargs, [{'time_range': time_range}])
+        self.assertEqual(mock_row._kwargs, [{
+            'state': None,
+            'time_range': time_range,
+        }])
 
     def test_delete_cells_non_iterable(self):
         table = object()

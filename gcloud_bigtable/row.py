@@ -128,6 +128,9 @@ class Row(object):
         reached an invalid state. Similarly if no filter is set but the
         state is not :data:`None`.
 
+        :type state: bool or :class:`NoneType <types.NoneType>`
+        :param state: The state that the mutation should be applied in.
+
         :rtype: list
         :returns: The list to add new mutations to (for the current state).
         :raises: :class:`ValueError <exceptions.ValueError>`
@@ -146,7 +149,8 @@ class Row(object):
             else:
                 return self._false_pb_mutations
 
-    def set_cell(self, column_family_id, column, value, timestamp=None):
+    def set_cell(self, column_family_id, column, value, timestamp=None,
+                 state=None):
         """Sets a value in this row.
 
         The cell is determined by the ``row_key`` of the :class:`Row` and the
@@ -173,6 +177,10 @@ class Row(object):
 
         :type timestamp: :class:`datetime.datetime`
         :param timestamp: (Optional) The timestamp of the operation.
+
+        :type state: bool or :class:`NoneType <types.NoneType>`
+        :param state: (Optional) The state that the mutation should be
+                      applied in.
         """
         column = _to_bytes(column)
         value = _to_bytes(value)
@@ -189,9 +197,9 @@ class Row(object):
             value=value,
         )
         mutation_pb = data_pb2.Mutation(set_cell=mutation_val)
-        self._get_mutations(None).append(mutation_pb)
+        self._get_mutations(state).append(mutation_pb)
 
-    def delete(self):
+    def delete(self, state=None):
         """Deletes this row from the table.
 
         .. note::
@@ -200,12 +208,17 @@ class Row(object):
             :class:`Row`, but does not make an API request. To actually
             send an API request (with the mutations) to the Google Cloud
             Bigtable API, call :meth:`commit`.
+
+        :type state: bool or :class:`NoneType <types.NoneType>`
+        :param state: (Optional) The state that the mutation should be
+                      applied in.
         """
         mutation_val = data_pb2.Mutation.DeleteFromRow()
         mutation_pb = data_pb2.Mutation(delete_from_row=mutation_val)
-        self._get_mutations(None).append(mutation_pb)
+        self._get_mutations(state).append(mutation_pb)
 
-    def delete_cell(self, column_family_id, column, time_range=None):
+    def delete_cell(self, column_family_id, column, time_range=None,
+                    state=None):
         """Deletes cell in this row.
 
         .. note::
@@ -226,10 +239,16 @@ class Row(object):
         :type time_range: :class:`TimestampRange`
         :param time_range: (Optional) The range of time within which cells
                            should be deleted.
-        """
-        self.delete_cells(column_family_id, [column], time_range=time_range)
 
-    def delete_cells(self, column_family_id, columns, time_range=None):
+        :type state: bool or :class:`NoneType <types.NoneType>`
+        :param state: (Optional) The state that the mutation should be
+                      applied in.
+        """
+        self.delete_cells(column_family_id, [column], time_range=time_range,
+                          state=state)
+
+    def delete_cells(self, column_family_id, columns, time_range=None,
+                     state=None):
         """Deletes cells in this row.
 
         .. note::
@@ -251,13 +270,18 @@ class Row(object):
         :type time_range: :class:`TimestampRange`
         :param time_range: (Optional) The range of time within which cells
                            should be deleted.
+
+        :type state: bool or :class:`NoneType <types.NoneType>`
+        :param state: (Optional) The state that the mutation should be
+                      applied in.
         """
+        mutations_list = self._get_mutations(state)
         if columns is self.ALL_COLUMNS:
             mutation_val = data_pb2.Mutation.DeleteFromFamily(
                 family_name=column_family_id,
             )
             mutation_pb = data_pb2.Mutation(delete_from_family=mutation_val)
-            self._get_mutations(None).append(mutation_pb)
+            mutations_list.append(mutation_pb)
         else:
             delete_kwargs = {}
             if time_range is not None:
@@ -280,7 +304,7 @@ class Row(object):
 
             # We don't add the mutations until all columns have been
             # processed without error.
-            self._get_mutations(None).extend(to_append)
+            mutations_list.extend(to_append)
 
     def commit(self, timeout_seconds=None):
         """Makes a ``MutateRow`` API request.
