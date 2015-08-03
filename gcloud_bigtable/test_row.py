@@ -61,6 +61,7 @@ class TestRow(GRPCMockTestMixin):
         self.assertEqual(row._row_key, row_key_val)
         self.assertTrue(row._table is table)
         self.assertTrue(row._filter is filter)
+        self.assertEqual(row._rule_pb_list, [])
         if filter is None:
             self.assertEqual(row._pb_mutations, [])
             self.assertTrue(row._true_pb_mutations is None)
@@ -110,18 +111,6 @@ class TestRow(GRPCMockTestMixin):
         row = self._makeOne(ROW_KEY, table)
         self.assertEqual(row.timeout_seconds, timeout_seconds)
 
-    def test_delete(self):
-        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-
-        row = self._makeOne(ROW_KEY, object())
-        self.assertEqual(row._pb_mutations, [])
-        row.delete()
-
-        expected_pb = data_pb2.Mutation(
-            delete_from_row=data_pb2.Mutation.DeleteFromRow(),
-        )
-        self.assertEqual(row._pb_mutations, [expected_pb])
-
     def _get_mutations_helper(self, filter=None, state=None):
         row = self._makeOne(ROW_KEY, None, filter=filter)
         # Mock the mutations with unique objects so we can compare.
@@ -161,18 +150,49 @@ class TestRow(GRPCMockTestMixin):
         with self.assertRaises(ValueError):
             self._get_mutations_helper(filter=filter_, state=state)
 
-    def _set_cell_helper(self, column=COLUMN,
-                         column_bytes=None, timestamp=None,
-                         timestamp_micros=-1):
+    def test_append_cell_value(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
 
         table = object()
         row = self._makeOne(ROW_KEY, table)
-        value = b'foobar'
+        self.assertEqual(row._rule_pb_list, [])
+
+        value = b'bytes-val'
+        row.append_cell_value(COLUMN_FAMILY_ID, COLUMN, value)
+        expected_pb = data_pb2.ReadModifyWriteRule(
+            family_name=COLUMN_FAMILY_ID, column_qualifier=COLUMN,
+            append_value=value)
+        self.assertEqual(row._rule_pb_list, [expected_pb])
+
+    def test_increment_cell_value(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        table = object()
+        row = self._makeOne(ROW_KEY, table)
+        self.assertEqual(row._rule_pb_list, [])
+
+        int_value = 281330
+        row.increment_cell_value(COLUMN_FAMILY_ID, COLUMN, int_value)
+        expected_pb = data_pb2.ReadModifyWriteRule(
+            family_name=COLUMN_FAMILY_ID, column_qualifier=COLUMN,
+            increment_amount=int_value)
+        self.assertEqual(row._rule_pb_list, [expected_pb])
+
+    def _set_cell_helper(self, column=COLUMN, column_bytes=None,
+                         value=b'foobar', timestamp=None,
+                         timestamp_micros=-1):
+        import six
+        import struct
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        table = object()
+        row = self._makeOne(ROW_KEY, table)
         self.assertEqual(row._pb_mutations, [])
         row.set_cell(COLUMN_FAMILY_ID, column,
                      value, timestamp=timestamp)
 
+        if isinstance(value, six.integer_types):
+            value = struct.pack('>q', value)
         expected_pb = data_pb2.Mutation(
             set_cell=data_pb2.Mutation.SetCell(
                 family_name=COLUMN_FAMILY_ID,
@@ -188,6 +208,10 @@ class TestRow(GRPCMockTestMixin):
 
     def test_set_cell_with_string_column(self):
         self._set_cell_helper(column=COLUMN_NON_BYTES, column_bytes=COLUMN)
+
+    def test_set_cell_with_integer_value(self):
+        value = 1337
+        self._set_cell_helper(column=COLUMN, value=value)
 
     def test_set_cell_with_non_bytes_value(self):
         table = object()
@@ -205,6 +229,18 @@ class TestRow(GRPCMockTestMixin):
         timestamp = EPOCH + datetime.timedelta(microseconds=microseconds)
         self._set_cell_helper(timestamp=timestamp,
                               timestamp_micros=millis_granularity)
+
+    def test_delete(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        row = self._makeOne(ROW_KEY, object())
+        self.assertEqual(row._pb_mutations, [])
+        row.delete()
+
+        expected_pb = data_pb2.Mutation(
+            delete_from_row=data_pb2.Mutation.DeleteFromRow(),
+        )
+        self.assertEqual(row._pb_mutations, [expected_pb])
 
     def test_delete_cell(self):
         klass = self._getTargetClass()
