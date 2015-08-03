@@ -411,9 +411,6 @@ class Row(object):
             # We expect a `._generated.empty_pb2.Empty`.
             response.result()
 
-        # Reset mutations after commit-ing request.
-        mutations_list[:] = []
-
     def _commit_check_and_mutate(self, timeout_seconds=None):
         """Makes a ``CheckAndMutateRow`` API request.
 
@@ -459,11 +456,15 @@ class Row(object):
             # We expect a `.messages_pb2.CheckAndMutateRowResponse`
             check_and_mutate_row_response = response.result()
 
-        # Reset mutations after commit-ing request.
-        true_mutations[:] = []
-        false_mutations[:] = []
-
         return check_and_mutate_row_response.predicate_matched
+
+    def clear_mutations(self):
+        """Removes all currently accumulated mutations on the current row."""
+        if self.filter is None:
+            self._pb_mutations[:] = []
+        else:
+            self._true_pb_mutations[:] = []
+            self._false_pb_mutations[:] = []
 
     def commit(self, timeout_seconds=None):
         """Makes a ``MutateRow`` or ``CheckAndMutateRow`` API request.
@@ -494,10 +495,19 @@ class Row(object):
                  mutations exceeds the ``_MAX_MUTATIONS``.
         """
         if self.filter is None:
-            return self._commit_mutate(timeout_seconds=timeout_seconds)
+            result = self._commit_mutate(timeout_seconds=timeout_seconds)
         else:
-            return self._commit_check_and_mutate(
+            result = self._commit_check_and_mutate(
                 timeout_seconds=timeout_seconds)
+
+        # Reset mutations after commit-ing request.
+        self.clear_mutations()
+
+        return result
+
+    def clear_modification_rules(self):
+        """Removes all currently accumulated modifications on current row."""
+        self._rule_pb_list[:] = []
 
     def commit_modifications(self, timeout_seconds=None):
         """Makes a ``ReadModifyWriteRow`` API request.
@@ -557,6 +567,9 @@ class Row(object):
                                                      timeout_seconds)
             # We expect a `.data_pb2.Row`
             row_response = response.result()
+
+        # Reset modifications after commit-ing request.
+        self.clear_modification_rules()
 
         # NOTE: We expect row_response.key == self.row_key but don't check.
         return _parse_rmw_row_response(row_response)

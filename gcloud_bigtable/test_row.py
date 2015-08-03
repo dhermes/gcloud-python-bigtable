@@ -413,12 +413,14 @@ class TestRow(GRPCMockTestMixin):
         # We must create the cluster with the client passed in
         # and then the table with that cluster.
         TEST_CASE = self
+        ROW_CREATED = []
         timeout_seconds = 711
 
         def result_method(client):
             cluster = client.cluster(ZONE, CLUSTER_ID)
             table = cluster.table(TABLE_ID)
             row = TEST_CASE._makeOne(ROW_KEY, table)
+            ROW_CREATED.append(row)
             row.set_cell(COLUMN_FAMILY_ID, COLUMN, value)
             return row.commit(timeout_seconds=timeout_seconds)
 
@@ -426,6 +428,9 @@ class TestRow(GRPCMockTestMixin):
                                       request_pb, response_pb, expected_result,
                                       PROJECT_ID,
                                       timeout_seconds=timeout_seconds)
+        self.assertEqual(ROW_CREATED[0]._pb_mutations, [])
+        self.assertEqual(ROW_CREATED[0]._true_pb_mutations, None)
+        self.assertEqual(ROW_CREATED[0]._false_pb_mutations, None)
 
     def test_commit_too_many_mutations(self):
         from gcloud_bigtable._testing import _Monkey
@@ -489,12 +494,14 @@ class TestRow(GRPCMockTestMixin):
         # We must create the cluster with the client passed in
         # and then the table with that cluster.
         TEST_CASE = self
+        ROW_CREATED = []
         timeout_seconds = 262
 
         def result_method(client):
             cluster = client.cluster(ZONE, CLUSTER_ID)
             table = cluster.table(TABLE_ID)
             row = TEST_CASE._makeOne(ROW_KEY, table, filter=row_filter)
+            ROW_CREATED.append(row)
             # Note in our expected `request_pb` we set true_mutations, hence
             # use the true state here.
             row.set_cell(COLUMN_FAMILY_ID, COLUMN, value, state=True)
@@ -504,6 +511,9 @@ class TestRow(GRPCMockTestMixin):
                                       request_pb, response_pb, expected_result,
                                       PROJECT_ID,
                                       timeout_seconds=timeout_seconds)
+        self.assertEqual(ROW_CREATED[0]._pb_mutations, None)
+        self.assertEqual(ROW_CREATED[0]._true_pb_mutations, [])
+        self.assertEqual(ROW_CREATED[0]._false_pb_mutations, [])
 
     def test_commit_with_filter_too_many_mutations(self):
         from gcloud_bigtable._testing import _Monkey
@@ -568,12 +578,14 @@ class TestRow(GRPCMockTestMixin):
         # We must create the cluster with the client passed in
         # and then the table with that cluster.
         TEST_CASE = self
+        ROW_CREATED = []
         timeout_seconds = 87
 
         def result_method(client):
             cluster = client.cluster(ZONE, CLUSTER_ID)
             table = cluster.table(TABLE_ID)
             row = TEST_CASE._makeOne(ROW_KEY, table)
+            ROW_CREATED.append(row)
             row.append_cell_value(COLUMN_FAMILY_ID, COLUMN, value)
             return row.commit_modifications(timeout_seconds=timeout_seconds)
 
@@ -585,6 +597,7 @@ class TestRow(GRPCMockTestMixin):
                                           timeout_seconds=timeout_seconds)
 
         mock_parse_rmw_row_response.check_called(self, [(response_pb,)])
+        self.assertEqual(ROW_CREATED[0]._rule_pb_list, [])
 
     def test_commit_modifications_no_rules(self):
         from gcloud_bigtable._testing import _MockCalled
