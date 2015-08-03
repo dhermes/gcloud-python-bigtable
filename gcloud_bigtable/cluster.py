@@ -51,7 +51,7 @@ def _prepare_create_request(cluster):
     :type cluster: :class:`Cluster`
     :param cluster: The cluster to be created.
 
-    :rtype: :class:`messages_pb2.CreateClusterRequest`
+    :rtype: :class:`.messages_pb2.CreateClusterRequest`
     :returns: The CreateCluster request object containing the cluster info.
     """
     zone_full_name = ('projects/' + cluster.project_id +
@@ -110,7 +110,7 @@ class Cluster(object):
 
         For now, we leave out the properties ``hdd_bytes`` and ``ssd_bytes``
         (both integers) and also the ``default_storage_type`` (an enum)
-        which if not sent will end up as ``data_pb2.STORAGE_SSD``.
+        which if not sent will end up as :data:`.data_pb2.STORAGE_SSD`.
 
     :type zone: string
     :param zone: The name of the zone where the cluster resides.

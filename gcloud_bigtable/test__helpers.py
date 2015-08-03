@@ -290,6 +290,21 @@ class Test__timestamp_to_microseconds(unittest2.TestCase):
             self._callFUT(timestamp)
 
 
+class Test__microseconds_to_timestamp(unittest2.TestCase):
+
+    def _callFUT(self, microseconds):
+        from gcloud_bigtable._helpers import _microseconds_to_timestamp
+        return _microseconds_to_timestamp(microseconds)
+
+    def test_it(self):
+        import datetime
+        from gcloud_bigtable import _helpers as MUT
+
+        microseconds = 123456
+        timestamp = MUT.EPOCH + datetime.timedelta(microseconds=microseconds)
+        self.assertEqual(timestamp, self._callFUT(microseconds))
+
+
 class Test__to_bytes(unittest2.TestCase):
 
     def _callFUT(self, value):

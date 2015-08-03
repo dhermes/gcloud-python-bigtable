@@ -18,6 +18,12 @@ import unittest2
 from gcloud_bigtable._grpc_mocks import GRPCMockTestMixin
 
 
+PROJECT_ID = u'project-id'
+ZONE = u'zone'
+CLUSTER_ID = u'cluster-id'
+TABLE_ID = u'table-id'
+TABLE_NAME = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+              '/clusters/' + CLUSTER_ID + '/tables/' + TABLE_ID)
 ROW_KEY = b'row_key'
 ROW_KEY_NON_BYTES = u'row_key'
 COLUMN = b'column'
@@ -384,12 +390,6 @@ class TestRow(GRPCMockTestMixin):
 
         # Create request_pb
         value = b'bytes-value'
-        project_id = 'project-id'
-        zone = 'zone'
-        cluster_id = 'cluster-id'
-        table_id = 'table-id'
-        table_name = ('projects/' + project_id + '/zones/' + zone +
-                      '/clusters/' + cluster_id + '/tables/' + table_id)
         mutation = data_pb2.Mutation(
             set_cell=data_pb2.Mutation.SetCell(
                 family_name=COLUMN_FAMILY_ID,
@@ -399,7 +399,7 @@ class TestRow(GRPCMockTestMixin):
             ),
         )
         request_pb = messages_pb2.MutateRowRequest(
-            table_name=table_name,
+            table_name=TABLE_NAME,
             row_key=ROW_KEY,
             mutations=[mutation],
         )
@@ -416,20 +416,20 @@ class TestRow(GRPCMockTestMixin):
         timeout_seconds = 711
 
         def result_method(client):
-            cluster = client.cluster(zone, cluster_id)
-            table = cluster.table(table_id)
+            cluster = client.cluster(ZONE, CLUSTER_ID)
+            table = cluster.table(TABLE_ID)
             row = TEST_CASE._makeOne(ROW_KEY, table)
             row.set_cell(COLUMN_FAMILY_ID, COLUMN, value)
             return row.commit(timeout_seconds=timeout_seconds)
 
         self._grpc_client_test_helper('MutateRow', result_method,
                                       request_pb, response_pb, expected_result,
-                                      project_id,
+                                      PROJECT_ID,
                                       timeout_seconds=timeout_seconds)
 
     def test_commit_too_many_mutations(self):
-        from gcloud_bigtable import row as MUT
         from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import row as MUT
 
         table = object()
         row = self._makeOne(ROW_KEY, table)
@@ -440,9 +440,9 @@ class TestRow(GRPCMockTestMixin):
                 row.commit()
 
     def test_commit_no_mutations(self):
-        from gcloud_bigtable import row as MUT
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import row as MUT
 
         table = object()
         row = self._makeOne(ROW_KEY, table)
@@ -461,12 +461,6 @@ class TestRow(GRPCMockTestMixin):
 
         # Create request_pb
         value = b'bytes-value'
-        project_id = 'project-id'
-        zone = 'zone'
-        cluster_id = 'cluster-id'
-        table_id = 'table-id'
-        table_name = ('projects/' + project_id + '/zones/' + zone +
-                      '/clusters/' + cluster_id + '/tables/' + table_id)
         mutation = data_pb2.Mutation(
             set_cell=data_pb2.Mutation.SetCell(
                 family_name=COLUMN_FAMILY_ID,
@@ -477,7 +471,7 @@ class TestRow(GRPCMockTestMixin):
         )
         row_filter = RowFilter(row_sample_filter=0.33)
         request_pb = messages_pb2.CheckAndMutateRowRequest(
-            table_name=table_name,
+            table_name=TABLE_NAME,
             row_key=ROW_KEY,
             predicate_filter=row_filter.to_pb(),
             true_mutations=[mutation],
@@ -498,22 +492,22 @@ class TestRow(GRPCMockTestMixin):
         timeout_seconds = 262
 
         def result_method(client):
-            cluster = client.cluster(zone, cluster_id)
-            table = cluster.table(table_id)
+            cluster = client.cluster(ZONE, CLUSTER_ID)
+            table = cluster.table(TABLE_ID)
             row = TEST_CASE._makeOne(ROW_KEY, table, filter=row_filter)
-            # Note in our expecte `request_pb` we set true_mutations, hence
+            # Note in our expected `request_pb` we set true_mutations, hence
             # use the true state here.
             row.set_cell(COLUMN_FAMILY_ID, COLUMN, value, state=True)
             return row.commit(timeout_seconds=timeout_seconds)
 
         self._grpc_client_test_helper('CheckAndMutateRow', result_method,
                                       request_pb, response_pb, expected_result,
-                                      project_id,
+                                      PROJECT_ID,
                                       timeout_seconds=timeout_seconds)
 
     def test_commit_with_filter_too_many_mutations(self):
-        from gcloud_bigtable import row as MUT
         from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import row as MUT
 
         table = object()
         filter_ = object()
@@ -525,9 +519,9 @@ class TestRow(GRPCMockTestMixin):
                 row.commit()
 
     def test_commit_with_filter_no_mutations(self):
-        from gcloud_bigtable import row as MUT
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import row as MUT
 
         table = object()
         filter_ = object()
@@ -540,6 +534,158 @@ class TestRow(GRPCMockTestMixin):
             self.assertEqual(result, None)
         # Make sure no stub was ever created, i.e. no request was sent.
         mock_make_stub.check_called(self, [])
+
+    def test_commit_modifications(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import row as MUT
+
+        # Create request_pb
+        value = b'bytes-value'
+        # We will call row.append_cell_value(COLUMN_FAMILY_ID, COLUMN, value).
+        request_pb = messages_pb2.ReadModifyWriteRowRequest(
+            table_name=TABLE_NAME,
+            row_key=ROW_KEY,
+            rules=[
+                data_pb2.ReadModifyWriteRule(
+                    family_name=COLUMN_FAMILY_ID,
+                    column_qualifier=COLUMN,
+                    append_value=value,
+                ),
+            ],
+        )
+
+        # Create response_pb
+        response_pb = object()
+
+        # Create expected_result.
+        expected_result = object()
+        mock_parse_rmw_row_response = _MockCalled(expected_result)
+
+        # We must create the cluster with the client passed in
+        # and then the table with that cluster.
+        TEST_CASE = self
+        timeout_seconds = 87
+
+        def result_method(client):
+            cluster = client.cluster(ZONE, CLUSTER_ID)
+            table = cluster.table(TABLE_ID)
+            row = TEST_CASE._makeOne(ROW_KEY, table)
+            row.append_cell_value(COLUMN_FAMILY_ID, COLUMN, value)
+            return row.commit_modifications(timeout_seconds=timeout_seconds)
+
+        with _Monkey(MUT, _parse_rmw_row_response=mock_parse_rmw_row_response):
+            self._grpc_client_test_helper('ReadModifyWriteRow', result_method,
+                                          request_pb, response_pb,
+                                          expected_result,
+                                          PROJECT_ID,
+                                          timeout_seconds=timeout_seconds)
+
+        mock_parse_rmw_row_response.check_called(self, [(response_pb,)])
+
+    def test_commit_modifications_no_rules(self):
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import row as MUT
+
+        table = object()
+        row = self._makeOne(ROW_KEY, table)
+        self.assertEqual(row._rule_pb_list, [])
+        mock_make_stub = _MockCalled()
+        with _Monkey(MUT, make_stub=mock_make_stub):
+            result = row.commit_modifications()
+            self.assertEqual(result, {})
+        # Make sure no stub was ever created, i.e. no request was sent.
+        mock_make_stub.check_called(self, [])
+
+
+class Test__parse_rmw_row_response(unittest2.TestCase):
+
+    def _callFUT(self, row_response):
+        from gcloud_bigtable.row import _parse_rmw_row_response
+        return _parse_rmw_row_response(row_response)
+
+    def test_it(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        from gcloud_bigtable._helpers import _microseconds_to_timestamp
+
+        COL_FAM1 = u'col-fam-id'
+        COL_FAM2 = u'col-fam-id2'
+        COL_NAME1 = b'col-name1'
+        COL_NAME2 = b'col-name2'
+        COL_NAME3 = b'col-name3-but-other-fam'
+        CELL_VAL1 = b'cell-val'
+        CELL_VAL2 = b'cell-val-newer'
+        CELL_VAL3 = b'altcol-cell-val'
+        CELL_VAL4 = b'foo'
+
+        microseconds = 1000871
+        timestamp = _microseconds_to_timestamp(microseconds)
+        expected_output = {
+            COL_FAM1: {
+                COL_NAME1: [
+                    (CELL_VAL1, timestamp),
+                    (CELL_VAL2, timestamp),
+                ],
+                COL_NAME2: [
+                    (CELL_VAL3, timestamp),
+                ],
+            },
+            COL_FAM2: {
+                COL_NAME3: [
+                    (CELL_VAL4, timestamp),
+                ],
+            },
+        }
+        sample_input = data_pb2.Row(
+            families=[
+                data_pb2.Family(
+                    name=COL_FAM1,
+                    columns=[
+                        data_pb2.Column(
+                            qualifier=COL_NAME1,
+                            cells=[
+                                data_pb2.Cell(
+                                    value=CELL_VAL1,
+                                    timestamp_micros=microseconds,
+                                ),
+                                data_pb2.Cell(
+                                    value=CELL_VAL2,
+                                    timestamp_micros=microseconds,
+                                ),
+                            ],
+                        ),
+                        data_pb2.Column(
+                            qualifier=COL_NAME2,
+                            cells=[
+                                data_pb2.Cell(
+                                    value=CELL_VAL3,
+                                    timestamp_micros=microseconds,
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                data_pb2.Family(
+                    name=COL_FAM2,
+                    columns=[
+                        data_pb2.Column(
+                            qualifier=COL_NAME3,
+                            cells=[
+                                data_pb2.Cell(
+                                    value=CELL_VAL4,
+                                    timestamp_micros=microseconds,
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+        )
+        self.assertEqual(expected_output, self._callFUT(sample_input))
 
 
 class TestRowFilter(unittest2.TestCase):

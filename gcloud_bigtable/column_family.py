@@ -84,7 +84,7 @@ class GarbageCollectionRule(object):
     def to_pb(self):
         """Converts the :class:`GarbageCollectionRule` to a protobuf.
 
-        :rtype: :class:`data_pb2.GcRule`
+        :rtype: :class:`.data_pb2.GcRule`
         :returns: The converted current object.
         """
         self._check_single_value()
@@ -119,7 +119,7 @@ class GarbageCollectionRuleUnion(object):
     def to_pb(self):
         """Converts the union into a single gc rule as a protobuf.
 
-        :rtype: :class:`data_pb2.GcRule`
+        :rtype: :class:`.data_pb2.GcRule`
         :returns: The converted current object.
         """
         union = data_pb2.GcRule.Union(
@@ -150,7 +150,7 @@ class GarbageCollectionRuleIntersection(object):
     def to_pb(self):
         """Converts the intersection into a single gc rule as a protobuf.
 
-        :rtype: :class:`data_pb2.GcRule`
+        :rtype: :class:`.data_pb2.GcRule`
         :returns: The converted current object.
         """
         intersection = data_pb2.GcRule.Intersection(
@@ -264,7 +264,7 @@ class ColumnFamily(object):
             timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.CreateColumnFamily.async(request_pb,
                                                      timeout_seconds)
-            # We expect a `data_pb2.ColumnFamily`
+            # We expect a `.data_pb2.ColumnFamily`
             response.result()
 
     def update(self, timeout_seconds=None):
@@ -295,7 +295,7 @@ class ColumnFamily(object):
             timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.UpdateColumnFamily.async(request_pb,
                                                      timeout_seconds)
-            # We expect a `data_pb2.ColumnFamily`
+            # We expect a `.data_pb2.ColumnFamily`
             response.result()
 
     def delete(self, timeout_seconds=None):
@@ -320,7 +320,7 @@ class ColumnFamily(object):
 def _gc_rule_from_pb(gc_rule_pb):
     """Convert a protobuf GC rule to a Python version.
 
-    :type gc_rule_pb: :class:`data_pb2.GcRule`
+    :type gc_rule_pb: :class:`.data_pb2.GcRule`
     :param gc_rule_pb: The GC rule to convert.
 
     :rtype: :class:`GarbageCollectionRule`,

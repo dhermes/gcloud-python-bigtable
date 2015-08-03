@@ -21,6 +21,7 @@ import struct
 from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_service_messages_pb2 as messages_pb2)
+from gcloud_bigtable._helpers import _microseconds_to_timestamp
 from gcloud_bigtable._helpers import _timestamp_to_microseconds
 from gcloud_bigtable._helpers import _to_bytes
 from gcloud_bigtable._helpers import make_stub
@@ -455,7 +456,7 @@ class Row(object):
             timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.CheckAndMutateRow.async(request_pb,
                                                     timeout_seconds)
-            # We expect a `messages_pb2.CheckAndMutateRowResponse`
+            # We expect a `.messages_pb2.CheckAndMutateRowResponse`
             check_and_mutate_row_response = response.result()
 
         # Reset mutations after commit-ing request.
@@ -497,6 +498,116 @@ class Row(object):
         else:
             return self._commit_check_and_mutate(
                 timeout_seconds=timeout_seconds)
+
+    def commit_modifications(self, timeout_seconds=None):
+        """Makes a ``ReadModifyWriteRow`` API request.
+
+        This commits modifications made by :meth:`append_cell_value` and
+        :meth:`increment_cell_value`. If no modifications were made, makes
+        no API request and just returns ``{}``.
+
+        Modifies a row atomically, reading the latest existing timestamp/value
+        from the specified columns and writing a new value by appending /
+        incrementing. The new cell created uses either the current server time
+        or the highest timestamp of a cell in that column (if it exceeds the
+        server time).
+
+        :type timeout_seconds: int
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to value set on row.
+
+        :rtype: dict
+        :returns: The new contents of all modified cells. Returned as a
+                  dictionary of column families, each of which holds a
+                  dictionary of columns. Each column contains a list of cells
+                  modified. Each cell is represented with a two-tuple with the
+                  value (in bytes) and the timestamp for the cell. For example:
+
+                  .. code:: python
+
+                      {
+                          u'col-fam-id': {
+                              b'col-name1': [
+                                  (b'cell-val', datetime.datetime(...)),
+                                  (b'cell-val-newer', datetime.datetime(...)),
+                              ],
+                              b'col-name2': [
+                                  (b'altcol-cell-val', datetime.datetime(...)),
+                              ],
+                          },
+                          u'col-fam-id2': {
+                              b'col-name3-but-other-fam': [
+                                  (b'foo', datetime.datetime(...)),
+                              ],
+                          },
+                      }
+        """
+        if len(self._rule_pb_list) == 0:
+            return {}
+        request_pb = messages_pb2.ReadModifyWriteRowRequest(
+            table_name=self.table.name,
+            row_key=self.row_key,
+            rules=self._rule_pb_list,
+        )
+        stub = make_stub(self.client, DATA_STUB_FACTORY,
+                         DATA_API_HOST, DATA_API_PORT)
+        with stub:
+            timeout_seconds = timeout_seconds or self.timeout_seconds
+            response = stub.ReadModifyWriteRow.async(request_pb,
+                                                     timeout_seconds)
+            # We expect a `.data_pb2.Row`
+            row_response = response.result()
+
+        # NOTE: We expect row_response.key == self.row_key but don't check.
+        return _parse_rmw_row_response(row_response)
+
+
+def _parse_rmw_row_response(row_response):
+    """Parses the response to a ``ReadModifyWriteRow`` request.
+
+    :type row_response: :class:`.data_pb2.Row`
+    :param row_response: The response row (with only modified cells) from a
+                         ``ReadModifyWriteRow`` request.
+
+    :rtype: dict
+    :returns: The new contents of all modified cells. Returned as a
+              dictionary of column families, each of which holds a
+              dictionary of columns. Each column contains a list of cells
+              modified. Each cell is represented with a two-tuple with the
+              value (in bytes) and the timestamp for the cell. For example:
+
+              .. code:: python
+
+                  {
+                      u'col-fam-id': {
+                          b'col-name1': [
+                              (b'cell-val', datetime.datetime(...)),
+                              (b'cell-val-newer', datetime.datetime(...)),
+                          ],
+                          b'col-name2': [
+                              (b'altcol-cell-val', datetime.datetime(...)),
+                          ],
+                      },
+                      u'col-fam-id2': {
+                          b'col-name3-but-other-fam': [
+                              (b'foo', datetime.datetime(...)),
+                          ],
+                      },
+                  }
+    """
+    result = {}
+    for column_family in row_response.families:
+        column_family_id = column_family.name
+        result[column_family_id] = curr_family = {}
+        for column in column_family.columns:
+            curr_family[column.qualifier] = cells = []
+            for cell in column.cells:
+                val_pair = (
+                    cell.value,
+                    _microseconds_to_timestamp(cell.timestamp_micros),
+                )
+                cells.append(val_pair)
+    return result
 
 
 # NOTE: For developers, this class may seem to be a bit verbose, i.e.
@@ -667,7 +778,7 @@ class RowFilter(object):
     def to_pb(self):
         """Converts the :class:`RowFilter` to a protobuf.
 
-        :rtype: :class:`data_pb2.RowFilter`
+        :rtype: :class:`.data_pb2.RowFilter`
         :returns: The converted current object.
         """
         self._check_single_value()
@@ -739,7 +850,7 @@ class TimestampRange(object):
     def to_pb(self):
         """Converts the :class:`TimestampRange` to a protobuf.
 
-        :rtype: :class:`data_pb2.TimestampRange`
+        :rtype: :class:`.data_pb2.TimestampRange`
         :returns: The converted current object.
         """
         timestamp_range_kwargs = {}
@@ -804,7 +915,7 @@ class ColumnRange(object):
     def to_pb(self):
         """Converts the :class:`ColumnRange` to a protobuf.
 
-        :rtype: :class:`data_pb2.ColumnRange`
+        :rtype: :class:`.data_pb2.ColumnRange`
         :returns: The converted current object.
         """
         column_range_kwargs = {'family_name': self.column_family_id}
@@ -872,7 +983,7 @@ class CellValueRange(object):
     def to_pb(self):
         """Converts the :class:`CellValueRange` to a protobuf.
 
-        :rtype: :class:`data_pb2.ValueRange`
+        :rtype: :class:`.data_pb2.ValueRange`
         :returns: The converted current object.
         """
         value_range_kwargs = {}
@@ -918,7 +1029,7 @@ class RowFilterChain(object):
     def to_pb(self):
         """Converts the :class:`RowFilterChain` to a protobuf.
 
-        :rtype: :class:`data_pb2.RowFilter`
+        :rtype: :class:`.data_pb2.RowFilter`
         :returns: The converted current object.
         """
         chain = data_pb2.RowFilter.Chain(
@@ -955,7 +1066,7 @@ class RowFilterUnion(object):
     def to_pb(self):
         """Converts the :class:`RowFilterUnion` to a protobuf.
 
-        :rtype: :class:`data_pb2.RowFilter`
+        :rtype: :class:`.data_pb2.RowFilter`
         :returns: The converted current object.
         """
         interleave = data_pb2.RowFilter.Interleave(
@@ -1015,7 +1126,7 @@ class ConditionalRowFilter(object):
     def to_pb(self):
         """Converts the :class:`ConditionalRowFilter` to a protobuf.
 
-        :rtype: :class:`data_pb2.RowFilter`
+        :rtype: :class:`.data_pb2.RowFilter`
         :returns: The converted current object.
         """
         condition_kwargs = {'predicate_filter': self.base_filter.to_pb()}

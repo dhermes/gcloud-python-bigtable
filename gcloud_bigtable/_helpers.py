@@ -197,7 +197,7 @@ def _duration_pb_to_timedelta(duration_pb):
 
 
 def _timestamp_to_microseconds(timestamp, granularity=1000):
-    """Converts a native datetime object to milliseconds.
+    """Converts a native datetime object to microseconds.
 
     .. note::
 
@@ -209,14 +209,15 @@ def _timestamp_to_microseconds(timestamp, granularity=1000):
     :param timestamp: A timestamp to be converted to microseconds.
 
     :type granularity: int
-    :param granularity: The resolution (relative to milliseconds) that the
+    :param granularity: The resolution (relative to microseconds) that the
                         timestamp should be truncated to. Defaults to 1000
-                        and no other value is likely needed. The only value of
-                        the enum :class:`data_pb2.Table.TimestampGranularity`
-                        is `data_pb2.Table.MILLIS`.
+                        and no other value is likely needed since the only
+                        value of the enum
+                        :class:`.data_pb2.Table.TimestampGranularity` is
+                        :data:`.data_pb2.Table.MILLIS`.
 
     :rtype: int
-    :returns: The ``timestamp`` as milliseconds (with the appropriate
+    :returns: The ``timestamp`` as microseconds (with the appropriate
               granularity).
     """
     timestamp_seconds = (timestamp - EPOCH).total_seconds()
@@ -224,6 +225,18 @@ def _timestamp_to_microseconds(timestamp, granularity=1000):
     # Truncate to granularity.
     timestamp_micros -= (timestamp_micros % granularity)
     return timestamp_micros
+
+
+def _microseconds_to_timestamp(microseconds):
+    """Converts microseconds to a native datetime object.
+
+    :type microseconds: int
+    :param microseconds: The ``timestamp`` as microseconds.
+
+    :rtype: :class:`datetime.datetime`
+    :returns: A timestamp to be converted from microseconds.
+    """
+    return EPOCH + datetime.timedelta(microseconds=microseconds)
 
 
 def _to_bytes(value):

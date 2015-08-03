@@ -378,7 +378,7 @@ class Client(object):
         with stub:
             timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.ListZones.async(request_pb, timeout_seconds)
-            # We expect a `messages_pb2.ListZonesResponse`
+            # We expect a `.messages_pb2.ListZonesResponse`
             list_zones_response = response.result()
 
         result = []
@@ -407,7 +407,7 @@ class Client(object):
         with stub:
             timeout_seconds = timeout_seconds or self.timeout_seconds
             response = stub.ListClusters.async(request_pb, timeout_seconds)
-            # We expect a `messages_pb2.ListClustersResponse`
+            # We expect a `.messages_pb2.ListClustersResponse`
             list_clusters_response = response.result()
 
         failed_zones = [zone.display_name
