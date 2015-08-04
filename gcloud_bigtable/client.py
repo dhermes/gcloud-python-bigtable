@@ -395,13 +395,26 @@ class Client(object):
         Service(s).
         """
         self._data_stub = self._get_data_stub()
+        self._data_stub.__enter__()
         if self._admin:
             self._cluster_stub = self._get_cluster_stub()
             self._operations_stub = self._get_operations_stub()
             self._table_stub = self._get_table_stub()
 
+            self._cluster_stub.__enter__()
+            self._operations_stub.__enter__()
+            self._table_stub.__enter__()
+
     def stop(self):
         """Closes all the open gRPC clients."""
+        # When exit-ing, we pass None as the exception type, value and
+        # traceback to __exit__.
+        self._data_stub.__exit__(None, None, None)
+        if self._admin:
+            self._cluster_stub.__exit__(None, None, None)
+            self._operations_stub.__exit__(None, None, None)
+            self._table_stub.__exit__(None, None, None)
+
         self._data_stub = None
         self._cluster_stub = None
         self._operations_stub = None

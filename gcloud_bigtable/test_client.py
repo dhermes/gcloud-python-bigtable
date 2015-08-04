@@ -537,20 +537,23 @@ class TestClient(GRPCMockTestMixin):
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
         client = self._makeOne(credentials, project_id=PROJECT_ID, admin=admin)
-        value = object()
-        mock_make_stub = _MockCalled(value)
+        stub = _FakeStub()
+        mock_make_stub = _MockCalled(stub)
         with _Monkey(MUT, make_stub=mock_make_stub):
             client.start()
 
-        self.assertTrue(client._data_stub is value)
+        self.assertTrue(client._data_stub is stub)
         if admin:
-            self.assertTrue(client._cluster_stub is value)
-            self.assertTrue(client._operations_stub is value)
-            self.assertTrue(client._table_stub is value)
+            self.assertTrue(client._cluster_stub is stub)
+            self.assertTrue(client._operations_stub is stub)
+            self.assertTrue(client._table_stub is stub)
+            self.assertEqual(stub._entered, 4)
         else:
             self.assertTrue(client._cluster_stub is None)
             self.assertTrue(client._operations_stub is None)
             self.assertTrue(client._table_stub is None)
+            self.assertEqual(stub._entered, 1)
+        self.assertEqual(stub._exited, [])
 
     def test_start_non_admin(self):
         self._start_method_helper(admin=False)
@@ -558,21 +561,37 @@ class TestClient(GRPCMockTestMixin):
     def test_start_with_admin(self):
         self._start_method_helper(admin=True)
 
-    def test_stop(self):
+    def _stop_method_helper(self, admin):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID)
-        client._data_stub = object()
-        client._cluster_stub = object()
-        client._operations_stub = object()
-        client._table_stub = object()
+        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=admin)
+        stub1 = _FakeStub()
+        stub2 = _FakeStub()
+        client._data_stub = stub1
+        client._cluster_stub = stub2
+        client._operations_stub = stub2
+        client._table_stub = stub2
         client.stop()
         self.assertTrue(client._data_stub is None)
         self.assertTrue(client._cluster_stub is None)
         self.assertTrue(client._operations_stub is None)
         self.assertTrue(client._table_stub is None)
+        self.assertEqual(stub1._entered, 0)
+        self.assertEqual(stub2._entered, 0)
+        exc_none_triple = (None, None, None)
+        self.assertEqual(stub1._exited, [exc_none_triple])
+        if admin:
+            self.assertEqual(stub2._exited, [exc_none_triple] * 3)
+        else:
+            self.assertEqual(stub2._exited, [])
+
+    def test_stop_non_admin(self):
+        self._stop_method_helper(admin=False)
+
+    def test_stop_with_admin(self):
+        self._stop_method_helper(admin=True)
 
     def test_cluster_factory(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
@@ -707,3 +726,18 @@ class Test__get_contents(unittest2.TestCase):
             file_obj.write(contents)
 
         self.assertEqual(self._callFUT(filename), contents)
+
+
+class _FakeStub(object):
+
+    def __init__(self):
+        self._entered = 0
+        self._exited = []
+
+    def __enter__(self):
+        self._entered += 1
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._exited.append((exc_type, exc_val, exc_tb))
+        return True
