@@ -48,6 +48,18 @@ class MethodMock(object):
         return AsyncResult(curr_result)
 
 
+class _StubMock(object):
+
+    def __init__(self, *results):
+        self.results = results
+        self.method_calls = []
+
+    def __getattr__(self, name):
+        # We need not worry about attributes set in constructor
+        # since __getattribute__ will handle them.
+        return MethodMock(name, self)
+
+
 class StubMock(object):
     """Mock for :class:`grpc.early_adopter.implementations._Stub`.
 

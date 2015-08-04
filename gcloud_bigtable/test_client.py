@@ -702,6 +702,7 @@ class TestClient(GRPCMockTestMixin):
             bigtable_cluster_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._grpc_mocks import _StubMock
         from gcloud_bigtable._testing import _MockWithAttachedMethods
 
         scoped_creds = object()
@@ -723,7 +724,7 @@ class TestClient(GRPCMockTestMixin):
             ],
         )
 
-        # Patch the stub used by the ListZones method.
+        # Patch the stub used by the API method.
         client._cluster_stub = stub = _StubMock(response_pb)
 
         # Create expected_result.
@@ -755,6 +756,7 @@ class TestClient(GRPCMockTestMixin):
             bigtable_cluster_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._grpc_mocks import _StubMock
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable.cluster import Cluster
 
@@ -794,7 +796,7 @@ class TestClient(GRPCMockTestMixin):
             ],
         )
 
-        # Patch the stub used by the ListZones method.
+        # Patch the stub used by the API method.
         client._cluster_stub = stub = _StubMock(response_pb)
 
         # Create expected_result.
@@ -846,16 +848,3 @@ class _FakeStub(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._exited.append((exc_type, exc_val, exc_tb))
         return True
-
-
-class _StubMock(object):
-
-    def __init__(self, *results):
-        self.results = results
-        self.method_calls = []
-
-    def __getattr__(self, name):
-        from gcloud_bigtable._grpc_mocks import MethodMock
-        # We need not worry about attributes set in constructor
-        # since __getattribute__ will handle them.
-        return MethodMock(name, self)

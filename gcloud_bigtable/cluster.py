@@ -258,13 +258,10 @@ class Cluster(object):
                                 cluster.
         """
         request_pb = messages_pb2.GetClusterRequest(name=self.name)
-        stub = make_stub(self.client, CLUSTER_STUB_FACTORY,
-                         CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.GetCluster.async(request_pb, timeout_seconds)
-            # We expect a `._generated.bigtable_cluster_data_pb2.Cluster`.
-            cluster_pb = response.result()
+        response = self.client.cluster_stub.GetCluster.async(request_pb,
+                                                             timeout_seconds)
+        # We expect a `._generated.bigtable_cluster_data_pb2.Cluster`.
+        cluster_pb = response.result()
 
         # NOTE: _update_from_pb does not check that the project, zone and
         #       cluster ID on the response match the request.
