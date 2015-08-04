@@ -324,10 +324,17 @@ class TestCluster(GRPCMockTestMixin):
 
     def _operation_finished_helper(self, done):
         from gcloud_bigtable._generated import operations_pb2
-        from gcloud_bigtable import cluster as MUT
+        from gcloud_bigtable._grpc_mocks import _StubMock
+
+        client = _Client(PROJECT_ID)
+        cluster = self._makeOne(ZONE, CLUSTER_ID, client)
+
+        # Patch up the cluster's operation attributes.
+        cluster._operation_id = op_id = 789
+        cluster._operation_begin = op_begin = object()
+        cluster._operation_type = op_type = object()
 
         # Create request_pb
-        op_id = 789
         op_name = ('operations/projects/' + PROJECT_ID + '/zones/' +
                    ZONE + '/clusters/' + CLUSTER_ID +
                    '/operations/%d' % (op_id,))
@@ -336,38 +343,30 @@ class TestCluster(GRPCMockTestMixin):
         # Create response_pb
         response_pb = operations_pb2.Operation(done=done)
 
+        # Patch the stub used by the API method.
+        client.operations_stub = stub = _StubMock(response_pb)
+
         # Create expected_result.
         expected_result = done
 
-        # We must create the cluster with the client passed in.
-        TEST_CASE = self
-        CLUSTER_CREATED = []
-        op_begin = object()
-        op_type = object()
+        # Perform the method and check the result.
         timeout_seconds = 1
+        result = cluster.operation_finished(timeout_seconds=timeout_seconds)
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'GetOperation',
+            (request_pb, timeout_seconds),
+            {},
+        )])
 
-        def result_method(client):
-            cluster = TEST_CASE._makeOne(ZONE, CLUSTER_ID, client)
-            cluster._operation_id = op_id
-            cluster._operation_begin = op_begin
-            cluster._operation_type = op_type
-            CLUSTER_CREATED.append(cluster)
-            return cluster.operation_finished(timeout_seconds=timeout_seconds)
-
-        self._grpc_client_test_helper('GetOperation', result_method,
-                                      request_pb, response_pb, expected_result,
-                                      PROJECT_ID,
-                                      stub_factory=MUT.OPERATIONS_STUB_FACTORY,
-                                      timeout_seconds=timeout_seconds)
-        self.assertEqual(len(CLUSTER_CREATED), 1)
         if done:
-            self.assertEqual(CLUSTER_CREATED[0]._operation_type, None)
-            self.assertEqual(CLUSTER_CREATED[0]._operation_id, None)
-            self.assertEqual(CLUSTER_CREATED[0]._operation_begin, None)
+            self.assertEqual(cluster._operation_type, None)
+            self.assertEqual(cluster._operation_id, None)
+            self.assertEqual(cluster._operation_begin, None)
         else:
-            self.assertEqual(CLUSTER_CREATED[0]._operation_type, op_type)
-            self.assertEqual(CLUSTER_CREATED[0]._operation_id, op_id)
-            self.assertEqual(CLUSTER_CREATED[0]._operation_begin, op_begin)
+            self.assertEqual(cluster._operation_type, op_type)
+            self.assertEqual(cluster._operation_id, op_id)
+            self.assertEqual(cluster._operation_begin, op_begin)
 
     def test_operation_finished(self):
         self._operation_finished_helper(done=True)
@@ -612,7 +611,8 @@ class TestCluster(GRPCMockTestMixin):
 
 class _Client(object):
 
-    def __init__(self, project_id, cluster_stub=None):
+    def __init__(self, project_id, cluster_stub=None, operations_stub=None):
         self.project_id = project_id
         self.project_name = 'projects/' + project_id
         self.cluster_stub = cluster_stub
+        self.operations_stub = operations_stub

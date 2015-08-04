@@ -30,7 +30,6 @@ from gcloud_bigtable._helpers import make_stub
 from gcloud_bigtable.constants import CLUSTER_ADMIN_HOST
 from gcloud_bigtable.constants import CLUSTER_ADMIN_PORT
 from gcloud_bigtable.constants import CLUSTER_STUB_FACTORY
-from gcloud_bigtable.constants import OPERATIONS_STUB_FACTORY
 from gcloud_bigtable.constants import TABLE_ADMIN_HOST
 from gcloud_bigtable.constants import TABLE_ADMIN_PORT
 from gcloud_bigtable.constants import TABLE_STUB_FACTORY
@@ -286,13 +285,11 @@ class Cluster(object):
         operation_name = ('operations/' + self.name +
                           '/operations/%d' % (self._operation_id,))
         request_pb = operations_pb2.GetOperationRequest(name=operation_name)
-        stub = make_stub(self.client, OPERATIONS_STUB_FACTORY,
-                         CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.GetOperation.async(request_pb, timeout_seconds)
-            # We expact a `._generated.operations_pb2.Operation`.
-            operation_pb = response.result()
+        timeout_seconds = timeout_seconds or self.timeout_seconds
+        response = self.client.operations_stub.GetOperation.async(
+            request_pb, timeout_seconds)
+        # We expact a `._generated.operations_pb2.Operation`.
+        operation_pb = response.result()
 
         if operation_pb.done:
             self._operation_type = None
