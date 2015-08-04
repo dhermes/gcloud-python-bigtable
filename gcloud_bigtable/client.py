@@ -45,9 +45,16 @@ from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._helpers import make_stub
 from gcloud_bigtable.cluster import Cluster
-from gcloud_bigtable.cluster import CLUSTER_ADMIN_PORT
-from gcloud_bigtable.cluster import CLUSTER_ADMIN_HOST
-from gcloud_bigtable.cluster import CLUSTER_STUB_FACTORY
+from gcloud_bigtable.constants import CLUSTER_ADMIN_PORT
+from gcloud_bigtable.constants import CLUSTER_ADMIN_HOST
+from gcloud_bigtable.constants import CLUSTER_STUB_FACTORY
+from gcloud_bigtable.constants import DATA_API_HOST
+from gcloud_bigtable.constants import DATA_API_PORT
+from gcloud_bigtable.constants import DATA_STUB_FACTORY
+from gcloud_bigtable.constants import OPERATIONS_STUB_FACTORY
+from gcloud_bigtable.constants import TABLE_ADMIN_PORT
+from gcloud_bigtable.constants import TABLE_ADMIN_HOST
+from gcloud_bigtable.constants import TABLE_STUB_FACTORY
 
 
 ADMIN_SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
@@ -215,10 +222,17 @@ class Client(object):
         if admin:
             scopes.append(ADMIN_SCOPE)
 
+        self._admin = bool(admin)
         self._credentials = credentials.create_scoped(scopes)
         self._project_id = _determine_project_id(project_id)
         self.user_agent = user_agent
         self.timeout_seconds = timeout_seconds
+
+        # These will be set in start().
+        self._data_stub = None
+        self._cluster_stub = None
+        self._operations_stub = None
+        self._table_stub = None
 
     @classmethod
     def from_service_account_json(cls, json_credentials_path, project_id=None,
@@ -334,6 +348,64 @@ class Client(object):
                   API RPC service.
         """
         return 'projects/' + self._project_id
+
+    def _get_data_stub(self):
+        """Creates gRPC stub to make requests to the Data API.
+
+        :rtype: :class:`grpc.early_adopter.implementations._Stub`
+        :returns: A gRPC stub object.
+        """
+        return make_stub(self, DATA_STUB_FACTORY,
+                         DATA_API_HOST, DATA_API_PORT)
+
+    def _get_cluster_stub(self):
+        """Creates gRPC stub to make requests to the Cluster Admin API.
+
+        :rtype: :class:`grpc.early_adopter.implementations._Stub`
+        :returns: A gRPC stub object.
+        """
+        return make_stub(self, CLUSTER_STUB_FACTORY,
+                         CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
+
+    def _get_operations_stub(self):
+        """Creates gRPC stub to make requests to the Operations API.
+
+        These are for long-running operations of the Cluster Admin API,
+        hence the host and port matching.
+
+        :rtype: :class:`grpc.early_adopter.implementations._Stub`
+        :returns: A gRPC stub object.
+        """
+        return make_stub(self, OPERATIONS_STUB_FACTORY,
+                         CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
+
+    def _get_table_stub(self):
+        """Creates gRPC stub to make requests to the Table Admin API.
+
+        :rtype: :class:`grpc.early_adopter.implementations._Stub`
+        :returns: A gRPC stub object.
+        """
+        return make_stub(self, TABLE_STUB_FACTORY,
+                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
+
+    def start(self):
+        """Prepare the client to make requests.
+
+        Activates gRPC contexts for making requests to the Bigtable
+        Service(s).
+        """
+        self._data_stub = self._get_data_stub()
+        if self._admin:
+            self._cluster_stub = self._get_cluster_stub()
+            self._operations_stub = self._get_operations_stub()
+            self._table_stub = self._get_table_stub()
+
+    def stop(self):
+        """Closes all the open gRPC clients."""
+        self._data_stub = None
+        self._cluster_stub = None
+        self._operations_stub = None
+        self._table_stub = None
 
     def cluster(self, zone, cluster_id, display_name=None, serve_nodes=3):
         """Factory to create a cluster associated with this client.
