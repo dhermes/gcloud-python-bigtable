@@ -546,13 +546,11 @@ class Client(object):
                   zones in the request).
         """
         request_pb = messages_pb2.ListClustersRequest(name=self.project_name)
-        stub = make_stub(self, CLUSTER_STUB_FACTORY,
-                         CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.ListClusters.async(request_pb, timeout_seconds)
-            # We expect a `.messages_pb2.ListClustersResponse`
-            list_clusters_response = response.result()
+        timeout_seconds = timeout_seconds or self.timeout_seconds
+        response = self.cluster_stub.ListClusters.async(request_pb,
+                                                        timeout_seconds)
+        # We expect a `.messages_pb2.ListClustersResponse`
+        list_clusters_response = response.result()
 
         failed_zones = [zone.display_name
                         for zone in list_clusters_response.failed_zones]

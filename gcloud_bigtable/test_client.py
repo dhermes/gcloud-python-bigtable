@@ -708,9 +708,12 @@ class TestClient(GRPCMockTestMixin):
         credentials = _MockWithAttachedMethods(scoped_creds)
         client = self._makeOne(credentials, project_id=PROJECT_ID, admin=True)
 
+        # Create request_pb
         request_pb = messages_pb2.ListZonesRequest(
             name='projects/' + PROJECT_ID,
         )
+
+        # Create response_pb
         zone1 = 'foo'
         zone2 = 'bar'
         response_pb = messages_pb2.ListZonesResponse(
@@ -719,10 +722,14 @@ class TestClient(GRPCMockTestMixin):
                 data_pb2.Zone(display_name=zone2, status=zone_status),
             ],
         )
+
+        # Patch the stub used by the ListZones method.
         client._cluster_stub = stub = _StubMock(response_pb)
+
+        # Create expected_result.
         expected_result = [zone1, zone2]
 
-        # Create the method to be performed on the client.
+        # Perform the method and check the result.
         timeout_seconds = 281330
         result = client.list_zones(timeout_seconds=timeout_seconds)
         self.assertEqual(result, expected_result)
@@ -748,7 +755,12 @@ class TestClient(GRPCMockTestMixin):
             bigtable_cluster_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable.cluster import Cluster
+
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=True)
 
         # Create request_pb
         request_pb = messages_pb2.ListClustersRequest(
@@ -782,27 +794,26 @@ class TestClient(GRPCMockTestMixin):
             ],
         )
 
+        # Patch the stub used by the ListZones method.
+        client._cluster_stub = stub = _StubMock(response_pb)
+
         # Create expected_result.
         failed_zones = [failed_zone]
         clusters = [
-            Cluster(zone, cluster_id1, None),
-            Cluster(zone, cluster_id2, None),
+            Cluster(zone, cluster_id1, client),
+            Cluster(zone, cluster_id2, client),
         ]
         expected_result = (clusters, failed_zones)
 
-        # We didn't have access to the client above when creating the clusters
-        # so we will patch it in the `result_method` closure.
+        # Perform the method and check the result.
         timeout_seconds = 8004
-
-        def result_method(client):
-            clusters[0]._client = client
-            clusters[1]._client = client
-            return client.list_clusters(timeout_seconds=timeout_seconds)
-
-        self._grpc_client_test_helper('ListClusters', result_method,
-                                      request_pb, response_pb, expected_result,
-                                      PROJECT_ID,
-                                      timeout_seconds=timeout_seconds)
+        result = client.list_clusters(timeout_seconds=timeout_seconds)
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'ListClusters',
+            (request_pb, timeout_seconds),
+            {},
+        )])
 
 
 class Test__get_contents(unittest2.TestCase):
