@@ -36,12 +36,13 @@ EXPECTED_ZONES = (
 )
 EXISTING_CLUSTERS = []
 CREDENTIALS = GoogleCredentials.get_application_default()
-CLIENT = Client(CREDENTIALS, project_id=PROJECT_ID)
+CLIENT = Client(CREDENTIALS, project_id=PROJECT_ID, admin=True)
 CLUSTER = CLIENT.cluster(TEST_ZONE, TEST_CLUSTER_ID,
                          display_name=TEST_CLUSTER_ID)
 
 
 def setUpModule():
+    CLIENT.start()
     clusters, failed_zones = CLIENT.list_clusters()
 
     if len(failed_zones) != 0:
@@ -55,6 +56,7 @@ def setUpModule():
 
 def tearDownModule():
     CLUSTER.delete()
+    CLIENT.stop()
 
 
 class TestClusterAdminAPI(unittest2.TestCase):

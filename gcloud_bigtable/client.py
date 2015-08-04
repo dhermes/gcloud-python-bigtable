@@ -519,13 +519,11 @@ class Client(object):
                  zones is not in ``OK`` state.
         """
         request_pb = messages_pb2.ListZonesRequest(name=self.project_name)
-        stub = make_stub(self, CLUSTER_STUB_FACTORY,
-                         CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.ListZones.async(request_pb, timeout_seconds)
-            # We expect a `.messages_pb2.ListZonesResponse`
-            list_zones_response = response.result()
+        timeout_seconds = timeout_seconds or self.timeout_seconds
+        response = self.cluster_stub.ListZones.async(request_pb,
+                                                     timeout_seconds)
+        # We expect a `.messages_pb2.ListZonesResponse`
+        list_zones_response = response.result()
 
         result = []
         for zone in list_zones_response.zones:

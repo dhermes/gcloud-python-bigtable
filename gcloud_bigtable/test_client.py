@@ -702,29 +702,35 @@ class TestClient(GRPCMockTestMixin):
             bigtable_cluster_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=True)
 
         request_pb = messages_pb2.ListZonesRequest(
             name='projects/' + PROJECT_ID,
         )
         zone1 = 'foo'
-        zone2 = 'foo'
+        zone2 = 'bar'
         response_pb = messages_pb2.ListZonesResponse(
             zones=[
                 data_pb2.Zone(display_name=zone1, status=zone_status),
                 data_pb2.Zone(display_name=zone2, status=zone_status),
             ],
         )
+        client._cluster_stub = stub = _StubMock(response_pb)
         expected_result = [zone1, zone2]
 
         # Create the method to be performed on the client.
         timeout_seconds = 281330
-
-        def result_method(client):
-            return client.list_zones(timeout_seconds=timeout_seconds)
-
-        self._grpc_client_test_helper('ListZones', result_method, request_pb,
-                                      response_pb, expected_result, PROJECT_ID,
-                                      timeout_seconds=timeout_seconds)
+        result = client.list_zones(timeout_seconds=timeout_seconds)
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'ListZones',
+            (request_pb, timeout_seconds),
+            {},
+        )])
 
     def test_list_zones(self):
         from gcloud_bigtable._generated import (
@@ -829,3 +835,16 @@ class _FakeStub(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._exited.append((exc_type, exc_val, exc_tb))
         return True
+
+
+class _StubMock(object):
+
+    def __init__(self, *results):
+        self.results = results
+        self.method_calls = []
+
+    def __getattr__(self, name):
+        from gcloud_bigtable._grpc_mocks import MethodMock
+        # We need not worry about attributes set in constructor
+        # since __getattribute__ will handle them.
+        return MethodMock(name, self)
