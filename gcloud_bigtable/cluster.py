@@ -30,9 +30,6 @@ from gcloud_bigtable._helpers import make_stub
 from gcloud_bigtable.constants import CLUSTER_ADMIN_HOST
 from gcloud_bigtable.constants import CLUSTER_ADMIN_PORT
 from gcloud_bigtable.constants import CLUSTER_STUB_FACTORY
-from gcloud_bigtable.constants import TABLE_ADMIN_HOST
-from gcloud_bigtable.constants import TABLE_ADMIN_PORT
-from gcloud_bigtable.constants import TABLE_STUB_FACTORY
 from gcloud_bigtable.table import Table
 
 
@@ -423,13 +420,10 @@ class Cluster(object):
                  returned tables has a name that is not of the expected format.
         """
         request_pb = table_messages_pb2.ListTablesRequest(name=self.name)
-        stub = make_stub(self.client, TABLE_STUB_FACTORY,
-                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.ListTables.async(request_pb, timeout_seconds)
-            # We expect a `table_messages_pb2.ListTablesResponse`
-            table_list_pb = response.result()
+        response = self.client.table_stub.ListTables.async(request_pb,
+                                                           timeout_seconds)
+        # We expect a `table_messages_pb2.ListTablesResponse`
+        table_list_pb = response.result()
 
         result = []
         for table_pb in table_list_pb.tables:

@@ -758,7 +758,6 @@ class TestClient(GRPCMockTestMixin):
             bigtable_cluster_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable._grpc_mocks import _StubMock
         from gcloud_bigtable._testing import _MockWithAttachedMethods
-        from gcloud_bigtable.cluster import Cluster
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
@@ -802,8 +801,8 @@ class TestClient(GRPCMockTestMixin):
         # Create expected_result.
         failed_zones = [failed_zone]
         clusters = [
-            Cluster(zone, cluster_id1, client),
-            Cluster(zone, cluster_id2, client),
+            client.cluster(zone, cluster_id1),
+            client.cluster(zone, cluster_id2),
         ]
         expected_result = (clusters, failed_zones)
 

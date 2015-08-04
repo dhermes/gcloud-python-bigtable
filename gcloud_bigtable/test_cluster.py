@@ -555,7 +555,10 @@ class TestCluster(GRPCMockTestMixin):
             bigtable_table_data_pb2 as table_data_pb2)
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as table_messages_pb2)
-        from gcloud_bigtable import cluster as MUT
+        from gcloud_bigtable._grpc_mocks import _StubMock
+
+        client = _Client(PROJECT_ID)
+        cluster = self._makeOne(ZONE, CLUSTER_ID, client)
 
         # Create request_
         cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
@@ -570,27 +573,22 @@ class TestCluster(GRPCMockTestMixin):
             ],
         )
 
+        # Patch the stub used by the API method.
+        client.table_stub = stub = _StubMock(response_pb)
+
         # Create expected_result.
-        expected_result = []  # We'll add one below.
+        expected_table = cluster.table(table_id)
+        expected_result = [expected_table]
 
-        # We must create the cluster with the client passed in.
-        TEST_CASE = self
-        CLUSTER_CREATED = []
+        # Perform the method and check the result.
         timeout_seconds = 45
-
-        def result_method(client):
-            cluster = TEST_CASE._makeOne(ZONE, CLUSTER_ID, client)
-            CLUSTER_CREATED.append(cluster)
-            expected_result.append(cluster.table(table_id))
-            return cluster.list_tables(timeout_seconds=timeout_seconds)
-
-        self._grpc_client_test_helper('ListTables', result_method,
-                                      request_pb, response_pb, expected_result,
-                                      PROJECT_ID,
-                                      stub_factory=MUT.TABLE_STUB_FACTORY,
-                                      stub_host=MUT.TABLE_ADMIN_HOST,
-                                      timeout_seconds=timeout_seconds)
-        self.assertEqual(len(CLUSTER_CREATED), 1)
+        result = cluster.list_tables(timeout_seconds=timeout_seconds)
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'ListTables',
+            (request_pb, timeout_seconds),
+            {},
+        )])
 
     def test_list_tables(self):
         table_id = 'table_id'
