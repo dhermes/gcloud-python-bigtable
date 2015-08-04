@@ -1,5 +1,7 @@
 # Google Cloud Bigtable Python Library (Alpha)
 
+[![Documentation Status](https://readthedocs.org/projects/gcloud-python-bigtable/badge/?version=latest)](https://readthedocs.org/projects/gcloud-python-bigtable/?badge=latest)
+
 ### An extension to [`gcloud-python`][1]
 
 This library supports RPC requests to the Google Cloud Bigtable API over
@@ -75,8 +77,8 @@ and then from there, the token created will be picked up automatically
 when you create an object which requires authentication:
 
 ```python
-from gcloud_bigtable.cluster import Cluster
-cluster = Cluster(project_id, zone, cluster_id)
+from gcloud_bigtable.client import Client
+client = Client()
 ```
 
 If instead you'd like to use a service account, you can set an
@@ -92,9 +94,8 @@ you can create a `credentials` object directly and pass it
 to the constructor of an object which requires authentication:
 
 ```python
-from gcloud_bigtable.cluster import Cluster
-cluster = Cluster(project_id, zone, cluster_id,
-                  credentials=credentials)
+from gcloud_bigtable.client import Client
+client = Client(credentials=credentials)
 ```
 
 ## Enabling the Bigtable API
