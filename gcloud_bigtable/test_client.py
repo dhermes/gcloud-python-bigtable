@@ -15,8 +15,6 @@
 
 import unittest2
 
-from gcloud_bigtable._grpc_mocks import GRPCMockTestMixin
-
 
 PROJECT_ID = 'project-id'
 
@@ -224,24 +222,7 @@ class Test__determine_project_id(unittest2.TestCase):
                      method_input=None)
 
 
-class TestClient(GRPCMockTestMixin):
-
-    @classmethod
-    def setUpClass(cls):
-        from gcloud_bigtable import client as MUT
-        cls._MUT = MUT
-        cls._STUB_SCOPES = [MUT.DATA_SCOPE]
-        cls._STUB_FACTORY_NAME = 'CLUSTER_STUB_FACTORY'
-        cls._STUB_HOST = MUT.CLUSTER_ADMIN_HOST
-        cls._STUB_PORT = MUT.CLUSTER_ADMIN_PORT
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls._MUT
-        del cls._STUB_SCOPES
-        del cls._STUB_FACTORY_NAME
-        del cls._STUB_HOST
-        del cls._STUB_PORT
+class TestClient(unittest2.TestCase):
 
     def _getTargetClass(self):
         from gcloud_bigtable.client import Client

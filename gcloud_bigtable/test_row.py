@@ -15,8 +15,6 @@
 
 import unittest2
 
-from gcloud_bigtable._grpc_mocks import GRPCMockTestMixin
-
 
 PROJECT_ID = u'project-id'
 ZONE = u'zone'
@@ -31,25 +29,7 @@ COLUMN_NON_BYTES = u'column'
 COLUMN_FAMILY_ID = u'column_family_id'
 
 
-class TestRow(GRPCMockTestMixin):
-
-    @classmethod
-    def setUpClass(cls):
-        from gcloud_bigtable import client
-        from gcloud_bigtable import row as MUT
-        cls._MUT = MUT
-        cls._STUB_SCOPES = [client.DATA_SCOPE]
-        cls._STUB_FACTORY_NAME = 'DATA_STUB_FACTORY'
-        cls._STUB_HOST = MUT.DATA_API_HOST
-        cls._STUB_PORT = MUT.DATA_API_PORT
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls._MUT
-        del cls._STUB_SCOPES
-        del cls._STUB_FACTORY_NAME
-        del cls._STUB_HOST
-        del cls._STUB_PORT
+class TestRow(unittest2.TestCase):
 
     def _getTargetClass(self):
         from gcloud_bigtable.row import Row
@@ -387,6 +367,11 @@ class TestRow(GRPCMockTestMixin):
         from gcloud_bigtable._generated import (
             bigtable_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable._generated import empty_pb2
+        from gcloud_bigtable._grpc_mocks import _StubMock
+
+        client = _Client()
+        table = _Table(TABLE_NAME, client=client)
+        row = self._makeOne(ROW_KEY, table)
 
         # Create request_pb
         value = b'bytes-value'
@@ -407,30 +392,25 @@ class TestRow(GRPCMockTestMixin):
         # Create response_pb
         response_pb = empty_pb2.Empty()
 
+        # Patch the stub used by the API method.
+        client.data_stub = stub = _StubMock(response_pb)
+
         # Create expected_result.
         expected_result = None  # commit() has no return value when no filter.
 
-        # We must create the cluster with the client passed in
-        # and then the table with that cluster.
-        TEST_CASE = self
-        ROW_CREATED = []
+        # Perform the method and check the result.
         timeout_seconds = 711
-
-        def result_method(client):
-            cluster = client.cluster(ZONE, CLUSTER_ID)
-            table = cluster.table(TABLE_ID)
-            row = TEST_CASE._makeOne(ROW_KEY, table)
-            ROW_CREATED.append(row)
-            row.set_cell(COLUMN_FAMILY_ID, COLUMN, value)
-            return row.commit(timeout_seconds=timeout_seconds)
-
-        self._grpc_client_test_helper('MutateRow', result_method,
-                                      request_pb, response_pb, expected_result,
-                                      PROJECT_ID,
-                                      timeout_seconds=timeout_seconds)
-        self.assertEqual(ROW_CREATED[0]._pb_mutations, [])
-        self.assertEqual(ROW_CREATED[0]._true_pb_mutations, None)
-        self.assertEqual(ROW_CREATED[0]._false_pb_mutations, None)
+        row.set_cell(COLUMN_FAMILY_ID, COLUMN, value)
+        result = row.commit(timeout_seconds=timeout_seconds)
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'MutateRow',
+            (request_pb, timeout_seconds),
+            {},
+        )])
+        self.assertEqual(row._pb_mutations, [])
+        self.assertEqual(row._true_pb_mutations, None)
+        self.assertEqual(row._false_pb_mutations, None)
 
     def test_commit_too_many_mutations(self):
         from gcloud_bigtable._testing import _Monkey
@@ -445,24 +425,33 @@ class TestRow(GRPCMockTestMixin):
                 row.commit()
 
     def test_commit_no_mutations(self):
-        from gcloud_bigtable._testing import _MockCalled
-        from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable import row as MUT
+        from gcloud_bigtable._grpc_mocks import _StubMock
 
-        table = object()
+        client = _Client()
+        table = _Table(None, client=client)
         row = self._makeOne(ROW_KEY, table)
         self.assertEqual(row._pb_mutations, [])
-        mock_make_stub = _MockCalled()
-        with _Monkey(MUT, make_stub=mock_make_stub):
-            row.commit()
-        # Make sure no stub was ever created, i.e. no request was sent.
-        mock_make_stub.check_called(self, [])
+
+        # Patch the stub used by the API method.
+        client.data_stub = stub = _StubMock()
+
+        # Perform the method and check the result.
+        result = row.commit()
+        self.assertEqual(result, None)
+        # Make sure no request was sent.
+        self.assertEqual(stub.method_calls, [])
 
     def test_commit_with_filter(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
         from gcloud_bigtable._generated import (
             bigtable_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._grpc_mocks import _StubMock
         from gcloud_bigtable.row import RowFilter
+
+        client = _Client()
+        table = _Table(TABLE_NAME, client=client)
+        row_filter = RowFilter(row_sample_filter=0.33)
+        row = self._makeOne(ROW_KEY, table, filter=row_filter)
 
         # Create request_pb
         value = b'bytes-value'
@@ -474,7 +463,6 @@ class TestRow(GRPCMockTestMixin):
                 value=value,
             ),
         )
-        row_filter = RowFilter(row_sample_filter=0.33)
         request_pb = messages_pb2.CheckAndMutateRowRequest(
             table_name=TABLE_NAME,
             row_key=ROW_KEY,
@@ -488,32 +476,25 @@ class TestRow(GRPCMockTestMixin):
         response_pb = messages_pb2.CheckAndMutateRowResponse(
             predicate_matched=predicate_matched)
 
+        # Patch the stub used by the API method.
+        client.data_stub = stub = _StubMock(response_pb)
+
         # Create expected_result.
         expected_result = predicate_matched
 
-        # We must create the cluster with the client passed in
-        # and then the table with that cluster.
-        TEST_CASE = self
-        ROW_CREATED = []
+        # Perform the method and check the result.
         timeout_seconds = 262
-
-        def result_method(client):
-            cluster = client.cluster(ZONE, CLUSTER_ID)
-            table = cluster.table(TABLE_ID)
-            row = TEST_CASE._makeOne(ROW_KEY, table, filter=row_filter)
-            ROW_CREATED.append(row)
-            # Note in our expected `request_pb` we set true_mutations, hence
-            # use the true state here.
-            row.set_cell(COLUMN_FAMILY_ID, COLUMN, value, state=True)
-            return row.commit(timeout_seconds=timeout_seconds)
-
-        self._grpc_client_test_helper('CheckAndMutateRow', result_method,
-                                      request_pb, response_pb, expected_result,
-                                      PROJECT_ID,
-                                      timeout_seconds=timeout_seconds)
-        self.assertEqual(ROW_CREATED[0]._pb_mutations, None)
-        self.assertEqual(ROW_CREATED[0]._true_pb_mutations, [])
-        self.assertEqual(ROW_CREATED[0]._false_pb_mutations, [])
+        row.set_cell(COLUMN_FAMILY_ID, COLUMN, value, state=True)
+        result = row.commit(timeout_seconds=timeout_seconds)
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'CheckAndMutateRow',
+            (request_pb, timeout_seconds),
+            {},
+        )])
+        self.assertEqual(row._pb_mutations, None)
+        self.assertEqual(row._true_pb_mutations, [])
+        self.assertEqual(row._false_pb_mutations, [])
 
     def test_commit_with_filter_too_many_mutations(self):
         from gcloud_bigtable._testing import _Monkey
@@ -529,29 +510,36 @@ class TestRow(GRPCMockTestMixin):
                 row.commit()
 
     def test_commit_with_filter_no_mutations(self):
-        from gcloud_bigtable._testing import _MockCalled
-        from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable import row as MUT
+        from gcloud_bigtable._grpc_mocks import _StubMock
 
-        table = object()
+        client = _Client()
+        table = _Table(None, client=client)
         filter_ = object()
         row = self._makeOne(ROW_KEY, table, filter=filter_)
         self.assertEqual(row._true_pb_mutations, [])
         self.assertEqual(row._false_pb_mutations, [])
-        mock_make_stub = _MockCalled()
-        with _Monkey(MUT, make_stub=mock_make_stub):
-            result = row.commit()
-            self.assertEqual(result, None)
-        # Make sure no stub was ever created, i.e. no request was sent.
-        mock_make_stub.check_called(self, [])
+
+        # Patch the stub used by the API method.
+        client.data_stub = stub = _StubMock()
+
+        # Perform the method and check the result.
+        result = row.commit()
+        self.assertEqual(result, None)
+        # Make sure no request was sent.
+        self.assertEqual(stub.method_calls, [])
 
     def test_commit_modifications(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
         from gcloud_bigtable._generated import (
             bigtable_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._grpc_mocks import _StubMock
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import row as MUT
+
+        client = _Client()
+        table = _Table(TABLE_NAME, client=client)
+        row = self._makeOne(ROW_KEY, table)
 
         # Create request_pb
         value = b'bytes-value'
@@ -571,48 +559,49 @@ class TestRow(GRPCMockTestMixin):
         # Create response_pb
         response_pb = object()
 
+        # Patch the stub used by the API method.
+        client.data_stub = stub = _StubMock(response_pb)
+
         # Create expected_result.
         expected_result = object()
         mock_parse_rmw_row_response = _MockCalled(expected_result)
 
-        # We must create the cluster with the client passed in
-        # and then the table with that cluster.
-        TEST_CASE = self
-        ROW_CREATED = []
+        # Perform the method and check the result.
         timeout_seconds = 87
 
-        def result_method(client):
-            cluster = client.cluster(ZONE, CLUSTER_ID)
-            table = cluster.table(TABLE_ID)
-            row = TEST_CASE._makeOne(ROW_KEY, table)
-            ROW_CREATED.append(row)
-            row.append_cell_value(COLUMN_FAMILY_ID, COLUMN, value)
-            return row.commit_modifications(timeout_seconds=timeout_seconds)
-
         with _Monkey(MUT, _parse_rmw_row_response=mock_parse_rmw_row_response):
-            self._grpc_client_test_helper('ReadModifyWriteRow', result_method,
-                                          request_pb, response_pb,
-                                          expected_result,
-                                          PROJECT_ID,
-                                          timeout_seconds=timeout_seconds)
+            row.append_cell_value(COLUMN_FAMILY_ID, COLUMN, value)
+            result = row.commit_modifications(timeout_seconds=timeout_seconds)
+
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'ReadModifyWriteRow',
+            (request_pb, timeout_seconds),
+            {},
+        )])
+        self.assertEqual(row._pb_mutations, [])
+        self.assertEqual(row._true_pb_mutations, None)
+        self.assertEqual(row._false_pb_mutations, None)
 
         mock_parse_rmw_row_response.check_called(self, [(response_pb,)])
-        self.assertEqual(ROW_CREATED[0]._rule_pb_list, [])
+        self.assertEqual(row._rule_pb_list, [])
 
     def test_commit_modifications_no_rules(self):
-        from gcloud_bigtable._testing import _MockCalled
-        from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable import row as MUT
+        from gcloud_bigtable._grpc_mocks import _StubMock
 
-        table = object()
+        client = _Client()
+        table = _Table(None, client=client)
         row = self._makeOne(ROW_KEY, table)
         self.assertEqual(row._rule_pb_list, [])
-        mock_make_stub = _MockCalled()
-        with _Monkey(MUT, make_stub=mock_make_stub):
-            result = row.commit_modifications()
-            self.assertEqual(result, {})
-        # Make sure no stub was ever created, i.e. no request was sent.
-        mock_make_stub.check_called(self, [])
+
+        # Patch the stub used by the API method.
+        client.data_stub = stub = _StubMock()
+
+        # Perform the method and check the result.
+        result = row.commit_modifications()
+        self.assertEqual(result, {})
+        # Make sure no request was sent.
+        self.assertEqual(stub.method_calls, [])
 
 
 class Test__parse_rmw_row_response(unittest2.TestCase):
@@ -1489,6 +1478,11 @@ class TestConditionalRowFilter(unittest2.TestCase):
             ),
         )
         self.assertEqual(filter_pb, expected_pb)
+
+
+class _Client(object):
+
+    data_stub = None
 
 
 class _Table(object):

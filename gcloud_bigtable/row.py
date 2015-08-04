@@ -24,10 +24,6 @@ from gcloud_bigtable._generated import (
 from gcloud_bigtable._helpers import _microseconds_to_timestamp
 from gcloud_bigtable._helpers import _timestamp_to_microseconds
 from gcloud_bigtable._helpers import _to_bytes
-from gcloud_bigtable._helpers import make_stub
-from gcloud_bigtable.constants import DATA_API_HOST
-from gcloud_bigtable.constants import DATA_API_PORT
-from gcloud_bigtable.constants import DATA_STUB_FACTORY
 
 
 _MAX_MUTATIONS = 100000
@@ -403,13 +399,11 @@ class Row(object):
             row_key=self.row_key,
             mutations=mutations_list,
         )
-        stub = make_stub(self.client, DATA_STUB_FACTORY,
-                         DATA_API_HOST, DATA_API_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.MutateRow.async(request_pb, timeout_seconds)
-            # We expect a `._generated.empty_pb2.Empty`.
-            response.result()
+        timeout_seconds = timeout_seconds or self.timeout_seconds
+        response = self.client.data_stub.MutateRow.async(request_pb,
+                                                         timeout_seconds)
+        # We expect a `._generated.empty_pb2.Empty`.
+        response.result()
 
     def _commit_check_and_mutate(self, timeout_seconds=None):
         """Makes a ``CheckAndMutateRow`` API request.
@@ -447,15 +441,11 @@ class Row(object):
             true_mutations=true_mutations,
             false_mutations=false_mutations,
         )
-        stub = make_stub(self.client, DATA_STUB_FACTORY,
-                         DATA_API_HOST, DATA_API_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.CheckAndMutateRow.async(request_pb,
-                                                    timeout_seconds)
-            # We expect a `.messages_pb2.CheckAndMutateRowResponse`
-            check_and_mutate_row_response = response.result()
-
+        timeout_seconds = timeout_seconds or self.timeout_seconds
+        response = self.client.data_stub.CheckAndMutateRow.async(
+            request_pb, timeout_seconds)
+        # We expect a `.messages_pb2.CheckAndMutateRowResponse`
+        check_and_mutate_row_response = response.result()
         return check_and_mutate_row_response.predicate_matched
 
     def clear_mutations(self):
@@ -559,14 +549,11 @@ class Row(object):
             row_key=self.row_key,
             rules=self._rule_pb_list,
         )
-        stub = make_stub(self.client, DATA_STUB_FACTORY,
-                         DATA_API_HOST, DATA_API_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.ReadModifyWriteRow.async(request_pb,
-                                                     timeout_seconds)
-            # We expect a `.data_pb2.Row`
-            row_response = response.result()
+        timeout_seconds = timeout_seconds or self.timeout_seconds
+        response = self.client.data_stub.ReadModifyWriteRow.async(
+            request_pb, timeout_seconds)
+        # We expect a `.data_pb2.Row`
+        row_response = response.result()
 
         # Reset modifications after commit-ing request.
         self.clear_modification_rules()
