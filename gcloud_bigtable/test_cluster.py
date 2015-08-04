@@ -264,7 +264,7 @@ class TestCluster(unittest2.TestCase):
             bigtable_cluster_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
 
         client = _Client(PROJECT_ID)
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
@@ -281,7 +281,7 @@ class TestCluster(unittest2.TestCase):
         )
 
         # Patch the stub used by the API method.
-        client.cluster_stub = stub = _StubMock(response_pb)
+        client.cluster_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None  # reload() has no return value.
@@ -304,7 +304,7 @@ class TestCluster(unittest2.TestCase):
 
     def _operation_finished_helper(self, done):
         from gcloud_bigtable._generated import operations_pb2
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
 
         client = _Client(PROJECT_ID)
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
@@ -324,7 +324,7 @@ class TestCluster(unittest2.TestCase):
         response_pb = operations_pb2.Operation(done=done)
 
         # Patch the stub used by the API method.
-        client.operations_stub = stub = _StubMock(response_pb)
+        client.operations_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = done
@@ -358,7 +358,7 @@ class TestCluster(unittest2.TestCase):
         from gcloud_bigtable._generated import (
             bigtable_cluster_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import operations_pb2
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster as MUT
@@ -375,7 +375,7 @@ class TestCluster(unittest2.TestCase):
         response_pb = data_pb2.Cluster(current_operation=current_op)
 
         # Patch the stub used by the API method.
-        client.cluster_stub = stub = _StubMock(response_pb)
+        client.cluster_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None
@@ -406,7 +406,7 @@ class TestCluster(unittest2.TestCase):
         from gcloud_bigtable._generated import (
             bigtable_cluster_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import operations_pb2
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster as MUT
@@ -432,7 +432,7 @@ class TestCluster(unittest2.TestCase):
         response_pb = data_pb2.Cluster(current_operation=current_op)
 
         # Patch the stub used by the API method.
-        client.cluster_stub = stub = _StubMock(response_pb)
+        client.cluster_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None
@@ -461,7 +461,7 @@ class TestCluster(unittest2.TestCase):
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable._generated import empty_pb2
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
 
         client = _Client(PROJECT_ID)
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
@@ -475,7 +475,7 @@ class TestCluster(unittest2.TestCase):
         response_pb = empty_pb2.Empty()
 
         # Patch the stub used by the API method.
-        client.cluster_stub = stub = _StubMock(response_pb)
+        client.cluster_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None  # delete() has no return value.
@@ -494,7 +494,7 @@ class TestCluster(unittest2.TestCase):
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable._generated import operations_pb2
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster as MUT
@@ -511,7 +511,7 @@ class TestCluster(unittest2.TestCase):
         response_pb = operations_pb2.Operation()
 
         # Patch the stub used by the API method.
-        client.cluster_stub = stub = _StubMock(response_pb)
+        client.cluster_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None
@@ -541,7 +541,7 @@ class TestCluster(unittest2.TestCase):
             bigtable_table_data_pb2 as table_data_pb2)
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as table_messages_pb2)
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
 
         client = _Client(PROJECT_ID)
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
@@ -560,7 +560,7 @@ class TestCluster(unittest2.TestCase):
         )
 
         # Patch the stub used by the API method.
-        client.table_stub = stub = _StubMock(response_pb)
+        client.table_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_table = cluster.table(table_id)

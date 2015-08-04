@@ -367,7 +367,7 @@ class TestRow(unittest2.TestCase):
         from gcloud_bigtable._generated import (
             bigtable_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable._generated import empty_pb2
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
 
         client = _Client()
         table = _Table(TABLE_NAME, client=client)
@@ -393,7 +393,7 @@ class TestRow(unittest2.TestCase):
         response_pb = empty_pb2.Empty()
 
         # Patch the stub used by the API method.
-        client.data_stub = stub = _StubMock(response_pb)
+        client.data_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None  # commit() has no return value when no filter.
@@ -425,7 +425,7 @@ class TestRow(unittest2.TestCase):
                 row.commit()
 
     def test_commit_no_mutations(self):
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
 
         client = _Client()
         table = _Table(None, client=client)
@@ -433,7 +433,7 @@ class TestRow(unittest2.TestCase):
         self.assertEqual(row._pb_mutations, [])
 
         # Patch the stub used by the API method.
-        client.data_stub = stub = _StubMock()
+        client.data_stub = stub = StubMock()
 
         # Perform the method and check the result.
         result = row.commit()
@@ -445,7 +445,7 @@ class TestRow(unittest2.TestCase):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
         from gcloud_bigtable._generated import (
             bigtable_service_messages_pb2 as messages_pb2)
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
         from gcloud_bigtable.row import RowFilter
 
         client = _Client()
@@ -477,7 +477,7 @@ class TestRow(unittest2.TestCase):
             predicate_matched=predicate_matched)
 
         # Patch the stub used by the API method.
-        client.data_stub = stub = _StubMock(response_pb)
+        client.data_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = predicate_matched
@@ -510,7 +510,7 @@ class TestRow(unittest2.TestCase):
                 row.commit()
 
     def test_commit_with_filter_no_mutations(self):
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
 
         client = _Client()
         table = _Table(None, client=client)
@@ -520,7 +520,7 @@ class TestRow(unittest2.TestCase):
         self.assertEqual(row._false_pb_mutations, [])
 
         # Patch the stub used by the API method.
-        client.data_stub = stub = _StubMock()
+        client.data_stub = stub = StubMock()
 
         # Perform the method and check the result.
         result = row.commit()
@@ -532,7 +532,7 @@ class TestRow(unittest2.TestCase):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
         from gcloud_bigtable._generated import (
             bigtable_service_messages_pb2 as messages_pb2)
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import row as MUT
@@ -560,7 +560,7 @@ class TestRow(unittest2.TestCase):
         response_pb = object()
 
         # Patch the stub used by the API method.
-        client.data_stub = stub = _StubMock(response_pb)
+        client.data_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = object()
@@ -587,7 +587,7 @@ class TestRow(unittest2.TestCase):
         self.assertEqual(row._rule_pb_list, [])
 
     def test_commit_modifications_no_rules(self):
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
 
         client = _Client()
         table = _Table(None, client=client)
@@ -595,7 +595,7 @@ class TestRow(unittest2.TestCase):
         self.assertEqual(row._rule_pb_list, [])
 
         # Patch the stub used by the API method.
-        client.data_stub = stub = _StubMock()
+        client.data_stub = stub = StubMock()
 
         # Perform the method and check the result.
         result = row.commit_modifications()

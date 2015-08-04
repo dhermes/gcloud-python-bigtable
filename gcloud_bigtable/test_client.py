@@ -683,7 +683,7 @@ class TestClient(unittest2.TestCase):
             bigtable_cluster_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
         from gcloud_bigtable._testing import _MockWithAttachedMethods
 
         scoped_creds = object()
@@ -706,7 +706,7 @@ class TestClient(unittest2.TestCase):
         )
 
         # Patch the stub used by the API method.
-        client._cluster_stub = stub = _StubMock(response_pb)
+        client._cluster_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = [zone1, zone2]
@@ -737,7 +737,7 @@ class TestClient(unittest2.TestCase):
             bigtable_cluster_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
         from gcloud_bigtable._testing import _MockWithAttachedMethods
 
         scoped_creds = object()
@@ -777,7 +777,7 @@ class TestClient(unittest2.TestCase):
         )
 
         # Patch the stub used by the API method.
-        client._cluster_stub = stub = _StubMock(response_pb)
+        client._cluster_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         failed_zones = [failed_zone]

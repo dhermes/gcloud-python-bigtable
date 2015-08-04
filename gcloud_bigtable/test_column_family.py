@@ -343,7 +343,7 @@ class TestColumnFamily(unittest2.TestCase):
             bigtable_table_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as messages_pb2)
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
 
         client = _Client()
         table_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
@@ -366,7 +366,7 @@ class TestColumnFamily(unittest2.TestCase):
         response_pb = data_pb2.ColumnFamily()
 
         # Patch the stub used by the API method.
-        client.table_stub = stub = _StubMock(response_pb)
+        client.table_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None  # create() has no return value.
@@ -392,7 +392,7 @@ class TestColumnFamily(unittest2.TestCase):
     def _update_test_helper(self, gc_rule=None):
         from gcloud_bigtable._generated import (
             bigtable_table_data_pb2 as data_pb2)
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
 
         client = _Client()
         table_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
@@ -414,7 +414,7 @@ class TestColumnFamily(unittest2.TestCase):
         response_pb = data_pb2.ColumnFamily()
 
         # Patch the stub used by the API method.
-        client.table_stub = stub = _StubMock(response_pb)
+        client.table_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None  # update() has no return value.
@@ -441,7 +441,7 @@ class TestColumnFamily(unittest2.TestCase):
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable._generated import empty_pb2
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
 
         client = _Client()
         table_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
@@ -458,7 +458,7 @@ class TestColumnFamily(unittest2.TestCase):
         response_pb = empty_pb2.Empty()
 
         # Patch the stub used by the API method.
-        client.table_stub = stub = _StubMock(response_pb)
+        client.table_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None  # delete() has no return value.

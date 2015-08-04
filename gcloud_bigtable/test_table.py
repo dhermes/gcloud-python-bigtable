@@ -113,7 +113,7 @@ class TestTable(unittest2.TestCase):
             bigtable_table_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as messages_pb2)
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
 
         client = _Client()
         cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
@@ -132,7 +132,7 @@ class TestTable(unittest2.TestCase):
         response_pb = data_pb2.Table()
 
         # Patch the stub used by the API method.
-        client.table_stub = stub = _StubMock(response_pb)
+        client.table_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None  # create() has no return value.
@@ -160,7 +160,7 @@ class TestTable(unittest2.TestCase):
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable._generated import empty_pb2
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
 
         new_table_id = 'new_table_id'
         self.assertNotEqual(new_table_id, TABLE_ID)
@@ -182,7 +182,7 @@ class TestTable(unittest2.TestCase):
         response_pb = empty_pb2.Empty()
 
         # Patch the stub used by the API method.
-        client.table_stub = stub = _StubMock(response_pb)
+        client.table_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None  # rename() has no return value.
@@ -201,7 +201,7 @@ class TestTable(unittest2.TestCase):
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable._generated import empty_pb2
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
 
         client = _Client()
         cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
@@ -217,7 +217,7 @@ class TestTable(unittest2.TestCase):
         response_pb = empty_pb2.Empty()
 
         # Patch the stub used by the API method.
-        client.table_stub = stub = _StubMock(response_pb)
+        client.table_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None  # delete() has no return value.
@@ -237,7 +237,7 @@ class TestTable(unittest2.TestCase):
             bigtable_table_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as messages_pb2)
-        from gcloud_bigtable._grpc_mocks import _StubMock
+        from gcloud_bigtable._grpc_mocks import StubMock
         from gcloud_bigtable.column_family import ColumnFamily
 
         client = _Client()
@@ -261,7 +261,7 @@ class TestTable(unittest2.TestCase):
         )
 
         # Patch the stub used by the API method.
-        client.table_stub = stub = _StubMock(response_pb)
+        client.table_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = {

@@ -45,7 +45,7 @@ class MethodMock(object):
         return AsyncResult(curr_result)
 
 
-class _StubMock(object):
+class StubMock(object):
 
     def __init__(self, *results):
         self.results = results
