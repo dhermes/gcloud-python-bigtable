@@ -416,7 +416,95 @@ class TestClient(GRPCMockTestMixin):
         client = self._makeOne(credentials, project_id=PROJECT_ID)
         self.assertEqual(client.project_name, project_name)
 
-    def test__get_data_stub(self):
+    def test_data_stub_getter(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID)
+        client._data_stub = object()
+        self.assertTrue(client.data_stub is client._data_stub)
+
+    def test_data_stub_failure(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID)
+        with self.assertRaises(ValueError):
+            getattr(client, 'data_stub')
+
+    def test_cluster_stub_getter(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=True)
+        client._cluster_stub = object()
+        self.assertTrue(client.cluster_stub is client._cluster_stub)
+
+    def test_cluster_stub_non_admin_failure(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=False)
+        with self.assertRaises(ValueError):
+            getattr(client, 'cluster_stub')
+
+    def test_cluster_stub_unset_failure(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=True)
+        with self.assertRaises(ValueError):
+            getattr(client, 'cluster_stub')
+
+    def test_operations_stub_getter(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=True)
+        client._operations_stub = object()
+        self.assertTrue(client.operations_stub is client._operations_stub)
+
+    def test_operations_stub_non_admin_failure(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=False)
+        with self.assertRaises(ValueError):
+            getattr(client, 'operations_stub')
+
+    def test_operations_stub_unset_failure(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=True)
+        with self.assertRaises(ValueError):
+            getattr(client, 'operations_stub')
+
+    def test_table_stub_getter(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=True)
+        client._table_stub = object()
+        self.assertTrue(client.table_stub is client._table_stub)
+
+    def test_table_stub_non_admin_failure(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=False)
+        with self.assertRaises(ValueError):
+            getattr(client, 'table_stub')
+
+    def test_table_stub_unset_failure(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=True)
+        with self.assertRaises(ValueError):
+            getattr(client, 'table_stub')
+
+    def test__make_data_stub(self):
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable._testing import _Monkey
@@ -431,7 +519,7 @@ class TestClient(GRPCMockTestMixin):
         expected_result = object()
         mock_make_stub = _MockCalled(expected_result)
         with _Monkey(MUT, make_stub=mock_make_stub):
-            result = client._get_data_stub()
+            result = client._make_data_stub()
 
         self.assertTrue(result is expected_result)
         make_stub_args = [
@@ -444,7 +532,7 @@ class TestClient(GRPCMockTestMixin):
         ]
         mock_make_stub.check_called(self, make_stub_args)
 
-    def test__get_cluster_stub(self):
+    def test__make_cluster_stub(self):
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable._testing import _Monkey
@@ -459,7 +547,7 @@ class TestClient(GRPCMockTestMixin):
         expected_result = object()
         mock_make_stub = _MockCalled(expected_result)
         with _Monkey(MUT, make_stub=mock_make_stub):
-            result = client._get_cluster_stub()
+            result = client._make_cluster_stub()
 
         self.assertTrue(result is expected_result)
         make_stub_args = [
@@ -472,7 +560,7 @@ class TestClient(GRPCMockTestMixin):
         ]
         mock_make_stub.check_called(self, make_stub_args)
 
-    def test__get_operations_stub(self):
+    def test__make_operations_stub(self):
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable._testing import _Monkey
@@ -487,7 +575,7 @@ class TestClient(GRPCMockTestMixin):
         expected_result = object()
         mock_make_stub = _MockCalled(expected_result)
         with _Monkey(MUT, make_stub=mock_make_stub):
-            result = client._get_operations_stub()
+            result = client._make_operations_stub()
 
         self.assertTrue(result is expected_result)
         make_stub_args = [
@@ -500,7 +588,7 @@ class TestClient(GRPCMockTestMixin):
         ]
         mock_make_stub.check_called(self, make_stub_args)
 
-    def test__get_table_stub(self):
+    def test__make_table_stub(self):
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable._testing import _Monkey
@@ -515,7 +603,7 @@ class TestClient(GRPCMockTestMixin):
         expected_result = object()
         mock_make_stub = _MockCalled(expected_result)
         with _Monkey(MUT, make_stub=mock_make_stub):
-            result = client._get_table_stub()
+            result = client._make_table_stub()
 
         self.assertTrue(result is expected_result)
         make_stub_args = [

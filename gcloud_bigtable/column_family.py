@@ -330,8 +330,8 @@ def _gc_rule_from_pb(gc_rule_pb):
     :returns: An instance of one of the native rules defined
               in :module:`column_family` or :data:`None` if no values were
               set on the protobuf passed in.
-    :raises: :class:`ValueError` if more than one property has been set on
-             the GC rule.
+    :raises: :class:`ValueError <exceptions.ValueError>` if more than one
+             property has been set on the GC rule.
     """
     all_fields = [field.name for field in gc_rule_pb._fields]
     if len(all_fields) == 0:

@@ -108,8 +108,8 @@ def _require_pb_property(message_pb, property_name, value):
 
     :rtype: object
     :returns: The value of ``property_name`` set on ``message_pb``.
-    :raises: :class:`ValueError` if the result returned from the
-             ``message_pb`` does not contain the ``property_name``
+    :raises: :class:`ValueError <exceptions.ValueError>` if the result returned
+             from the ``message_pb`` does not contain the ``property_name``
              value or if the value returned disagrees with the ``value``
              passed with the request (if that value is not null).
     """
@@ -140,8 +140,8 @@ def _parse_pb_any_to_native(any_val, expected_type=None):
 
     :rtype: object
     :returns: The de-serialized object.
-    :raises: :class:`ValueError` if the ``expected_type`` does not match
-             the ``type_url`` on the input.
+    :raises: :class:`ValueError <exceptions.ValueError>` if the
+             ``expected_type`` does not match the ``type_url`` on the input.
     """
     if expected_type is not None and expected_type != any_val.type_url:
         raise ValueError('Expected type: %s, Received: %s' % (
