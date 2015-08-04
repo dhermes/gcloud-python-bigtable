@@ -26,10 +26,6 @@ from gcloud_bigtable._generated import operations_pb2
 from gcloud_bigtable._helpers import _parse_pb_any_to_native
 from gcloud_bigtable._helpers import _pb_timestamp_to_datetime
 from gcloud_bigtable._helpers import _require_pb_property
-from gcloud_bigtable._helpers import make_stub
-from gcloud_bigtable.constants import CLUSTER_ADMIN_HOST
-from gcloud_bigtable.constants import CLUSTER_ADMIN_PORT
-from gcloud_bigtable.constants import CLUSTER_STUB_FACTORY
 from gcloud_bigtable.table import Table
 
 
@@ -254,6 +250,7 @@ class Cluster(object):
                                 cluster.
         """
         request_pb = messages_pb2.GetClusterRequest(name=self.name)
+        timeout_seconds = timeout_seconds or self.timeout_seconds
         response = self.client.cluster_stub.GetCluster.async(request_pb,
                                                              timeout_seconds)
         # We expect a `._generated.bigtable_cluster_data_pb2.Cluster`.
@@ -319,13 +316,11 @@ class Cluster(object):
                                 cluster.
         """
         request_pb = _prepare_create_request(self)
-        stub = make_stub(self.client, CLUSTER_STUB_FACTORY,
-                         CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.CreateCluster.async(request_pb, timeout_seconds)
-            # We expect an `operations_pb2.Operation`.
-            cluster_pb = response.result()
+        timeout_seconds = timeout_seconds or self.timeout_seconds
+        response = self.client.cluster_stub.CreateCluster.async(
+            request_pb, timeout_seconds)
+        # We expect an `operations_pb2.Operation`.
+        cluster_pb = response.result()
 
         self._operation_type = 'create'
         self._operation_id, self._operation_begin = _process_operation(
@@ -356,13 +351,11 @@ class Cluster(object):
             display_name=self.display_name,
             serve_nodes=self.serve_nodes,
         )
-        stub = make_stub(self.client, CLUSTER_STUB_FACTORY,
-                         CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.UpdateCluster.async(request_pb, timeout_seconds)
-            # We expect a `._generated.bigtable_cluster_data_pb2.Cluster`.
-            cluster_pb = response.result()
+        timeout_seconds = timeout_seconds or self.timeout_seconds
+        response = self.client.cluster_stub.UpdateCluster.async(
+            request_pb, timeout_seconds)
+        # We expect a `._generated.bigtable_cluster_data_pb2.Cluster`.
+        cluster_pb = response.result()
 
         self._operation_type = 'update'
         self._operation_id, self._operation_begin = _process_operation(
@@ -377,13 +370,11 @@ class Cluster(object):
                                 cluster.
         """
         request_pb = messages_pb2.DeleteClusterRequest(name=self.name)
-        stub = make_stub(self.client, CLUSTER_STUB_FACTORY,
-                         CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.DeleteCluster.async(request_pb, timeout_seconds)
-            # We expect a `._generated.empty_pb2.Empty`
-            response.result()
+        timeout_seconds = timeout_seconds or self.timeout_seconds
+        response = self.client.cluster_stub.DeleteCluster.async(
+            request_pb, timeout_seconds)
+        # We expect a `._generated.empty_pb2.Empty`
+        response.result()
 
     def undelete(self, timeout_seconds=None):
         """Undelete this cluster.
@@ -394,13 +385,11 @@ class Cluster(object):
                                 cluster.
         """
         request_pb = messages_pb2.UndeleteClusterRequest(name=self.name)
-        stub = make_stub(self.client, CLUSTER_STUB_FACTORY,
-                         CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.UndeleteCluster.async(request_pb, timeout_seconds)
-            # We expect a `._generated.operations_pb2.Operation`
-            operation_pb2 = response.result()
+        timeout_seconds = timeout_seconds or self.timeout_seconds
+        response = self.client.cluster_stub.UndeleteCluster.async(
+            request_pb, timeout_seconds)
+        # We expect a `._generated.operations_pb2.Operation`
+        operation_pb2 = response.result()
 
         self._operation_type = 'undelete'
         self._operation_id, self._operation_begin = _process_operation(
@@ -420,6 +409,7 @@ class Cluster(object):
                  returned tables has a name that is not of the expected format.
         """
         request_pb = table_messages_pb2.ListTablesRequest(name=self.name)
+        timeout_seconds = timeout_seconds or self.timeout_seconds
         response = self.client.table_stub.ListTables.async(request_pb,
                                                            timeout_seconds)
         # We expect a `table_messages_pb2.ListTablesResponse`

@@ -15,8 +15,6 @@
 
 import unittest2
 
-from gcloud_bigtable._grpc_mocks import GRPCMockTestMixin
-
 
 PROJECT_ID = 'project-id'
 ZONE = 'zone'
@@ -97,25 +95,7 @@ class Test__process_operation(unittest2.TestCase):
             self._callFUT(cluster)
 
 
-class TestCluster(GRPCMockTestMixin):
-
-    @classmethod
-    def setUpClass(cls):
-        from gcloud_bigtable import client
-        from gcloud_bigtable import cluster as MUT
-        cls._MUT = MUT
-        cls._STUB_SCOPES = [client.DATA_SCOPE]
-        cls._STUB_FACTORY_NAME = 'CLUSTER_STUB_FACTORY'
-        cls._STUB_HOST = MUT.CLUSTER_ADMIN_HOST
-        cls._STUB_PORT = MUT.CLUSTER_ADMIN_PORT
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls._MUT
-        del cls._STUB_SCOPES
-        del cls._STUB_FACTORY_NAME
-        del cls._STUB_HOST
-        del cls._STUB_PORT
+class TestCluster(unittest2.TestCase):
 
     def _getTargetClass(self):
         from gcloud_bigtable.cluster import Cluster
@@ -378,9 +358,13 @@ class TestCluster(GRPCMockTestMixin):
         from gcloud_bigtable._generated import (
             bigtable_cluster_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import operations_pb2
+        from gcloud_bigtable._grpc_mocks import _StubMock
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster as MUT
+
+        client = _Client(PROJECT_ID)
+        cluster = self._makeOne(ZONE, CLUSTER_ID, client)
 
         # Create request_pb. Just a mock since we monkey patch
         # _prepare_create_request
@@ -390,50 +374,53 @@ class TestCluster(GRPCMockTestMixin):
         current_op = operations_pb2.Operation()
         response_pb = data_pb2.Cluster(current_operation=current_op)
 
+        # Patch the stub used by the API method.
+        client.cluster_stub = stub = _StubMock(response_pb)
+
         # Create expected_result.
         expected_result = None
 
-        # We must create the cluster with the client passed in.
-        TEST_CASE = self
-        CLUSTER_CREATED = []
+        # Perform the method and check the result.
         timeout_seconds = 578
-
-        def result_method(client):
-            cluster = TEST_CASE._makeOne(ZONE, CLUSTER_ID, client)
-            CLUSTER_CREATED.append(cluster)
-            return cluster.create(timeout_seconds=timeout_seconds)
-
         mock_prepare_create_request = _MockCalled(request_pb)
         op_id = 5678
         op_begin = object()
         mock_process_operation = _MockCalled((op_id, op_begin))
         with _Monkey(MUT, _prepare_create_request=mock_prepare_create_request,
                      _process_operation=mock_process_operation):
-            self._grpc_client_test_helper('CreateCluster', result_method,
-                                          request_pb, response_pb,
-                                          expected_result, PROJECT_ID,
-                                          timeout_seconds=timeout_seconds)
+            result = cluster.create(timeout_seconds=timeout_seconds)
 
-        self.assertEqual(len(CLUSTER_CREATED), 1)
-        self.assertEqual(CLUSTER_CREATED[0]._operation_type, 'create')
-        self.assertEqual(CLUSTER_CREATED[0]._operation_id, op_id)
-        self.assertTrue(CLUSTER_CREATED[0]._operation_begin is op_begin)
-        mock_prepare_create_request.check_called(self, [(CLUSTER_CREATED[0],)])
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'CreateCluster',
+            (request_pb, timeout_seconds),
+            {},
+        )])
+        self.assertEqual(cluster._operation_type, 'create')
+        self.assertEqual(cluster._operation_id, op_id)
+        self.assertTrue(cluster._operation_begin is op_begin)
+        mock_prepare_create_request.check_called(self, [(cluster,)])
         mock_process_operation.check_called(self, [(current_op,)])
 
     def test_update(self):
         from gcloud_bigtable._generated import (
             bigtable_cluster_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import operations_pb2
+        from gcloud_bigtable._grpc_mocks import _StubMock
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster as MUT
 
+        client = _Client(PROJECT_ID)
+        serve_nodes = 81
+        display_name = 'display_name'
+        cluster = self._makeOne(ZONE, CLUSTER_ID, client,
+                                display_name=display_name,
+                                serve_nodes=serve_nodes)
+
         # Create request_pb
         cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
                         '/clusters/' + CLUSTER_ID)
-        serve_nodes = 81
-        display_name = 'display_name'
         request_pb = data_pb2.Cluster(
             name=cluster_name,
             display_name=display_name,
@@ -444,43 +431,40 @@ class TestCluster(GRPCMockTestMixin):
         current_op = operations_pb2.Operation()
         response_pb = data_pb2.Cluster(current_operation=current_op)
 
+        # Patch the stub used by the API method.
+        client.cluster_stub = stub = _StubMock(response_pb)
+
         # Create expected_result.
         expected_result = None
 
         # We must create the cluster object with the client passed in.
-        TEST_CASE = self
-        CLUSTER_CREATED = []
         timeout_seconds = 9
-
-        def result_method(client):
-            cluster = TEST_CASE._makeOne(ZONE, CLUSTER_ID, client,
-                                         display_name=display_name,
-                                         serve_nodes=serve_nodes)
-            CLUSTER_CREATED.append(cluster)
-            return cluster.update(timeout_seconds=timeout_seconds)
-
         op_id = 5678
         op_begin = object()
         mock_process_operation = _MockCalled((op_id, op_begin))
         with _Monkey(MUT,
                      _process_operation=mock_process_operation):
-            self._grpc_client_test_helper('UpdateCluster', result_method,
-                                          request_pb, response_pb,
-                                          expected_result, PROJECT_ID,
-                                          timeout_seconds=timeout_seconds)
+            result = cluster.update(timeout_seconds=timeout_seconds)
 
-        self.assertEqual(len(CLUSTER_CREATED), 1)
-        self.assertEqual(CLUSTER_CREATED[0]._operation_type, 'update')
-        self.assertEqual(CLUSTER_CREATED[0]._operation_id, op_id)
-        self.assertTrue(CLUSTER_CREATED[0]._operation_begin is op_begin)
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'UpdateCluster',
+            (request_pb, timeout_seconds),
+            {},
+        )])
+        self.assertEqual(cluster._operation_type, 'update')
+        self.assertEqual(cluster._operation_id, op_id)
+        self.assertTrue(cluster._operation_begin is op_begin)
         mock_process_operation.check_called(self, [(current_op,)])
 
     def test_delete(self):
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable._generated import empty_pb2
+        from gcloud_bigtable._grpc_mocks import _StubMock
 
-        TEST_CASE = self
+        client = _Client(PROJECT_ID)
+        cluster = self._makeOne(ZONE, CLUSTER_ID, client)
 
         # Create request_pb
         cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
@@ -490,28 +474,33 @@ class TestCluster(GRPCMockTestMixin):
         # Create response_pb
         response_pb = empty_pb2.Empty()
 
+        # Patch the stub used by the API method.
+        client.cluster_stub = stub = _StubMock(response_pb)
+
         # Create expected_result.
         expected_result = None  # delete() has no return value.
 
-        # We must create the cluster with the client passed in.
+        # Perform the method and check the result.
         timeout_seconds = 57
-
-        def result_method(client):
-            cluster = TEST_CASE._makeOne(ZONE, CLUSTER_ID, client)
-            return cluster.delete(timeout_seconds=timeout_seconds)
-
-        self._grpc_client_test_helper('DeleteCluster', result_method,
-                                      request_pb, response_pb, expected_result,
-                                      PROJECT_ID,
-                                      timeout_seconds=timeout_seconds)
+        result = cluster.delete(timeout_seconds=timeout_seconds)
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'DeleteCluster',
+            (request_pb, timeout_seconds),
+            {},
+        )])
 
     def test_undelete(self):
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable._generated import operations_pb2
+        from gcloud_bigtable._grpc_mocks import _StubMock
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster as MUT
+
+        client = _Client(PROJECT_ID)
+        cluster = self._makeOne(ZONE, CLUSTER_ID, client)
 
         # Create request_pb
         cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
@@ -521,33 +510,30 @@ class TestCluster(GRPCMockTestMixin):
         # Create response_pb
         response_pb = operations_pb2.Operation()
 
+        # Patch the stub used by the API method.
+        client.cluster_stub = stub = _StubMock(response_pb)
+
         # Create expected_result.
         expected_result = None
 
-        # We must create the cluster object with the client passed in.
-        TEST_CASE = self
-        CLUSTER_CREATED = []
+        # Perform the method and check the result.
         timeout_seconds = 78
-
-        def result_method(client):
-            cluster = TEST_CASE._makeOne(ZONE, CLUSTER_ID, client)
-            CLUSTER_CREATED.append(cluster)
-            return cluster.undelete(timeout_seconds=timeout_seconds)
-
         op_id = 5678
         op_begin = object()
         mock_process_operation = _MockCalled((op_id, op_begin))
         with _Monkey(MUT,
                      _process_operation=mock_process_operation):
-            self._grpc_client_test_helper('UndeleteCluster', result_method,
-                                          request_pb, response_pb,
-                                          expected_result, PROJECT_ID,
-                                          timeout_seconds=timeout_seconds)
+            result = cluster.undelete(timeout_seconds=timeout_seconds)
 
-        self.assertEqual(len(CLUSTER_CREATED), 1)
-        self.assertEqual(CLUSTER_CREATED[0]._operation_type, 'undelete')
-        self.assertEqual(CLUSTER_CREATED[0]._operation_id, op_id)
-        self.assertTrue(CLUSTER_CREATED[0]._operation_begin is op_begin)
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'UndeleteCluster',
+            (request_pb, timeout_seconds),
+            {},
+        )])
+        self.assertEqual(cluster._operation_type, 'undelete')
+        self.assertEqual(cluster._operation_id, op_id)
+        self.assertTrue(cluster._operation_begin is op_begin)
         mock_process_operation.check_called(self, [(response_pb,)])
 
     def _list_tables_helper(self, table_id, table_name=None):
