@@ -41,6 +41,27 @@ $ # May need to update dynamic linker config via:
 $ # [sudo] ldconfig
 ```
 
+## Testing
+
+Unfortunately, `tox` will fail by default due to the presence of
+`grpcio` in `setup.py`. In order to successfully set up a `tox`
+test environment (e.g `ENV=py27`), run
+
+```bash
+tox -e ${ENV}
+```
+
+and watch the install fail, then with the partially set up
+environment, execute:
+
+```bash
+BREW_PREFIX=$(brew --prefix)
+VERSION=0.10.0a0
+CFLAGS=-I${BREW_PREFIX}/include LDFLAGS=-L${BREW_PREFIX}/lib \
+  .tox/${ENV}/bin/pip install grpcio==${VERSION}
+unset BREW_PREFIX
+```
+
 ## False Starts
 
 This library originally attempted to support HTTP-RPC requests
