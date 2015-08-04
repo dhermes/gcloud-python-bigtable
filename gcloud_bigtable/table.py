@@ -17,12 +17,8 @@
 
 from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as messages_pb2)
-from gcloud_bigtable._helpers import make_stub
 from gcloud_bigtable.column_family import ColumnFamily
 from gcloud_bigtable.column_family import _gc_rule_from_pb
-from gcloud_bigtable.constants import TABLE_ADMIN_HOST
-from gcloud_bigtable.constants import TABLE_ADMIN_PORT
-from gcloud_bigtable.constants import TABLE_STUB_FACTORY
 from gcloud_bigtable.row import Row
 
 
@@ -178,13 +174,11 @@ class Table(object):
             name=self.cluster.name,
             table_id=self.table_id,
         )
-        stub = make_stub(self.client, TABLE_STUB_FACTORY,
-                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.CreateTable.async(request_pb, timeout_seconds)
-            # We expect a `._generated.bigtable_table_data_pb2.Table`
-            response.result()
+        timeout_seconds = timeout_seconds or self.timeout_seconds
+        response = self.client.table_stub.CreateTable.async(request_pb,
+                                                            timeout_seconds)
+        # We expect a `._generated.bigtable_table_data_pb2.Table`
+        response.result()
 
     def rename(self, new_table_id, timeout_seconds=None):
         """Rename this table.
@@ -214,13 +208,11 @@ class Table(object):
             name=self.name,
             new_id=new_table_id,
         )
-        stub = make_stub(self.client, TABLE_STUB_FACTORY,
-                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.RenameTable.async(request_pb, timeout_seconds)
-            # We expect a `._generated.empty_pb2.Empty`
-            response.result()
+        timeout_seconds = timeout_seconds or self.timeout_seconds
+        response = self.client.table_stub.RenameTable.async(request_pb,
+                                                            timeout_seconds)
+        # We expect a `._generated.empty_pb2.Empty`
+        response.result()
 
         self.table_id = new_table_id
 
@@ -232,13 +224,11 @@ class Table(object):
                                 If not passed, defaults to value set on table.
         """
         request_pb = messages_pb2.DeleteTableRequest(name=self.name)
-        stub = make_stub(self.client, TABLE_STUB_FACTORY,
-                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.DeleteTable.async(request_pb, timeout_seconds)
-            # We expect a `._generated.empty_pb2.Empty`
-            response.result()
+        timeout_seconds = timeout_seconds or self.timeout_seconds
+        response = self.client.table_stub.DeleteTable.async(request_pb,
+                                                            timeout_seconds)
+        # We expect a `._generated.empty_pb2.Empty`
+        response.result()
 
     def list_column_families(self, timeout_seconds=None):
         """Check if this table exists.
@@ -255,13 +245,11 @@ class Table(object):
                  name from the column family ID.
         """
         request_pb = messages_pb2.GetTableRequest(name=self.name)
-        stub = make_stub(self.client, TABLE_STUB_FACTORY,
-                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.GetTable.async(request_pb, timeout_seconds)
-            # We expect a `._generated.bigtable_table_data_pb2.Table`
-            table_pb = response.result()
+        timeout_seconds = timeout_seconds or self.timeout_seconds
+        response = self.client.table_stub.GetTable.async(request_pb,
+                                                         timeout_seconds)
+        # We expect a `._generated.bigtable_table_data_pb2.Table`
+        table_pb = response.result()
 
         result = {}
         for column_family_id, value_pb in table_pb.column_families.items():

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from gcloud_bigtable._grpc_mocks import GRPCMockTestMixin
+import unittest2
 
 
 PROJECT_ID = 'project-id'
@@ -22,25 +22,7 @@ CLUSTER_ID = 'cluster-id'
 TABLE_ID = 'table-id'
 
 
-class TestTable(GRPCMockTestMixin):
-
-    @classmethod
-    def setUpClass(cls):
-        from gcloud_bigtable import client
-        from gcloud_bigtable import table as MUT
-        cls._MUT = MUT
-        cls._STUB_SCOPES = [client.DATA_SCOPE]
-        cls._STUB_FACTORY_NAME = 'TABLE_STUB_FACTORY'
-        cls._STUB_HOST = MUT.TABLE_ADMIN_HOST
-        cls._STUB_PORT = MUT.TABLE_ADMIN_PORT
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls._MUT
-        del cls._STUB_SCOPES
-        del cls._STUB_FACTORY_NAME
-        del cls._STUB_HOST
-        del cls._STUB_PORT
+class TestTable(unittest2.TestCase):
 
     def _getTargetClass(self):
         from gcloud_bigtable.table import Table
@@ -131,10 +113,15 @@ class TestTable(GRPCMockTestMixin):
             bigtable_table_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._grpc_mocks import _StubMock
 
-        # Create request_pb
+        client = _Client()
         cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
                         '/clusters/' + CLUSTER_ID)
+        cluster = _Cluster(cluster_name, client=client)
+        table = self._makeOne(TABLE_ID, cluster)
+
+        # Create request_pb
         request_pb = messages_pb2.CreateTableRequest(
             initial_split_keys=initial_split_keys,
             name=cluster_name,
@@ -144,24 +131,22 @@ class TestTable(GRPCMockTestMixin):
         # Create response_pb
         response_pb = data_pb2.Table()
 
+        # Patch the stub used by the API method.
+        client.table_stub = stub = _StubMock(response_pb)
+
         # Create expected_result.
         expected_result = None  # create() has no return value.
 
-        # We must create the cluster with the client passed in
-        # and then the table with that cluster.
-        TEST_CASE = self
+        # Perform the method and check the result.
         timeout_seconds = 150
-
-        def result_method(client):
-            cluster = client.cluster(ZONE, CLUSTER_ID)
-            table = TEST_CASE._makeOne(TABLE_ID, cluster)
-            return table.create(initial_split_keys=initial_split_keys,
-                                timeout_seconds=timeout_seconds)
-
-        self._grpc_client_test_helper('CreateTable', result_method,
-                                      request_pb, response_pb, expected_result,
-                                      PROJECT_ID,
-                                      timeout_seconds=timeout_seconds)
+        result = table.create(initial_split_keys=initial_split_keys,
+                              timeout_seconds=timeout_seconds)
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'CreateTable',
+            (request_pb, timeout_seconds),
+            {},
+        )])
 
     def test_create(self):
         initial_split_keys = None
@@ -175,13 +160,19 @@ class TestTable(GRPCMockTestMixin):
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable._generated import empty_pb2
+        from gcloud_bigtable._grpc_mocks import _StubMock
 
         new_table_id = 'new_table_id'
         self.assertNotEqual(new_table_id, TABLE_ID)
 
+        client = _Client()
+        cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+                        '/clusters/' + CLUSTER_ID)
+        cluster = _Cluster(cluster_name, client=client)
+        table = self._makeOne(TABLE_ID, cluster)
+
         # Create request_pb
-        table_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
-                      '/clusters/' + CLUSTER_ID + '/tables/' + TABLE_ID)
+        table_name = cluster_name + '/tables/' + TABLE_ID
         request_pb = messages_pb2.RenameTableRequest(
             name=table_name,
             new_id=new_table_id,
@@ -190,68 +181,73 @@ class TestTable(GRPCMockTestMixin):
         # Create response_pb
         response_pb = empty_pb2.Empty()
 
+        # Patch the stub used by the API method.
+        client.table_stub = stub = _StubMock(response_pb)
+
         # Create expected_result.
         expected_result = None  # rename() has no return value.
 
-        # We must create the cluster with the client passed in
-        # and then the table with that cluster.
-        TEST_CASE = self
-        TABLE_CREATED = []
+        # Perform the method and check the result.
         timeout_seconds = 97
-
-        def result_method(client):
-            cluster = client.cluster(ZONE, CLUSTER_ID)
-            table = TEST_CASE._makeOne(TABLE_ID, cluster)
-            TABLE_CREATED.append(table)
-            return table.rename(new_table_id, timeout_seconds=timeout_seconds)
-
-        self._grpc_client_test_helper('RenameTable', result_method,
-                                      request_pb, response_pb, expected_result,
-                                      PROJECT_ID,
-                                      timeout_seconds=timeout_seconds)
-        self.assertEqual(TABLE_CREATED[0].table_id, new_table_id)
+        result = table.rename(new_table_id, timeout_seconds=timeout_seconds)
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'RenameTable',
+            (request_pb, timeout_seconds),
+            {},
+        )])
 
     def test_delete(self):
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable._generated import empty_pb2
+        from gcloud_bigtable._grpc_mocks import _StubMock
+
+        client = _Client()
+        cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+                        '/clusters/' + CLUSTER_ID)
+        cluster = _Cluster(cluster_name, client=client)
+        table = self._makeOne(TABLE_ID, cluster)
 
         # Create request_pb
-        table_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
-                      '/clusters/' + CLUSTER_ID + '/tables/' + TABLE_ID)
+        table_name = cluster_name + '/tables/' + TABLE_ID
         request_pb = messages_pb2.DeleteTableRequest(name=table_name)
 
         # Create response_pb
         response_pb = empty_pb2.Empty()
 
+        # Patch the stub used by the API method.
+        client.table_stub = stub = _StubMock(response_pb)
+
         # Create expected_result.
         expected_result = None  # delete() has no return value.
 
-        # We must create the cluster with the client passed in
-        # and then the table with that cluster.
-        TEST_CASE = self
+        # Perform the method and check the result.
         timeout_seconds = 871
-
-        def result_method(client):
-            cluster = client.cluster(ZONE, CLUSTER_ID)
-            table = TEST_CASE._makeOne(TABLE_ID, cluster)
-            return table.delete(timeout_seconds=timeout_seconds)
-
-        self._grpc_client_test_helper('DeleteTable', result_method,
-                                      request_pb, response_pb, expected_result,
-                                      PROJECT_ID,
-                                      timeout_seconds=timeout_seconds)
+        result = table.delete(timeout_seconds=timeout_seconds)
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'DeleteTable',
+            (request_pb, timeout_seconds),
+            {},
+        )])
 
     def _list_column_families_helper(self, column_family_name=None):
         from gcloud_bigtable._generated import (
             bigtable_table_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._grpc_mocks import _StubMock
         from gcloud_bigtable.column_family import ColumnFamily
 
+        client = _Client()
+        cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+                        '/clusters/' + CLUSTER_ID)
+        cluster = _Cluster(cluster_name, client=client)
+        table = self._makeOne(TABLE_ID, cluster)
+
         # Create request_pb
-        table_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
-                      '/clusters/' + CLUSTER_ID + '/tables/' + TABLE_ID)
+        table_name = cluster_name + '/tables/' + TABLE_ID
         request_pb = messages_pb2.GetTableRequest(name=table_name)
 
         # Create response_pb
@@ -264,25 +260,23 @@ class TestTable(GRPCMockTestMixin):
             column_families={column_family_id: column_family},
         )
 
+        # Patch the stub used by the API method.
+        client.table_stub = stub = _StubMock(response_pb)
+
         # Create expected_result.
-        expected_result = {}  # Will update this once test table is created.
+        expected_result = {
+            column_family_id: ColumnFamily(column_family_id, table),
+        }
 
-        # We must create the cluster with the client passed in
-        # and then the table with that cluster.
-        TEST_CASE = self
+        # Perform the method and check the result.
         timeout_seconds = 502
-
-        def result_method(client):
-            cluster = client.cluster(ZONE, CLUSTER_ID)
-            table = TEST_CASE._makeOne(TABLE_ID, cluster)
-            expected_result[column_family_id] = ColumnFamily(
-                column_family_id, table)
-            return table.list_column_families(timeout_seconds=timeout_seconds)
-
-        self._grpc_client_test_helper('GetTable', result_method,
-                                      request_pb, response_pb, expected_result,
-                                      PROJECT_ID,
-                                      timeout_seconds=timeout_seconds)
+        result = table.list_column_families(timeout_seconds=timeout_seconds)
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'GetTable',
+            (request_pb, timeout_seconds),
+            {},
+        )])
 
     def test_list_column_families(self):
         self._list_column_families_helper()
@@ -292,6 +286,13 @@ class TestTable(GRPCMockTestMixin):
         with self.assertRaises(ValueError):
             self._list_column_families_helper(
                 column_family_name=column_family_name)
+
+
+class _Client(object):
+
+    cluster_stub = None
+    operations_stub = None
+    table_stub = None
 
 
 class _Cluster(object):

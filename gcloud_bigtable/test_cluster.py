@@ -595,8 +595,10 @@ class TestCluster(unittest2.TestCase):
 
 class _Client(object):
 
-    def __init__(self, project_id, cluster_stub=None, operations_stub=None):
+    cluster_stub = None
+    operations_stub = None
+    table_stub = None
+
+    def __init__(self, project_id):
         self.project_id = project_id
         self.project_name = 'projects/' + project_id
-        self.cluster_stub = cluster_stub
-        self.operations_stub = operations_stub
