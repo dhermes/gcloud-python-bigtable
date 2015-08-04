@@ -15,8 +15,6 @@
 
 import unittest2
 
-from gcloud_bigtable._grpc_mocks import GRPCMockTestMixin
-
 
 PROJECT_ID = 'project-id'
 ZONE = 'zone'
@@ -274,25 +272,7 @@ class TestGarbageCollectionRuleIntersection(unittest2.TestCase):
         self.assertEqual(gc_rule_pb, pb_rule5)
 
 
-class TestColumnFamily(GRPCMockTestMixin):
-
-    @classmethod
-    def setUpClass(cls):
-        from gcloud_bigtable import client
-        from gcloud_bigtable import column_family as MUT
-        cls._MUT = MUT
-        cls._STUB_SCOPES = [client.DATA_SCOPE]
-        cls._STUB_FACTORY_NAME = 'TABLE_STUB_FACTORY'
-        cls._STUB_HOST = MUT.TABLE_ADMIN_HOST
-        cls._STUB_PORT = MUT.TABLE_ADMIN_PORT
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls._MUT
-        del cls._STUB_SCOPES
-        del cls._STUB_FACTORY_NAME
-        del cls._STUB_HOST
-        del cls._STUB_PORT
+class TestColumnFamily(unittest2.TestCase):
 
     def _getTargetClass(self):
         from gcloud_bigtable.column_family import ColumnFamily
@@ -363,41 +343,43 @@ class TestColumnFamily(GRPCMockTestMixin):
             bigtable_table_data_pb2 as data_pb2)
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._grpc_mocks import _StubMock
 
-        # Create request_pb
+        client = _Client()
         table_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
                       '/clusters/' + CLUSTER_ID + '/tables/' + TABLE_ID)
+        table = _Table(table_name, client=client)
+        column_family = self._makeOne(COLUMN_FAMILY_ID, table, gc_rule=gc_rule)
+
+        # Create request_pb
         if gc_rule is None:
-            column_family = data_pb2.ColumnFamily()
+            column_family_pb = data_pb2.ColumnFamily()
         else:
-            column_family = data_pb2.ColumnFamily(gc_rule=gc_rule.to_pb())
+            column_family_pb = data_pb2.ColumnFamily(gc_rule=gc_rule.to_pb())
         request_pb = messages_pb2.CreateColumnFamilyRequest(
             name=table_name,
             column_family_id=COLUMN_FAMILY_ID,
-            column_family=column_family,
+            column_family=column_family_pb,
         )
 
         # Create response_pb
         response_pb = data_pb2.ColumnFamily()
 
+        # Patch the stub used by the API method.
+        client.table_stub = stub = _StubMock(response_pb)
+
         # Create expected_result.
         expected_result = None  # create() has no return value.
 
-        # We must create the column family from the client.
-        TEST_CASE = self
+        # Perform the method and check the result.
         timeout_seconds = 4
-
-        def result_method(client):
-            cluster = client.cluster(ZONE, CLUSTER_ID)
-            table = cluster.table(TABLE_ID)
-            column_family = TEST_CASE._makeOne(COLUMN_FAMILY_ID, table,
-                                               gc_rule=gc_rule)
-            return column_family.create(timeout_seconds=timeout_seconds)
-
-        self._grpc_client_test_helper('CreateColumnFamily', result_method,
-                                      request_pb, response_pb, expected_result,
-                                      PROJECT_ID,
-                                      timeout_seconds=timeout_seconds)
+        result = column_family.create(timeout_seconds=timeout_seconds)
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'CreateColumnFamily',
+            (request_pb, timeout_seconds),
+            {},
+        )])
 
     def test_create(self):
         self._create_test_helper(gc_rule=None)
@@ -410,12 +392,16 @@ class TestColumnFamily(GRPCMockTestMixin):
     def _update_test_helper(self, gc_rule=None):
         from gcloud_bigtable._generated import (
             bigtable_table_data_pb2 as data_pb2)
+        from gcloud_bigtable._grpc_mocks import _StubMock
+
+        client = _Client()
+        table_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+                      '/clusters/' + CLUSTER_ID + '/tables/' + TABLE_ID)
+        table = _Table(table_name, client=client)
+        column_family = self._makeOne(COLUMN_FAMILY_ID, table, gc_rule=gc_rule)
 
         # Create request_pb
-        column_family_name = (
-            'projects/' + PROJECT_ID + '/zones/' + ZONE +
-            '/clusters/' + CLUSTER_ID + '/tables/' + TABLE_ID +
-            '/columnFamilies/' + COLUMN_FAMILY_ID)
+        column_family_name = table_name + '/columnFamilies/' + COLUMN_FAMILY_ID
         if gc_rule is None:
             request_pb = data_pb2.ColumnFamily(name=column_family_name)
         else:
@@ -427,24 +413,21 @@ class TestColumnFamily(GRPCMockTestMixin):
         # Create response_pb
         response_pb = data_pb2.ColumnFamily()
 
+        # Patch the stub used by the API method.
+        client.table_stub = stub = _StubMock(response_pb)
+
         # Create expected_result.
         expected_result = None  # update() has no return value.
 
-        # We must create the column family from the client.
-        TEST_CASE = self
+        # Perform the method and check the result.
         timeout_seconds = 28
-
-        def result_method(client):
-            cluster = client.cluster(ZONE, CLUSTER_ID)
-            table = cluster.table(TABLE_ID)
-            column_family = TEST_CASE._makeOne(COLUMN_FAMILY_ID, table,
-                                               gc_rule=gc_rule)
-            return column_family.update(timeout_seconds=timeout_seconds)
-
-        self._grpc_client_test_helper('UpdateColumnFamily', result_method,
-                                      request_pb, response_pb, expected_result,
-                                      PROJECT_ID,
-                                      timeout_seconds=timeout_seconds)
+        result = column_family.update(timeout_seconds=timeout_seconds)
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'UpdateColumnFamily',
+            (request_pb, timeout_seconds),
+            {},
+        )])
 
     def test_update(self):
         self._update_test_helper(gc_rule=None)
@@ -458,36 +441,37 @@ class TestColumnFamily(GRPCMockTestMixin):
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable._generated import empty_pb2
+        from gcloud_bigtable._grpc_mocks import _StubMock
+
+        client = _Client()
+        table_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+                      '/clusters/' + CLUSTER_ID + '/tables/' + TABLE_ID)
+        table = _Table(table_name, client=client)
+        column_family = self._makeOne(COLUMN_FAMILY_ID, table)
 
         # Create request_pb
-        column_family_name = (
-            'projects/' + PROJECT_ID + '/zones/' + ZONE +
-            '/clusters/' + CLUSTER_ID + '/tables/' + TABLE_ID +
-            '/columnFamilies/' + COLUMN_FAMILY_ID)
+        column_family_name = table_name + '/columnFamilies/' + COLUMN_FAMILY_ID
         request_pb = messages_pb2.DeleteColumnFamilyRequest(
             name=column_family_name)
 
         # Create response_pb
         response_pb = empty_pb2.Empty()
 
+        # Patch the stub used by the API method.
+        client.table_stub = stub = _StubMock(response_pb)
+
         # Create expected_result.
         expected_result = None  # delete() has no return value.
 
-        # We must create the cluster with the client passed in
-        # and then the table with that cluster.
-        TEST_CASE = self
+        # Perform the method and check the result.
         timeout_seconds = 7
-
-        def result_method(client):
-            cluster = client.cluster(ZONE, CLUSTER_ID)
-            table = cluster.table(TABLE_ID)
-            column_family = TEST_CASE._makeOne(COLUMN_FAMILY_ID, table)
-            return column_family.delete(timeout_seconds=timeout_seconds)
-
-        self._grpc_client_test_helper('DeleteColumnFamily', result_method,
-                                      request_pb, response_pb, expected_result,
-                                      PROJECT_ID,
-                                      timeout_seconds=timeout_seconds)
+        result = column_family.delete(timeout_seconds=timeout_seconds)
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'DeleteColumnFamily',
+            (request_pb, timeout_seconds),
+            {},
+        )])
 
 
 class Test__gc_rule_from_pb(unittest2.TestCase):
@@ -581,6 +565,13 @@ class Test__gc_rule_from_pb(unittest2.TestCase):
         fake_descriptor = FieldDescriptor(*descriptor_args)
         gc_rule_pb._fields[fake_descriptor] = None
         self.assertEqual(self._callFUT(gc_rule_pb), None)
+
+
+class _Client(object):
+
+    cluster_stub = None
+    operations_stub = None
+    table_stub = None
 
 
 class _Table(object):

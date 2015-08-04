@@ -20,10 +20,6 @@ from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._helpers import _duration_pb_to_timedelta
 from gcloud_bigtable._helpers import _timedelta_to_duration_pb
-from gcloud_bigtable._helpers import make_stub
-from gcloud_bigtable.constants import TABLE_ADMIN_HOST
-from gcloud_bigtable.constants import TABLE_ADMIN_PORT
-from gcloud_bigtable.constants import TABLE_STUB_FACTORY
 
 
 class GarbageCollectionRule(object):
@@ -257,15 +253,11 @@ class ColumnFamily(object):
             column_family_id=self.column_family_id,
             column_family=column_family,
         )
-
-        stub = make_stub(self.client, TABLE_STUB_FACTORY,
-                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.CreateColumnFamily.async(request_pb,
-                                                     timeout_seconds)
-            # We expect a `.data_pb2.ColumnFamily`
-            response.result()
+        timeout_seconds = timeout_seconds or self.timeout_seconds
+        response = self.client.table_stub.CreateColumnFamily.async(
+            request_pb, timeout_seconds)
+        # We expect a `.data_pb2.ColumnFamily`
+        response.result()
 
     def update(self, timeout_seconds=None):
         """Update this column family.
@@ -288,15 +280,11 @@ class ColumnFamily(object):
         if self.gc_rule is not None:
             request_kwargs['gc_rule'] = self.gc_rule.to_pb()
         request_pb = data_pb2.ColumnFamily(**request_kwargs)
-
-        stub = make_stub(self.client, TABLE_STUB_FACTORY,
-                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.UpdateColumnFamily.async(request_pb,
-                                                     timeout_seconds)
-            # We expect a `.data_pb2.ColumnFamily`
-            response.result()
+        timeout_seconds = timeout_seconds or self.timeout_seconds
+        response = self.client.table_stub.UpdateColumnFamily.async(
+            request_pb, timeout_seconds)
+        # We expect a `.data_pb2.ColumnFamily`
+        response.result()
 
     def delete(self, timeout_seconds=None):
         """Delete this column family.
@@ -307,14 +295,11 @@ class ColumnFamily(object):
                                 column family.
         """
         request_pb = messages_pb2.DeleteColumnFamilyRequest(name=self.name)
-        stub = make_stub(self.client, TABLE_STUB_FACTORY,
-                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
-        with stub:
-            timeout_seconds = timeout_seconds or self.timeout_seconds
-            response = stub.DeleteColumnFamily.async(request_pb,
-                                                     timeout_seconds)
-            # We expect a `._generated.empty_pb2.Empty`
-            response.result()
+        timeout_seconds = timeout_seconds or self.timeout_seconds
+        response = self.client.table_stub.DeleteColumnFamily.async(
+            request_pb, timeout_seconds)
+        # We expect a `._generated.empty_pb2.Empty`
+        response.result()
 
 
 def _gc_rule_from_pb(gc_rule_pb):
