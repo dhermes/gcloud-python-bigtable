@@ -288,6 +288,128 @@ class TestTable(unittest2.TestCase):
                 column_family_name=column_family_name)
 
 
+class Test__create_row_request(unittest2.TestCase):
+
+    def _callFUT(self, table_name, row_key=None, start_key=None, end_key=None,
+                 filter=None, allow_row_interleaving=None, limit=None):
+        from gcloud_bigtable.table import _create_row_request
+        return _create_row_request(
+            table_name, row_key=row_key, start_key=start_key, end_key=end_key,
+            filter=filter, allow_row_interleaving=allow_row_interleaving,
+            limit=limit)
+
+    def test_table_name_only(self):
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+
+        table_name = 'table_name'
+        result = self._callFUT(table_name)
+        expected_result = messages_pb2.ReadRowsRequest(table_name=table_name)
+        self.assertEqual(result, expected_result)
+
+    def test_row_key_row_range_conflict(self):
+        with self.assertRaises(ValueError):
+            self._callFUT(None, row_key=object(), end_key=object())
+
+    def test_row_key(self):
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+
+        table_name = 'table_name'
+        row_key = b'row_key'
+        result = self._callFUT(table_name, row_key=row_key)
+        expected_result = messages_pb2.ReadRowsRequest(
+            table_name=table_name,
+            row_key=row_key,
+        )
+        self.assertEqual(result, expected_result)
+
+    def test_row_range_start_key(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+
+        table_name = 'table_name'
+        start_key = b'start_key'
+        result = self._callFUT(table_name, start_key=start_key)
+        expected_result = messages_pb2.ReadRowsRequest(
+            table_name=table_name,
+            row_range=data_pb2.RowRange(start_key=start_key),
+        )
+        self.assertEqual(result, expected_result)
+
+    def test_row_range_end_key(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+
+        table_name = 'table_name'
+        end_key = b'end_key'
+        result = self._callFUT(table_name, end_key=end_key)
+        expected_result = messages_pb2.ReadRowsRequest(
+            table_name=table_name,
+            row_range=data_pb2.RowRange(end_key=end_key),
+        )
+        self.assertEqual(result, expected_result)
+
+    def test_row_range_both_keys(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+
+        table_name = 'table_name'
+        start_key = b'start_key'
+        end_key = b'end_key'
+        result = self._callFUT(table_name, start_key=start_key,
+                               end_key=end_key)
+        expected_result = messages_pb2.ReadRowsRequest(
+            table_name=table_name,
+            row_range=data_pb2.RowRange(start_key=start_key, end_key=end_key),
+        )
+        self.assertEqual(result, expected_result)
+
+    def test_with_filter(self):
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable.row import RowFilter
+
+        table_name = 'table_name'
+        row_filter = RowFilter(row_sample_filter=0.33)
+        result = self._callFUT(table_name, filter=row_filter)
+        expected_result = messages_pb2.ReadRowsRequest(
+            table_name=table_name,
+            filter=row_filter.to_pb(),
+        )
+        self.assertEqual(result, expected_result)
+
+    def test_with_allow_row_interleaving(self):
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+
+        table_name = 'table_name'
+        allow_row_interleaving = True
+        result = self._callFUT(table_name,
+                               allow_row_interleaving=allow_row_interleaving)
+        expected_result = messages_pb2.ReadRowsRequest(
+            table_name=table_name,
+            allow_row_interleaving=allow_row_interleaving,
+        )
+        self.assertEqual(result, expected_result)
+
+    def test_with_limit(self):
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+
+        table_name = 'table_name'
+        limit = 1337
+        result = self._callFUT(table_name, limit=limit)
+        expected_result = messages_pb2.ReadRowsRequest(
+            table_name=table_name,
+            num_rows_limit=limit,
+        )
+        self.assertEqual(result, expected_result)
+
+
 class _Client(object):
 
     cluster_stub = None

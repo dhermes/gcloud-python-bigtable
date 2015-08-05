@@ -46,6 +46,7 @@ class MethodMock(object):
 
 
 class StubMock(object):
+    """Class to act as a gPRC stub."""
 
     def __init__(self, *results):
         self.results = results

@@ -15,8 +15,12 @@
 """User friendly container for Google Cloud Bigtable Table."""
 
 
+from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+from gcloud_bigtable._generated import (
+    bigtable_service_messages_pb2 as data_messages_pb2)
 from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as messages_pb2)
+from gcloud_bigtable._helpers import _to_bytes
 from gcloud_bigtable.column_family import ColumnFamily
 from gcloud_bigtable.column_family import _gc_rule_from_pb
 from gcloud_bigtable.row import Row
@@ -262,3 +266,80 @@ class Table(object):
                                      column_family.name, value_pb.name))
             result[column_family_id] = column_family
         return result
+
+
+def _create_row_request(table_name, row_key=None, start_key=None, end_key=None,
+                        filter=None, allow_row_interleaving=None, limit=None):
+    """Reads rows in the table.
+
+    :type table_name: string
+    :param table_name: The name of the table to read from.
+
+    :type row_key: bytes
+    :param row_key: (Optional) The key of a specific row to read from.
+
+    :type start_key: bytes
+    :param start_key: (Optional) The beginning of a range of row keys to
+                      read from. The range will include ``start_key``. If
+                      left empty, will be interpreted as the empty string.
+
+    :type end_key: bytes
+    :param end_key: (Optional) The end of a range of row keys to read from.
+                    The range will not include ``end_key``. If left empty,
+                    will be interpreted as an infinite string.
+
+    :type filter: :class:`.row.RowFilter`, :class:`.row.RowFilterChain`,
+                  :class:`.row.RowFilterUnion` or
+                  :class:`.row.ConditionalRowFilter`
+    :param filter: (Optional) The filter to apply to the contents of the
+                   specified row(s). If unset, reads the entire table.
+
+    :type allow_row_interleaving: bool
+    :param allow_row_interleaving: (Optional) By default, rows are read
+                                   sequentially, producing results which are
+                                   guaranteed to arrive in increasing row
+                                   order. Setting
+                                   ``allow_row_interleaving`` to
+                                   :data:`True` allows multiple rows to be
+                                   interleaved in the response stream,
+                                   which increases throughput but breaks
+                                   this guarantee, and may force the
+                                   client to use more memory to buffer
+                                   partially-received rows.
+
+    :type limit: int
+    :param limit: (Optional) The read will terminate after committing to N
+                  rows' worth of results. The default (zero) is to return
+                  all results. Note that if ``allow_row_interleaving`` is
+                  set to :data:`True`, partial results may be returned for
+                  more than N rows. However, only N ``commit_row`` chunks
+                  will be sent.
+
+    :rtype: :class:`data_messages_pb2.ReadRowsRequest`
+    :returns: The ``ReadRowsRequest`` protobuf corresponding to the inputs.
+    :raises: :class:`ValueError <exceptions.ValueError>` if both
+             ``row_key`` and one of ``start_key`` and ``end_key`` are set
+    """
+    request_kwargs = {'table_name': table_name}
+    if (row_key is not None and
+            (start_key is not None or end_key is not None)):
+        raise ValueError('Row key and row range cannot be '
+                         'set simultaneously')
+    if row_key is not None:
+        request_kwargs['row_key'] = _to_bytes(row_key)
+    if start_key is not None or end_key is not None:
+        range_kwargs = {}
+        if start_key is not None:
+            range_kwargs['start_key'] = _to_bytes(start_key)
+        if end_key is not None:
+            range_kwargs['end_key'] = _to_bytes(end_key)
+        row_range = data_pb2.RowRange(**range_kwargs)
+        request_kwargs['row_range'] = row_range
+    if filter is not None:
+        request_kwargs['filter'] = filter.to_pb()
+    if allow_row_interleaving is not None:
+        request_kwargs['allow_row_interleaving'] = allow_row_interleaving
+    if limit is not None:
+        request_kwargs['num_rows_limit'] = limit
+
+    return data_messages_pb2.ReadRowsRequest(**request_kwargs)
