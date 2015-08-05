@@ -77,7 +77,7 @@ class TestTable(unittest2.TestCase):
         from gcloud_bigtable.row import Row
 
         table = self._makeOne(TABLE_ID, None)
-        row_key = 'row_key'
+        row_key = b'row_key'
         row = table.row(row_key)
         self.assertTrue(isinstance(row, Row))
         self.assertEqual(row.row_key, row_key)
@@ -287,6 +287,52 @@ class TestTable(unittest2.TestCase):
             self._list_column_families_helper(
                 column_family_name=column_family_name)
 
+    def test_read_row(self):
+        from gcloud_bigtable._grpc_mocks import StubMock
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import table as MUT
+
+        client = _Client()
+        cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+                        '/clusters/' + CLUSTER_ID)
+        cluster = _Cluster(cluster_name, client=client)
+        table = self._makeOne(TABLE_ID, cluster)
+
+        # Create request_pb
+        request_pb = object()  # Returned by our mock.
+        mock_create_row_request = _MockCalled(request_pb)
+
+        # Create response_pb
+        response_pb = object()  # Will just be passed to a mock.
+        response_iter = [response_pb]
+
+        # Patch the stub used by the API method.
+        client.data_stub = stub = StubMock(response_iter)
+
+        # Create expected_result.
+        expected_result = object()
+        mock_parse_row_response = _MockCalled(expected_result)
+
+        # Perform the method and check the result.
+        row_key = b'row_key'
+        filter = object()
+        timeout_seconds = 596
+        with _Monkey(MUT, _create_row_request=mock_create_row_request,
+                     _parse_row_response=mock_parse_row_response):
+            result = table.read_row(row_key, filter=filter,
+                                    timeout_seconds=timeout_seconds)
+
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'ReadRows',
+            (request_pb, timeout_seconds),
+            {},
+        )])
+        mock_create_row_request.check_called(
+            self, [(table.name,)], [{'row_key': row_key, 'filter': filter}])
+        mock_parse_row_response.check_called(self, [(response_pb,)])
+
 
 class Test__create_row_request(unittest2.TestCase):
 
@@ -410,8 +456,169 @@ class Test__create_row_request(unittest2.TestCase):
         self.assertEqual(result, expected_result)
 
 
+class Test__parse_row_response(unittest2.TestCase):
+
+    def _callFUT(self, read_rows_response_pb):
+        from gcloud_bigtable.table import _parse_row_response
+        return _parse_row_response(read_rows_response_pb)
+
+    def _success_helper(self, col_fam1, col_fam2):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._helpers import _microseconds_to_timestamp
+
+        COL_NAME1 = b'col-name1'
+        COL_NAME2 = b'col-name2'
+        CELL_VAL1 = b'cell-val'
+        CELL_VAL2 = b'cell-val-newer'
+
+        microseconds = 92303240203
+        timestamp = _microseconds_to_timestamp(microseconds)
+
+        row_contents1 = data_pb2.Family(
+            name=col_fam1,
+            columns=[
+                data_pb2.Column(
+                    qualifier=COL_NAME1,
+                    cells=[
+                        data_pb2.Cell(
+                            value=CELL_VAL1,
+                            timestamp_micros=microseconds,
+                        ),
+                    ],
+                ),
+            ],
+        )
+        row_contents2 = data_pb2.Family(
+            name=col_fam2,
+            columns=[
+                data_pb2.Column(
+                    qualifier=COL_NAME2,
+                    cells=[
+                        data_pb2.Cell(
+                            value=CELL_VAL2,
+                            timestamp_micros=microseconds,
+                        ),
+                    ],
+                ),
+            ],
+        )
+        response_pb = messages_pb2.ReadRowsResponse(chunks=[
+            messages_pb2.ReadRowsResponse.Chunk(row_contents=row_contents1),
+            messages_pb2.ReadRowsResponse.Chunk(row_contents=row_contents2),
+            messages_pb2.ReadRowsResponse.Chunk(commit_row=True),
+        ])
+        result = self._callFUT(response_pb)
+
+        if col_fam1 == col_fam2:
+            expected_result = {
+                col_fam1: {
+                    COL_NAME1: [(CELL_VAL1, timestamp)],
+                    COL_NAME2: [(CELL_VAL2, timestamp)],
+                },
+            }
+        else:
+            expected_result = {
+                col_fam1: {
+                    COL_NAME1: [(CELL_VAL1, timestamp)],
+                },
+                col_fam2: {
+                    COL_NAME2: [(CELL_VAL2, timestamp)],
+                },
+            }
+        self.assertEqual(result, expected_result)
+
+    def test_success(self):
+        col_fam1 = u'col-fam-id'
+        col_fam2 = u'col-fam-id2'
+        self._success_helper(col_fam1, col_fam2)
+
+    def test_success_with_overlap(self):
+        col_fam1 = col_fam2 = u'col-fam-id'
+        self._success_helper(col_fam1, col_fam2)
+
+    def test_commit_empty(self):
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+
+        response_pb = messages_pb2.ReadRowsResponse(chunks=[])
+        self.assertEqual(self._callFUT(response_pb), {})
+
+    def test_commit_row_before_end(self):
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+
+        response_pb = messages_pb2.ReadRowsResponse(chunks=[
+            messages_pb2.ReadRowsResponse.Chunk(),
+            messages_pb2.ReadRowsResponse.Chunk(commit_row=True),
+            messages_pb2.ReadRowsResponse.Chunk(),
+        ])
+        with self.assertRaises(ValueError):
+            self._callFUT(response_pb)
+
+    def test_with_reset_row(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._helpers import _microseconds_to_timestamp
+
+        COL_FAM1 = u'col-fam-id'
+        COL_NAME1 = b'col-name1'
+        COL_NAME2 = b'col-name2'
+        CELL_VAL1 = b'cell-val'
+        CELL_VAL2 = b'cell-val-newer'
+
+        microseconds = 324982394203
+        timestamp = _microseconds_to_timestamp(microseconds)
+
+        row_contents1 = data_pb2.Family(
+            name=COL_FAM1,
+            columns=[
+                data_pb2.Column(
+                    qualifier=COL_NAME1,
+                    cells=[
+                        data_pb2.Cell(
+                            value=CELL_VAL1,
+                            timestamp_micros=microseconds,
+                        ),
+                    ],
+                ),
+            ],
+        )
+        row_contents2 = data_pb2.Family(
+            name=COL_FAM1,
+            columns=[
+                data_pb2.Column(
+                    qualifier=COL_NAME2,
+                    cells=[
+                        data_pb2.Cell(
+                            value=CELL_VAL2,
+                            timestamp_micros=microseconds,
+                        ),
+                    ],
+                ),
+            ],
+        )
+        response_pb = messages_pb2.ReadRowsResponse(chunks=[
+            messages_pb2.ReadRowsResponse.Chunk(row_contents=row_contents1),
+            messages_pb2.ReadRowsResponse.Chunk(reset_row=True),
+            messages_pb2.ReadRowsResponse.Chunk(row_contents=row_contents2),
+            messages_pb2.ReadRowsResponse.Chunk(commit_row=True),
+        ])
+        result = self._callFUT(response_pb)
+
+        expected_result = {
+            COL_FAM1: {
+                COL_NAME2: [(CELL_VAL2, timestamp)],
+            },
+        }
+        self.assertEqual(result, expected_result)
+
+
 class _Client(object):
 
+    data_stub = None
     cluster_stub = None
     operations_stub = None
     table_stub = None

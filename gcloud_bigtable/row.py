@@ -21,7 +21,6 @@ import struct
 from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_service_messages_pb2 as messages_pb2)
-from gcloud_bigtable._helpers import _microseconds_to_timestamp
 from gcloud_bigtable._helpers import _parse_family_pb
 from gcloud_bigtable._helpers import _timestamp_to_microseconds
 from gcloud_bigtable._helpers import _to_bytes
@@ -563,46 +562,6 @@ class Row(object):
         return _parse_rmw_row_response(row_response)
 
 
-def _parse_rmw_row_response(row_response):
-    """Parses the response to a ``ReadModifyWriteRow`` request.
-
-    :type row_response: :class:`.data_pb2.Row`
-    :param row_response: The response row (with only modified cells) from a
-                         ``ReadModifyWriteRow`` request.
-
-    :rtype: dict
-    :returns: The new contents of all modified cells. Returned as a
-              dictionary of column families, each of which holds a
-              dictionary of columns. Each column contains a list of cells
-              modified. Each cell is represented with a two-tuple with the
-              value (in bytes) and the timestamp for the cell. For example:
-
-              .. code:: python
-
-                  {
-                      u'col-fam-id': {
-                          b'col-name1': [
-                              (b'cell-val', datetime.datetime(...)),
-                              (b'cell-val-newer', datetime.datetime(...)),
-                          ],
-                          b'col-name2': [
-                              (b'altcol-cell-val', datetime.datetime(...)),
-                          ],
-                      },
-                      u'col-fam-id2': {
-                          b'col-name3-but-other-fam': [
-                              (b'foo', datetime.datetime(...)),
-                          ],
-                      },
-                  }
-    """
-    result = {}
-    for column_family in row_response.families:
-        column_family_id, curr_family = _parse_family_pb(column_family)
-        result[column_family_id] = curr_family
-    return result
-
-
 # NOTE: For developers, this class may seem to be a bit verbose, i.e.
 #       a list of property names and **kwargs may do the trick better
 #       than actually listing every single argument. However, for the sake
@@ -1129,3 +1088,43 @@ class ConditionalRowFilter(object):
             condition_kwargs['false_filter'] = self.false_filter.to_pb()
         condition = data_pb2.RowFilter.Condition(**condition_kwargs)
         return data_pb2.RowFilter(condition=condition)
+
+
+def _parse_rmw_row_response(row_response):
+    """Parses the response to a ``ReadModifyWriteRow`` request.
+
+    :type row_response: :class:`.data_pb2.Row`
+    :param row_response: The response row (with only modified cells) from a
+                         ``ReadModifyWriteRow`` request.
+
+    :rtype: dict
+    :returns: The new contents of all modified cells. Returned as a
+              dictionary of column families, each of which holds a
+              dictionary of columns. Each column contains a list of cells
+              modified. Each cell is represented with a two-tuple with the
+              value (in bytes) and the timestamp for the cell. For example:
+
+              .. code:: python
+
+                  {
+                      u'col-fam-id': {
+                          b'col-name1': [
+                              (b'cell-val', datetime.datetime(...)),
+                              (b'cell-val-newer', datetime.datetime(...)),
+                          ],
+                          b'col-name2': [
+                              (b'altcol-cell-val', datetime.datetime(...)),
+                          ],
+                      },
+                      u'col-fam-id2': {
+                          b'col-name3-but-other-fam': [
+                              (b'foo', datetime.datetime(...)),
+                          ],
+                      },
+                  }
+    """
+    result = {}
+    for column_family in row_response.families:
+        column_family_id, curr_family = _parse_family_pb(column_family)
+        result[column_family_id] = curr_family
+    return result

@@ -20,6 +20,7 @@ from gcloud_bigtable._generated import (
     bigtable_service_messages_pb2 as data_messages_pb2)
 from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as messages_pb2)
+from gcloud_bigtable._helpers import _parse_family_pb
 from gcloud_bigtable._helpers import _to_bytes
 from gcloud_bigtable.column_family import ColumnFamily
 from gcloud_bigtable.column_family import _gc_rule_from_pb
@@ -267,6 +268,59 @@ class Table(object):
             result[column_family_id] = column_family
         return result
 
+    def read_row(self, row_key, filter=None, timeout_seconds=None):
+        """Read a single row from this table.
+
+        :type row_key: bytes
+        :param row_key: The key of the row to read from.
+
+        :type filter: :class:`.row.RowFilter`, :class:`.row.RowFilterChain`,
+                      :class:`.row.RowFilterUnion` or
+                      :class:`.row.ConditionalRowFilter`
+        :param filter: (Optional) The filter to apply to the contents of the
+                       row. If unset, returns the entire row.
+
+        :type timeout_seconds: int
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to value set on table.
+
+        :rtype: dict
+        :returns: The contents of the row. Returns as a dictionary of column
+                  families, each of which holds a dictionary of columns. Each
+                  column contains a list of cells modified. Each cell is
+                  represented with a two-tuple with the value (in bytes) and
+                  the timestamp for the cell. For example:
+
+                  .. code:: python
+
+                      {
+                          u'col-fam-id': {
+                              b'col-name1': [
+                                  (b'cell-val', datetime.datetime(...)),
+                                  (b'cell-val-newer', datetime.datetime(...)),
+                              ],
+                              b'col-name2': [
+                                  (b'altcol-cell-val', datetime.datetime(...)),
+                              ],
+                          },
+                          u'col-fam-id2': {
+                              b'col-name3-but-other-fam': [
+                                  (b'foo', datetime.datetime(...)),
+                              ],
+                          },
+                      }
+        """
+        row_key = _to_bytes(row_key)
+        request_pb = _create_row_request(self.name, row_key=row_key,
+                                         filter=filter)
+        timeout_seconds = timeout_seconds or self.timeout_seconds
+        response_iterator = self.client.data_stub.ReadRows(request_pb,
+                                                           timeout_seconds)
+        # We expect a `data_messages_pb2.ReadRowsResponse`
+        read_rows_response, = list(response_iterator)
+        # NOTE: We assume read_rows_response.row_key == row_key
+        return _parse_row_response(read_rows_response)
+
 
 def _create_row_request(table_name, row_key=None, start_key=None, end_key=None,
                         filter=None, allow_row_interleaving=None, limit=None):
@@ -343,3 +397,58 @@ def _create_row_request(table_name, row_key=None, start_key=None, end_key=None,
         request_kwargs['num_rows_limit'] = limit
 
     return data_messages_pb2.ReadRowsRequest(**request_kwargs)
+
+
+def _parse_row_response(read_rows_response_pb):
+    """Parses a response from ``ReadRows`` into a dictionary.
+
+    :type read_rows_response_pb: :class:`.data_messages_pb2.ReadRowsResponse`
+    :param read_rows_response_pb: A response from ``ReadRows``.
+
+    :rtype: dict
+    :returns: The parsed contents of the cells the row. Returned as a
+              dictionary of column families, each of which holds a
+              dictionary of columns. Each column contains a list of cells
+              modified. Each cell is represented with a two-tuple with the
+              value (in bytes) and the timestamp for the cell. For example:
+
+              .. code:: python
+
+                  {
+                      u'col-fam-id': {
+                          b'col-name1': [
+                              (b'cell-val', datetime.datetime(...)),
+                              (b'cell-val-newer', datetime.datetime(...)),
+                          ],
+                          b'col-name2': [
+                              (b'altcol-cell-val', datetime.datetime(...)),
+                          ],
+                      },
+                      u'col-fam-id2': {
+                          b'col-name3-but-other-fam': [
+                              (b'foo', datetime.datetime(...)),
+                          ],
+                      },
+                  }
+
+    :raises: :class:`ValueError <exceptions.ValueError>` if a commit row chunk
+             occurs anywhere than in the last chunk.
+    """
+    result = {}
+    num_chunks = len(read_rows_response_pb.chunks)
+    for i, chunk in enumerate(read_rows_response_pb.chunks):
+        if chunk.HasField('commit_row') and chunk.commit_row:
+            if i + 1 == num_chunks:
+                break
+            else:
+                raise ValueError('Commit row was not the last chunk')
+        elif chunk.HasField('reset_row') and chunk.reset_row:
+            result.clear()
+        else:
+            col_fam_id, local_result = _parse_family_pb(chunk.row_contents)
+            col_fam = result.setdefault(col_fam_id, {})
+            for col_name, local_cells in local_result.items():
+                cells = col_fam.setdefault(col_name, [])
+                cells.extend(local_cells)
+
+    return result
