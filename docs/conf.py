@@ -327,8 +327,10 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
 
-
-# Example configuration for intersphinx: refer to the Python standard library.
+# Configuration for intersphinx:
+# Refer to the Python standard library and oauth2client library.
+# NOTE: We also have a custom mapping for items in the stdlib not
+#       included in https://docs.python.org/objects.inv
 intersphinx_mapping = {
     'python': ('https://docs.python.org/', None),
     'pythonlocal': ('https://docs.python.org/2.7/', 'python-inv.txt'),
