@@ -22,6 +22,7 @@ from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._helpers import _microseconds_to_timestamp
+from gcloud_bigtable._helpers import _parse_family_pb
 from gcloud_bigtable._helpers import _timestamp_to_microseconds
 from gcloud_bigtable._helpers import _to_bytes
 
@@ -597,16 +598,8 @@ def _parse_rmw_row_response(row_response):
     """
     result = {}
     for column_family in row_response.families:
-        column_family_id = column_family.name
-        result[column_family_id] = curr_family = {}
-        for column in column_family.columns:
-            curr_family[column.qualifier] = cells = []
-            for cell in column.cells:
-                val_pair = (
-                    cell.value,
-                    _microseconds_to_timestamp(cell.timestamp_micros),
-                )
-                cells.append(val_pair)
+        column_family_id, curr_family = _parse_family_pb(column_family)
+        result[column_family_id] = curr_family
     return result
 
 

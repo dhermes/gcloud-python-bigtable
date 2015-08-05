@@ -469,3 +469,62 @@ class Test_make_stub(unittest2.TestCase):
         )
         transformer.check_called(self, [(client,)])
         self.assertEqual(client._called, [])
+
+
+class Test__parse_family_pb(unittest2.TestCase):
+
+    def _callFUT(self, family_pb):
+        from gcloud_bigtable._helpers import _parse_family_pb
+        return _parse_family_pb(family_pb)
+
+    def test_it(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        from gcloud_bigtable._helpers import _microseconds_to_timestamp
+
+        COL_FAM1 = u'col-fam-id'
+        COL_NAME1 = b'col-name1'
+        COL_NAME2 = b'col-name2'
+        CELL_VAL1 = b'cell-val'
+        CELL_VAL2 = b'cell-val-newer'
+        CELL_VAL3 = b'altcol-cell-val'
+
+        microseconds = 5554441037
+        timestamp = _microseconds_to_timestamp(microseconds)
+        expected_dict = {
+            COL_NAME1: [
+                (CELL_VAL1, timestamp),
+                (CELL_VAL2, timestamp),
+            ],
+            COL_NAME2: [
+                (CELL_VAL3, timestamp),
+            ],
+        }
+        expected_output = (COL_FAM1, expected_dict)
+        sample_input = data_pb2.Family(
+            name=COL_FAM1,
+            columns=[
+                data_pb2.Column(
+                    qualifier=COL_NAME1,
+                    cells=[
+                        data_pb2.Cell(
+                            value=CELL_VAL1,
+                            timestamp_micros=microseconds,
+                        ),
+                        data_pb2.Cell(
+                            value=CELL_VAL2,
+                            timestamp_micros=microseconds,
+                        ),
+                    ],
+                ),
+                data_pb2.Column(
+                    qualifier=COL_NAME2,
+                    cells=[
+                        data_pb2.Cell(
+                            value=CELL_VAL3,
+                            timestamp_micros=microseconds,
+                        ),
+                    ],
+                ),
+            ],
+        )
+        self.assertEqual(expected_output, self._callFUT(sample_input))
