@@ -203,7 +203,7 @@ def _timestamp_to_microseconds(timestamp, granularity=1000):
 
         If ``timestamp`` does not have the same timezone as ``EPOCH``
         (which is UTC), then subtracting the epoch from the timestamp
-        will raise a :class:`TypeError`.
+        will raise a :class:`TypeError <exceptions.TypeError>`.
 
     :type timestamp: :class:`datetime.datetime`
     :param timestamp: A timestamp to be converted to microseconds.
@@ -247,7 +247,8 @@ def _to_bytes(value):
 
     :rtype: bytes
     :returns: The ``value`` as bytes.
-    :raises: :class:`TypeError` if the ``value`` is not bytes or string.
+    :raises: :class:`TypeError <exceptions.TypeError>` if the ``value`` is not
+             bytes or string.
     """
     if isinstance(value, six.text_type):
         value = value.encode('utf-8')
