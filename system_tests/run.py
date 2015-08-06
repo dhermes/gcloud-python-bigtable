@@ -14,7 +14,9 @@
 
 from __future__ import print_function
 
+import datetime
 import os
+import pytz
 import time
 import unittest2
 
@@ -24,21 +26,24 @@ from gcloud_bigtable.client import Client
 
 
 PROJECT_ID = os.getenv('GCLOUD_TESTS_PROJECT_ID')
-TEST_ZONE = 'us-central1-c'
-TEST_CLUSTER_ID = 'gcloud-python'
-TEST_SERVE_NODES = 3
-TEST_TABLE_ID = 'gcloud-python-test-table'
+CENTRAL_1C_ZONE = 'us-central1-c'
+CLUSTER_ID = 'gcloud-python'
+SERVE_NODES = 3
+TABLE_ID = 'gcloud-python-test-table'
+COLUMN_FAMILY_ID1 = u'col-fam-id1'
+COLUMN_FAMILY_ID2 = u'col-fam-id2'
+ROW_KEY = b'row-key'
 EXPECTED_ZONES = (
     'asia-east1-b',
     'europe-west1-c',
     'us-central1-b',
-    TEST_ZONE,
+    CENTRAL_1C_ZONE,
 )
 EXISTING_CLUSTERS = []
 CREDENTIALS = GoogleCredentials.get_application_default()
 CLIENT = Client(CREDENTIALS, project_id=PROJECT_ID, admin=True)
-CLUSTER = CLIENT.cluster(TEST_ZONE, TEST_CLUSTER_ID,
-                         display_name=TEST_CLUSTER_ID)
+CLUSTER = CLIENT.cluster(CENTRAL_1C_ZONE, CLUSTER_ID,
+                         display_name=CLUSTER_ID)
 
 
 def setUpModule():
@@ -84,7 +89,7 @@ class TestClusterAdminAPI(unittest2.TestCase):
 
     def test_reload(self):
         # Use same arguments as CLUSTER (created in `setUpModule`).
-        cluster = CLIENT.cluster(TEST_ZONE, TEST_CLUSTER_ID)
+        cluster = CLIENT.cluster(CENTRAL_1C_ZONE, CLUSTER_ID)
         # Make sure metadata unset before reloading.
         cluster.display_name = None
         cluster.serve_nodes = None
@@ -94,8 +99,8 @@ class TestClusterAdminAPI(unittest2.TestCase):
         self.assertEqual(cluster.serve_nodes, CLUSTER.serve_nodes)
 
     def test_create_cluster(self):
-        cluster_id = '%s-%d' % (TEST_CLUSTER_ID, 1000 * time.time())
-        cluster = CLIENT.cluster(TEST_ZONE, cluster_id)
+        cluster_id = '%s-%d' % (CLUSTER_ID, 1000 * time.time())
+        cluster = CLIENT.cluster(CENTRAL_1C_ZONE, cluster_id)
         cluster.create()
         # Make sure this cluster gets deleted after the test case.
         self.clusters_to_delete.append(cluster)
@@ -105,7 +110,7 @@ class TestClusterAdminAPI(unittest2.TestCase):
         self.assertTrue(cluster.operation_finished())
 
         # Create a new cluster instance and make sure it is the same.
-        cluster_alt = CLIENT.cluster(TEST_ZONE, cluster_id)
+        cluster_alt = CLIENT.cluster(CENTRAL_1C_ZONE, cluster_id)
         cluster_alt.reload()
 
         self.assertEqual(cluster, cluster_alt)
@@ -122,7 +127,7 @@ class TestClusterAdminAPI(unittest2.TestCase):
         self.assertTrue(CLUSTER.operation_finished())
 
         # Create a new cluster instance and make sure it is the same.
-        cluster_alt = CLIENT.cluster(TEST_ZONE, TEST_CLUSTER_ID)
+        cluster_alt = CLIENT.cluster(CENTRAL_1C_ZONE, CLUSTER_ID)
         self.assertNotEqual(cluster_alt.display_name,
                             CLUSTER.display_name)
         cluster_alt.reload()
@@ -143,7 +148,7 @@ class TestTableAdminAPI(unittest2.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self._table = CLUSTER.table(TEST_TABLE_ID)
+        self._table = CLUSTER.table(TABLE_ID)
         self._table.create()
 
     @classmethod
@@ -187,16 +192,15 @@ class TestTableAdminAPI(unittest2.TestCase):
         self.tables_to_delete.append(temp_table)
 
         self.assertEqual(temp_table.list_column_families(), {})
-        column_family_id = u'my-column'
         gc_rule = GarbageCollectionRule(max_num_versions=1)
-        column_family = temp_table.column_family(column_family_id,
+        column_family = temp_table.column_family(COLUMN_FAMILY_ID1,
                                                  gc_rule=gc_rule)
         column_family.create()
 
         col_fams = temp_table.list_column_families()
 
         self.assertEqual(len(col_fams), 1)
-        retrieved_col_fam = col_fams[column_family_id]
+        retrieved_col_fam = col_fams[COLUMN_FAMILY_ID1]
         self.assertTrue(retrieved_col_fam.table is column_family.table)
         self.assertEqual(retrieved_col_fam.column_family_id,
                          column_family.column_family_id)
@@ -212,14 +216,77 @@ class TestTableAdminAPI(unittest2.TestCase):
         self.tables_to_delete.append(temp_table)
 
         self.assertEqual(temp_table.list_column_families(), {})
-        column_family_id = u'my-column'
-        column_family = temp_table.column_family(column_family_id)
+        column_family = temp_table.column_family(COLUMN_FAMILY_ID1)
         column_family.create()
 
         # Make sure the family is there before deleting it.
         col_fams = temp_table.list_column_families()
-        self.assertEqual(list(col_fams.keys()), [column_family_id])
+        self.assertEqual(list(col_fams.keys()), [COLUMN_FAMILY_ID1])
 
         column_family.delete()
         # Make sure we have successfully deleted it.
         self.assertEqual(temp_table.list_column_families(), {})
+
+
+class TestDataAPI(unittest2.TestCase):
+
+    @classmethod
+    def setUpClass(self):
+        self._table = table = CLUSTER.table(TABLE_ID)
+        table.create()
+        table.column_family(COLUMN_FAMILY_ID1).create()
+        table.column_family(COLUMN_FAMILY_ID2).create()
+
+    @classmethod
+    def tearDownClass(self):
+        # Will also delete any data contained in the table.
+        self._table.delete()
+
+    def test_read_row(self):
+        from gcloud_bigtable._helpers import _microseconds_to_timestamp
+        from gcloud_bigtable._helpers import _timestamp_to_microseconds
+
+        col_name1 = b'col-name1'
+        col_name2 = b'col-name2'
+        col_name3 = b'col-name3-but-other-fam'
+        cell_val1 = b'cell-val'
+        cell_val2 = b'cell-val-newer'
+        cell_val3 = b'altcol-cell-val'
+        cell_val4 = b'foo'
+
+        timestamp1 = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+        # Must be millisecond granularity.
+        timestamp1 = _microseconds_to_timestamp(
+            _timestamp_to_microseconds(timestamp1))
+        # 1000 microseconds is a millisecond
+        timestamp2 = timestamp1 + datetime.timedelta(microseconds=1000)
+        timestamp3 = timestamp1 + datetime.timedelta(microseconds=2000)
+        timestamp4 = timestamp1 + datetime.timedelta(microseconds=3000)
+        row = self._table.row(ROW_KEY)
+        row.set_cell(COLUMN_FAMILY_ID1, col_name1, cell_val1,
+                     timestamp=timestamp1)
+        row.set_cell(COLUMN_FAMILY_ID1, col_name1, cell_val2,
+                     timestamp=timestamp2)
+        row.set_cell(COLUMN_FAMILY_ID1, col_name2, cell_val3,
+                     timestamp=timestamp3)
+        row.set_cell(COLUMN_FAMILY_ID2, col_name3, cell_val4,
+                     timestamp=timestamp4)
+        row.commit()
+
+        # Read back the contents of the row.
+        row_contents = self._table.read_row(ROW_KEY)
+        self.assertEqual(set(row_contents.keys()),
+                         set([COLUMN_FAMILY_ID1, COLUMN_FAMILY_ID2]))
+
+        family1 = row_contents[COLUMN_FAMILY_ID1]
+        self.assertEqual(set(family1.keys()), set([col_name1, col_name2]))
+        col1 = family1[col_name1]
+        expected_col1 = [(cell_val1, timestamp1), (cell_val2, timestamp2)]
+        self.assertEqual(sorted(col1), sorted(expected_col1))
+        col2 = family1[col_name2]
+        self.assertEqual(col2, [(cell_val3, timestamp3)])
+
+        family2 = row_contents[COLUMN_FAMILY_ID2]
+        self.assertEqual(set(family2.keys()), set([col_name3]))
+        col3 = family2[col_name3]
+        self.assertEqual(col3, [(cell_val4, timestamp4)])
