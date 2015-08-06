@@ -310,7 +310,6 @@ class Table(object):
                           },
                       }
         """
-        row_key = _to_bytes(row_key)
         request_pb = _create_row_request(self.name, row_key=row_key,
                                          filter=filter)
         timeout_seconds = timeout_seconds or self.timeout_seconds
