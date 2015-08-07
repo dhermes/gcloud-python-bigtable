@@ -46,7 +46,7 @@ which zones your project has access to with a `ListZones`_ request:
 
     zones = client.list_clusters()
 
-This will return a list of ``string`` s.
+This will return a list of :class:`string <str>` s.
 
 ********************
 Create a new Cluster

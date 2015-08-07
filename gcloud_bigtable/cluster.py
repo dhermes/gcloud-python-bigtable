@@ -104,17 +104,17 @@ class Cluster(object):
         (both integers) and also the ``default_storage_type`` (an enum)
         which if not sent will end up as :data:`.data_pb2.STORAGE_SSD`.
 
-    :type zone: string
+    :type zone: str
     :param zone: The name of the zone where the cluster resides.
 
-    :type cluster_id: string
+    :type cluster_id: str
     :param cluster_id: The ID of the cluster.
 
     :type client: :class:`.client.Client`
     :param client: The client that owns the cluster. Provides
                    authorization and a project ID.
 
-    :type display_name: string
+    :type display_name: str
     :param display_name: (Optional) The display name for the cluster in the
                          Cloud Console UI. (Must be between 4 and 30
                          characters.) If this value is not set in the
@@ -183,7 +183,7 @@ class Cluster(object):
     def project_id(self):
         """Getter for cluster's project ID.
 
-        :rtype: string
+        :rtype: str
         :returns: The project ID for the cluster (is stored on the client).
         """
         return self._client.project_id
@@ -209,7 +209,7 @@ class Cluster(object):
 
             ``"projects/{project_id}/zones/{zone}/clusters/{cluster_id}"``
 
-        :rtype: string
+        :rtype: str
         :returns: The cluster name.
         """
         return (self.client.project_name + '/zones/' + self.zone +
@@ -218,7 +218,7 @@ class Cluster(object):
     def table(self, table_id):
         """Factory to create a table associated with this cluster.
 
-        :type table_id: string
+        :type table_id: str
         :param table_id: The ID of the table.
 
         :rtype: :class:`.Table`

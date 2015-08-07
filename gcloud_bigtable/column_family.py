@@ -163,8 +163,9 @@ class ColumnFamily(object):
     * :meth:`update` itself
     * :meth:`delete` itself
 
-    :type column_family_id: string
-    :param column_family_id: The ID of the column family.
+    :type column_family_id: str
+    :param column_family_id: The ID of the column family. Must be of the
+                             form ``[_a-zA-Z0-9][-_.a-zA-Z0-9]*``.
 
     :type table: :class:`.table.Table`
     :param table: The table that owns the column family.
@@ -221,7 +222,7 @@ class ColumnFamily(object):
 
             ``"projects/../zones/../clusters/../tables/../columnFamilies/.."``
 
-        :rtype: string
+        :rtype: str
         :returns: The column family name.
         """
         return self.table.name + '/columnFamilies/' + self.column_family_id
@@ -311,7 +312,7 @@ def _gc_rule_from_pb(gc_rule_pb):
     :rtype: :class:`GarbageCollectionRule`,
             :class:`GarbageCollectionRuleUnion`,
             :class:`GarbageCollectionRuleIntersection` or
-            :class:`NoneType <types.NoneType>`
+            :data:`NoneType <types.NoneType>`
     :returns: An instance of one of the native rules defined
               in :module:`column_family` or :data:`None` if no values were
               set on the protobuf passed in.

@@ -55,20 +55,20 @@ def transform_old_to_new(line, old_module, new_module,
     In any of these cases, "{old_module}" is replaced with "{new_module}".
     If none match, nothing is returned.
 
-    :type line: string
+    :type line: str
     :param line: The line to be transformed.
 
-    :type old_module: string
+    :type old_module: str
     :param old_module: The import to be re-written.
 
-    :type new_module: string
+    :type new_module: str
     :param new_module: The new location of the re-written import.
 
     :type ignore_import_from: bool
     :param ignore_import_from: Flag to determine if the "from * import"
                                statements should be ignored.
 
-    :rtype: string or :class:`NoneType <types.NoneType>`
+    :rtype: :class:`str` or :data:`NoneType <types.NoneType>`
     :returns: The transformed line if the old module was found, otherwise
               does nothing.
     """
@@ -106,10 +106,10 @@ def transform_line(line):
     package or directly rewrites the custom ``google.protobuf`` import
     statement.
 
-    :type line: string
+    :type line: str
     :param line: The line to be transformed.
 
-    :rtype: string
+    :rtype: str
     :returns: The transformed line.
     """
     for old_module, new_module in REPLACEMENTS.iteritems():
@@ -144,7 +144,7 @@ def transform_line(line):
 def rewrite_file(filename):
     """Rewrites a given PB2 modules.
 
-    :type filename: string
+    :type filename: str
     :param filename: The name of the file to be rewritten.
     """
     with open(filename, 'rU') as file_obj:

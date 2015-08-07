@@ -99,10 +99,10 @@ def _require_pb_property(message_pb, property_name, value):
     :type message_pb: :class:`google.protobuf.message.Message`
     :param message_pb: The message to check for ``property_name``.
 
-    :type property_name: string
+    :type property_name: str
     :param property_name: The property value to check against.
 
-    :type value: object or :class:`NoneType <types.NoneType>`
+    :type value: object or :data:`NoneType <types.NoneType>`
     :param value: The value to check against the cluster. If :data:`None`,
                   will not be checked.
 
@@ -134,7 +134,7 @@ def _parse_pb_any_to_native(any_val, expected_type=None):
     :type any_val: :class:`gcloud_bigtable._generated.any_pb2.Any`
     :param any_val: A serialized protobuf value container.
 
-    :type expected_type: string
+    :type expected_type: str
     :param expected_type: (Optional) The type URL we expect ``any_val``
                           to have.
 
@@ -242,7 +242,7 @@ def _microseconds_to_timestamp(microseconds):
 def _to_bytes(value):
     """Converts a value to bytes (or checks that it already is).
 
-    :type value: bytes (or string)
+    :type value: bytes
     :param value: The value to ensure is converted to bytes.
 
     :rtype: bytes
@@ -282,7 +282,7 @@ def get_certs():
     Calls set_certs() first in case the value has not been set, but
     this will do nothing if the value is already set.
 
-    :rtype: string
+    :rtype: str
     :returns: The root certificates set on ``AuthInfo``.
     """
     set_certs(reset=False)
@@ -300,7 +300,7 @@ def make_stub(client, stub_factory, host, port):
     :param stub_factory: A factory which will create a gRPC stub for
                          a given service.
 
-    :type host: string
+    :type host: str
     :param host: The host for the service.
 
     :type port: int

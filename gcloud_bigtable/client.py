@@ -78,7 +78,7 @@ DEFAULT_USER_AGENT = 'gcloud-bigtable-python'
 def _project_id_from_environment():
     """Attempts to get the project ID from an environment variable.
 
-    :rtype: string or :class:`NoneType <types.NoneType>`
+    :rtype: :class:`str` or :data:`NoneType <types.NoneType>`
     :returns: The project ID provided or :data:`None`
     """
     return os.getenv(PROJECT_ENV_VAR)
@@ -87,7 +87,7 @@ def _project_id_from_environment():
 def _project_id_from_app_engine():
     """Gets the App Engine application ID if it can be inferred.
 
-    :rtype: string or :class:`NoneType <types.NoneType>`
+    :rtype: :class:`str` or :data:`NoneType <types.NoneType>`
     :returns: App Engine application ID if running in App Engine,
               else :data:`None`.
     """
@@ -110,7 +110,7 @@ def _project_id_from_compute_engine():
     See https://github.com/google/oauth2client/issues/93 for context about
     DNS latency.
 
-    :rtype: string or :class:`NoneType <types.NoneType>`
+    :rtype: :class:`str` or :data:`NoneType <types.NoneType>`
     :returns: Compute Engine project ID if the metadata service is available,
               else :data:`None`.
     """
@@ -130,7 +130,7 @@ def _project_id_from_compute_engine():
         connection.close()
 
 
-def _determine_project_id(project_id):
+def _determine_project_id(project_id=None):
     """Determine the project ID from the input or environment.
 
     When checking the environment, the following precedence is observed:
@@ -139,12 +139,12 @@ def _determine_project_id(project_id):
     * Google App Engine application ID
     * Google Compute Engine project ID (from metadata server)
 
-    :type project_id: string or :class:`NoneType <types.NoneType>`
-    :param project_id: The ID of the project which owns the clusters, tables
-                       and data. If not provided, will attempt to
-                       determine from the environment.
+    :type project_id: str
+    :param project_id: (Optional) The ID of the project which owns the
+                       clusters, tables and data. If not provided, will attempt
+                       to determine from the environment.
 
-    :rtype: string
+    :rtype: str
     :returns: The project ID provided or inferred from the environment.
     :raises: :class:`EnvironmentError` if the project ID was not
              passed in and can't be inferred from the environment.
@@ -170,12 +170,12 @@ class Client(object):
 
     :type credentials:
         :class:`OAuth2Credentials <oauth2client.client.OAuth2Credentials>` or
-        :class:`NoneType <types.NoneType>`
+        :data:`NoneType <types.NoneType>`
     :param credentials: (Optional) The OAuth2 Credentials to use for this
                         cluster. If not provided, defaulst to the Google
                         Application Default Credentials.
 
-    :type project_id: string
+    :type project_id: :class:`str` or :func:`unicode <unicode>`
     :param project_id: (Optional) The ID of the project which owns the
                        clusters, tables and data. If not provided, will
                        attempt to determine from the environment.
@@ -190,7 +190,7 @@ class Client(object):
                   interact with the Cluster Admin or Table Admin APIs. This
                   requires the :const:`ADMIN_SCOPE`. Defaults to :data:`False`.
 
-    :type user_agent: string
+    :type user_agent: str
     :param user_agent: (Optional) The user agent to be used with API request.
                        Defaults to :const:`DEFAULT_USER_AGENT`.
 
@@ -239,7 +239,7 @@ class Client(object):
                                   read_only=False, admin=False):
         """Factory to retrieve JSON credentials while creating client object.
 
-        :type json_credentials_path: string
+        :type json_credentials_path: str
         :param json_credentials_path: The path to a private key file (this file
                                       was given to you when you created the
                                       service account). This file must contain
@@ -247,7 +247,7 @@ class Client(object):
                                       other credentials information (downloaded
                                       from the Google APIs console).
 
-        :type project_id: string
+        :type project_id: str
         :param project_id: The ID of the project which owns the clusters,
                            tables and data. Will be passed to :class:`Client`
                            constructor.
@@ -280,15 +280,15 @@ class Client(object):
           Unless you have an explicit reason to use a PKCS12 key for your
           service account, we recommend using a JSON key.
 
-        :type client_email: string
+        :type client_email: str
         :param client_email: The e-mail attached to the service account.
 
-        :type private_key_path: string
+        :type private_key_path: str
         :param private_key_path: The path to a private key file (this file was
                                  given to you when you created the service
                                  account). This file must be in P12 format.
 
-        :type project_id: string
+        :type project_id: str
         :param project_id: The ID of the project which owns the clusters,
                            tables and data. Will be passed to :class:`Client`
                            constructor.
@@ -326,7 +326,7 @@ class Client(object):
     def project_id(self):
         """Getter for client's project ID.
 
-        :rtype: string
+        :rtype: str
         :returns: The project ID stored on the client.
         """
         return self._project_id
@@ -343,7 +343,7 @@ class Client(object):
 
             ``"projects/{project_id}"``
 
-        :rtype: string
+        :rtype: str
         :returns: The project name to be used with the Cloud Bigtable Admin
                   API RPC service.
         """
@@ -484,13 +484,13 @@ class Client(object):
     def cluster(self, zone, cluster_id, display_name=None, serve_nodes=3):
         """Factory to create a cluster associated with this client.
 
-        :type zone: string
+        :type zone: str
         :param zone: The name of the zone where the cluster resides.
 
-        :type cluster_id: string
+        :type cluster_id: str
         :param cluster_id: The ID of the cluster.
 
-        :type display_name: string
+        :type display_name: str
         :param display_name: (Optional) The display name for the cluster in the
                              Cloud Console UI. (Must be between 4 and 30
                              characters.) If this value is not set in the
@@ -513,8 +513,8 @@ class Client(object):
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on client.
 
-        :rtype: list of strings
-        :returns: The names of the zones
+        :rtype: list
+        :returns: The names (as :class:`str`) of the zones
         :raises: :class:`ValueError <exceptions.ValueError>` if one of the
                  zones is not in ``OK`` state.
         """
@@ -564,7 +564,7 @@ def _get_contents(filename):
 
     This is just implemented so we can stub out while testing.
 
-    :type filename: string or bytes
+    :type filename: :class:`str` or :func:`unicode <unicode>`
     :param filename: The name of a file to open.
 
     :rtype: bytes

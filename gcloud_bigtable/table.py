@@ -49,7 +49,7 @@ class Table(object):
     * :meth:`delete` the table
     * :meth:`list_column_families` in the table
 
-    :type table_id: string
+    :type table_id: str
     :param table_id: The ID of the table.
 
     :type cluster: :class:`.cluster.Cluster`
@@ -100,7 +100,7 @@ class Table(object):
 
             ``"projects/../zones/../clusters/../tables/{table_id}"``
 
-        :rtype: string
+        :rtype: str
         :returns: The table name.
         """
         return self.cluster.name + '/tables/' + self.table_id
@@ -108,8 +108,9 @@ class Table(object):
     def column_family(self, column_family_id, gc_rule=None):
         """Factory to create a column family associated with this table.
 
-        :type column_family_id: string
-        :param column_family_id: The ID of the column family.
+        :type column_family_id: str
+        :param column_family_id: The ID of the column family. Must be of the
+                                 form ``[_a-zA-Z0-9][-_.a-zA-Z0-9]*``.
 
         :type gc_rule: :class:`.column_family.GarbageCollectionRule`,
                        :class:`.column_family.GarbageCollectionRuleUnion` or
@@ -125,7 +126,7 @@ class Table(object):
     def row(self, row_key):
         """Factory to create a row associated with this table.
 
-        :type row_key: bytes (or string)
+        :type row_key: bytes
         :param row_key: The key for the row being created.
 
         :rtype: :class:`.row.Row`
@@ -161,7 +162,7 @@ class Table(object):
             ``current_operation`` in the response, but in example usage so far,
             it seems the Bigtable API does not return any operation.
 
-        :type initial_split_keys: iterable of strings
+        :type initial_split_keys: list
         :param initial_split_keys: (Optional) List of row keys that will be
                                    used to initially split the table into
                                    several tablets (Tablets are similar to
@@ -202,7 +203,7 @@ class Table(object):
             when this method is used. It's unclear when this method will
             actually be supported by the API.
 
-        :type new_table_id: string
+        :type new_table_id: str
         :param new_table_id: The new name table ID.
 
         :type timeout_seconds: int
@@ -325,7 +326,7 @@ def _create_row_request(table_name, row_key=None, start_key=None, end_key=None,
                         filter=None, allow_row_interleaving=None, limit=None):
     """Reads rows in the table.
 
-    :type table_name: string
+    :type table_name: str
     :param table_name: The name of the table to read from.
 
     :type row_key: bytes

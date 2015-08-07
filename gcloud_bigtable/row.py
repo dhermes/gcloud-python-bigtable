@@ -42,7 +42,7 @@ class Row(object):
         :data:`False`. The mutations will be applied conditionally, based on
         whether the filter matches any cells in the :class:`Row` or not.
 
-    :type row_key: bytes (or string)
+    :type row_key: bytes
     :param row_key: The key for the current row.
 
     :type table: :class:`.table.Table`
@@ -99,7 +99,7 @@ class Row(object):
 
         :rtype: :class:`RowFilter`, :class:`RowFilterChain`,
                 :class:`RowFilterUnion`, :class:`ConditionalRowFilter` or
-                :class:`NoneType <types.NoneType>`
+                :data:`NoneType <types.NoneType>`
         :returns: The filter for the row.
         """
         return self._filter
@@ -122,15 +122,16 @@ class Row(object):
         """
         return self.table.timeout_seconds
 
-    def _get_mutations(self, state):
+    def _get_mutations(self, state=None):
         """Gets the list of mutations for a given state.
 
         If the state is :data`None` but there is a filter set, then we've
         reached an invalid state. Similarly if no filter is set but the
         state is not :data:`None`.
 
-        :type state: bool or :class:`NoneType <types.NoneType>`
-        :param state: The state that the mutation should be applied in.
+        :type state: bool
+        :param state: (Optional) The state that the mutation should be
+                      applied in.
 
         :rtype: list
         :returns: The list to add new mutations to (for the current state).
@@ -166,14 +167,16 @@ class Row(object):
             send an API request (with the mutations) to the Google Cloud
             Bigtable API, call :meth:`commit`.
 
-        :type column_family_id: string
+        :type column_family_id: str
         :param column_family_id: The column family that contains the column.
+                                 Must be of the form
+                                 ``[_a-zA-Z0-9][-_.a-zA-Z0-9]*``.
 
-        :type column: bytes (or string)
+        :type column: bytes
         :param column: The column within the column family where the cell
                        is located.
 
-        :type value: bytes or integer
+        :type value: bytes or :class:`int`
         :param value: The value to set in the cell. If an integer is used,
                       will be interpreted as a 64-bit big-endian signed
                       integer (8 bytes).
@@ -181,7 +184,7 @@ class Row(object):
         :type timestamp: :class:`datetime.datetime`
         :param timestamp: (Optional) The timestamp of the operation.
 
-        :type state: bool or :class:`NoneType <types.NoneType>`
+        :type state: bool
         :param state: (Optional) The state that the mutation should be
                       applied in.
         """
@@ -214,10 +217,12 @@ class Row(object):
             request. To actually send an API request (with the rules) to the
             Google Cloud Bigtable API, call :meth:`commit`.
 
-        :type column_family_id: string
+        :type column_family_id: str
         :param column_family_id: The column family that contains the column.
+                                 Must be of the form
+                                 ``[_a-zA-Z0-9][-_.a-zA-Z0-9]*``.
 
-        :type column: bytes (or string)
+        :type column: bytes
         :param column: The column within the column family where the cell
                        is located.
 
@@ -246,10 +251,12 @@ class Row(object):
             request. To actually send an API request (with the rules) to the
             Google Cloud Bigtable API, call :meth:`commit`.
 
-        :type column_family_id: string
+        :type column_family_id: str
         :param column_family_id: The column family that contains the column.
+                                 Must be of the form
+                                 ``[_a-zA-Z0-9][-_.a-zA-Z0-9]*``.
 
-        :type column: bytes (or string)
+        :type column: bytes
         :param column: The column within the column family where the cell
                        is located.
 
@@ -277,7 +284,7 @@ class Row(object):
             send an API request (with the mutations) to the Google Cloud
             Bigtable API, call :meth:`commit`.
 
-        :type state: bool or :class:`NoneType <types.NoneType>`
+        :type state: bool
         :param state: (Optional) The state that the mutation should be
                       applied in.
         """
@@ -296,11 +303,12 @@ class Row(object):
             send an API request (with the mutations) to the Google Cloud
             Bigtable API, call :meth:`commit`.
 
-        :type column_family_id: string
+        :type column_family_id: str
         :param column_family_id: The column family that contains the column
-                                 or columns with cells being deleted.
+                                 or columns with cells being deleted. Must be
+                                 of the form ``[_a-zA-Z0-9][-_.a-zA-Z0-9]*``.
 
-        :type column: bytes (or string)
+        :type column: bytes
         :param column: The column within the column family that will have a
                        cell deleted.
 
@@ -308,7 +316,7 @@ class Row(object):
         :param time_range: (Optional) The range of time within which cells
                            should be deleted.
 
-        :type state: bool or :class:`NoneType <types.NoneType>`
+        :type state: bool
         :param state: (Optional) The state that the mutation should be
                       applied in.
         """
@@ -326,11 +334,13 @@ class Row(object):
             send an API request (with the mutations) to the Google Cloud
             Bigtable API, call :meth:`commit`.
 
-        :type column_family_id: string
+        :type column_family_id: str
         :param column_family_id: The column family that contains the column
-                                 or columns with cells being deleted.
+                                 or columns with cells being deleted. Must be
+                                 of the form ``[_a-zA-Z0-9][-_.a-zA-Z0-9]*``.
 
-        :type columns: iterable of bytes (or strings) or object
+        :type columns: :class:`list` of :class:`str` /
+                       :func:`unicode <unicode>`, or :class:`object`
         :param columns: The columns within the column family that will have
                         cells deleted. If :attr:`Row.ALL_COLUMNS` is used then
                         the entire column family will be deleted from the row.
@@ -339,7 +349,7 @@ class Row(object):
         :param time_range: (Optional) The range of time within which cells
                            should be deleted.
 
-        :type state: bool or :class:`NoneType <types.NoneType>`
+        :type state: bool
         :param state: (Optional) The state that the mutation should be
                       applied in.
         """
@@ -477,7 +487,7 @@ class Row(object):
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on row.
 
-        :rtype: bool or :class:`NoneType <types.NoneType>`
+        :rtype: :class:`bool` or :data:`NoneType <types.NoneType>`
         :returns: :data:`None` if there is no filter, otherwise a flag
                   indicating if the filter was matched (which also
                   indicates which set of mutations were applied by the server).
@@ -573,8 +583,10 @@ class RowFilter(object):
     These values can be combined via :class:`RowFilterChain`,
     :class:`RowFilterUnion` and :class:`ConditionalRowFilter`.
 
-    The regex filters must be valid RE2 patterns. See
-    https://github.com/google/re2/wiki/Syntax for the accepted syntax.
+    The regex filters must be valid RE2 patterns. See Google's
+    `RE2 reference`_ for the accepted syntax.
+
+    .. _RE2 reference: https://github.com/google/re2/wiki/Syntax
 
     .. note::
 
@@ -589,27 +601,27 @@ class RowFilter(object):
         character will not match the new line character ``\\n``, which may be
         present in a binary value.
 
-    :type row_key_regex_filter: bytes (or string)
+    :type row_key_regex_filter: bytes
     :param row_key_regex_filter: A regular expression (RE2) to match cells from
                                  rows with row keys that satisfy this regex.
                                  For a ``CheckAndMutateRowRequest``, this
                                  filter is unnecessary since the row key is
                                  already specified.
 
-    :type family_name_regex_filter: string
+    :type family_name_regex_filter: str
     :param family_name_regex_filter: A regular expression (RE2) to match cells
                                      from columns in a given column family. For
                                      technical reasons, the regex must not
                                      contain the ``':'`` character, even if it
                                      isnot being uses as a literal.
 
-    :type column_qualifier_regex_filter: bytes (or string)
+    :type column_qualifier_regex_filter: bytes
     :param column_qualifier_regex_filter: A regular expression (RE2) to match
                                           cells from column that match this
                                           regex (irrespective of column
                                           family).
 
-    :type value_regex_filter: bytes (or string)
+    :type value_regex_filter: bytes
     :param value_regex_filter: A regular expression (RE2) to match cells with
                                values that match this regex.
 
@@ -822,15 +834,16 @@ class ColumnRange(object):
     By default, we include them both, but this can be changed with optional
     flags.
 
-    :type column_family_id: string
-    :param column_family_id: The column family that contains the columns.
+    :type column_family_id: str
+    :param column_family_id: The column family that contains the columns. Must
+                             be of the form ``[_a-zA-Z0-9][-_.a-zA-Z0-9]*``.
 
-    :type start_column: bytes (or string)
+    :type start_column: bytes
     :param start_column: The start of the range of columns. If no value is
                          used, it is interpreted as the empty string
                          (inclusive) by the backend.
 
-    :type end_column: bytes (or string)
+    :type end_column: bytes
     :param end_column: The end of the range of columns. If no value is used, it
                        is interpreted as the infinite string (exclusive) by the
                        backend.
@@ -895,12 +908,12 @@ class CellValueRange(object):
     By default, we include them both, but this can be changed with optional
     flags.
 
-    :type start_value: bytes (or string)
+    :type start_value: bytes
     :param start_value: The start of the range of values. If no value is
                         used, it is interpreted as the empty string
                         (inclusive) by the backend.
 
-    :type end_value: bytes (or string)
+    :type end_value: bytes
     :param end_value: The end of the range of values. If no value is used, it
                       is interpreted as the infinite string (exclusive) by the
                       backend.
