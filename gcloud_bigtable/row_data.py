@@ -15,6 +15,9 @@
 """Container for Google Cloud Bigtable Cells and Streaming Row Contents."""
 
 
+import copy
+
+
 class Cell(object):
     """Representation of a Google Cloud Bigtable Cell.
 
@@ -37,3 +40,28 @@ class Cell(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+
+class PartialRowData(object):
+    """Representation of partial row in a Google Cloud Bigtable Table.
+
+    These are expected to be updated directly from a
+    :class:`._generated.bigtable_service_messages_pb2.ReadRowsResponse`
+    """
+
+    def __init__(self):
+        self._row_key = None
+        self._cells = []
+
+    @property
+    def cells(self):
+        """Property returning all the cells accumulated on this partial row.
+
+        :rtype: list
+        :returns: List of the :class:`Cell` objects accumulated.
+        """
+        return copy.deepcopy(self._cells)
+
+    def clear(self):
+        """Clears all cells that have been added."""
+        self._cells[:] = []

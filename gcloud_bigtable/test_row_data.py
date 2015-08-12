@@ -59,3 +59,34 @@ class TestCell(unittest2.TestCase):
         cell1 = self._makeOne(value1, timestamp)
         cell2 = self._makeOne(value2, timestamp)
         self.assertNotEqual(cell1, cell2)
+
+
+class TestPartialRowData(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row_data import PartialRowData
+        return PartialRowData
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_constructor(self):
+        partial_row_data = self._makeOne()
+        self.assertEqual(partial_row_data._row_key, None)
+        self.assertEqual(partial_row_data._cells, [])
+
+    def test_cells_property(self):
+        partial_row_data = self._makeOne()
+        cells = [1, 2]
+        partial_row_data._cells = cells
+        # Make sure we get a copy, not the original.
+        self.assertFalse(partial_row_data.cells is cells)
+        self.assertEqual(partial_row_data.cells, cells)
+
+    def test_clear(self):
+        partial_row_data = self._makeOne()
+        cells = [1, 2]
+        partial_row_data._cells = cells
+        self.assertEqual(partial_row_data.cells, cells)
+        partial_row_data.clear()
+        self.assertEqual(partial_row_data.cells, [])
