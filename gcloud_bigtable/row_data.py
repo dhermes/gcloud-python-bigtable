@@ -17,6 +17,8 @@
 
 import copy
 
+from gcloud_bigtable._helpers import _microseconds_to_timestamp
+
 
 class Cell(object):
     """Representation of a Google Cloud Bigtable Cell.
@@ -31,6 +33,19 @@ class Cell(object):
     def __init__(self, value, timestamp):
         self.value = value
         self.timestamp = timestamp
+
+    @classmethod
+    def from_pb(cls, cell_pb):
+        """Create a new cell from a Cell protobuf.
+
+        :type cell_pb: :class:`.generated.bigtable_data_pb2.Cell`
+        :param cell_pb: The protobuf to convert.
+
+        :rtype: :class:`Cell`
+        :returns: The cell corresponding to the protobuf.
+        """
+        timestamp = _microseconds_to_timestamp(cell_pb.timestamp_micros)
+        return cls(cell_pb.value, timestamp)
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
