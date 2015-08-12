@@ -333,5 +333,5 @@ texinfo_documents = [
 #       included in https://docs.python.org/objects.inv
 intersphinx_mapping = {
     'python': ('https://docs.python.org/', None),
-    'oauth2client': ('http://google.github.io/oauth2client/', None),
+    'oauth2client': ('http://oauth2client.readthedocs.org/en/latest/', None),
 }
