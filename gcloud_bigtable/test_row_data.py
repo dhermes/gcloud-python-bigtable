@@ -73,11 +73,11 @@ class TestPartialRowData(unittest2.TestCase):
     def test_constructor(self):
         partial_row_data = self._makeOne()
         self.assertEqual(partial_row_data._row_key, None)
-        self.assertEqual(partial_row_data._cells, [])
+        self.assertEqual(partial_row_data._cells, {})
 
     def test_cells_property(self):
         partial_row_data = self._makeOne()
-        cells = [1, 2]
+        cells = {1: 2}
         partial_row_data._cells = cells
         # Make sure we get a copy, not the original.
         self.assertFalse(partial_row_data.cells is cells)
@@ -85,8 +85,8 @@ class TestPartialRowData(unittest2.TestCase):
 
     def test_clear(self):
         partial_row_data = self._makeOne()
-        cells = [1, 2]
+        cells = {1: 2}
         partial_row_data._cells = cells
         self.assertEqual(partial_row_data.cells, cells)
         partial_row_data.clear()
-        self.assertEqual(partial_row_data.cells, [])
+        self.assertEqual(partial_row_data.cells, {})

@@ -51,7 +51,7 @@ class PartialRowData(object):
 
     def __init__(self):
         self._row_key = None
-        self._cells = []
+        self._cells = {}
 
     @property
     def cells(self):
@@ -64,4 +64,4 @@ class PartialRowData(object):
 
     def clear(self):
         """Clears all cells that have been added."""
-        self._cells[:] = []
+        self._cells.clear()
