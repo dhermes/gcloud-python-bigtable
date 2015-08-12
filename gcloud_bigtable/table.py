@@ -321,6 +321,48 @@ class Table(object):
         # NOTE: We assume read_rows_response.row_key == row_key
         return _parse_row_response(read_rows_response)
 
+    def sample_row_keys(self, timeout_seconds=None):
+        """Read a sample of row keys in the table.
+
+        The returned row keys will delimit contiguous sections of the table of
+        approximately equal size, which can be used to break up the data for
+        distributed tasks like mapreduces.
+
+        The elements in the iterator are a SampleRowKeys response and they have
+        the properties ``offset_bytes`` and ``row_key``. They occur in sorted
+        order. The table might have contents before the first row key in the
+        list and after the last one, but a key containing the empty string
+        indicates "end of table" and will be the last response given, if
+        present.
+
+        .. note::
+
+            Row keys in this list may not have ever been written to or read
+            from, and users should therefore not make any assumptions about the
+            row key structure that are specific to their use case.
+
+        The ``offset_bytes`` field on a response indicates the approximate
+        total storage space used by all rows in the table which precede
+        ``row_key``. Buffering the contents of all rows between two subsequent
+        samples would require space roughly equal to the difference in their
+        ``offset_bytes`` fields.
+
+        :type timeout_seconds: int
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to value set on table.
+
+        :rtype: :class:`grpc.framework.alpha._reexport._CancellableIterator`
+        :returns: A cancel-able iterator. Can be consumed by calling ``next()``
+                  or by casting to a :class:`list` and can be cancelled by
+                  calling ``cancel()``.
+        """
+        request_pb = data_messages_pb2.SampleRowKeysRequest(
+            table_name=self.name)
+        timeout_seconds = timeout_seconds or self.timeout_seconds
+        response_iterator = self.client.data_stub.SampleRowKeys(
+            request_pb, timeout_seconds)
+        return response_iterator
+
 
 def _create_row_request(table_name, row_key=None, start_key=None, end_key=None,
                         filter=None, allow_row_interleaving=None, limit=None):

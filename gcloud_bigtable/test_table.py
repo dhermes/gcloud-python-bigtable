@@ -303,12 +303,12 @@ class TestTable(unittest2.TestCase):
         request_pb = object()  # Returned by our mock.
         mock_create_row_request = _MockCalled(request_pb)
 
-        # Create response_pb
+        # Create response_iterator
         response_pb = object()  # Will just be passed to a mock.
-        response_iter = [response_pb]
+        response_iterator = [response_pb]
 
         # Patch the stub used by the API method.
-        client.data_stub = stub = StubMock(response_iter)
+        client.data_stub = stub = StubMock(response_iterator)
 
         # Create expected_result.
         expected_result = object()
@@ -332,6 +332,40 @@ class TestTable(unittest2.TestCase):
         mock_create_row_request.check_called(
             self, [(table.name,)], [{'row_key': row_key, 'filter': filter}])
         mock_parse_row_response.check_called(self, [(response_pb,)])
+
+    def test_sample_row_keys(self):
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable._grpc_mocks import StubMock
+
+        client = _Client()
+        cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+                        '/clusters/' + CLUSTER_ID)
+        cluster = _Cluster(cluster_name, client=client)
+        table = self._makeOne(TABLE_ID, cluster)
+
+        # Create request_pb
+        table_name = cluster_name + '/tables/' + TABLE_ID
+        request_pb = messages_pb2.SampleRowKeysRequest(table_name=table_name)
+
+        # Create response_iterator
+        response_iterator = object()  # Just passed to a mock.
+
+        # Patch the stub used by the API method.
+        client.data_stub = stub = StubMock(response_iterator)
+
+        # Create expected_result.
+        expected_result = response_iterator
+
+        # Perform the method and check the result.
+        timeout_seconds = 1333
+        result = table.sample_row_keys(timeout_seconds=timeout_seconds)
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'SampleRowKeys',
+            (request_pb, timeout_seconds),
+            {},
+        )])
 
 
 class Test__create_row_request(unittest2.TestCase):
