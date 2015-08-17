@@ -214,7 +214,8 @@ class TestPartialRowData(unittest2.TestCase):
         from gcloud_bigtable._generated import (
             bigtable_service_messages_pb2 as messages_pb2)
 
-        partial_row_data = self._makeOne(None)
+        row_key = b'row-key'
+        partial_row_data = self._makeOne(row_key)
 
         # Set-up chunk1, some data that will be reset by chunk2.
         ignored_family_name = u'ignore-name'
@@ -234,7 +235,7 @@ class TestPartialRowData(unittest2.TestCase):
 
         # Prepare request and make sure PartialRowData is empty before.
         read_rows_response_pb = messages_pb2.ReadRowsResponse(
-            chunks=[chunk1, chunk2, chunk3, chunk4])
+            row_key=row_key, chunks=[chunk1, chunk2, chunk3, chunk4])
         self.assertEqual(partial_row_data.cells, {})
         self.assertFalse(partial_row_data.committed)
 
@@ -251,13 +252,28 @@ class TestPartialRowData(unittest2.TestCase):
         with self.assertRaises(ValueError):
             partial_row_data.update_from_read_rows(None)
 
+    def test_update_from_read_rows_row_key_disagree(self):
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+
+        row_key1 = b'row-key1'
+        row_key2 = b'row-key2'
+        partial_row_data = self._makeOne(row_key1)
+
+        self.assertNotEqual(row_key1, row_key2)
+        read_rows_response_pb = messages_pb2.ReadRowsResponse(row_key=row_key2)
+        with self.assertRaises(ValueError):
+            partial_row_data.update_from_read_rows(read_rows_response_pb)
+
     def test_update_from_read_rows_empty_chunk(self):
         from gcloud_bigtable._generated import (
             bigtable_service_messages_pb2 as messages_pb2)
 
-        partial_row_data = self._makeOne(None)
+        row_key = b'row-key'
+        partial_row_data = self._makeOne(row_key)
         chunk = messages_pb2.ReadRowsResponse.Chunk()
-        read_rows_response_pb = messages_pb2.ReadRowsResponse(chunks=[chunk])
+        read_rows_response_pb = messages_pb2.ReadRowsResponse(
+            row_key=row_key, chunks=[chunk])
 
         # This makes it an "empty" chunk.
         self.assertEqual(chunk.WhichOneof('chunk'), None)
@@ -265,17 +281,23 @@ class TestPartialRowData(unittest2.TestCase):
             partial_row_data.update_from_read_rows(read_rows_response_pb)
 
     def test_from_read_rows(self):
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+
         klass = self._getTargetClass()
 
         class FakePartial(klass):
 
-            def __init__(self):
+            def __init__(self, *args, **kwargs):
+                super(FakePartial, self).__init__(*args, **kwargs)
                 self._called = []
 
             def update_from_read_rows(self, value):
                 self._called.append(value)
 
-        fake_input = object()
-        result = FakePartial.from_read_rows(fake_input)
+        row_key = b'row-key'
+        read_rows_response_pb = messages_pb2.ReadRowsResponse(row_key=row_key)
+        result = FakePartial.from_read_rows(read_rows_response_pb)
         self.assertTrue(isinstance(result, FakePartial))
-        self.assertEqual(result._called, [fake_input])
+        self.assertEqual(result._called, [read_rows_response_pb])
+        self.assertEqual(result.row_key, row_key)

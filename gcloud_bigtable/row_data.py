@@ -174,11 +174,17 @@ class PartialRowData(object):
                                       ``ReadRows`` request.
 
         :raises: :class:`ValueError <exceptions.ValueError>` if the current
-                 partial row has already been committed or if there is a chunk
+                 partial row has already been committed, if the row key on the
+                 response doesn't match the current one or if there is a chunk
                  encountered with an unexpected ``ONEOF`` protobuf property.
         """
         if self._committed:
             raise ValueError('The row has been committed')
+
+        if read_rows_response_pb.row_key != self.row_key:
+            raise ValueError('Response row key (%r) does not match current '
+                             'one (%r).' % (read_rows_response_pb.row_key,
+                                            self.row_key))
 
         last_chunk_index = len(read_rows_response_pb.chunks) - 1
         for index, chunk in enumerate(read_rows_response_pb.chunks):
@@ -207,6 +213,6 @@ class PartialRowData(object):
         :rtype: :class:`PartialRowData`
         :returns: A partial row parsed from the response.
         """
-        result = cls()
+        result = cls(read_rows_response_pb.row_key)
         result.update_from_read_rows(read_rows_response_pb)
         return result
