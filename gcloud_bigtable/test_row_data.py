@@ -92,6 +92,45 @@ class TestPartialRowData(unittest2.TestCase):
         self.assertEqual(partial_row_data._cells, {})
         self.assertFalse(partial_row_data._committed)
 
+    def test___eq__(self):
+        row_key = object()
+        partial_row_data1 = self._makeOne(row_key)
+        partial_row_data2 = self._makeOne(row_key)
+        self.assertEqual(partial_row_data1, partial_row_data2)
+
+    def test___eq__type_differ(self):
+        partial_row_data1 = self._makeOne(None)
+        partial_row_data2 = object()
+        self.assertNotEqual(partial_row_data1, partial_row_data2)
+
+    def test___ne__same_value(self):
+        row_key = object()
+        partial_row_data1 = self._makeOne(row_key)
+        partial_row_data2 = self._makeOne(row_key)
+        comparison_val = (partial_row_data1 != partial_row_data2)
+        self.assertFalse(comparison_val)
+
+    def test___ne__(self):
+        row_key1 = object()
+        partial_row_data1 = self._makeOne(row_key1)
+        row_key2 = object()
+        partial_row_data2 = self._makeOne(row_key2)
+        self.assertNotEqual(partial_row_data1, partial_row_data2)
+
+    def test___ne__committed(self):
+        row_key = object()
+        partial_row_data1 = self._makeOne(row_key)
+        partial_row_data1._committed = object()
+        partial_row_data2 = self._makeOne(row_key)
+        self.assertNotEqual(partial_row_data1, partial_row_data2)
+
+    def test___ne__cells(self):
+        row_key = object()
+        partial_row_data1 = self._makeOne(row_key)
+        partial_row_data1._cells = object()
+        partial_row_data2 = self._makeOne(row_key)
+        self.assertNotEqual(partial_row_data1, partial_row_data2)
+
     def test_cells_property(self):
         partial_row_data = self._makeOne(None)
         cells = {1: 2}

@@ -72,12 +72,25 @@ class PartialRowData(object):
         self._cells = {}
         self._committed = False
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return (other._row_key == self._row_key and
+                other._committed == self._committed and
+                other._cells == self._cells)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @property
     def cells(self):
         """Property returning all the cells accumulated on this partial row.
 
-        :rtype: list
-        :returns: List of the :class:`Cell` objects accumulated.
+        :rtype: dict
+        :returns: Dictionary of the :class:`Cell` objects accumulated. This
+                  dictionary has two-levels of keys (first for column families
+                  and second for column names/qualifiers within a family). For
+                  a given column, a list of :class:`Cell` objects is stored.
         """
         return copy.deepcopy(self._cells)
 
