@@ -62,10 +62,13 @@ class PartialRowData(object):
 
     These are expected to be updated directly from a
     :class:`._generated.bigtable_service_messages_pb2.ReadRowsResponse`
+
+    :type row_key: bytes
+    :param row_key: The key for the row holding the (partial) data.
     """
 
-    def __init__(self):
-        self._row_key = None
+    def __init__(self, row_key):
+        self._row_key = row_key
         self._cells = {}
         self._committed = False
 
@@ -77,6 +80,24 @@ class PartialRowData(object):
         :returns: List of the :class:`Cell` objects accumulated.
         """
         return copy.deepcopy(self._cells)
+
+    @property
+    def row_key(self):
+        """Getter for the current (partial) row's key.
+
+        :rtype: bytes
+        :returns: The current (partial) row's key.
+        """
+        return self._row_key
+
+    @property
+    def committed(self):
+        """Getter for the committed status of the (partial) row.
+
+        :rtype: bool
+        :returns: The committed status of the (partial) row.
+        """
+        return self._committed
 
     def clear(self):
         """Clears all cells that have been added."""
