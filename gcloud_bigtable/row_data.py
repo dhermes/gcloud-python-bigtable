@@ -38,7 +38,7 @@ class Cell(object):
     def from_pb(cls, cell_pb):
         """Create a new cell from a Cell protobuf.
 
-        :type cell_pb: :class:`.generated.bigtable_data_pb2.Cell`
+        :type cell_pb: :class:`._generated.bigtable_data_pb2.Cell`
         :param cell_pb: The protobuf to convert.
 
         :rtype: :class:`Cell`
@@ -67,6 +67,7 @@ class PartialRowData(object):
     def __init__(self):
         self._row_key = None
         self._cells = {}
+        self._committed = False
 
     @property
     def cells(self):
@@ -79,4 +80,112 @@ class PartialRowData(object):
 
     def clear(self):
         """Clears all cells that have been added."""
+        self._committed = False
         self._cells.clear()
+
+    def _handle_commit_row(self, chunk, index, last_chunk_index):
+        """Handles a ``commit_row`` chunk.
+
+        :type chunk: ``ReadRowsResponse.Chunk``
+        :param chunk: The chunk being handled.
+
+        :type index: int
+        :param index: The current index of the chunk.
+
+        :type last_chunk_index: int
+        :param last_chunk_index: The index of the last chunk.
+
+        :raises: :class:`ValueError <exceptions.ValueError>` if the value of
+                 ``commit_row`` is :data:`False` or if the chunk passed is not
+                 the last chunk in a response.
+        """
+        # NOTE: We assume the caller has checked that the ``ONEOF`` property
+        #       for ``chunk`` is ``commit_row``.
+        if not chunk.commit_row:
+            raise ValueError('Received commit_row that was False.')
+
+        if index != last_chunk_index:
+            raise ValueError('Commit row chunk was not the last chunk')
+        else:
+            self._committed = True
+
+    def _handle_reset_row(self, chunk):
+        """Handles a ``reset_row`` chunk.
+
+        :type chunk: ``ReadRowsResponse.Chunk``
+        :param chunk: The chunk being handled.
+
+        :raises: :class:`ValueError <exceptions.ValueError>` if the value of
+                 ``reset_row`` is :data:`False`
+        """
+        # NOTE: We assume the caller has checked that the ``ONEOF`` property
+        #       for ``chunk`` is ``reset_row``.
+        if not chunk.reset_row:
+            raise ValueError('Received reset_row that was False.')
+
+        self.clear()
+
+    def _handle_row_contents(self, chunk):
+        """Handles a ``row_contents`` chunk.
+
+        :type chunk: ``ReadRowsResponse.Chunk``
+        :param chunk: The chunk being handled.
+        """
+        # NOTE: We assume the caller has checked that the ``ONEOF`` property
+        #       for ``chunk`` is ``row_contents``.
+
+        # chunk.row_contents is ._generated.bigtable_data_pb2.Family
+        column_family_id = chunk.row_contents.name
+        column_family_dict = self._cells.setdefault(column_family_id, {})
+        for column in chunk.row_contents.columns:
+            cells = [Cell.from_pb(cell) for cell in column.cells]
+
+            column_name = column.qualifier
+            column_cells = column_family_dict.setdefault(column_name, [])
+            column_cells.extend(cells)
+
+    def update_from_read_rows(self, read_rows_response_pb):
+        """Updates the current row from a ``ReadRows`` response.
+
+        :type read_rows_response_pb:
+            :class:`._generated.bigtable_service_messages_pb2.ReadRowsResponse`
+        :param read_rows_response_pb: A response streamed back as part of a
+                                      ``ReadRows`` request.
+
+        :raises: :class:`ValueError <exceptions.ValueError>` if the current
+                 partial row has already been committed or if there is a chunk
+                 encountered with an unexpected ``ONEOF`` protobuf property.
+        """
+        if self._committed:
+            raise ValueError('The row has been committed')
+
+        last_chunk_index = len(read_rows_response_pb.chunks) - 1
+        for index, chunk in enumerate(read_rows_response_pb.chunks):
+            chunk_property = chunk.WhichOneof('chunk')
+            if chunk_property == 'row_contents':
+                self._handle_row_contents(chunk)
+            elif chunk_property == 'reset_row':
+                self._handle_reset_row(chunk)
+            elif chunk_property == 'commit_row':
+                self._handle_commit_row(chunk, index, last_chunk_index)
+            else:
+                # NOTE: This includes chunk_property == None since we always
+                #       want a value to be set
+                raise ValueError('Unexpected chunk property: %s' % (
+                    chunk_property,))
+
+    @classmethod
+    def from_read_rows(cls, read_rows_response_pb):
+        """Parses a response from ``ReadRows`` into a partial row.
+
+        :type read_rows_response_pb:
+            :class:`._generated.bigtable_service_messages_pb2.ReadRowsResponse`
+        :param read_rows_response_pb: A response streamed back as part of a
+                                      ``ReadRows`` request.
+
+        :rtype: :class:`PartialRowData`
+        :returns: A partial row parsed from the response.
+        """
+        result = cls()
+        result.update_from_read_rows(read_rows_response_pb)
+        return result
