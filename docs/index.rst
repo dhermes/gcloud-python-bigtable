@@ -160,6 +160,7 @@ Documented Modules
    table
    column-family
    row
+   row-data
 
 Indices and tables
 ~~~~~~~~~~~~~~~~~~
