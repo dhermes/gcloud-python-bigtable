@@ -213,19 +213,3 @@ class PartialRowData(object):
                 #       want a value to be set
                 raise ValueError('Unexpected chunk property: %s' % (
                     chunk_property,))
-
-    @classmethod
-    def from_read_rows(cls, read_rows_response_pb):
-        """Parses a response from ``ReadRows`` into a partial row.
-
-        :type read_rows_response_pb:
-            :class:`._generated.bigtable_service_messages_pb2.ReadRowsResponse`
-        :param read_rows_response_pb: A response streamed back as part of a
-                                      ``ReadRows`` request.
-
-        :rtype: :class:`PartialRowData`
-        :returns: A partial row parsed from the response.
-        """
-        result = cls(read_rows_response_pb.row_key)
-        result.update_from_read_rows(read_rows_response_pb)
-        return result

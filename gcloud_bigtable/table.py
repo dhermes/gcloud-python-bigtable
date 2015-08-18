@@ -350,7 +350,7 @@ class Table(object):
 
 def _create_row_request(table_name, row_key=None, start_key=None, end_key=None,
                         filter=None, allow_row_interleaving=None, limit=None):
-    """Reads rows in the table.
+    """Creates a request to read rows in a table.
 
     :type table_name: str
     :param table_name: The name of the table to read from.
