@@ -235,3 +235,7 @@ class PartialRowsData(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def cancel(self):
+        """Cancels the iterator, closing the stream."""
+        self._response_iterator.cancel()

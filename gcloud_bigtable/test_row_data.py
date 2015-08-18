@@ -359,3 +359,18 @@ class TestPartialRowsData(unittest2.TestCase):
         response_iterator2 = object()
         partial_rows_data2 = self._makeOne(response_iterator2)
         self.assertNotEqual(partial_rows_data1, partial_rows_data2)
+
+    def test_cancel(self):
+        response_iterator = _MockCancellableIterator()
+        partial_rows_data = self._makeOne(response_iterator)
+        self.assertEqual(response_iterator.cancel_calls, 0)
+        partial_rows_data.cancel()
+        self.assertEqual(response_iterator.cancel_calls, 1)
+
+
+class _MockCancellableIterator(object):
+
+    cancel_calls = 0
+
+    def cancel(self):
+        self.cancel_calls += 1
