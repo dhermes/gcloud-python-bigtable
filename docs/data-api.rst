@@ -286,7 +286,39 @@ documentation for more information on the optional arguments.
 Sample Keys in a Table
 ----------------------
 
-`SampleRowKeys`_
+Make a `SampleRowKeys`_ API request with
+:meth:`Table.sample_row_keys() <gcloud_bigtable.table.Table.sample_row_keys>`:
+
+.. code:: python
+
+    keys_iterator = table.sample_row_keys()
+
+The returned row keys will delimit contiguous sections of the table of
+approximately equal size, which can be used to break up the data for
+distributed tasks like mapreduces.
+
+As with
+:meth:`Table.read_rows() <gcloud_bigtable.table.Table.read_rows>`, the
+returned ``keys_iterator`` is connected to a cancellable HTTP/2 stream.
+
+The next key in the result can be accessed via
+
+.. code:: python
+
+    next_key = keys_iterator.next()
+
+or all keys can be iterated over via
+
+.. code:: python
+
+    for curr_key in keys_iterator:
+        do_something(curr_key)
+
+Just as with reading, the stream can be canceled:
+
+.. code:: python
+
+    keys_iterator.cancel()
 
 .. _ReadRows: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/f4d922bb950f1584b30f9928e84d042ad59f5658/bigtable-protos/src/main/proto/google/bigtable/v1/bigtable_service.proto#L36-L38
 .. _SampleRowKeys: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/f4d922bb950f1584b30f9928e84d042ad59f5658/bigtable-protos/src/main/proto/google/bigtable/v1/bigtable_service.proto#L44-L46
