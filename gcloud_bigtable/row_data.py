@@ -213,3 +213,25 @@ class PartialRowData(object):
                 #       want a value to be set
                 raise ValueError('Unexpected chunk property: %s' % (
                     chunk_property,))
+
+
+class PartialRowsData(object):
+    """Convenience wrapper for consuming a ``ReadRows`` streaming response.
+
+    :type response_iterator:
+        :class:`grpc.framework.alpha._reexport._CancellableIterator`
+    :param response_iterator: A streaming iterator returned from a
+                              ``ReadRows`` request.
+    """
+
+    def __init__(self, response_iterator):
+        # We expect an iterator of `data_messages_pb2.ReadRowsResponse`
+        self._response_iterator = response_iterator
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return other._response_iterator == self._response_iterator
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
