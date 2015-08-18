@@ -326,6 +326,22 @@ class TestPartialRowsData(unittest2.TestCase):
         from gcloud_bigtable.row_data import PartialRowsData
         return PartialRowsData
 
+    def _getDoNothingClass(self):
+        klass = self._getTargetClass()
+
+        class FakePartialRowsData(klass):
+
+            def __init__(self, *args, **kwargs):
+                super(FakePartialRowsData, self).__init__(*args, **kwargs)
+                self._consumed = []
+
+            def consume_next(self):
+                value = self._response_iterator.next()
+                self._consumed.append(value)
+                return value
+
+        return FakePartialRowsData
+
     def _makeOne(self, *args, **kwargs):
         return self._getTargetClass()(*args, **kwargs)
 
@@ -405,6 +421,28 @@ class TestPartialRowsData(unittest2.TestCase):
         partial_rows_data = self._makeOne(response_iterator)
         with self.assertRaises(StopIteration):
             partial_rows_data.consume_next()
+
+    def test_consume_all(self):
+        klass = self._getDoNothingClass()
+
+        value1, value2, value3 = object(), object(), object()
+        response_iterator = _MockCancellableIterator(value1, value2, value3)
+        partial_rows_data = klass(response_iterator)
+        self.assertEqual(partial_rows_data._consumed, [])
+        partial_rows_data.consume_all()
+        self.assertEqual(partial_rows_data._consumed, [value1, value2, value3])
+
+    def test_consume_all_with_max_loops(self):
+        klass = self._getDoNothingClass()
+
+        value1, value2, value3 = object(), object(), object()
+        response_iterator = _MockCancellableIterator(value1, value2, value3)
+        partial_rows_data = klass(response_iterator)
+        self.assertEqual(partial_rows_data._consumed, [])
+        partial_rows_data.consume_all(max_loops=1)
+        self.assertEqual(partial_rows_data._consumed, [value1])
+        # Make sure the iterator still has the remaining values.
+        self.assertEqual(list(response_iterator.iter_values), [value2, value3])
 
 
 class _MockCancellableIterator(object):
