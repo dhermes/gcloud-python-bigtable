@@ -43,7 +43,7 @@ In order to support this, we'll rely on `gRPC`_. We are working with the gRPC
 team to rapidly make the install story more user-friendly.
 
 Get started by learning about the
-:class:`Client <gcloud_bigtable.client.Client` on the `Base for Everything`_
+:class:`Client <gcloud_bigtable.client.Client>` on the `Base for Everything`_
 page. If you have install questions, check out the project's `README`_.
 
 In the hierarchy of API concepts
