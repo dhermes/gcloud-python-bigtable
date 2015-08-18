@@ -1,13 +1,18 @@
 Cluster Admin API
 =================
 
-Create a
-:class:`Cluster <gcloud_bigtable.cluster.Cluster>` to get
-a high-level interface to cluster management:
+
+To create a :class:`Cluster <gcloud_bigtable.cluster.Cluster>` object:
 
 .. code:: python
 
-    cluster = client.cluster(zone, cluster_id)
+    cluster = client.cluster(zone, cluster_id,
+                             display_name=display_name,
+                             serve_nodes=3)
+
+Both ``display_name`` and ``serve_nodes`` are optional. When not provided,
+``display_name`` defaults to the ``cluster_id`` value and ``serve_nodes``
+defaults to the minimum allowed: ``3``.
 
 *************
 List Clusters

@@ -33,6 +33,13 @@ pass it directly:
 
     client = Client(credentials=credentials)
 
+In addition, the
+:meth:`from_service_account_json() <gcloud_bigtable.client.Client.from_service_account_json>`
+and
+:meth:`from_service_account_p12() <gcloud_bigtable.client.Client.from_service_account_p12>`
+factories can be used if you know the specific type of credentials you'd
+like to use.
+
 Project ID
 ----------
 
@@ -79,7 +86,17 @@ This will ensure that the
 for API requests (so any accidental requests that would modify data will
 fail).
 
+Next Step
+---------
+
+After a :class:`Client <gcloud_bigtable.client.Client>`, the next highest-level
+object is a :class:`Cluster <gcloud_bigtable.cluster.Cluster>`. You'll need
+one before you can interact with tables or data.
+
+Head next to learn about the `Cluster Admin API`_.
+
 .. _Application Default Credentials: https://developers.google.com/identity/protocols/application-default-credentials
 .. _oauth2client: http://oauth2client.readthedocs.org/en/latest/
 .. _Cluster Admin: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/tree/f4d922bb950f1584b30f9928e84d042ad59f5658/bigtable-protos/src/main/proto/google/bigtable/admin/cluster/v1
 .. _Table Admin: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/tree/f4d922bb950f1584b30f9928e84d042ad59f5658/bigtable-protos/src/main/proto/google/bigtable/admin/table/v1
+.. _Cluster Admin API: cluster-api.html
