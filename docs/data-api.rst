@@ -222,12 +222,66 @@ Reading Data
 Read Single Row from a Table
 ----------------------------
 
-`ReadRows`_
+To make a `ReadRows`_ API request for a single row key, use
+:meth:`Table.read_row() <gcloud_bigtable.table.Table.read_row>`:
+
+.. code:: python
+
+    row_data = table.read_row(row_key)
+
+Rather than returning a :class:`Row <gcloud_bigtable.row.Row>`, this method
+returns a :class:`PartialRowData <gcloud_bigtable.row_data.PartialRowData>`
+instance. This class is used for reading and parsing data rather than for
+modifying data (as :class:`Row <gcloud_bigtable.row.Row>` is).
+
+A filter can also be applied to the
+
+.. code:: python
+
+    row_data = table.read_row(row_key, filter=filter)
+
+The allowable ``filter`` values are the same as those used for a
+:class:`Row <gcloud_bigtable.row.Row>` with **conditional** mutations. For
+more information, see the
+:meth:`Table.read_row() <gcloud_bigtable.table.Table.read_row>` documentation.
 
 Stream Many Rows from a Table
 -----------------------------
 
-`ReadRows`_
+To make a `ReadRows`_ API request for a stream of rows, use
+:meth:`Table.read_rows() <gcloud_bigtable.table.Table.read_rows>`:
+
+.. code:: python
+
+    row_data = table.read_rows()
+
+Using gRPC over HTTP/2, a continual stream of responses will be delivered.
+We have a custom
+returns a :class:`PartialRowsData <gcloud_bigtable.row_data.PartialRowsData>`
+class to allow consuming and parsing these streams as they come.
+
+In particular
+
+* :meth:`consume_next() <gcloud_bigtable.row_data.PartialRowsData.consume_next>`
+  pulls the next result from the stream, parses it and stores it on the
+  :class:`PartialRowsData <gcloud_bigtable.row_data.PartialRowsData>` instance
+* :meth:`consume_all() <gcloud_bigtable.row_data.PartialRowsData.consume_all>`
+  pulls results from the stream until there are no more
+* :meth:`cancel() <gcloud_bigtable.row_data.PartialRowsData.cancel>` closes
+  the stream
+
+See the :class:`PartialRowsData <gcloud_bigtable.row_data.PartialRowsData>`
+documentation for more information.
+
+As with
+:meth:`Table.read_row() <gcloud_bigtable.table.Table.read_row>`, an optional
+``filter`` can be applied. In addition a ``start_key`` and / or ``end_key``
+can be supplied for the stream, a ``limit`` can be set and a boolean
+``allow_row_interleaving`` can be specified to allow faster streamed results
+at the potential cost of non-sequential reads.
+
+See the :meth:`Table.read_rows() <gcloud_bigtable.table.Table.read_rows>`
+documentation for more information on the optional arguments.
 
 Sample Keys in a Table
 ----------------------
