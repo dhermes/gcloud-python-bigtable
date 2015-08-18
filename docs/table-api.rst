@@ -90,22 +90,74 @@ To retrieve the list of column families use
 Column Family Factory
 ---------------------
 
-Factory
+To create a
+:class:`ColumnFamily <gcloud_bigtable.column_family.ColumnFamily>` object:
+
+.. code:: python
+
+    column_family = table.column_family(column_family_id)
+
+There is no real reason to use this factory unless you intend to
+create or delete a column family.
+
+In addition, you can specify an optional ``gc_rule`` (a
+:class:`GarbageCollectionRule <gcloud_bigtable.column_family.GarbageCollectionRule>`
+or similar):
+
+.. code:: python
+
+    column_family = table.column_family(column_family_id,
+                                        gc_rule=gc_rule)
+
+This rule helps the backend determine when and how to clean up old cells
+in the column family.
+
+See the `Column Families doc`_ for more information about
+:class:`GarbageCollectionRule <gcloud_bigtable.column_family.GarbageCollectionRule>`
+and related classes.
 
 Create a new Column Family
 --------------------------
 
-`CreateColumnFamily`_
+After creating the column family object, make a `CreateColumnFamily`_ API
+request with
+:meth:`ColumnFamily.create() <gcloud_bigtable.column_family.ColumnFamily.create>`
 
-Update an existing Column Family
---------------------------------
+.. code:: python
 
-`UpdateColumnFamily`_
+    column_family.create()
 
 Delete an existing Column Family
 --------------------------------
 
-`DeleteColumnFamily`_
+Make a `DeleteColumnFamily`_ API request with
+:meth:`ColumnFamily.delete() <gcloud_bigtable.column_family.ColumnFamily.delete>`
+
+.. code:: python
+
+    column_family.delete()
+
+Update an existing Column Family
+--------------------------------
+
+Though the `UpdateColumnFamily`_ API request is listed in the service
+definition, requests to that method return::
+
+    BigtableTableService.UpdateColumnFamily is not yet implemented
+
+We have implemented
+:meth:`ColumnFamily.update() <gcloud_bigtable.column_family.ColumnFamily.update>`
+but it will not work unless the backend supports the method.
+
+Next Step
+---------
+
+Now we go down the final step of the hierarchy from
+:class:`Table <gcloud_bigtable.table.Table>` to
+:class:`Row <gcloud_bigtable.row.Row>` as well as streaming
+data directly via a :class:`Table <gcloud_bigtable.table.Table>`.
+
+Head next to learn about the `Data API`_.
 
 .. _ListTables: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/f4d922bb950f1584b30f9928e84d042ad59f5658/bigtable-protos/src/main/proto/google/bigtable/admin/table/v1/bigtable_table_service.proto#L40-L42
 .. _CreateTable: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/f4d922bb950f1584b30f9928e84d042ad59f5658/bigtable-protos/src/main/proto/google/bigtable/admin/table/v1/bigtable_table_service.proto#L35-L37
@@ -116,3 +168,5 @@ Delete an existing Column Family
 .. _UpdateColumnFamily: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/f4d922bb950f1584b30f9928e84d042ad59f5658/bigtable-protos/src/main/proto/google/bigtable/admin/table/v1/bigtable_table_service.proto#L66-L68
 .. _DeleteColumnFamily: https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/f4d922bb950f1584b30f9928e84d042ad59f5658/bigtable-protos/src/main/proto/google/bigtable/admin/table/v1/bigtable_table_service.proto#L71-L73
 .. _column families: https://cloud.google.com/bigtable/docs/schema-design#column_families_and_column_qualifiers
+.. _Column Families doc: column-family.html
+.. _Data API: data-api.html
