@@ -10,7 +10,7 @@ List Clusters
 
 If you want a comprehensive list of all existing clusters, make a
 `ListClusters`_ API request with
-:class:`list_clusters() <gcloud_bigtable.client.Client.list_clusters>`:
+:meth:`Client.list_clusters() <gcloud_bigtable.client.Client.list_clusters>`:
 
 .. code:: python
 
@@ -21,7 +21,7 @@ List Zones
 
 If you aren't sure which ``zone`` to create a cluster in, find out
 which zones your project has access to with a `ListZones`_ API request
-with :class:`list_zones() <gcloud_bigtable.client.Client.list_zones>`:
+with :meth:`Client.list_zones() <gcloud_bigtable.client.Client.list_zones>`:
 
 .. code:: python
 
