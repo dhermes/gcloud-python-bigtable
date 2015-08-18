@@ -334,6 +334,7 @@ class TestPartialRowsData(unittest2.TestCase):
         partial_rows_data = self._makeOne(response_iterator)
         self.assertTrue(partial_rows_data._response_iterator
                         is response_iterator)
+        self.assertEqual(partial_rows_data._rows, {})
 
     def test___eq__(self):
         response_iterator = object()
@@ -367,10 +368,54 @@ class TestPartialRowsData(unittest2.TestCase):
         partial_rows_data.cancel()
         self.assertEqual(response_iterator.cancel_calls, 1)
 
+    def test_consume_next(self):
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable.row_data import PartialRowData
+
+        row_key = b'row-key'
+        value_pb = messages_pb2.ReadRowsResponse(row_key=row_key)
+        response_iterator = _MockCancellableIterator(value_pb)
+        partial_rows_data = self._makeOne(response_iterator)
+        self.assertEqual(partial_rows_data._rows, {})
+        partial_rows_data.consume_next()
+        expected_rows = {row_key: PartialRowData(row_key)}
+        self.assertEqual(partial_rows_data._rows, expected_rows)
+
+    def test_consume_next_row_exists(self):
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+        from gcloud_bigtable.row_data import PartialRowData
+
+        row_key = b'row-key'
+        chunk = messages_pb2.ReadRowsResponse.Chunk(commit_row=True)
+        value_pb = messages_pb2.ReadRowsResponse(row_key=row_key,
+                                                 chunks=[chunk])
+        response_iterator = _MockCancellableIterator(value_pb)
+        partial_rows_data = self._makeOne(response_iterator)
+        existing_values = PartialRowData(row_key)
+        partial_rows_data._rows[row_key] = existing_values
+        self.assertFalse(existing_values.committed)
+        partial_rows_data.consume_next()
+        self.assertTrue(existing_values.committed)
+        self.assertEqual(existing_values.cells, {})
+
+    def test_consume_next_empty_iter(self):
+        response_iterator = _MockCancellableIterator()
+        partial_rows_data = self._makeOne(response_iterator)
+        with self.assertRaises(StopIteration):
+            partial_rows_data.consume_next()
+
 
 class _MockCancellableIterator(object):
 
     cancel_calls = 0
 
+    def __init__(self, *values):
+        self.iter_values = iter(values)
+
     def cancel(self):
         self.cancel_calls += 1
+
+    def next(self):
+        return self.iter_values.next()

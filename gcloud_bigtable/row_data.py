@@ -227,6 +227,7 @@ class PartialRowsData(object):
     def __init__(self, response_iterator):
         # We expect an iterator of `data_messages_pb2.ReadRowsResponse`
         self._response_iterator = response_iterator
+        self._rows = {}
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -239,3 +240,17 @@ class PartialRowsData(object):
     def cancel(self):
         """Cancels the iterator, closing the stream."""
         self._response_iterator.cancel()
+
+    def consume_next(self):
+        """Consumes the next ``ReadRowsResponse`` from the stream.
+
+        Parses the response and stores it as a :class:`PartialRowData`
+        in a dictionary owned by this object.
+        """
+        read_rows_response = self._response_iterator.next()
+        row_key = read_rows_response.row_key
+        partial_row = self._rows.get(row_key)
+        if partial_row is None:
+            partial_row = self._rows[row_key] = PartialRowData(row_key)
+        # NOTE: This is not atomic in the case of failures.
+        partial_row.update_from_read_rows(read_rows_response)
