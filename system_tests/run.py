@@ -278,7 +278,7 @@ class TestDataAPI(unittest2.TestCase):
                           timestamp=timestamp1)
         if row2 is not None:
             row2.set_cell(COLUMN_FAMILY_ID1, COL_NAME1, CELL_VAL2,
-                         timestamp=timestamp2)
+                          timestamp=timestamp2)
         if row3 is not None:
             row3.set_cell(COLUMN_FAMILY_ID1, COL_NAME2, CELL_VAL3,
                           timestamp=timestamp3)
@@ -306,17 +306,17 @@ class TestDataAPI(unittest2.TestCase):
         self.assertEqual(partial_row_data.row_key, ROW_KEY)
 
         # Check the cells match.
-        row_contents = partial_row_data.cells
         ts_attr = operator.attrgetter('timestamp')
         expected_row_contents = {
             COLUMN_FAMILY_ID1: {
-                COL_NAME1: sorted([cell1, cell2], key=ts_attr),
+                COL_NAME1: sorted([cell1, cell2], key=ts_attr, reverse=True),
                 COL_NAME2: [cell3],
             },
             COLUMN_FAMILY_ID2: {
                 COL_NAME3: [cell4],
             },
         }
+        self.assertEqual(partial_row_data.cells, expected_row_contents)
 
     def test_read_rows(self):
         from gcloud_bigtable.row_data import PartialRowData
