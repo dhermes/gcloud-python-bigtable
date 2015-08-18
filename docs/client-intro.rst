@@ -10,6 +10,17 @@ and creating other objects:
     from gcloud_bigtable.client import Client
     client = Client()
 
+Long-lived Defaults
+-------------------
+
+When creating a :class:`Client <gcloud_bigtable.client.Client>`, the
+``user_agent`` and ``timeout_seconds`` arguments have sensible
+defaults
+(:data:`DEFAULT_USER_AGENT <gcloud_bigtable.client.DEFAULT_USER_AGENT>` and
+:data:`DEFAULT_TIMEOUT_SECONDS <gcloud_bigtable.client.DEFAULT_TIMEOUT_SECONDS>`).
+However, you may over-ride them and these will be used throughout all API
+requests made with the ``client`` you create.
+
 Authorization
 -------------
 
