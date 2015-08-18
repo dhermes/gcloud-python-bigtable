@@ -33,6 +33,13 @@ SERVE_NODES = 3
 TABLE_ID = 'gcloud-python-test-table'
 COLUMN_FAMILY_ID1 = u'col-fam-id1'
 COLUMN_FAMILY_ID2 = u'col-fam-id2'
+COL_NAME1 = b'col-name1'
+COL_NAME2 = b'col-name2'
+COL_NAME3 = b'col-name3-but-other-fam'
+CELL_VAL1 = b'cell-val'
+CELL_VAL2 = b'cell-val-newer'
+CELL_VAL3 = b'altcol-cell-val'
+CELL_VAL4 = b'foo'
 ROW_KEY = b'row-key'
 EXPECTED_ZONES = (
     'asia-east1-b',
@@ -243,18 +250,10 @@ class TestDataAPI(unittest2.TestCase):
         # Will also delete any data contained in the table.
         self._table.delete()
 
-    def test_read_row(self):
+    def _write_to_row(self, row_key=ROW_KEY):
         from gcloud_bigtable._helpers import _microseconds_to_timestamp
         from gcloud_bigtable._helpers import _timestamp_to_microseconds
         from gcloud_bigtable.row_data import Cell
-
-        col_name1 = b'col-name1'
-        col_name2 = b'col-name2'
-        col_name3 = b'col-name3-but-other-fam'
-        cell_val1 = b'cell-val'
-        cell_val2 = b'cell-val-newer'
-        cell_val3 = b'altcol-cell-val'
-        cell_val4 = b'foo'
 
         timestamp1 = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
         # Must be millisecond granularity.
@@ -264,44 +263,41 @@ class TestDataAPI(unittest2.TestCase):
         timestamp2 = timestamp1 + datetime.timedelta(microseconds=1000)
         timestamp3 = timestamp1 + datetime.timedelta(microseconds=2000)
         timestamp4 = timestamp1 + datetime.timedelta(microseconds=3000)
-        row = self._table.row(ROW_KEY)
-        row.set_cell(COLUMN_FAMILY_ID1, col_name1, cell_val1,
+        row = self._table.row(row_key)
+        row.set_cell(COLUMN_FAMILY_ID1, COL_NAME1, CELL_VAL1,
                      timestamp=timestamp1)
-        row.set_cell(COLUMN_FAMILY_ID1, col_name1, cell_val2,
+        row.set_cell(COLUMN_FAMILY_ID1, COL_NAME1, CELL_VAL2,
                      timestamp=timestamp2)
-        row.set_cell(COLUMN_FAMILY_ID1, col_name2, cell_val3,
+        row.set_cell(COLUMN_FAMILY_ID1, COL_NAME2, CELL_VAL3,
                      timestamp=timestamp3)
-        row.set_cell(COLUMN_FAMILY_ID2, col_name3, cell_val4,
+        row.set_cell(COLUMN_FAMILY_ID2, COL_NAME3, CELL_VAL4,
                      timestamp=timestamp4)
         row.commit()
 
         # Create the cells we will check.
-        cell1 = Cell(cell_val1, timestamp1)
-        cell2 = Cell(cell_val2, timestamp2)
-        cell3 = Cell(cell_val3, timestamp3)
-        cell4 = Cell(cell_val4, timestamp4)
+        cell1 = Cell(CELL_VAL1, timestamp1)
+        cell2 = Cell(CELL_VAL2, timestamp2)
+        cell3 = Cell(CELL_VAL3, timestamp3)
+        cell4 = Cell(CELL_VAL4, timestamp4)
+        return cell1, cell2, cell3, cell4
+
+    def test_read_row(self):
+        cell1, cell2, cell3, cell4 = self._write_to_row()
 
         # Read back the contents of the row.
         partial_row_data = self._table.read_row(ROW_KEY)
         self.assertTrue(partial_row_data.committed)
         self.assertEqual(partial_row_data.row_key, ROW_KEY)
 
-        # Check the cells match. First by the column families.
+        # Check the cells match.
         row_contents = partial_row_data.cells
-        self.assertEqual(set(row_contents.keys()),
-                         set([COLUMN_FAMILY_ID1, COLUMN_FAMILY_ID2]))
-
-        # Check the first column family.
-        family1 = row_contents[COLUMN_FAMILY_ID1]
-        self.assertEqual(set(family1.keys()), set([col_name1, col_name2]))
-        col1 = family1[col_name1]
-        expected_col1 = [cell1, cell2]
         ts_attr = operator.attrgetter('timestamp')
-        self.assertEqual(sorted(col1, key=ts_attr),
-                         sorted(expected_col1, key=ts_attr))
-        col2 = family1[col_name2]
-        self.assertEqual(col2, [cell3])
-
-        # Check the second column family.
-        family2 = row_contents[COLUMN_FAMILY_ID2]
-        self.assertEqual(family2, {col_name3: [cell4]})
+        expected_row_contents = {
+            COLUMN_FAMILY_ID1: {
+                COL_NAME1: sorted([cell1, cell2], key=ts_attr),
+                COL_NAME2: [cell3],
+            },
+            COLUMN_FAMILY_ID2: {
+                COL_NAME3: [cell4],
+            },
+        }
