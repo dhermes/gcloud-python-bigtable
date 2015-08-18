@@ -237,6 +237,17 @@ class PartialRowsData(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    @property
+    def rows(self):
+        """Property returning all rows accumulated from the stream.
+
+        :rtype: dict
+        :returns: Dictionary of :class:`PartialRowData`.
+        """
+        # NOTE: To avoid duplication large objects, this is just the
+        #       mutable private data.
+        return self._rows
+
     def cancel(self):
         """Cancels the iterator, closing the stream."""
         self._response_iterator.cancel()

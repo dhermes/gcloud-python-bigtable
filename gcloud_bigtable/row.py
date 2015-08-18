@@ -131,7 +131,8 @@ class Row(object):
 
         :type state: bool
         :param state: (Optional) The state that the mutation should be
-                      applied in.
+                      applied in. Unset if the mutation is not conditional,
+                      otherwise :data:`True` or :data:`False`.
 
         :rtype: list
         :returns: The list to add new mutations to (for the current state).
@@ -186,7 +187,8 @@ class Row(object):
 
         :type state: bool
         :param state: (Optional) The state that the mutation should be
-                      applied in.
+                      applied in. Unset if the mutation is not conditional,
+                      otherwise :data:`True` or :data:`False`.
         """
         column = _to_bytes(column)
         if isinstance(value, six.integer_types):
@@ -286,7 +288,8 @@ class Row(object):
 
         :type state: bool
         :param state: (Optional) The state that the mutation should be
-                      applied in.
+                      applied in. Unset if the mutation is not conditional,
+                      otherwise :data:`True` or :data:`False`.
         """
         mutation_val = data_pb2.Mutation.DeleteFromRow()
         mutation_pb = data_pb2.Mutation(delete_from_row=mutation_val)
@@ -318,7 +321,8 @@ class Row(object):
 
         :type state: bool
         :param state: (Optional) The state that the mutation should be
-                      applied in.
+                      applied in. Unset if the mutation is not conditional,
+                      otherwise :data:`True` or :data:`False`.
         """
         self.delete_cells(column_family_id, [column], time_range=time_range,
                           state=state)
@@ -351,7 +355,8 @@ class Row(object):
 
         :type state: bool
         :param state: (Optional) The state that the mutation should be
-                      applied in.
+                      applied in. Unset if the mutation is not conditional,
+                      otherwise :data:`True` or :data:`False`.
         """
         mutations_list = self._get_mutations(state)
         if columns is self.ALL_COLUMNS:

@@ -41,6 +41,7 @@ CELL_VAL2 = b'cell-val-newer'
 CELL_VAL3 = b'altcol-cell-val'
 CELL_VAL4 = b'foo'
 ROW_KEY = b'row-key'
+ROW_KEY_ALT = b'row-key-alt'
 EXPECTED_ZONES = (
     'asia-east1-b',
     'europe-west1-c',
@@ -250,7 +251,16 @@ class TestDataAPI(unittest2.TestCase):
         # Will also delete any data contained in the table.
         self._table.delete()
 
-    def _write_to_row(self, row_key=ROW_KEY):
+    def setUp(self):
+        self.rows_to_delete = []
+
+    def tearDown(self):
+        for row in self.rows_to_delete:
+            row.clear_mutations()
+            row.delete()
+            row.commit()
+
+    def _write_to_row(self, row1=None, row2=None, row3=None, row4=None):
         from gcloud_bigtable._helpers import _microseconds_to_timestamp
         from gcloud_bigtable._helpers import _timestamp_to_microseconds
         from gcloud_bigtable.row_data import Cell
@@ -263,16 +273,18 @@ class TestDataAPI(unittest2.TestCase):
         timestamp2 = timestamp1 + datetime.timedelta(microseconds=1000)
         timestamp3 = timestamp1 + datetime.timedelta(microseconds=2000)
         timestamp4 = timestamp1 + datetime.timedelta(microseconds=3000)
-        row = self._table.row(row_key)
-        row.set_cell(COLUMN_FAMILY_ID1, COL_NAME1, CELL_VAL1,
-                     timestamp=timestamp1)
-        row.set_cell(COLUMN_FAMILY_ID1, COL_NAME1, CELL_VAL2,
-                     timestamp=timestamp2)
-        row.set_cell(COLUMN_FAMILY_ID1, COL_NAME2, CELL_VAL3,
-                     timestamp=timestamp3)
-        row.set_cell(COLUMN_FAMILY_ID2, COL_NAME3, CELL_VAL4,
-                     timestamp=timestamp4)
-        row.commit()
+        if row1 is not None:
+            row1.set_cell(COLUMN_FAMILY_ID1, COL_NAME1, CELL_VAL1,
+                          timestamp=timestamp1)
+        if row2 is not None:
+            row2.set_cell(COLUMN_FAMILY_ID1, COL_NAME1, CELL_VAL2,
+                         timestamp=timestamp2)
+        if row3 is not None:
+            row3.set_cell(COLUMN_FAMILY_ID1, COL_NAME2, CELL_VAL3,
+                          timestamp=timestamp3)
+        if row4 is not None:
+            row4.set_cell(COLUMN_FAMILY_ID2, COL_NAME3, CELL_VAL4,
+                          timestamp=timestamp4)
 
         # Create the cells we will check.
         cell1 = Cell(CELL_VAL1, timestamp1)
@@ -282,7 +294,11 @@ class TestDataAPI(unittest2.TestCase):
         return cell1, cell2, cell3, cell4
 
     def test_read_row(self):
-        cell1, cell2, cell3, cell4 = self._write_to_row()
+        row = self._table.row(ROW_KEY)
+        self.rows_to_delete.append(row)
+
+        cell1, cell2, cell3, cell4 = self._write_to_row(row, row, row, row)
+        row.commit()
 
         # Read back the contents of the row.
         partial_row_data = self._table.read_row(ROW_KEY)
@@ -301,3 +317,48 @@ class TestDataAPI(unittest2.TestCase):
                 COL_NAME3: [cell4],
             },
         }
+
+    def test_read_rows(self):
+        from gcloud_bigtable.row_data import PartialRowData
+
+        row = self._table.row(ROW_KEY)
+        row_alt = self._table.row(ROW_KEY_ALT)
+        self.rows_to_delete.extend([row, row_alt])
+
+        cell1, cell2, cell3, cell4 = self._write_to_row(row, row_alt,
+                                                        row, row_alt)
+        row.commit()
+        row_alt.commit()
+
+        rows_data = self._table.read_rows()
+        self.assertEqual(rows_data.rows, {})
+        rows_data.consume_all()
+
+        # NOTE: We should refrain from editing protected data on instances.
+        #       Instead we should make the values public or provide factories
+        #       for constructing objects with them.
+        row_data = PartialRowData(ROW_KEY)
+        row_data._committed = True
+        row_data._cells = {
+            COLUMN_FAMILY_ID1: {
+                COL_NAME1: [cell1],
+                COL_NAME2: [cell3],
+            },
+        }
+
+        row_alt_data = PartialRowData(ROW_KEY_ALT)
+        row_alt_data._committed = True
+        row_alt_data._cells = {
+            COLUMN_FAMILY_ID1: {
+                COL_NAME1: [cell2],
+            },
+            COLUMN_FAMILY_ID2: {
+                COL_NAME3: [cell4],
+            },
+        }
+
+        expected_rows = {
+            ROW_KEY: row_data,
+            ROW_KEY_ALT: row_alt_data,
+        }
+        self.assertEqual(rows_data.rows, expected_rows)

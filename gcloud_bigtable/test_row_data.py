@@ -352,6 +352,11 @@ class TestPartialRowsData(unittest2.TestCase):
                         is response_iterator)
         self.assertEqual(partial_rows_data._rows, {})
 
+    def test_rows_getter(self):
+        partial_rows_data = self._makeOne(None)
+        partial_rows_data._rows = value = object()
+        self.assertTrue(partial_rows_data.rows is value)
+
     def test___eq__(self):
         response_iterator = object()
         partial_rows_data1 = self._makeOne(response_iterator)
@@ -393,10 +398,10 @@ class TestPartialRowsData(unittest2.TestCase):
         value_pb = messages_pb2.ReadRowsResponse(row_key=row_key)
         response_iterator = _MockCancellableIterator(value_pb)
         partial_rows_data = self._makeOne(response_iterator)
-        self.assertEqual(partial_rows_data._rows, {})
+        self.assertEqual(partial_rows_data.rows, {})
         partial_rows_data.consume_next()
         expected_rows = {row_key: PartialRowData(row_key)}
-        self.assertEqual(partial_rows_data._rows, expected_rows)
+        self.assertEqual(partial_rows_data.rows, expected_rows)
 
     def test_consume_next_row_exists(self):
         from gcloud_bigtable._generated import (
