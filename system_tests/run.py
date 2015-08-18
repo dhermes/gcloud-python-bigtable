@@ -15,6 +15,7 @@
 from __future__ import print_function
 
 import datetime
+import operator
 import os
 import pytz
 import time
@@ -175,13 +176,13 @@ class TestTableAdminAPI(unittest2.TestCase):
         self.tables_to_delete.append(temp_table)
 
         # First, create a sorted version of our expected result.
-        expected_tables = sorted([temp_table, self._table],
-                                 key=lambda value: value.name)
+        name_attr = operator.attrgetter('name')
+        expected_tables = sorted([temp_table, self._table], key=name_attr)
 
         # Then query for the tables in the cluster and sort them by
         # name as well.
         tables = CLUSTER.list_tables()
-        sorted_tables = sorted(tables, key=lambda value: value.name)
+        sorted_tables = sorted(tables, key=name_attr)
         self.assertEqual(sorted_tables, expected_tables)
 
     def test_create_column_family(self):
@@ -245,6 +246,7 @@ class TestDataAPI(unittest2.TestCase):
     def test_read_row(self):
         from gcloud_bigtable._helpers import _microseconds_to_timestamp
         from gcloud_bigtable._helpers import _timestamp_to_microseconds
+        from gcloud_bigtable.row_data import Cell
 
         col_name1 = b'col-name1'
         col_name2 = b'col-name2'
@@ -273,20 +275,33 @@ class TestDataAPI(unittest2.TestCase):
                      timestamp=timestamp4)
         row.commit()
 
+        # Create the cells we will check.
+        cell1 = Cell(cell_val1, timestamp1)
+        cell2 = Cell(cell_val2, timestamp2)
+        cell3 = Cell(cell_val3, timestamp3)
+        cell4 = Cell(cell_val4, timestamp4)
+
         # Read back the contents of the row.
-        row_contents = self._table.read_row(ROW_KEY)
+        partial_row_data = self._table.read_row(ROW_KEY)
+        self.assertTrue(partial_row_data.committed)
+        self.assertEqual(partial_row_data.row_key, ROW_KEY)
+
+        # Check the cells match. First by the column families.
+        row_contents = partial_row_data.cells
         self.assertEqual(set(row_contents.keys()),
                          set([COLUMN_FAMILY_ID1, COLUMN_FAMILY_ID2]))
 
+        # Check the first column family.
         family1 = row_contents[COLUMN_FAMILY_ID1]
         self.assertEqual(set(family1.keys()), set([col_name1, col_name2]))
         col1 = family1[col_name1]
-        expected_col1 = [(cell_val1, timestamp1), (cell_val2, timestamp2)]
-        self.assertEqual(sorted(col1), sorted(expected_col1))
+        expected_col1 = [cell1, cell2]
+        ts_attr = operator.attrgetter('timestamp')
+        self.assertEqual(sorted(col1, key=ts_attr),
+                         sorted(expected_col1, key=ts_attr))
         col2 = family1[col_name2]
-        self.assertEqual(col2, [(cell_val3, timestamp3)])
+        self.assertEqual(col2, [cell3])
 
+        # Check the second column family.
         family2 = row_contents[COLUMN_FAMILY_ID2]
-        self.assertEqual(set(family2.keys()), set([col_name3]))
-        col3 = family2[col_name3]
-        self.assertEqual(col3, [(cell_val4, timestamp4)])
+        self.assertEqual(family2, {col_name3: [cell4]})
