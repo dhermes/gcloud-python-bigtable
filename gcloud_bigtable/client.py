@@ -43,19 +43,36 @@ except ImportError:
 from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
+from gcloud_bigtable._generated import bigtable_cluster_service_pb2
+from gcloud_bigtable._generated import bigtable_service_pb2
+from gcloud_bigtable._generated import bigtable_table_service_pb2
+from gcloud_bigtable._generated import operations_pb2
 from gcloud_bigtable._helpers import make_stub
 from gcloud_bigtable.cluster import Cluster
-from gcloud_bigtable.constants import CLUSTER_ADMIN_PORT
-from gcloud_bigtable.constants import CLUSTER_ADMIN_HOST
-from gcloud_bigtable.constants import CLUSTER_STUB_FACTORY
-from gcloud_bigtable.constants import DATA_API_HOST
-from gcloud_bigtable.constants import DATA_API_PORT
-from gcloud_bigtable.constants import DATA_STUB_FACTORY
-from gcloud_bigtable.constants import OPERATIONS_STUB_FACTORY
-from gcloud_bigtable.constants import TABLE_ADMIN_PORT
-from gcloud_bigtable.constants import TABLE_ADMIN_HOST
-from gcloud_bigtable.constants import TABLE_STUB_FACTORY
 
+
+TABLE_STUB_FACTORY = (bigtable_table_service_pb2.
+                      early_adopter_create_BigtableTableService_stub)
+TABLE_ADMIN_HOST = 'bigtabletableadmin.googleapis.com'
+"""Table Admin API request host."""
+TABLE_ADMIN_PORT = 443
+"""Table Admin API request port."""
+
+CLUSTER_STUB_FACTORY = (bigtable_cluster_service_pb2.
+                        early_adopter_create_BigtableClusterService_stub)
+CLUSTER_ADMIN_HOST = 'bigtableclusteradmin.googleapis.com'
+"""Cluster Admin API request host."""
+CLUSTER_ADMIN_PORT = 443
+"""Cluster Admin API request port."""
+
+DATA_STUB_FACTORY = (bigtable_service_pb2.
+                     early_adopter_create_BigtableService_stub)
+DATA_API_HOST = 'bigtable.googleapis.com'
+"""Data API request host."""
+DATA_API_PORT = 443
+"""Data API request port."""
+
+OPERATIONS_STUB_FACTORY = operations_pb2.early_adopter_create_Operations_stub
 
 ADMIN_SCOPE = 'https://www.googleapis.com/auth/cloud-bigtable.admin'
 """Scope for interacting with the Cluster Admin and Table Admin APIs."""

@@ -90,8 +90,7 @@ export GOOGLE_APPLICATION_CREDENTIALS="/path/to/keyfile.json"
 ```
 
 If you are **familiar** with the [`oauth2client`][9] library,
-you can create a `credentials` object directly and pass it
-to the constructor of an object which requires authentication:
+you can create a `credentials` object and pass it directly:
 
 ```python
 from gcloud_bigtable.client import Client
