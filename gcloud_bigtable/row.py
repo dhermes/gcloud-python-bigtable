@@ -37,7 +37,7 @@ class Row(object):
         A :class:`Row` accumulates mutations locally via the :meth:`set_cell`,
         :meth:`delete`, :meth:`delete_cell` and :meth:`delete_cells` methods.
         To actually send these mutations to the Google Cloud Bigtable API, you
-        must call :meth:`commit`. If a ``filter`` is set on the :class:`Row`,
+        must call :meth:`commit`. If a ``filter_`` is set on the :class:`Row`,
         the mutations must have an associated state: :data:`True` or
         :data:`False`. The mutations will be applied conditionally, based on
         whether the filter matches any cells in the :class:`Row` or not.
@@ -48,23 +48,23 @@ class Row(object):
     :type table: :class:`.table.Table`
     :param table: The table that owns the row.
 
-    :type filter: :class:`RowFilter`, :class:`RowFilterChain`,
-                  :class:`RowFilterUnion` or :class:`ConditionalRowFilter`
-    :param filter: (Optional) Filter to be used for conditional mutations.
-                   If a filter is set, then the :class:`Row` will accumulate
-                   mutations for either a :data:`True` or :data:`False` state.
-                   When :meth:`commit`-ed, the mutations for the :data:`True`
-                   state will be applied if the filter matches any cells in the
-                   row, otherwise the :data:`False` state will be.
+    :type filter_: :class:`RowFilter`, :class:`RowFilterChain`,
+                   :class:`RowFilterUnion` or :class:`ConditionalRowFilter`
+    :param filter_: (Optional) Filter to be used for conditional mutations.
+                    If a filter is set, then the :class:`Row` will accumulate
+                    mutations for either a :data:`True` or :data:`False` state.
+                    When :meth:`commit`-ed, the mutations for the :data:`True`
+                    state will be applied if the filter matches any cells in
+                    the row, otherwise the :data:`False` state will be.
     """
 
     ALL_COLUMNS = object()
     """Sentinel value used to indicate all columns in a column family."""
 
-    def __init__(self, row_key, table, filter=None):
+    def __init__(self, row_key, table, filter_=None):
         self._row_key = _to_bytes(row_key)
         self._table = table
-        self._filter = filter
+        self._filter = filter_
         self._rule_pb_list = []
         if self._filter is None:
             self._pb_mutations = []

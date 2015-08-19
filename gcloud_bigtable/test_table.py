@@ -320,10 +320,10 @@ class TestTable(unittest2.TestCase):
         expected_result._committed = True
 
         # Perform the method and check the result.
-        filter = object()
+        filter_obj = object()
         timeout_seconds = 596
         with _Monkey(MUT, _create_row_request=mock_create_row_request):
-            result = table.read_row(row_key, filter=filter,
+            result = table.read_row(row_key, filter_=filter_obj,
                                     timeout_seconds=timeout_seconds)
 
         self.assertEqual(result, expected_result)
@@ -333,7 +333,8 @@ class TestTable(unittest2.TestCase):
             {},
         )])
         mock_create_row_request.check_called(
-            self, [(table.name,)], [{'row_key': row_key, 'filter': filter}])
+            self, [(table.name,)],
+            [{'row_key': row_key, 'filter_': filter_obj}])
 
     def test_read_row(self):
         from gcloud_bigtable._generated import (
@@ -378,13 +379,13 @@ class TestTable(unittest2.TestCase):
         # Perform the method and check the result.
         start_key = b'start-key'
         end_key = b'end-key'
-        filter = object()
+        filter_obj = object()
         allow_row_interleaving = True
         limit = 22
         timeout_seconds = 1111
         with _Monkey(MUT, _create_row_request=mock_create_row_request):
             result = table.read_rows(
-                start_key=start_key, end_key=end_key, filter=filter,
+                start_key=start_key, end_key=end_key, filter_=filter_obj,
                 allow_row_interleaving=allow_row_interleaving, limit=limit,
                 timeout_seconds=timeout_seconds)
 
@@ -397,7 +398,7 @@ class TestTable(unittest2.TestCase):
         created_kwargs = {
             'start_key': start_key,
             'end_key': end_key,
-            'filter': filter,
+            'filter_': filter_obj,
             'allow_row_interleaving': allow_row_interleaving,
             'limit': limit,
         }
@@ -442,11 +443,11 @@ class TestTable(unittest2.TestCase):
 class Test__create_row_request(unittest2.TestCase):
 
     def _callFUT(self, table_name, row_key=None, start_key=None, end_key=None,
-                 filter=None, allow_row_interleaving=None, limit=None):
+                 filter_=None, allow_row_interleaving=None, limit=None):
         from gcloud_bigtable.table import _create_row_request
         return _create_row_request(
             table_name, row_key=row_key, start_key=start_key, end_key=end_key,
-            filter=filter, allow_row_interleaving=allow_row_interleaving,
+            filter_=filter_, allow_row_interleaving=allow_row_interleaving,
             limit=limit)
 
     def test_table_name_only(self):
@@ -526,7 +527,7 @@ class Test__create_row_request(unittest2.TestCase):
 
         table_name = 'table_name'
         row_filter = RowFilter(row_sample_filter=0.33)
-        result = self._callFUT(table_name, filter=row_filter)
+        result = self._callFUT(table_name, filter_=row_filter)
         expected_result = messages_pb2.ReadRowsRequest(
             table_name=table_name,
             filter=row_filter.to_pb(),

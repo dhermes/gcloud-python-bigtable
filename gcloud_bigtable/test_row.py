@@ -38,17 +38,18 @@ class TestRow(unittest2.TestCase):
     def _makeOne(self, *args, **kwargs):
         return self._getTargetClass()(*args, **kwargs)
 
-    def _constructor_helper(self, row_key, row_key_expected=None, filter=None):
+    def _constructor_helper(self, row_key, row_key_expected=None,
+                            filter_=None):
         table = object()
-        row = self._makeOne(row_key, table, filter=filter)
+        row = self._makeOne(row_key, table, filter_=filter_)
         row_key_val = row_key_expected or row_key
         # Only necessary in Py2
         self.assertEqual(type(row._row_key), type(row_key_val))
         self.assertEqual(row._row_key, row_key_val)
         self.assertTrue(row._table is table)
-        self.assertTrue(row._filter is filter)
+        self.assertTrue(row._filter is filter_)
         self.assertEqual(row._rule_pb_list, [])
-        if filter is None:
+        if filter_ is None:
             self.assertEqual(row._pb_mutations, [])
             self.assertTrue(row._true_pb_mutations is None)
             self.assertTrue(row._false_pb_mutations is None)
@@ -61,7 +62,7 @@ class TestRow(unittest2.TestCase):
         self._constructor_helper(ROW_KEY)
 
     def test_constructor_with_filter(self):
-        self._constructor_helper(ROW_KEY, filter=object())
+        self._constructor_helper(ROW_KEY, filter_=object())
 
     def test_constructor_with_unicode(self):
         self._constructor_helper(ROW_KEY_NON_BYTES, row_key_expected=ROW_KEY)
@@ -82,7 +83,7 @@ class TestRow(unittest2.TestCase):
 
     def test_filter_getter(self):
         filter_ = object()
-        row = self._makeOne(ROW_KEY, object(), filter=filter_)
+        row = self._makeOne(ROW_KEY, object(), filter_=filter_)
         self.assertTrue(row.filter is filter_)
 
     def test_client_getter(self):
@@ -97,8 +98,8 @@ class TestRow(unittest2.TestCase):
         row = self._makeOne(ROW_KEY, table)
         self.assertEqual(row.timeout_seconds, timeout_seconds)
 
-    def _get_mutations_helper(self, filter=None, state=None):
-        row = self._makeOne(ROW_KEY, None, filter=filter)
+    def _get_mutations_helper(self, filter_=None, state=None):
+        row = self._makeOne(ROW_KEY, None, filter_=filter_)
         # Mock the mutations with unique objects so we can compare.
         row._pb_mutations = no_bool = object()
         row._true_pb_mutations = true_mutations = object()
@@ -120,21 +121,21 @@ class TestRow(unittest2.TestCase):
         filter_ = object()
         state = True
         (_, true_filter, _), mutations = self._get_mutations_helper(
-            filter=filter_, state=state)
+            filter_=filter_, state=state)
         self.assertTrue(mutations is true_filter)
 
     def test__get_mutations_with_filter_false_state(self):
         filter_ = object()
         state = False
         (_, _, false_filter), mutations = self._get_mutations_helper(
-            filter=filter_, state=state)
+            filter_=filter_, state=state)
         self.assertTrue(mutations is false_filter)
 
     def test__get_mutations_with_filter_bad_state(self):
         filter_ = object()
         state = None
         with self.assertRaises(ValueError):
-            self._get_mutations_helper(filter=filter_, state=state)
+            self._get_mutations_helper(filter_=filter_, state=state)
 
     def test_append_cell_value(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
@@ -451,7 +452,7 @@ class TestRow(unittest2.TestCase):
         client = _Client()
         table = _Table(TABLE_NAME, client=client)
         row_filter = RowFilter(row_sample_filter=0.33)
-        row = self._makeOne(ROW_KEY, table, filter=row_filter)
+        row = self._makeOne(ROW_KEY, table, filter_=row_filter)
 
         # Create request_pb
         value = b'bytes-value'
@@ -502,7 +503,7 @@ class TestRow(unittest2.TestCase):
 
         table = object()
         filter_ = object()
-        row = self._makeOne(ROW_KEY, table, filter=filter_)
+        row = self._makeOne(ROW_KEY, table, filter_=filter_)
         row._true_pb_mutations = [1, 2, 3]
         num_mutations = len(row._true_pb_mutations)
         with _Monkey(MUT, _MAX_MUTATIONS=num_mutations - 1):
@@ -515,7 +516,7 @@ class TestRow(unittest2.TestCase):
         client = _Client()
         table = _Table(None, client=client)
         filter_ = object()
-        row = self._makeOne(ROW_KEY, table, filter=filter_)
+        row = self._makeOne(ROW_KEY, table, filter_=filter_)
         self.assertEqual(row._true_pb_mutations, [])
         self.assertEqual(row._false_pb_mutations, [])
 

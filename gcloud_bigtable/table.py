@@ -270,17 +270,17 @@ class Table(object):
             result[column_family_id] = column_family
         return result
 
-    def read_row(self, row_key, filter=None, timeout_seconds=None):
+    def read_row(self, row_key, filter_=None, timeout_seconds=None):
         """Read a single row from this table.
 
         :type row_key: bytes
         :param row_key: The key of the row to read from.
 
-        :type filter: :class:`.row.RowFilter`, :class:`.row.RowFilterChain`,
-                      :class:`.row.RowFilterUnion` or
-                      :class:`.row.ConditionalRowFilter`
-        :param filter: (Optional) The filter to apply to the contents of the
-                       row. If unset, returns the entire row.
+        :type filter_: :class:`.row.RowFilter`, :class:`.row.RowFilterChain`,
+                       :class:`.row.RowFilterUnion` or
+                       :class:`.row.ConditionalRowFilter`
+        :param filter_: (Optional) The filter to apply to the contents of the
+                        row. If unset, returns the entire row.
 
         :type timeout_seconds: int
         :param timeout_seconds: Number of seconds for request time-out.
@@ -292,7 +292,7 @@ class Table(object):
                  chunk is never encountered.
         """
         request_pb = _create_row_request(self.name, row_key=row_key,
-                                         filter=filter)
+                                         filter_=filter_)
         timeout_seconds = timeout_seconds or self.timeout_seconds
         response_iterator = self.client.data_stub.ReadRows(request_pb,
                                                            timeout_seconds)
@@ -307,7 +307,7 @@ class Table(object):
         return result
 
     def read_rows(self, start_key=None, end_key=None,
-                  allow_row_interleaving=None, limit=None, filter=None,
+                  allow_row_interleaving=None, limit=None, filter_=None,
                   timeout_seconds=None):
         """Read rows from this table.
 
@@ -321,12 +321,12 @@ class Table(object):
                         The range will not include ``end_key``. If left empty,
                         will be interpreted as an infinite string.
 
-        :type filter: :class:`.row.RowFilter`, :class:`.row.RowFilterChain`,
-                      :class:`.row.RowFilterUnion` or
-                      :class:`.row.ConditionalRowFilter`
-        :param filter: (Optional) The filter to apply to the contents of the
-                       specified row(s). If unset, reads every column in
-                       each row.
+        :type filter_: :class:`.row.RowFilter`, :class:`.row.RowFilterChain`,
+                       :class:`.row.RowFilterUnion` or
+                       :class:`.row.ConditionalRowFilter`
+        :param filter_: (Optional) The filter to apply to the contents of the
+                        specified row(s). If unset, reads every column in
+                        each row.
 
         :type allow_row_interleaving: bool
         :param allow_row_interleaving: (Optional) By default, rows are read
@@ -358,7 +358,7 @@ class Table(object):
                   the streamed results.
         """
         request_pb = _create_row_request(
-            self.name, start_key=start_key, end_key=end_key, filter=filter,
+            self.name, start_key=start_key, end_key=end_key, filter_=filter_,
             allow_row_interleaving=allow_row_interleaving, limit=limit)
         timeout_seconds = timeout_seconds or self.timeout_seconds
         response_iterator = self.client.data_stub.ReadRows(request_pb,
@@ -410,7 +410,7 @@ class Table(object):
 
 
 def _create_row_request(table_name, row_key=None, start_key=None, end_key=None,
-                        filter=None, allow_row_interleaving=None, limit=None):
+                        filter_=None, allow_row_interleaving=None, limit=None):
     """Creates a request to read rows in a table.
 
     :type table_name: str
@@ -429,11 +429,11 @@ def _create_row_request(table_name, row_key=None, start_key=None, end_key=None,
                     The range will not include ``end_key``. If left empty,
                     will be interpreted as an infinite string.
 
-    :type filter: :class:`.row.RowFilter`, :class:`.row.RowFilterChain`,
-                  :class:`.row.RowFilterUnion` or
-                  :class:`.row.ConditionalRowFilter`
-    :param filter: (Optional) The filter to apply to the contents of the
-                   specified row(s). If unset, reads the entire table.
+    :type filter_: :class:`.row.RowFilter`, :class:`.row.RowFilterChain`,
+                   :class:`.row.RowFilterUnion` or
+                   :class:`.row.ConditionalRowFilter`
+    :param filter_: (Optional) The filter to apply to the contents of the
+                    specified row(s). If unset, reads the entire table.
 
     :type allow_row_interleaving: bool
     :param allow_row_interleaving: (Optional) By default, rows are read
@@ -476,8 +476,8 @@ def _create_row_request(table_name, row_key=None, start_key=None, end_key=None,
             range_kwargs['end_key'] = _to_bytes(end_key)
         row_range = data_pb2.RowRange(**range_kwargs)
         request_kwargs['row_range'] = row_range
-    if filter is not None:
-        request_kwargs['filter'] = filter.to_pb()
+    if filter_ is not None:
+        request_kwargs['filter'] = filter_.to_pb()
     if allow_row_interleaving is not None:
         request_kwargs['allow_row_interleaving'] = allow_row_interleaving
     if limit is not None:

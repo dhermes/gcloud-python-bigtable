@@ -147,10 +147,10 @@ against in the row:
 
 .. code:: python
 
-    row = table.row(row_key, filter=filter)
+    row = table.row(row_key, filter_=filter_val)
 
 See the :class:`Row <gcloud_bigtable.row.Row>` class for more information
-about acceptable values for ``filter``.
+about acceptable values for ``filter_``.
 
 The only other difference from **direct** modifications are that each mutation
 added must specify a ``state``: will the mutation be applied if the filter
@@ -165,9 +165,9 @@ For example
 
 .. note::
 
-    If ``state`` is passed when no ``filter`` is set on a
+    If ``state`` is passed when no ``filter_`` is set on a
     :class:`Row <gcloud_bigtable.row.Row>`, adding the mutation will fail.
-    Similarly, if no ``state`` is passed when a ``filter`` has been set,
+    Similarly, if no ``state`` is passed when a ``filter_`` has been set,
     adding the mutation will fail.
 
 Append Mutations
@@ -238,9 +238,9 @@ A filter can also be applied to the
 
 .. code:: python
 
-    row_data = table.read_row(row_key, filter=filter)
+    row_data = table.read_row(row_key, filter_=filter_val)
 
-The allowable ``filter`` values are the same as those used for a
+The allowable ``filter_`` values are the same as those used for a
 :class:`Row <gcloud_bigtable.row.Row>` with **conditional** mutations. For
 more information, see the
 :meth:`Table.read_row() <gcloud_bigtable.table.Table.read_row>` documentation.
@@ -275,7 +275,7 @@ documentation for more information.
 
 As with
 :meth:`Table.read_row() <gcloud_bigtable.table.Table.read_row>`, an optional
-``filter`` can be applied. In addition a ``start_key`` and / or ``end_key``
+``filter_`` can be applied. In addition a ``start_key`` and / or ``end_key``
 can be supplied for the stream, a ``limit`` can be set and a boolean
 ``allow_row_interleaving`` can be specified to allow faster streamed results
 at the potential cost of non-sequential reads.
