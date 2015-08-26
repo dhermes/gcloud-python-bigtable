@@ -1,0 +1,79 @@
+# Installing HBase / Thrift locally
+
+ 1. Run `javac -version` to make sure you have JDK 7 (or 8)
+    For example "javac 1.7.0_79" == JDK 7.
+ 2. Visit http://apache.cs.utah.edu/hbase/ (or other mirror)
+    and find your latest version (e.g.
+    http://apache.cs.utah.edu/hbase/1.1.1/hbase-1.1.1-bin.tar.gz)
+    Make sure it is "-bin" and not "-src".
+ 3. Run `wget http://apache.cs.utah.edu/hbase/1.1.1/hbase-1.1.1-bin.tar.gz`
+    (HOLY SHIT I CANNOT BELIEVE NONE OF THE MIRRORS ARE HTTPS)
+ 4. Run `tar -zxvf hbase-1.1.1-bin.tar.gz` (maybe drop the -v flag)
+ 5. Set the JAVA_HOME environment variable (e.g. if `which java` tells
+    us it is in `/usr/bin/java` then `export JAVA_HOME=/usr`
+ 6. Edit `hbase-1.1.1/conf/hbase-site.xml` to give locations on the local
+    filesystem where HBase and ZooKeeper are allowed to write data
+
+    <configuration>
+      <property>
+        <name>hbase.rootdir</name>
+        <value>file://.../hbase_throwaway/hbase</value>
+      </property>
+      <property>
+        <name>hbase.zookeeper.property.dataDir</name>
+        <value>.../hbase_throwaway/zookeeper</value>
+      </property>
+    </configuration>
+
+    **DO NOT** create the HBase data directory. HBase will do this for you.
+    If you create the directory, HBase will attempt to do a migration, which
+    is not what you want.
+
+ 7. Run `./hbase-1.1.1/bin/start-hbase.sh`. You can use the `jps` command to
+    verify that you have one running process called `HMaster`. (`jps` ==
+    Java Process Status tool)
+ 8. Feel free to play around in the shell `./hbase-1.1.1/bin/hbase shell`
+ 9. Run `./hbase-1.1.1/bin/stop-hbase.sh` to step the server
+10. Run `./hbase-1.1.1/bin/hbase thrift start`
+    (H/T: http://wiki.apache.org/hadoop/Hbase/ThriftApi)
+
+# Installing HappyBase locally
+
+ 1. Run `virtualenv happybase-venv`
+ 2. Run `source happybase-venv/bin/activate`
+ 3. Run `pip install happybase`
+ 4. Run `python -c "import happybase"` to make sure it worked
+ 5. Run `pip install ipython` if you prefer that as your shell
+    in your virtualenv
+
+# Running HappyBase locally
+
+ 1. Run `./hbase-1.1.1/bin/start-hbase.sh`
+ 2. Run `./hbase-1.1.1/bin/hbase thrift start --port=9090 > ./hbase-1.1.1/logs/thrift.log 2>&1 &`
+    (in the background, use `jps` to get the process ID)
+ 3. Run Python:
+
+    import happybase
+    connection = happybase.Connection(host='localhost', port=9090)
+    print(connection.tables())
+    families = {'family': {}}
+    table_name = 'table-name'
+    connection.create_table(table_name, families)
+    print(connection.tables())
+    table = connection.table(table_name)
+
+    row_key = 'row-key'
+    table.put(row_key, {'family:qual1': 'value1',
+                        'family:qual2': 'value2'})
+    row = table.row(row_key)
+    print(type(row))
+
+    for key, data in table.scan(row_prefix='row'):
+        print((key, data))
+
+    table.put(row_key, {'family:qual1': 'value1-new',
+                        'family:qual2': 'value2-new'})
+    row = table.row(row_key, include_timestamp=True)
+    print(row)
+    print(table.cells(row_key, 'family:qual1', include_timestamp=True))
+    print(table.cells(row_key, 'family:qual2', include_timestamp=True))
