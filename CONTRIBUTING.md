@@ -43,16 +43,16 @@ $ # [sudo] ldconfig
 
 ## Testing
 
-Unfortunately, `tox` will fail by default due to the presence of
-`grpcio` in `setup.py`. In order to successfully set up a `tox`
+Unfortunately, `tox` will fail by default due to the absence of
+`grpcio` from `setup.py`. In order to successfully set up a `tox`
 test environment (e.g `ENV=py27`), run
 
 ```bash
 tox -e ${ENV}
 ```
 
-and watch the install fail, then with the partially set up
-environment, execute:
+and watch the install fail (missing dependencies), then with the partially
+set up environment, execute:
 
 ```bash
 BREW_PREFIX=$(brew --prefix)
