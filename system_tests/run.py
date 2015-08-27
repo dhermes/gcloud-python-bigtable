@@ -23,7 +23,12 @@ import unittest2
 
 from oauth2client.client import GoogleCredentials
 
+from gcloud_bigtable._helpers import _microseconds_to_timestamp
+from gcloud_bigtable._helpers import _timestamp_to_microseconds
 from gcloud_bigtable.client import Client
+from gcloud_bigtable.column_family import GarbageCollectionRule
+from gcloud_bigtable.row_data import Cell
+from gcloud_bigtable.row_data import PartialRowData
 
 
 PROJECT_ID = os.getenv('GCLOUD_TESTS_PROJECT_ID')
@@ -194,7 +199,6 @@ class TestTableAdminAPI(unittest2.TestCase):
         self.assertEqual(sorted_tables, expected_tables)
 
     def test_create_column_family(self):
-        from gcloud_bigtable.column_family import GarbageCollectionRule
         temp_table_id = 'foo-bar-baz-table'
         temp_table = CLUSTER.table(temp_table_id)
         temp_table.create()
@@ -213,10 +217,7 @@ class TestTableAdminAPI(unittest2.TestCase):
         self.assertTrue(retrieved_col_fam.table is column_family.table)
         self.assertEqual(retrieved_col_fam.column_family_id,
                          column_family.column_family_id)
-        # Due to a quirk / bug in the API, the retrieved column family
-        # does not include the GC rule.
-        self.assertNotEqual(retrieved_col_fam.gc_rule, column_family.table)
-        self.assertEqual(retrieved_col_fam.gc_rule, None)
+        self.assertEqual(retrieved_col_fam.gc_rule, gc_rule)
 
     def test_delete_column_family(self):
         temp_table_id = 'foo-bar-baz-table'
@@ -261,10 +262,6 @@ class TestDataAPI(unittest2.TestCase):
             row.commit()
 
     def _write_to_row(self, row1=None, row2=None, row3=None, row4=None):
-        from gcloud_bigtable._helpers import _microseconds_to_timestamp
-        from gcloud_bigtable._helpers import _timestamp_to_microseconds
-        from gcloud_bigtable.row_data import Cell
-
         timestamp1 = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
         # Must be millisecond granularity.
         timestamp1 = _microseconds_to_timestamp(
@@ -319,8 +316,6 @@ class TestDataAPI(unittest2.TestCase):
         self.assertEqual(partial_row_data.cells, expected_row_contents)
 
     def test_read_rows(self):
-        from gcloud_bigtable.row_data import PartialRowData
-
         row = self._table.row(ROW_KEY)
         row_alt = self._table.row(ROW_KEY_ALT)
         self.rows_to_delete.extend([row, row_alt])
