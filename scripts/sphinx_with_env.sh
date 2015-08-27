@@ -16,5 +16,8 @@
 
 set -ev
 
-export LD_LIBRARY_PATH=$(brew --prefix)/lib
+if [[ -n "$(which brew)" ]]; then
+  export LD_LIBRARY_PATH=$(brew --prefix)/lib
+fi
+
 sphinx-build ${@}
