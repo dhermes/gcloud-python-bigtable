@@ -32,7 +32,7 @@ class TestGRPCImportFailure(unittest2.TestCase):
     def tearDownClass(cls):
         del cls._load_module_args
 
-    def _module_patch_helper(self, test_method):
+    def _module_patch_helper(self, function_to_test):
         import sys
 
         removed_mods = {}
@@ -42,7 +42,7 @@ class TestGRPCImportFailure(unittest2.TestCase):
         try:
             sys.modules.pop('gcloud_bigtable', None)
             # Test method should re-import gcloud_bigtable
-            test_method()
+            function_to_test()
         finally:
             for mod_name, value in removed_mods.items():
                 sys.modules[mod_name] = value
@@ -54,7 +54,7 @@ class TestGRPCImportFailure(unittest2.TestCase):
 
         TEST_CASE = self
 
-        def test_method():
+        def function_to_test():
             c_mod = types.ModuleType('grpc._adapter._c')
             sys.modules['grpc._adapter._c'] = c_mod
 
@@ -70,7 +70,7 @@ class TestGRPCImportFailure(unittest2.TestCase):
             gcloud_bigtable = imp.load_module(*TEST_CASE._load_module_args)
             TEST_CASE.assertTrue(gcloud_bigtable._c is c_mod)
 
-        self._module_patch_helper(test_method)
+        self._module_patch_helper(function_to_test)
 
     @staticmethod
     def _create_fake_grpc_adapter_package(contents):
@@ -82,12 +82,12 @@ class TestGRPCImportFailure(unittest2.TestCase):
         curr_dir = os.path.join(temp_dir, 'grpc')
         os.mkdir(curr_dir)
         with open(os.path.join(curr_dir, '__init__.py'), 'wb') as file_obj:
-            file_obj.write('')
+            file_obj.write(b'')
 
         curr_dir = os.path.join(curr_dir, '_adapter')
         os.mkdir(curr_dir)
         with open(os.path.join(curr_dir, '__init__.py'), 'wb') as file_obj:
-            file_obj.write('')
+            file_obj.write(b'')
 
         filename = os.path.join(curr_dir, '_c.py')
         with open(filename, 'wb') as file_obj:
@@ -101,11 +101,12 @@ class TestGRPCImportFailure(unittest2.TestCase):
 
         # Be sure the message contains libgrpc.so
         c_module_contents = 'raise ImportError(%r)\n' % (orig_exc_message,)
+        c_module_contents = c_module_contents.encode('ascii')
         temp_dir = self._create_fake_grpc_adapter_package(c_module_contents)
 
         TEST_CASE = self
 
-        def test_method():
+        def function_to_test():
             sys.path.insert(0, temp_dir)
             try:
                 sys.modules.pop('grpc')
@@ -116,13 +117,13 @@ class TestGRPCImportFailure(unittest2.TestCase):
                     imp.load_module(*TEST_CASE._load_module_args)
                 except ImportError as exc:
                     if 'libgrpc.so' in orig_exc_message:
-                        TEST_CASE.assertNotEqual(exc.message, orig_exc_message)
+                        TEST_CASE.assertNotEqual(str(exc), orig_exc_message)
                     else:
-                        TEST_CASE.assertEqual(exc.message, orig_exc_message)
+                        TEST_CASE.assertEqual(str(exc), orig_exc_message)
             finally:
                 sys.path.remove(temp_dir)
 
-        self._module_patch_helper(test_method)
+        self._module_patch_helper(function_to_test)
 
     def test_system_library_cause(self):
         # Be sure the message contains libgrpc.so
