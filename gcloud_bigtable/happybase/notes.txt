@@ -77,3 +77,6 @@
     print(row)
     print(table.cells(row_key, 'family:qual1', include_timestamp=True))
     print(table.cells(row_key, 'family:qual2', include_timestamp=True))
+
+    print(list(table.scan()))
+    print(list(table.scan(sorted_columns=True)))
