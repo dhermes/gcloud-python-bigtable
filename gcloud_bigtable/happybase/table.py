@@ -103,3 +103,93 @@ class Table(object):
         """
         raise NotImplementedError('The Cloud Bigtable API does not have a '
                                   'concept of splitting a table into regions.')
+
+    def row(self, row, columns=None, timestamp=None, include_timestamp=False):
+        """Retrieve a single row of data.
+
+        Returns the latest cells in each column (or all columns if ``columns``
+        is not specified). If a ``timestamp`` is set, then **latest** becomes
+        **latest** up until ``timestamp``.
+
+        :type row: str
+        :param row: Row key for the row we are reading from.
+
+        :type columns: list
+        :param columns: (Optional) Iterable containing column names (as
+                        strings). Each column name can be either
+
+                          * an entire column family: ``fam`` or ``fam:``
+                          * an single column: ``fam:col``
+
+        :type timestamp: int
+        :param timestamp: (Optional) Timestamp (in milliseconds since the
+                          epoch). If specified, only cells returned before (or
+                          at) the timestamp will be returned.
+
+        :type include_timestamp: bool
+        :param include_timestamp: Flag to indicate if cell timestamps should be
+                                  included with the output.
+
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
+                 temporarily until the method is implemented.
+        """
+        raise NotImplementedError('Temporarily not implemented.')
+
+    def rows(self, rows, columns=None, timestamp=None,
+             include_timestamp=False):
+        """Retrieve multiple rows of data.
+
+        All optional arguments behave the same in this method as they do in
+        :meth:`row`.
+
+        :type rows: list
+        :param rows: Iterable of the row keys for the rows we are reading from.
+
+        :type columns: list
+        :param columns: (Optional) Iterable containing column names (as
+                        strings). Each column name can be either
+
+                          * an entire column family: ``fam`` or ``fam:``
+                          * an single column: ``fam:col``
+
+        :type timestamp: int
+        :param timestamp: (Optional) Timestamp (in milliseconds since the
+                          epoch). If specified, only cells returned before (or
+                          at) the timestamp will be returned.
+
+        :type include_timestamp: bool
+        :param include_timestamp: Flag to indicate if cell timestamps should be
+                                  included with the output.
+
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
+                 temporarily until the method is implemented.
+        """
+        raise NotImplementedError('Temporarily not implemented.')
+
+    def cells(self, row, column, versions=None, timestamp=None,
+              include_timestamp=False):
+        """Retrieve multiple versions of a single cell from the table.
+
+        :type row: str
+        :param row: Row key for the row we are reading from.
+
+        :type column: str
+        :param column: Column we are reading from; of the form ``fam:col``.
+
+        :type versions: int
+        :param versions: (Optional) The maximum number of cells to return. If
+                         not set, returns all cells found.
+
+        :type timestamp: int
+        :param timestamp: (Optional) Timestamp (in milliseconds since the
+                          epoch). If specified, only cells returned before (or
+                          at) the timestamp will be returned.
+
+        :type include_timestamp: bool
+        :param include_timestamp: Flag to indicate if cell timestamps should be
+                                  included with the output.
+
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
+                 temporarily until the method is implemented.
+        """
+        raise NotImplementedError('Temporarily not implemented.')

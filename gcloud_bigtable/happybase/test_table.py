@@ -75,3 +75,44 @@ class TestTable(unittest2.TestCase):
 
         with self.assertRaises(NotImplementedError):
             table.regions()
+
+    def test_row(self):
+        name = 'table-name'
+        connection = object()
+        table = self._makeOne(name, connection)
+
+        row_key = 'row-key'
+        columns = ['fam:col1', 'fam:col2']
+        timestamp = None
+        include_timestamp = True
+        with self.assertRaises(NotImplementedError):
+            table.row(row_key, columns=columns, timestamp=timestamp,
+                      include_timestamp=include_timestamp)
+
+    def test_rows(self):
+        name = 'table-name'
+        connection = object()
+        table = self._makeOne(name, connection)
+
+        row_keys = ['row-key']
+        columns = ['fam:col1', 'fam:col2']
+        timestamp = None
+        include_timestamp = True
+        with self.assertRaises(NotImplementedError):
+            table.rows(row_keys, columns=columns, timestamp=timestamp,
+                       include_timestamp=include_timestamp)
+
+    def test_cells(self):
+        name = 'table-name'
+        connection = object()
+        table = self._makeOne(name, connection)
+
+        row_key = 'row-key'
+        column = 'fam:col1'
+        versions = 11
+        timestamp = None
+        include_timestamp = True
+        with self.assertRaises(NotImplementedError):
+            table.cells(row_key, column, versions=versions,
+                        timestamp=timestamp,
+                        include_timestamp=include_timestamp)
