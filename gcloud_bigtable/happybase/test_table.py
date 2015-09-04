@@ -174,3 +174,46 @@ class TestTable(unittest2.TestCase):
         with self.assertRaises(NotImplementedError):
             table.batch(timestamp=timestamp, batch_size=batch_size,
                         transaction=transaction)
+
+    def test_counter_get(self):
+        name = 'table-name'
+        connection = object()
+        table = self._makeOne(name, connection)
+
+        row = 'row-key'
+        column = 'fam:col1'
+        with self.assertRaises(NotImplementedError):
+            table.counter_get(row, column)
+
+    def test_counter_set(self):
+        name = 'table-name'
+        connection = object()
+        table = self._makeOne(name, connection)
+
+        row = 'row-key'
+        column = 'fam:col1'
+        value = 42
+        with self.assertRaises(NotImplementedError):
+            table.counter_set(row, column, value=value)
+
+    def test_counter_inc(self):
+        name = 'table-name'
+        connection = object()
+        table = self._makeOne(name, connection)
+
+        row = 'row-key'
+        column = 'fam:col1'
+        value = 42
+        with self.assertRaises(NotImplementedError):
+            table.counter_inc(row, column, value=value)
+
+    def test_counter_dec(self):
+        name = 'table-name'
+        connection = object()
+        table = self._makeOne(name, connection)
+
+        row = 'row-key'
+        column = 'fam:col1'
+        value = 42
+        with self.assertRaises(NotImplementedError):
+            table.counter_dec(row, column, value=value)

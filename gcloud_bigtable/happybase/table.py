@@ -378,3 +378,96 @@ class Table(object):
                  temporarily until the method is implemented.
         """
         raise NotImplementedError('Temporarily not implemented.')
+
+    def counter_get(self, row, column):
+        """Retrieve the current value of a counter column.
+
+        This method retrieves the current value of a counter column. If the
+        counter column does not exist, this function initializes it to ``0``.
+
+        .. note::
+
+            Application code should **never** store a counter value directly;
+            use the atomic :meth:`counter_inc` and :meth:`counter_dec` methods
+            for that.
+
+        :type row: str
+        :param row: Row key for the row we are getting a counter from.
+
+        :type column: str
+        :param column: Column we are ``get``-ing from; of the form ``fam:col``.
+
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
+                 temporarily until the method is implemented.
+        """
+        raise NotImplementedError('Temporarily not implemented.')
+
+    def counter_set(self, row, column, value=0):
+        """Set a counter column to a specific value.
+
+        This method is provided in HappyBase, but we do not provide it here
+        because it defeats the purpose of using atomic increment and decrement
+        of a counter.
+
+        :type row: str
+        :param row: Row key for the row we are setting a counter in.
+
+        :type column: str
+        :param column: Column we are setting a value in; of
+                       the form ``fam:col``.
+
+        :type value: int
+        :param value: Value to set the counter to.
+
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
+                 always
+        """
+        raise NotImplementedError('Table.counter_set will not be implemented. '
+                                  'Instead use the increment/decrement '
+                                  'methods along with counter_get.')
+
+    def counter_inc(self, row, column, value=1):
+        """Atomically increment a counter column.
+
+        This method atomically increments a counter column in ``row``.
+        If the counter column does not exist, it is automatically initialized
+        to ``0`` before being incremented.
+
+        :type row: str
+        :param row: Row key for the row we are incrementing a counter in.
+
+        :type column: str
+        :param column: Column we are incrementing a value in; of the
+                       form ``fam:col``.
+
+        :type value: int
+        :param value: Amount to increment the counter by. (If negative,
+                      this is equivalent to decrement.)
+
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
+                 temporarily until the method is implemented.
+        """
+        raise NotImplementedError('Temporarily not implemented.')
+
+    def counter_dec(self, row, column, value=1):
+        """Atomically decrement a counter column.
+
+        This method atomically decrements a counter column in ``row``.
+        If the counter column does not exist, it is automatically initialized
+        to ``0`` before being decremented.
+
+        :type row: str
+        :param row: Row key for the row we are decrementing a counter in.
+
+        :type column: str
+        :param column: Column we are decrementing a value in; of the
+                       form ``fam:col``.
+
+        :type value: int
+        :param value: Amount to decrement the counter by. (If negative,
+                      this is equivalent to increment.)
+
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
+                 temporarily until the method is implemented.
+        """
+        raise NotImplementedError('Temporarily not implemented.')
