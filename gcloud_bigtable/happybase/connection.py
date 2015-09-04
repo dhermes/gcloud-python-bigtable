@@ -97,7 +97,7 @@ class Connection(object):
     def open(self):
         """Open the underlying transport to Cloud Bigtable.
 
-        :raises: :class:`ValueError <exceptions.NotImplementedError>`
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
                  temporarily until the method is implemented.
         """
         raise NotImplementedError('Temporarily not implemented.')
@@ -105,7 +105,7 @@ class Connection(object):
     def close(self):
         """Close the underlying transport to Cloud Bigtable.
 
-        :raises: :class:`ValueError <exceptions.NotImplementedError>`
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
                  temporarily until the method is implemented.
         """
         raise NotImplementedError('Temporarily not implemented.')
@@ -119,7 +119,7 @@ class Connection(object):
         :type use_prefix: bool
         :param use_prefix: Whether to use the table prefix (if any).
 
-        :raises: :class:`ValueError <exceptions.NotImplementedError>`
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
                  temporarily until the method is implemented.
         """
         raise NotImplementedError('Temporarily not implemented.')
@@ -129,7 +129,7 @@ class Connection(object):
 
         The connection is limited to a cluster in Cloud Bigtable.
 
-        :raises: :class:`ValueError <exceptions.NotImplementedError>`
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
                  temporarily until the method is implemented.
         """
         raise NotImplementedError('Temporarily not implemented.')
@@ -143,7 +143,7 @@ class Connection(object):
         :type families: dict
         :param families: The name and options for each column family.
 
-        :raises: :class:`ValueError <exceptions.NotImplementedError>`
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
                  temporarily until the method is implemented.
         """
         raise NotImplementedError('Temporarily not implemented.')
@@ -160,7 +160,7 @@ class Connection(object):
                         not relevant for Cloud Bigtable since it has no concept
                         of enabled / disabled tables.
 
-        :raises: :class:`ValueError <exceptions.NotImplementedError>`
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
                  temporarily until the method is implemented.
         """
         raise NotImplementedError('Temporarily not implemented.')
@@ -171,7 +171,8 @@ class Connection(object):
         Cloud Bigtable has no concept of enabled / disabled tables so this
         method does not work. It is provided simply for compatibility.
 
-        :raises: :class:`ValueError <exceptions.NotImplementedError>` always
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
+                 always
         """
         raise NotImplementedError('The Cloud Bigtable API has no concept of '
                                   'enabled or disabled tables.')
@@ -182,7 +183,8 @@ class Connection(object):
         Cloud Bigtable has no concept of enabled / disabled tables so this
         method does not work. It is provided simply for compatibility.
 
-        :raises: :class:`ValueError <exceptions.NotImplementedError>` always
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
+                 always
         """
         raise NotImplementedError('The Cloud Bigtable API has no concept of '
                                   'enabled or disabled tables.')
@@ -193,7 +195,8 @@ class Connection(object):
         Cloud Bigtable has no concept of enabled / disabled tables so this
         method does not work. It is provided simply for compatibility.
 
-        :raises: :class:`ValueError <exceptions.NotImplementedError>` always
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
+                 always
         """
         raise NotImplementedError('The Cloud Bigtable API has no concept of '
                                   'enabled or disabled tables.')
@@ -204,7 +207,8 @@ class Connection(object):
         Cloud Bigtable does not support compacting a table, so this
         method does not work. It is provided simply for compatibility.
 
-        :raises: :class:`ValueError <exceptions.NotImplementedError>` always
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
+                 always
         """
         raise NotImplementedError('The Cloud Bigtable API does not support '
                                   'compacting a table.')

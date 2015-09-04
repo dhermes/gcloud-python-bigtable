@@ -32,6 +32,13 @@
    row
    row-data
 
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: HappyBase Compatibility Sub-Package
+
+   happybase-connection
+
 Google Cloud Bigtable: Python
 =============================
 
