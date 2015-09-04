@@ -65,3 +65,92 @@ class TestBatch(unittest2.TestCase):
         with self.assertRaises(TypeError):
             self._makeOne(table, batch_size=batch_size,
                           transaction=transaction)
+
+    def test_send(self):
+        table = object()
+        batch = self._makeOne(table)
+        with self.assertRaises(NotImplementedError):
+            batch.send()
+
+    def test_put(self):
+        table = object()
+        batch = self._makeOne(table)
+
+        row = 'row-key'
+        data = {}
+        wal = None
+        with self.assertRaises(NotImplementedError):
+            batch.put(row, data, wal=wal)
+
+    def test_delete(self):
+        table = object()
+        batch = self._makeOne(table)
+
+        row = 'row-key'
+        columns = []
+        wal = None
+        with self.assertRaises(NotImplementedError):
+            batch.delete(row, columns=columns, wal=wal)
+
+    def test_context_manager(self):
+        klass = self._getTargetClass()
+
+        class BatchWithSend(klass):
+
+            _send_called = False
+
+            def send(self):
+                self._send_called = True
+
+        table = object()
+        batch = BatchWithSend(table)
+        self.assertFalse(batch._send_called)
+
+        with batch:
+            pass
+
+        self.assertTrue(batch._send_called)
+
+    def test_context_manager_with_exception_non_transactional(self):
+        klass = self._getTargetClass()
+
+        class BatchWithSend(klass):
+
+            _send_called = False
+
+            def send(self):
+                self._send_called = True
+
+        table = object()
+        batch = BatchWithSend(table)
+        self.assertFalse(batch._send_called)
+
+        with self.assertRaises(ValueError):
+            with batch:
+                raise ValueError('Something bad happened')
+
+        self.assertTrue(batch._send_called)
+
+    def test_context_manager_with_exception_transactional(self):
+        klass = self._getTargetClass()
+
+        class BatchWithSend(klass):
+
+            _send_called = False
+
+            def send(self):
+                self._send_called = True
+
+        table = object()
+        batch = BatchWithSend(table, transaction=True)
+        self.assertFalse(batch._send_called)
+
+        with self.assertRaises(ValueError):
+            with batch:
+                raise ValueError('Something bad happened')
+
+        self.assertFalse(batch._send_called)
+
+        # Just to make sure send() actually works (and to make cover happy).
+        batch.send()
+        self.assertTrue(batch._send_called)

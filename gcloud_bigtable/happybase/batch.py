@@ -41,7 +41,7 @@ class Batch(object):
                         can't be transactional.
 
     :type wal: object
-    :param wal: Unused parameter (Boolean for using the HBase Write Ahead Log.)
+    :param wal: Unused parameter (Boolean for using the HBase Write Ahead Log).
                 Provided for compatibility with HappyBase, but irrelevant for
                 Cloud Bigtable since it does not have a Write Ahead Log.
 
@@ -68,3 +68,86 @@ class Batch(object):
         self._batch_size = batch_size
         self._timestamp = timestamp
         self._transaction = transaction
+
+    def send(self):
+        """Send / commit the batch of mutations to the server.
+
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
+                 temporarily until the method is implemented.
+        """
+        raise NotImplementedError('Temporarily not implemented.')
+
+    def put(self, row, data, wal=None):
+        """Insert data into a row in the table owned by this batch.
+
+        :type row: str
+        :param row: The row key where the mutation will be "put".
+
+        :type data: dict
+        :param data: Dictionary containing the data to be inserted. The keys
+                     are columns names (of the form ``fam:col``) and the values
+                     are strings (bytes) to be stored in those columns.
+
+        :type wal: :data:`NoneType <types.NoneType>`
+        :param wal: Unused parameter (to over-ride the default on the
+                    instance). Provided for compatibility with HappyBase, but
+                    irrelevant for Cloud Bigtable since it does not have a
+                    Write Ahead Log.
+
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
+                 temporarily until the method is implemented.
+        """
+        raise NotImplementedError('Temporarily not implemented.')
+
+    def delete(self, row, columns=None, wal=None):
+        """Delete data from a row in the table owned by this batch.
+
+        :type row: str
+        :param row: The row key where the mutation will be "put".
+
+        :type columns: list
+        :param columns: (Optional) Iterable containing column names (as
+                        strings). Each column name can be either
+
+                          * an entire column family: ``fam`` or ``fam:``
+                          * an single column: ``fam:col``
+
+        :type wal: :data:`NoneType <types.NoneType>`
+        :param wal: Unused parameter (to over-ride the default on the
+                    instance). Provided for compatibility with HappyBase, but
+                    irrelevant for Cloud Bigtable since it does not have a
+                    Write Ahead Log.
+
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
+                 temporarily until the method is implemented.
+        """
+        raise NotImplementedError('Temporarily not implemented.')
+
+    def __enter__(self):
+        """Enter context manager, no set-up required."""
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Exit context manager, no set-up required.
+
+        :type exc_type: type
+        :param exc_type: The type of the exception if one occurred while the
+                         context manager was active. Otherwise, :data:`None`.
+
+        :type exc_value: :class:`Exception <exceptions.Exception>`
+        :param exc_value: An instance of ``exc_type`` if an exception occurred
+                          while the context was active.
+                          Otherwise, :data:`None`.
+
+        :type traceback: ``traceback`` type
+        :param traceback: The traceback where the exception occurred (if one
+                          did occur). Otherwise, :data:`None`.
+        """
+        # If the context manager encountered an exception and the batch is
+        # transactional, we don't commit the mutations.
+        if self._transaction and exc_type is not None:
+            return
+
+        # NOTE: For non-transactional batches, this will even commit mutations
+        #       if an error occurred during the context manager.
+        self.send()
