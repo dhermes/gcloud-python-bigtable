@@ -69,3 +69,18 @@ class ConnectionPool(object):
         for _ in xrange(size):
             connection = Connection(**connection_kwargs)
             self._queue.put(connection)
+
+    def connection(self, timeout=None):
+        """Obtain a connection from the pool.
+
+        Intended to be used as a context manager, but not implemented with
+        that functionality yet.
+
+        :type timeout: int
+        :param timeout: (Optional) Time (in seconds) to wait for a connection
+                        to open.
+
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
+                 temporarily until the method is implemented.
+        """
+        raise NotImplementedError('Temporarily not implemented.')

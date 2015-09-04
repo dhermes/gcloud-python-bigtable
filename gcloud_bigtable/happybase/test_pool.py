@@ -98,3 +98,10 @@ class TestConnectionPool(unittest2.TestCase):
         size = 0
         with self.assertRaises(ValueError):
             self._makeOne(size)
+
+    def test_connection(self):
+        size = 1
+        timeout = 10
+        pool = self._makeOne(size)
+        with self.assertRaises(NotImplementedError):
+            pool.connection(timeout=timeout)
