@@ -18,6 +18,7 @@ Intended to emulate the HappyBase library using Google Cloud BigTable
 as the backing store.
 """
 
+from gcloud_bigtable.happybase.batch import Batch
 from gcloud_bigtable.happybase.connection import Connection
 from gcloud_bigtable.happybase.connection import DEFAULT_HOST
 from gcloud_bigtable.happybase.connection import DEFAULT_PORT
@@ -26,10 +27,6 @@ from gcloud_bigtable.happybase.connection import DEFAULT_PORT
 # Types that have yet to be implemented
 class Table(object):
     """Unimplemented Table stub."""
-
-
-class Batch(object):
-    """Unimplemented Batch stub."""
 
 
 class ConnectionPool(object):

@@ -38,6 +38,7 @@
    :caption: HappyBase Compatibility Sub-Package
 
    happybase-connection
+   happybase-batch
 
 Google Cloud Bigtable: Python
 =============================
