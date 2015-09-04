@@ -37,6 +37,7 @@
    :hidden:
    :caption: HappyBase Compatibility Sub-Package
 
+   happybase-table
    happybase-connection
    happybase-batch
    happybase-pool
