@@ -193,3 +193,188 @@ class Table(object):
                  temporarily until the method is implemented.
         """
         raise NotImplementedError('Temporarily not implemented.')
+
+    def scan(self, row_start=None, row_stop=None, row_prefix=None,
+             columns=None, filter=None, timestamp=None,
+             include_timestamp=False, batch_size=1000, scan_batching=None,
+             limit=None, sorted_columns=False):
+        """Create a scanner for data in this table.
+
+        This method returns a generator that can be used for looping over the
+        matching rows.
+
+        If ``row_prefix`` is specified, only rows with row keys matching the
+        prefix will be returned. If given, ``row_start`` and ``row_stop``
+        cannot be used.
+
+        .. note::
+
+            Both ``row_start`` and ``row_stop`` can be :data:`None` to specify
+            the start and the end of the table respectively. If both are
+            omitted, a full table scan is done. Note that this usually results
+            in severe performance problems.
+
+        :type row_start: str
+        :param row_start: (Optional) Row key where the scanner should start
+                          (includes ``row_start``). If not specified, reads
+                          from the first key. If the table does not contain
+                          ``row_start``, it will start from the next key after
+                          it that **is** contained in the table.
+
+        :type row_stop: str
+        :param row_stop: (Optional) Row key where the scanner should stop
+                         (excludes ``row_stop``). If not specified, reads
+                         until the last key. The table does not have to contain
+                         ``row_stop``.
+
+        :type row_prefix: str
+        :param row_prefix: (Optional) Prefix to match row keys.
+
+        :type columns: list
+        :param columns: (Optional) Iterable containing column names (as
+                        strings). Each column name can be either
+
+                          * an entire column family: ``fam`` or ``fam:``
+                          * an single column: ``fam:col``
+
+        :type filter: str
+        :param filter: (Optional) An HBase filter string. See
+                       http://hbase.apache.org/0.94/book/thrift.html
+                       for more details.
+
+        :type timestamp: int
+        :param timestamp: (Optional) Timestamp (in milliseconds since the
+                          epoch). If specified, only cells returned before (or
+                          at) the timestamp will be returned.
+
+        :type include_timestamp: bool
+        :param include_timestamp: Flag to indicate if cell timestamps should be
+                                  included with the output.
+
+        :type batch_size: int
+        :param batch_size: Number of results to retrieve per batch. Defaults
+                           to 1000. Should be kept large unless individual
+                           row results are very large.
+
+        :type scan_batching: bool
+        :param scan_batching: Unused parameter. Provided for compatibility
+                              with HappyBase, but irrelevant for Cloud Bigtable
+                              since it does not have concepts of batching or
+                              caching for scans.
+
+        :type limit: int
+        :param limit: (Optional) Maximum number of rows to return.
+
+        :type sorted_columns: bool
+        :param sorted_columns: Flag to indicate if the returned columns need
+                               to be sorted.
+
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
+                 temporarily until the method is implemented.
+        """
+        raise NotImplementedError('Temporarily not implemented.')
+
+    def put(self, row, data, timestamp=None, wal=True):
+        """Insert data into a row in this table.
+
+        .. note::
+
+            This method will send a request with a single "put" mutation.
+            In many situations, :meth:`batch` is a more appropriate
+            method to manipulate data since it helps combine many mutations
+            into a single request.
+
+        :type row: str
+        :param row: The row key where the mutation will be "put".
+
+        :type data: dict
+        :param data: Dictionary containing the data to be inserted. The keys
+                     are columns names (of the form ``fam:col``) and the values
+                     are strings (bytes) to be stored in those columns.
+
+        :type timestamp: int
+        :param timestamp: (Optional) Timestamp (in milliseconds since the
+                          epoch) that the mutation will be applied at.
+
+        :type wal: :data:`NoneType <types.NoneType>`
+        :param wal: Unused parameter (to be passed to a created batch).
+                    Provided for compatibility with HappyBase, but irrelevant
+                    for Cloud Bigtable since it does not have a Write Ahead
+                    Log.
+
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
+                 temporarily until the method is implemented.
+        """
+        raise NotImplementedError('Temporarily not implemented.')
+
+    def delete(self, row, columns=None, timestamp=None, wal=True):
+        """Delete data from a row in this table.
+
+        This method deletes the entire ``row`` if ``columns`` is not
+        specified.
+
+        .. note::
+
+            This method will send a request with a single delete mutation.
+            In many situations, :meth:`batch` is a more appropriate
+            method to manipulate data since it helps combine many mutations
+            into a single request.
+
+        :type row: str
+        :param row: The row key where the delete will occur.
+
+        :type columns: list
+        :param columns: (Optional) Iterable containing column names (as
+                        strings). Each column name can be either
+
+                          * an entire column family: ``fam`` or ``fam:``
+                          * an single column: ``fam:col``
+
+        :type timestamp: int
+        :param timestamp: (Optional) Timestamp (in milliseconds since the
+                          epoch) that the mutation will be applied at.
+
+        :type wal: :data:`NoneType <types.NoneType>`
+        :param wal: Unused parameter (to be passed to a created batch).
+                    Provided for compatibility with HappyBase, but irrelevant
+                    for Cloud Bigtable since it does not have a Write Ahead
+                    Log.
+
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
+                 temporarily until the method is implemented.
+        """
+        raise NotImplementedError('Temporarily not implemented.')
+
+    def batch(self, timestamp=None, batch_size=None, transaction=False,
+              wal=True):
+        """Create a new batch operation for this table.
+
+        This method returns a new :class:`.Batch` instance that can be used
+        for mass data manipulation.
+
+        :type timestamp: int
+        :param timestamp: (Optional) Timestamp (in milliseconds since the
+                          epoch) that all mutations will be applied at.
+
+        :type batch_size: int
+        :param batch_size: (Optional) The maximum number of mutations to allow
+                           to accumulate before committing them.
+
+        :type transaction: bool
+        :param transaction: Flag indicating if the mutations should be sent
+                            transactionally or not. If ``transaction=True`` and
+                            an error occurs while a :class:`Batch` is active,
+                            then none of the accumulated mutations will be
+                            committed. If ``batch_size`` is set, the mutation
+                            can't be transactional.
+
+        :type wal: :data:`NoneType <types.NoneType>`
+        :param wal: Unused parameter (to be passed to the created batch).
+                    Provided for compatibility with HappyBase, but irrelevant
+                    for Cloud Bigtable since it does not have a Write Ahead
+                    Log.
+
+        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
+                 temporarily until the method is implemented.
+        """
+        raise NotImplementedError('Temporarily not implemented.')

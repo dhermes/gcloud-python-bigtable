@@ -116,3 +116,61 @@ class TestTable(unittest2.TestCase):
             table.cells(row_key, column, versions=versions,
                         timestamp=timestamp,
                         include_timestamp=include_timestamp)
+
+    def test_scan(self):
+        name = 'table-name'
+        connection = object()
+        table = self._makeOne(name, connection)
+
+        row_start = 'row-start'
+        row_stop = 'row-stop'
+        row_prefix = 'row-prefix'
+        columns = ['fam:col1', 'fam:col2']
+        filter_ = 'KeyOnlyFilter ()'
+        timestamp = None
+        include_timestamp = True
+        batch_size = 1337
+        scan_batching = None
+        limit = 123
+        sorted_columns = True
+        with self.assertRaises(NotImplementedError):
+            table.scan(row_start=row_start, row_stop=row_stop,
+                       row_prefix=row_prefix, columns=columns, filter=filter_,
+                       timestamp=timestamp,
+                       include_timestamp=include_timestamp,
+                       batch_size=batch_size, scan_batching=scan_batching,
+                       limit=limit, sorted_columns=sorted_columns)
+
+    def test_put(self):
+        name = 'table-name'
+        connection = object()
+        table = self._makeOne(name, connection)
+
+        row = 'row-key'
+        data = {'fam:col': 'foo'}
+        timestamp = None
+        with self.assertRaises(NotImplementedError):
+            table.put(row, data, timestamp=timestamp)
+
+    def test_delete(self):
+        name = 'table-name'
+        connection = object()
+        table = self._makeOne(name, connection)
+
+        row = 'row-key'
+        columns = ['fam:col1', 'fam:col2']
+        timestamp = None
+        with self.assertRaises(NotImplementedError):
+            table.delete(row, columns=columns, timestamp=timestamp)
+
+    def test_batch(self):
+        name = 'table-name'
+        connection = object()
+        table = self._makeOne(name, connection)
+
+        timestamp = object()
+        batch_size = 42
+        transaction = False  # Must be False when batch_size is non-null
+        with self.assertRaises(NotImplementedError):
+            table.batch(timestamp=timestamp, batch_size=batch_size,
+                        transaction=transaction)

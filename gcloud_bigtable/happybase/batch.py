@@ -103,7 +103,7 @@ class Batch(object):
         """Delete data from a row in the table owned by this batch.
 
         :type row: str
-        :param row: The row key where the mutation will be "put".
+        :param row: The row key where the delete will occur.
 
         :type columns: list
         :param columns: (Optional) Iterable containing column names (as
