@@ -1,8 +1,9 @@
 Column Families
 ===============
 
-When creating a :class:`Table <gcloud_bigtable.column_family.ColumnFamily>`,
-it is possible to set garbage collection rules for expired data.
+When creating a
+:class:`ColumnFamily <gcloud_bigtable.column_family.ColumnFamily>`, it is
+possible to set garbage collection rules for expired data.
 
 By setting a rule, cells in the table matching the rule will be deleted
 during periodic garbage collection (which executes opportunistically in the

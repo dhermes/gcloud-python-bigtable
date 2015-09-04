@@ -62,3 +62,20 @@ def make_ordered_row(sorted_columns, include_timestamp):
                               'as the output from the Thrift server, so this '
                               'helper can not be implemented.', 'Called with',
                               sorted_columns, include_timestamp)
+
+
+class Table(object):
+    """Representation of Cloud Bigtable table.
+
+    Used for adding data and
+
+    :type name: str
+    :param name: The name of the table.
+
+    :type connection: :class:`.Connection`
+    :param connection: The connection which has access to the table.
+    """
+
+    def __init__(self, name, connection):
+        self.name = name
+        self.connection = connection

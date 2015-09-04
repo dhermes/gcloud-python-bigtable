@@ -24,11 +24,7 @@ from gcloud_bigtable.happybase.connection import DEFAULT_HOST
 from gcloud_bigtable.happybase.connection import DEFAULT_PORT
 from gcloud_bigtable.happybase.pool import ConnectionPool
 from gcloud_bigtable.happybase.pool import NoConnectionsAvailable
-
-
-# Types that have yet to be implemented
-class Table(object):
-    """Unimplemented Table stub."""
+from gcloud_bigtable.happybase.table import Table
 
 
 # Values from HappyBase that we don't reproduce / are not relevant.

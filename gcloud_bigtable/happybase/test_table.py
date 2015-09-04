@@ -36,3 +36,20 @@ class Test_make_ordered_row(unittest2.TestCase):
     def test_it(self):
         with self.assertRaises(NotImplementedError):
             self._callFUT([], False)
+
+
+class TestTable(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.happybase.table import Table
+        return Table
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_constructor(self):
+        name = 'table-name'
+        connection = object()
+        table = self._makeOne(name, connection)
+        self.assertEqual(table.name, name)
+        self.assertEqual(table.connection, connection)

@@ -21,7 +21,7 @@ _WAL_SENTINEL = object()
 class Batch(object):
     """Batch class for accumulating mutations.
 
-    :type table: :class:`.Table`
+    :type table: :class:`Table <gcloud_bigtable.happybase.table.Table>`
     :param table: The table where mutations will be applied.
 
     :type timestamp: int

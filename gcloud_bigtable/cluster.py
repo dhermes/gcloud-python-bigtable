@@ -221,7 +221,7 @@ class Cluster(object):
         :type table_id: str
         :param table_id: The ID of the table.
 
-        :rtype: :class:`.Table`
+        :rtype: :class:`Table <gcloud_bigtable.table.Table>`
         :returns: The table owned by this cluster.
         """
         return Table(table_id, self)
@@ -403,7 +403,7 @@ class Cluster(object):
                                 If not passed, defaults to value set on
                                 cluster.
 
-        :rtype: list of :class:`.Table`
+        :rtype: list of :class:`Table <gcloud_bigtable.table.Table>`
         :returns: The list of tables owned by the cluster.
         :raises: :class:`ValueError <exceptions.ValueError>` if one of the
                  returned tables has a name that is not of the expected format.

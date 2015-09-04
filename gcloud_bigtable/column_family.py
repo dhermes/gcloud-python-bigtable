@@ -167,7 +167,7 @@ class ColumnFamily(object):
     :param column_family_id: The ID of the column family. Must be of the
                              form ``[_a-zA-Z0-9][-_.a-zA-Z0-9]*``.
 
-    :type table: :class:`.table.Table`
+    :type table: :class:`Table <gcloud_bigtable.table.Table>`
     :param table: The table that owns the column family.
 
     :type gc_rule: :class:`GarbageCollectionRule`,
@@ -186,7 +186,7 @@ class ColumnFamily(object):
     def table(self):
         """Getter for column family's table.
 
-        :rtype: :class:`.table.Table`
+        :rtype: :class:`Table <gcloud_bigtable.table.Table>`
         :returns: The table stored on the column family.
         """
         return self._table

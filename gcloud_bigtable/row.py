@@ -45,7 +45,7 @@ class Row(object):
     :type row_key: bytes
     :param row_key: The key for the current row.
 
-    :type table: :class:`.table.Table`
+    :type table: :class:`Table <gcloud_bigtable.table.Table>`
     :param table: The table that owns the row.
 
     :type filter_: :class:`RowFilter`, :class:`RowFilterChain`,
@@ -79,7 +79,7 @@ class Row(object):
     def table(self):
         """Getter for row's table.
 
-        :rtype: :class:`.table.Table`
+        :rtype: :class:`Table <gcloud_bigtable.table.Table>`
         :returns: The table stored on the row.
         """
         return self._table
