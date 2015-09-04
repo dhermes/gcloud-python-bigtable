@@ -52,9 +52,12 @@ class TestBatch(unittest2.TestCase):
         with self.assertRaises(ValueError):
             self._makeOne(table, wal=wal)
 
-    def test_constructor_with_negative_batch_size(self):
+    def test_constructor_with_non_positive_batch_size(self):
         table = object()
-        batch_size = -1
+        batch_size = -10
+        with self.assertRaises(ValueError):
+            self._makeOne(table, batch_size=batch_size)
+        batch_size = 0
         with self.assertRaises(ValueError):
             self._makeOne(table, batch_size=batch_size)
 

@@ -22,19 +22,13 @@ from gcloud_bigtable.happybase.batch import Batch
 from gcloud_bigtable.happybase.connection import Connection
 from gcloud_bigtable.happybase.connection import DEFAULT_HOST
 from gcloud_bigtable.happybase.connection import DEFAULT_PORT
+from gcloud_bigtable.happybase.pool import ConnectionPool
+from gcloud_bigtable.happybase.pool import NoConnectionsAvailable
 
 
 # Types that have yet to be implemented
 class Table(object):
     """Unimplemented Table stub."""
-
-
-class ConnectionPool(object):
-    """Unimplemented ConnectionPool stub."""
-
-
-class NoConnectionsAvailable(object):
-    """Unimplemented NoConnectionsAvailable stub."""
 
 
 # Values from HappyBase that we don't reproduce / are not relevant.

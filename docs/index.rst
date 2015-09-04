@@ -39,6 +39,7 @@
 
    happybase-connection
    happybase-batch
+   happybase-pool
 
 Google Cloud Bigtable: Python
 =============================
