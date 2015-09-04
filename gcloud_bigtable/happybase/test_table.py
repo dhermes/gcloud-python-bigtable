@@ -53,3 +53,25 @@ class TestTable(unittest2.TestCase):
         table = self._makeOne(name, connection)
         self.assertEqual(table.name, name)
         self.assertEqual(table.connection, connection)
+
+    def test___repr__(self):
+        name = 'table-name'
+        connection = object()
+        table = self._makeOne(name, connection)
+        self.assertEqual(repr(table), '<table.Table name=\'table-name\'>')
+
+    def test_families(self):
+        name = 'table-name'
+        connection = object()
+        table = self._makeOne(name, connection)
+
+        with self.assertRaises(NotImplementedError):
+            table.families()
+
+    def test_regions(self):
+        name = 'table-name'
+        connection = object()
+        table = self._makeOne(name, connection)
+
+        with self.assertRaises(NotImplementedError):
+            table.regions()
