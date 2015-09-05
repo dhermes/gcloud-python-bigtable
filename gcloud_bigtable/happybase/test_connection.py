@@ -264,10 +264,35 @@ class TestConnection(unittest2.TestCase):
         self._table_factory_prefix_helper(use_prefix=False)
 
     def test_tables(self):
+        from gcloud_bigtable.table import Table
+
         cluster = _Cluster()  # Avoid implicit environ check.
+        table_name1 = 'table-name1'
+        table_name2 = 'table-name2'
+        cluster.list_tables_result = [Table(table_name1, None),
+                                      Table(table_name2, None)]
         connection = self._makeOne(autoconnect=False, cluster=cluster)
-        with self.assertRaises(NotImplementedError):
-            connection.tables()
+        result = connection.tables()
+        self.assertEqual(result, [table_name1, table_name2])
+
+    def test_tables_with_prefix(self):
+        from gcloud_bigtable.table import Table
+
+        cluster = _Cluster()  # Avoid implicit environ check.
+        table_prefix = 'prefix'
+        table_prefix_separator = '<>'
+        unprefixed_table_name1 = 'table-name1'
+
+        table_name1 = (table_prefix + table_prefix_separator +
+                       unprefixed_table_name1)
+        table_name2 = 'table-name2'
+        cluster.list_tables_result = [Table(table_name1, None),
+                                      Table(table_name2, None)]
+        connection = self._makeOne(
+            autoconnect=False, cluster=cluster, table_prefix=table_prefix,
+            table_prefix_separator=table_prefix_separator)
+        result = connection.tables()
+        self.assertEqual(result, [unprefixed_table_name1])
 
     def test_create_table(self):
         cluster = _Cluster()  # Avoid implicit environ check.
@@ -349,6 +374,7 @@ class _Cluster(object):
         self.copies = list(copies)
         # Included to support Connection.__del__
         self.client = _Client()
+        self.list_tables_result = []
 
     def copy(self):
         if self.copies:
@@ -357,3 +383,6 @@ class _Cluster(object):
             return result
         else:
             return self
+
+    def list_tables(self):
+        return self.list_tables_result
