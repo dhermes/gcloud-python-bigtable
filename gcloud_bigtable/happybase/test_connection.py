@@ -80,9 +80,17 @@ class TestConnection(unittest2.TestCase):
         return self._getTargetClass()(*args, **kwargs)
 
     def test_constructor_defaults(self):
-        with self.assertRaises(NotImplementedError):
-            cluster = _Cluster()  # Avoid implicit environ check.
-            self._makeOne(cluster=cluster)
+        cluster = _Cluster()  # Avoid implicit environ check.
+        # autoconnect=True is default, so we need a valid client
+        cluster.client = client = _Client()
+        self.assertEqual(client.start_calls, 0)
+        connection = self._makeOne(cluster=cluster)
+        self.assertEqual(client.start_calls, 1)
+        self.assertEqual(client.stop_calls, 0)
+
+        self.assertEqual(connection._cluster, cluster)
+        self.assertEqual(connection.table_prefix, None)
+        self.assertEqual(connection.table_prefix_separator, '_')
 
     def test_constructor_no_autoconnect(self):
         cluster = _Cluster()  # Avoid implicit environ check.
@@ -160,9 +168,12 @@ class TestConnection(unittest2.TestCase):
 
     def test_open(self):
         cluster = _Cluster()  # Avoid implicit environ check.
+        cluster.client = client = _Client()
         connection = self._makeOne(autoconnect=False, cluster=cluster)
-        with self.assertRaises(NotImplementedError):
-            connection.open()
+        self.assertEqual(client.start_calls, 0)
+        connection.open()
+        self.assertEqual(client.start_calls, 1)
+        self.assertEqual(client.stop_calls, 0)
 
     def test_close(self):
         cluster = _Cluster()  # Avoid implicit environ check.
@@ -261,10 +272,9 @@ class _Client(object):
 
 class _Cluster(object):
 
-    _client = None
-
     def __init__(self, *copies):
         self.copies = list(copies)
+        self.client = None
 
     def copy(self):
         if self.copies:

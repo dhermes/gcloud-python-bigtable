@@ -176,10 +176,11 @@ class Connection(object):
     def open(self):
         """Open the underlying transport to Cloud Bigtable.
 
-        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
-                 temporarily until the method is implemented.
+        This method opens the underlying HTTP/2 connection using a
+        :class:`.Client` bound to the :class:`.Cluster` owned by
+        this connection.
         """
-        raise NotImplementedError('Temporarily not implemented.')
+        self._cluster.client.start()
 
     def close(self):
         """Close the underlying transport to Cloud Bigtable.
