@@ -31,7 +31,7 @@ class TestConnectionPool(unittest2.TestCase):
         from gcloud_bigtable.happybase.connection import Connection
 
         size = 11
-        cluster_copy = object()
+        cluster_copy = _Cluster()
         all_copies = [cluster_copy] * size
         cluster = _Cluster(*all_copies)  # Avoid implicit environ check.
         pool = self._makeOne(size, cluster=cluster)
@@ -77,9 +77,9 @@ class TestConnectionPool(unittest2.TestCase):
                 self._open_called = True
 
         # First make sure the custom Connection class does as expected.
-        cluster_copy1 = object()
-        cluster_copy2 = object()
-        cluster_copy3 = object()
+        cluster_copy1 = _Cluster()
+        cluster_copy2 = _Cluster()
+        cluster_copy3 = _Cluster()
         cluster = _Cluster(cluster_copy1, cluster_copy2, cluster_copy3)
         connection = ConnectionWithOpen(autoconnect=False, cluster=cluster)
         self.assertFalse(connection._open_called)
@@ -105,7 +105,7 @@ class TestConnectionPool(unittest2.TestCase):
         from gcloud_bigtable.happybase import pool as MUT
 
         size = 1
-        cluster_copy = object()
+        cluster_copy = _Cluster()
         all_copies = [cluster_copy] * size
         cluster = _Cluster(*all_copies)
 
@@ -144,10 +144,21 @@ class TestConnectionPool(unittest2.TestCase):
             pool.connection(timeout=timeout)
 
 
+class _Client(object):
+
+    def __init__(self):
+        self.stop_calls = 0
+
+    def stop(self):
+        self.stop_calls += 1
+
+
 class _Cluster(object):
 
     def __init__(self, *copies):
         self.copies = list(copies)
+        # Included to support Connection.__del__
+        self.client = _Client()
 
     def copy(self):
         if self.copies:

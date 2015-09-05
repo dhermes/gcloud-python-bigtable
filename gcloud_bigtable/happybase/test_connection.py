@@ -81,12 +81,10 @@ class TestConnection(unittest2.TestCase):
 
     def test_constructor_defaults(self):
         cluster = _Cluster()  # Avoid implicit environ check.
-        # autoconnect=True is default, so we need a valid client
-        cluster.client = client = _Client()
-        self.assertEqual(client.start_calls, 0)
+        self.assertEqual(cluster.client.start_calls, 0)
         connection = self._makeOne(cluster=cluster)
-        self.assertEqual(client.start_calls, 1)
-        self.assertEqual(client.stop_calls, 0)
+        self.assertEqual(cluster.client.start_calls, 1)
+        self.assertEqual(cluster.client.stop_calls, 0)
 
         self.assertEqual(connection._cluster, cluster)
         self.assertEqual(connection.table_prefix, None)
@@ -103,7 +101,7 @@ class TestConnection(unittest2.TestCase):
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable.happybase import connection as MUT
 
-        cluster = object()
+        cluster = _Cluster()
         timeout = object()
         mock_get_cluster = _MockCalled(cluster)
         with _Monkey(MUT, _get_cluster=mock_get_cluster):
@@ -119,7 +117,7 @@ class TestConnection(unittest2.TestCase):
         timeout = object()
         table_prefix = 'table-prefix'
         table_prefix_separator = 'sep'
-        cluster_copy = object()
+        cluster_copy = _Cluster()
         cluster = _Cluster(cluster_copy)
 
         connection = self._makeOne(
@@ -168,21 +166,36 @@ class TestConnection(unittest2.TestCase):
 
     def test_open(self):
         cluster = _Cluster()  # Avoid implicit environ check.
-        cluster.client = client = _Client()
         connection = self._makeOne(autoconnect=False, cluster=cluster)
-        self.assertEqual(client.start_calls, 0)
+        self.assertEqual(cluster.client.start_calls, 0)
         connection.open()
-        self.assertEqual(client.start_calls, 1)
-        self.assertEqual(client.stop_calls, 0)
+        self.assertEqual(cluster.client.start_calls, 1)
+        self.assertEqual(cluster.client.stop_calls, 0)
 
     def test_close(self):
         cluster = _Cluster()  # Avoid implicit environ check.
-        cluster.client = client = _Client()
         connection = self._makeOne(autoconnect=False, cluster=cluster)
-        self.assertEqual(client.stop_calls, 0)
+        self.assertEqual(cluster.client.stop_calls, 0)
         connection.close()
-        self.assertEqual(client.stop_calls, 1)
-        self.assertEqual(client.start_calls, 0)
+        self.assertEqual(cluster.client.stop_calls, 1)
+        self.assertEqual(cluster.client.start_calls, 0)
+
+    def test___del__good_initialization(self):
+        cluster = _Cluster()  # Avoid implicit environ check.
+        connection = self._makeOne(autoconnect=False, cluster=cluster)
+        self.assertEqual(cluster.client.stop_calls, 0)
+        connection.__del__()
+        self.assertEqual(cluster.client.stop_calls, 1)
+
+    def test___del__bad_initialization(self):
+        cluster = _Cluster()  # Avoid implicit environ check.
+        connection = self._makeOne(autoconnect=False, cluster=cluster)
+        # Fake that initialization failed.
+        del connection._initialized
+
+        self.assertEqual(cluster.client.stop_calls, 0)
+        connection.__del__()
+        self.assertEqual(cluster.client.stop_calls, 0)
 
     def test_table(self):
         cluster = _Cluster()  # Avoid implicit environ check.
@@ -277,7 +290,8 @@ class _Cluster(object):
 
     def __init__(self, *copies):
         self.copies = list(copies)
-        self.client = None
+        # Included to support Connection.__del__
+        self.client = _Client()
 
     def copy(self):
         if self.copies:

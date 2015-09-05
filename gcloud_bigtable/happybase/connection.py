@@ -173,6 +173,8 @@ class Connection(object):
         if autoconnect:
             self.open()
 
+        self._initialized = True
+
     def open(self):
         """Open the underlying transport to Cloud Bigtable.
 
@@ -190,6 +192,15 @@ class Connection(object):
         this connection.
         """
         self._cluster.client.stop()
+
+    def __del__(self):
+        try:
+            self._initialized
+        except AttributeError:
+            # Failure from constructor
+            return
+        else:
+            self.close()
 
     def table(self, name, use_prefix=True):
         """Table factory.
