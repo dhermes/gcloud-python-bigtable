@@ -63,6 +63,10 @@ passed in as keyword arguments. The arguments are:
 - ``transport``
 - ``protocol``
 
+In order to make :class:`.Connection` compatible with Cloud Bigtable, we
+add a ``client`` keyword argument to allow user's to pass in their own
+clients (which they can construct beforehand).
+
 Any uses of the ``wal`` (Write Ahead Log) argument will result in a
 :class:`ValueError <exceptions.ValueError>` as well. This includes
 uses in:

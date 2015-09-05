@@ -23,6 +23,8 @@ class TestConnection(unittest2.TestCase):
         return Connection
 
     def _makeOne(self, *args, **kwargs):
+        if 'client' not in kwargs:
+            kwargs['client'] = object()
         return self._getTargetClass()(*args, **kwargs)
 
     def test_constructor_defaults(self):
@@ -31,9 +33,38 @@ class TestConnection(unittest2.TestCase):
 
     def test_constructor_no_autoconnect(self):
         connection = self._makeOne(autoconnect=False)
-        self.assertEqual(connection.timeout, None)
         self.assertEqual(connection.table_prefix, None)
         self.assertEqual(connection.table_prefix_separator, '_')
+
+    def _constructor_missing_client_helper(self, timeout=None):
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable.happybase import connection as MUT
+
+        class FakeClient(object):
+
+            def __init__(self, *args, **kwargs):
+                self.args = args
+                self.kwargs = kwargs
+
+        with _Monkey(MUT, Client=FakeClient):
+            connection = self._makeOne(autoconnect=False, client=None,
+                                       timeout=timeout)
+            self.assertEqual(connection.table_prefix, None)
+            self.assertEqual(connection.table_prefix_separator, '_')
+            client = connection._client
+            self.assertTrue(isinstance(client, FakeClient))
+            self.assertEqual(client.args, ())
+            expected_kwargs = {'admin': True}
+            if timeout is not None:
+                expected_kwargs['timeout_seconds'] = timeout / 1000.0
+
+            self.assertEqual(client.kwargs, expected_kwargs)
+
+    def test_constructor_missing_client(self):
+        self._constructor_missing_client_helper()
+
+    def test_constructor_missing_client_with_timeout(self):
+        self._constructor_missing_client_helper(timeout=2103)
 
     def test_constructor_explicit(self):
         timeout = object()
@@ -44,7 +75,6 @@ class TestConnection(unittest2.TestCase):
             autoconnect=False, timeout=timeout,
             table_prefix=table_prefix,
             table_prefix_separator=table_prefix_separator)
-        self.assertEqual(connection.timeout, timeout)
         self.assertEqual(connection.table_prefix, table_prefix)
         self.assertEqual(connection.table_prefix_separator,
                          table_prefix_separator)

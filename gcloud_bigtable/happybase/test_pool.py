@@ -23,6 +23,8 @@ class TestConnectionPool(unittest2.TestCase):
         return ConnectionPool
 
     def _makeOne(self, *args, **kwargs):
+        if 'client' not in kwargs:
+            kwargs['client'] = object()
         return self._getTargetClass()(*args, **kwargs)
 
     def test_constructor_defaults(self):
@@ -54,7 +56,6 @@ class TestConnectionPool(unittest2.TestCase):
                              table_prefix_separator=table_prefix_separator)
 
         for connection in pool._queue.queue:
-            self.assertEqual(connection.timeout, timeout)
             self.assertEqual(connection.table_prefix, table_prefix)
             self.assertEqual(connection.table_prefix_separator,
                              table_prefix_separator)
@@ -72,18 +73,20 @@ class TestConnectionPool(unittest2.TestCase):
                 self._open_called = True
 
         # First make sure the custom Connection class does as expected.
-        connection = ConnectionWithOpen(autoconnect=False)
+        client = object()
+        connection = ConnectionWithOpen(autoconnect=False, client=client)
         self.assertFalse(connection._open_called)
-        connection = ConnectionWithOpen(autoconnect=True)
+        connection = ConnectionWithOpen(autoconnect=True, client=client)
         self.assertTrue(connection._open_called)
 
         # Then make sure autoconnect=True is ignored in a pool.
         size = 1
         with _Monkey(MUT, Connection=ConnectionWithOpen):
-            pool = self._makeOne(size, autoconnect=True)
+            pool = self._makeOne(size, autoconnect=True, client=client)
 
         for connection in pool._queue.queue:
             self.assertTrue(isinstance(connection, ConnectionWithOpen))
+            self.assertTrue(connection._client is client)
             self.assertFalse(connection._open_called)
 
     def test_constructor_non_integer_size(self):

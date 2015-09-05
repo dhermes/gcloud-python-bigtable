@@ -17,6 +17,8 @@
 
 import six
 
+from gcloud_bigtable.client import Client
+
 
 # Constants reproduced here for compatibility, though values are
 # all null.
@@ -69,6 +71,13 @@ class Connection(object):
                      HappyBase, but irrelevant for Cloud Bigtable since the
                      protocol is fixed.
 
+    :type client: :class:`.Client`
+    :param client: (Optional) A client for making gRPC requests to the
+                   Cloud Bigtable API. If not passed in, defaults to creating
+                   client with ``admin=True`` and using the ``timeout`` for
+                   the ``timeout_seconds``. The credentials for the client
+                   will be the implicit ones loaded from the environment.
+
     :raises: :class:`ValueError <exceptions.ValueError>` if any of the unused
              parameters are specified with a value other than the defaults.
              :class:`TypeError <exceptions.TypeError>` if ``table_prefix`` or
@@ -78,7 +87,8 @@ class Connection(object):
     def __init__(self, host=DEFAULT_HOST, port=DEFAULT_PORT, timeout=None,
                  autoconnect=True, table_prefix=None,
                  table_prefix_separator='_', compat=DEFAULT_COMPAT,
-                 transport=DEFAULT_TRANSPORT, protocol=DEFAULT_PROTOCOL):
+                 transport=DEFAULT_TRANSPORT, protocol=DEFAULT_PROTOCOL,
+                 client=None):
         if host is not DEFAULT_HOST:
             raise ValueError('Host cannot be set for gcloud HappyBase module')
         if port is not DEFAULT_PORT:
@@ -103,9 +113,15 @@ class Connection(object):
                             'received', table_prefix_separator,
                             type(table_prefix_separator))
 
-        self.timeout = timeout
         self.table_prefix = table_prefix
         self.table_prefix_separator = table_prefix_separator
+
+        self._client = client
+        if self._client is None:
+            client_kwargs = {'admin': True}
+            if timeout is not None:
+                client_kwargs['timeout_seconds'] = timeout / 1000.0
+            self._client = Client(**client_kwargs)
 
         if autoconnect:
             self.open()
