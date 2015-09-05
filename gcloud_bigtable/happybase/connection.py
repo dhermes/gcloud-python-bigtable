@@ -109,12 +109,15 @@ class Connection(object):
                      HappyBase, but irrelevant for Cloud Bigtable since the
                      protocol is fixed.
 
-    :type client: :class:`.Client`
-    :param client: (Optional) A client for making gRPC requests to the
-                   Cloud Bigtable API. If not passed in, defaults to creating
-                   client with ``admin=True`` and using the ``timeout`` for
-                   the ``timeout_seconds``. The credentials for the client
-                   will be the implicit ones loaded from the environment.
+    :type cluster: :class:`gcloud_bigtable.cluster.Cluster`
+    :param cluster: (Optional) A Cloud Bigtable cluster. The instance also
+                    owns a client for making gRPC requests to the Cloud
+                    Bigtable API. If not passed in, defaults to creating client
+                    with ``admin=True`` and using the ``timeout`` for the
+                    ``timeout_seconds``. The credentials for the client
+                    will be the implicit ones loaded from the environment.
+                    Then that client is used to retrieve all the clusters
+                    owned by the client's project.
 
     :raises: :class:`ValueError <exceptions.ValueError>` if any of the unused
              parameters are specified with a value other than the defaults.
@@ -126,7 +129,7 @@ class Connection(object):
                  autoconnect=True, table_prefix=None,
                  table_prefix_separator='_', compat=DEFAULT_COMPAT,
                  transport=DEFAULT_TRANSPORT, protocol=DEFAULT_PROTOCOL,
-                 client=None):
+                 cluster=None):
         if host is not DEFAULT_HOST:
             raise ValueError('Host cannot be set for gcloud HappyBase module')
         if port is not DEFAULT_PORT:
@@ -154,12 +157,9 @@ class Connection(object):
         self.table_prefix = table_prefix
         self.table_prefix_separator = table_prefix_separator
 
-        self._client = client
-        if self._client is None:
-            client_kwargs = {'admin': True}
-            if timeout is not None:
-                client_kwargs['timeout_seconds'] = timeout / 1000.0
-            self._client = Client(**client_kwargs)
+        self._cluster = cluster
+        if self._cluster is None:
+            self._cluster = _get_cluster(timeout=timeout)
 
         if autoconnect:
             self.open()

@@ -77,8 +77,8 @@ class TestConnection(unittest2.TestCase):
         return Connection
 
     def _makeOne(self, *args, **kwargs):
-        if 'client' not in kwargs:
-            kwargs['client'] = object()
+        if 'cluster' not in kwargs:
+            kwargs['cluster'] = object()
         return self._getTargetClass()(*args, **kwargs)
 
     def test_constructor_defaults(self):
@@ -90,29 +90,22 @@ class TestConnection(unittest2.TestCase):
         self.assertEqual(connection.table_prefix, None)
         self.assertEqual(connection.table_prefix_separator, '_')
 
-    def _constructor_missing_client_helper(self, timeout=None):
+    def test_constructor_missing_cluster(self):
+        from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable.happybase import connection as MUT
 
-        with _Monkey(MUT, Client=_Client):
-            connection = self._makeOne(autoconnect=False, client=None,
+        cluster = object()
+        timeout = object()
+        mock_get_cluster = _MockCalled(cluster)
+        with _Monkey(MUT, _get_cluster=mock_get_cluster):
+            connection = self._makeOne(autoconnect=False, cluster=None,
                                        timeout=timeout)
             self.assertEqual(connection.table_prefix, None)
             self.assertEqual(connection.table_prefix_separator, '_')
-            client = connection._client
-            self.assertTrue(isinstance(client, _Client))
-            self.assertEqual(client.args, ())
-            expected_kwargs = {'admin': True}
-            if timeout is not None:
-                expected_kwargs['timeout_seconds'] = timeout / 1000.0
+            self.assertEqual(connection._cluster, cluster)
 
-            self.assertEqual(client.kwargs, expected_kwargs)
-
-    def test_constructor_missing_client(self):
-        self._constructor_missing_client_helper()
-
-    def test_constructor_missing_client_with_timeout(self):
-        self._constructor_missing_client_helper(timeout=2103)
+        mock_get_cluster.check_called(self, [()], [{'timeout': timeout}])
 
     def test_constructor_explicit(self):
         timeout = object()
