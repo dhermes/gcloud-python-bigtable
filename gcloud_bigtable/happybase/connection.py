@@ -32,6 +32,44 @@ DEFAULT_COMPAT = None
 DEFAULT_PROTOCOL = None
 
 
+def _get_cluster(timeout=None):
+    """Gets cluster for the default project.
+
+    Creates a client with the inferred credentials and project ID from
+    the local environment. Then uses :meth:`.Client.list_clusters` to
+    get the unique cluster owned by the project.
+
+    If the request fails for any reason, or if there isn't exactly one cluster
+    owned by the project, then this function will fail.
+
+    :type timeout: int
+    :param timeout: (Optional) The socket timeout in milliseconds.
+
+    :rtype: :class:`gcloud_bigtable.cluster.Cluster`
+    :returns: The unique cluster owned by the project inferred from
+              the environment.
+    :raises: :class:`ValueError <exceptions.ValueError>` if any of the unused
+    """
+    client_kwargs = {'admin': True}
+    if timeout is not None:
+        client_kwargs['timeout_seconds'] = timeout / 1000.0
+    client = Client(**client_kwargs)
+    client.start()
+    clusters, failed_zones = client.list_clusters()
+    client.stop()
+
+    if len(failed_zones) != 0:
+        raise ValueError('Determining cluster via ListClusters encountered '
+                         'failed zones.')
+    if len(clusters) == 0:
+        raise ValueError('This client doesn\'t have access to any clusters.')
+    if len(clusters) > 1:
+        raise ValueError('This client has access to more than one cluster. '
+                         'Please directly pass the cluster you\'d '
+                         'like to use.')
+    return clusters[0]
+
+
 class Connection(object):
     """Connection to Cloud Bigtable backend.
 
