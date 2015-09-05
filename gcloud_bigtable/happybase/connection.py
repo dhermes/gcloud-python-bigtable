@@ -176,7 +176,7 @@ class Connection(object):
     def open(self):
         """Open the underlying transport to Cloud Bigtable.
 
-        This method opens the underlying HTTP/2 connection using a
+        This method opens the underlying HTTP/2 gRPC connection using a
         :class:`.Client` bound to the :class:`.Cluster` owned by
         this connection.
         """
@@ -185,10 +185,11 @@ class Connection(object):
     def close(self):
         """Close the underlying transport to Cloud Bigtable.
 
-        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
-                 temporarily until the method is implemented.
+        This method closes the underlying HTTP/2 gRPC connection using a
+        :class:`.Client` bound to the :class:`.Cluster` owned by
+        this connection.
         """
-        raise NotImplementedError('Temporarily not implemented.')
+        self._cluster.client.stop()
 
     def table(self, name, use_prefix=True):
         """Table factory.

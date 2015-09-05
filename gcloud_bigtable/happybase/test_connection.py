@@ -177,9 +177,12 @@ class TestConnection(unittest2.TestCase):
 
     def test_close(self):
         cluster = _Cluster()  # Avoid implicit environ check.
+        cluster.client = client = _Client()
         connection = self._makeOne(autoconnect=False, cluster=cluster)
-        with self.assertRaises(NotImplementedError):
-            connection.close()
+        self.assertEqual(client.stop_calls, 0)
+        connection.close()
+        self.assertEqual(client.stop_calls, 1)
+        self.assertEqual(client.start_calls, 0)
 
     def test_table(self):
         cluster = _Cluster()  # Avoid implicit environ check.
