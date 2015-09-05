@@ -27,6 +27,7 @@ In the hierarchy of API concepts
 """
 
 
+import copy
 import os
 import six
 import socket
@@ -329,6 +330,22 @@ class Client(object):
         return cls(credentials=credentials, project_id=project_id,
                    read_only=read_only, admin=admin)
 
+    def copy(self):
+        """Make a copy of this client.
+
+        Copies the local data stored as simple types but does not copy the
+        current state of any open connections with the Cloud Bigtable API.
+
+        :rtype: :class:`.Client`
+        :returns: A copy of the current client.
+        """
+        new_client = copy.deepcopy(self)
+        new_client._data_stub = None
+        new_client._cluster_stub = None
+        new_client._operations_stub = None
+        new_client._table_stub = None
+        return new_client
+
     @property
     def credentials(self):
         """Getter for client's credentials.
@@ -364,7 +381,7 @@ class Client(object):
         :returns: The project name to be used with the Cloud Bigtable Admin
                   API RPC service.
         """
-        return 'projects/' + self._project_id
+        return 'projects/' + self.project_id
 
     @property
     def data_stub(self):

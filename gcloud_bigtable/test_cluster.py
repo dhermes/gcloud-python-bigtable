@@ -126,6 +126,25 @@ class TestCluster(unittest2.TestCase):
         self.assertEqual(cluster.serve_nodes, serve_nodes)
         self.assertTrue(cluster._client is client)
 
+    def test_copy(self):
+        client = _Client(PROJECT_ID)
+        display_name = 'DISPLAY_NAME'
+        serve_nodes = 8
+        cluster = self._makeOne(ZONE, CLUSTER_ID, client,
+                                display_name=display_name,
+                                serve_nodes=serve_nodes)
+        new_cluster = cluster.copy()
+
+        # Make sure the client got copied to a new instance.
+        self.assertFalse(new_cluster._client is client)
+        self.assertEqual(new_cluster._client.__dict__,
+                         client.__dict__)
+        # Just replace the client on the new_cluster so we can
+        # check cluster equality.
+        new_cluster._client = client
+        self.assertFalse(cluster is new_cluster)
+        self.assertEqual(cluster, new_cluster)
+
     def test_client_getter(self):
         client = object()
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
@@ -602,3 +621,7 @@ class _Client(object):
     def __init__(self, project_id):
         self.project_id = project_id
         self.project_name = 'projects/' + project_id
+
+    def copy(self):
+        import copy as copy_module
+        return copy_module.deepcopy(self)

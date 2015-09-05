@@ -372,6 +372,42 @@ class TestClient(unittest2.TestCase):
         # Load private key (via _get_contents) from the key path.
         mock_get_contents.check_called(self, [(private_key_path,)])
 
+    def test_copy(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+
+        class Credentials(object):
+
+            def __init__(self, value):
+                self.value = value
+
+            def __eq__(self, other):
+                return self.value == other.value
+
+        scoped_creds = Credentials('value')
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID)
+        # Put some fake stubs in place so that we can verify they
+        # don't get copied.
+        client._data_stub = object()
+        client._cluster_stub = object()
+        client._operations_stub = object()
+        client._table_stub = object()
+
+        new_client = client.copy()
+        self.assertEqual(new_client._admin, client._admin)
+        self.assertEqual(new_client._credentials, client._credentials)
+        # Make sure credentials (a non-simple type) gets copied
+        # to a new instance.
+        self.assertFalse(new_client._credentials is client._credentials)
+        self.assertEqual(new_client._project_id, client._project_id)
+        self.assertEqual(new_client.user_agent, client.user_agent)
+        self.assertEqual(new_client.timeout_seconds, client.timeout_seconds)
+        # Make sure stubs are not preserved.
+        self.assertEqual(new_client._data_stub, None)
+        self.assertEqual(new_client._cluster_stub, None)
+        self.assertEqual(new_client._operations_stub, None)
+        self.assertEqual(new_client._table_stub, None)
+
     def test_credentials_getter(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
 
