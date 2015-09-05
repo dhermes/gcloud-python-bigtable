@@ -19,6 +19,7 @@ import six
 
 from gcloud_bigtable.client import Client
 from gcloud_bigtable.happybase.table import Table
+from gcloud_bigtable.table import Table as _LowLevelTable
 
 
 # Constants reproduced here for compatibility, though values are
@@ -281,18 +282,25 @@ class Connection(object):
         """Delete the specified table.
 
         :type name: str
-        :param name: The name of the table to be deleted.
+        :param name: The name of the table to be deleted. If ``table_prefix``
+                     is set, a prefix will be added to the ``name``.
 
         :type disable: bool
         :param disable: Whether to first disable the table if needed. This
-                        is provided for compatibility with happybase, but is
+                        is provided for compatibility with HappyBase, but is
                         not relevant for Cloud Bigtable since it has no concept
                         of enabled / disabled tables.
 
-        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
-                 temporarily until the method is implemented.
+        :raises: :class:`ValueError <exceptions.ValueError>`
+                 if ``disable=True``.
         """
-        raise NotImplementedError('Temporarily not implemented.')
+        if disable:
+            raise ValueError('The disable argument should not be used in '
+                             'delete_table(). Cloud Bigtable has no concept '
+                             'of enabled / disabled tables.')
+
+        name = self._table_name(name)
+        _LowLevelTable(name, self._cluster).delete()
 
     def enable_table(self, name):
         """Enable the specified table.
