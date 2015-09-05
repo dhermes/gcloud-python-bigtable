@@ -31,8 +31,9 @@ could not be implemented:
   - helper needed for Thrift library
 * :meth:`Table.regions() <gcloud_bigtable.happybase.table.Table.regions>`
   - tables in Cloud Bigtable do not expose internal storage details
-* :meth:`Table.counter_set() <gcloud_bigtable.happybase.table.Table.counter_set>`
-  - method can't be atomic, so we disable it
+* :meth:`Table.counter_set() \
+      <gcloud_bigtable.happybase.table.Table.counter_set>` - method can't
+  be atomic, so we disable it
 
 This also means that calling :meth:`.Connection.delete_table` with
 ``disable=True`` can't be supported.
@@ -48,6 +49,9 @@ to HBase and are defined as :data:`None` in our module:
 * ``DEFAULT_TRANSPORT``
 * ``DEFAULT_COMPAT``
 * ``DEFAULT_PROTOCOL``
+
+Two of these ``DEFAULT_HOST`` and ``DEFAULT_PORT``, are even imported in
+the main ``happybase`` package.
 
 The :class:`.Connection` constructor **disables** the use of several arguments
 and will a :class:`ValueError <exceptions.ValueError>` if any of them are

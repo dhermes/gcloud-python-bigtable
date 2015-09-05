@@ -31,23 +31,39 @@ class TestConnection(unittest2.TestCase):
 
     def test_constructor_no_autoconnect(self):
         connection = self._makeOne(autoconnect=False)
+        self.assertFalse(connection._started)
         self.assertEqual(connection.timeout, None)
         self.assertEqual(connection.table_prefix, None)
         self.assertEqual(connection.table_prefix_separator, '_')
 
     def test_constructor_explicit(self):
         timeout = object()
-        table_prefix = object()
-        table_prefix_separator = object()
+        table_prefix = 'table-prefix'
+        table_prefix_separator = 'sep'
 
         connection = self._makeOne(
             autoconnect=False, timeout=timeout,
             table_prefix=table_prefix,
             table_prefix_separator=table_prefix_separator)
+        self.assertFalse(connection._started)
         self.assertEqual(connection.timeout, timeout)
         self.assertEqual(connection.table_prefix, table_prefix)
         self.assertEqual(connection.table_prefix_separator,
                          table_prefix_separator)
+
+    def test_constructor_non_string_prefix(self):
+        table_prefix = object()
+
+        with self.assertRaises(TypeError):
+            self._makeOne(autoconnect=False,
+                          table_prefix=table_prefix)
+
+    def test_constructor_non_string_prefix_separator(self):
+        table_prefix_separator = object()
+
+        with self.assertRaises(TypeError):
+            self._makeOne(autoconnect=False,
+                          table_prefix_separator=table_prefix_separator)
 
     def test_constructor_with_host(self):
         with self.assertRaises(ValueError):

@@ -14,6 +14,10 @@
 
 """Google Cloud Bigtable HappyBase connection module."""
 
+
+import six
+
+
 # Constants reproduced here for compatibility, though values are
 # all null.
 COMPAT_MODES = None
@@ -67,6 +71,8 @@ class Connection(object):
 
     :raises: :class:`ValueError <exceptions.ValueError>` if any of the unused
              parameters are specified with a value other than the defaults.
+             :class:`TypeError <exceptions.TypeError>` if ``table_prefix`` or
+             ``table_prefix_separator`` are provided but not strings.
     """
 
     def __init__(self, host=DEFAULT_HOST, port=DEFAULT_PORT, timeout=None,
@@ -87,6 +93,17 @@ class Connection(object):
             raise ValueError('Protocol cannot be set for gcloud '
                              'HappyBase module')
 
+        if table_prefix is not None:
+            if not isinstance(table_prefix, six.string_types):
+                raise TypeError('table_prefix must be a string', 'received',
+                                table_prefix, type(table_prefix))
+
+        if not isinstance(table_prefix_separator, six.string_types):
+            raise TypeError('table_prefix_separator must be a string',
+                            'received', table_prefix_separator,
+                            type(table_prefix_separator))
+
+        self._started = False
         self.timeout = timeout
         self.table_prefix = table_prefix
         self.table_prefix_separator = table_prefix_separator
