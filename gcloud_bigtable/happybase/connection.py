@@ -18,6 +18,7 @@
 import six
 
 from gcloud_bigtable.client import Client
+from gcloud_bigtable.happybase.table import Table
 
 
 # Constants reproduced here for compatibility, though values are
@@ -202,6 +203,21 @@ class Connection(object):
         else:
             self.close()
 
+    def _table_name(self, name):
+        """Construct a table name by optionally adding a table name prefix.
+
+        :type name: str
+        :param name: The name to have a prefix added to it.
+
+        :rtype: str
+        :returns: The prefixed name, if the current connection has a table
+                  prefix set.
+        """
+        if self.table_prefix is None:
+            return name
+
+        return self.table_prefix + self.table_prefix_separator + name
+
     def table(self, name, use_prefix=True):
         """Table factory.
 
@@ -211,10 +227,12 @@ class Connection(object):
         :type use_prefix: bool
         :param use_prefix: Whether to use the table prefix (if any).
 
-        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
-                 temporarily until the method is implemented.
+        :rtype: `Table <gcloud_bigtable.happybase.table.Table>`
+        :returns: Table instance owned by this connection.
         """
-        raise NotImplementedError('Temporarily not implemented.')
+        if use_prefix:
+            name = self._table_name(name)
+        return Table(name, self)
 
     def tables(self):
         """Return a list of table names available to this connection.
