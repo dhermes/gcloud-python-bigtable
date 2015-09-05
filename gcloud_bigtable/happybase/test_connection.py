@@ -402,7 +402,7 @@ class TestConnection(unittest2.TestCase):
         # Check if our mock was called twice, but we don't know the order.
         mock_called = mock_parse_family_option.called_args
         self.assertEqual(len(mock_called), 2)
-        self.assertEqual(map(len, mock_called), [1, 1])
+        self.assertEqual([len(args) for args in mock_called], [1, 1])
         self.assertEqual(set(mock_called[0] + mock_called[1]),
                          set([col_fam_option1, col_fam_option2]))
 
