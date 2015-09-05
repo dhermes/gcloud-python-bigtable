@@ -77,16 +77,16 @@ class TestConnection(unittest2.TestCase):
         return Connection
 
     def _makeOne(self, *args, **kwargs):
-        if 'cluster' not in kwargs:
-            kwargs['cluster'] = _Cluster()
         return self._getTargetClass()(*args, **kwargs)
 
     def test_constructor_defaults(self):
         with self.assertRaises(NotImplementedError):
-            self._makeOne()
+            cluster = _Cluster()  # Avoid implicit environ check.
+            self._makeOne(cluster=cluster)
 
     def test_constructor_no_autoconnect(self):
-        connection = self._makeOne(autoconnect=False)
+        cluster = _Cluster()  # Avoid implicit environ check.
+        connection = self._makeOne(autoconnect=False, cluster=cluster)
         self.assertEqual(connection.table_prefix, None)
         self.assertEqual(connection.table_prefix_separator, '_')
 
@@ -159,61 +159,78 @@ class TestConnection(unittest2.TestCase):
             self._makeOne(protocol=object())
 
     def test_open(self):
-        connection = self._makeOne(autoconnect=False)
+        cluster = _Cluster()  # Avoid implicit environ check.
+        connection = self._makeOne(autoconnect=False, cluster=cluster)
         with self.assertRaises(NotImplementedError):
             connection.open()
 
     def test_close(self):
-        connection = self._makeOne(autoconnect=False)
+        cluster = _Cluster()  # Avoid implicit environ check.
+        connection = self._makeOne(autoconnect=False, cluster=cluster)
         with self.assertRaises(NotImplementedError):
             connection.close()
 
     def test_table(self):
-        connection = self._makeOne(autoconnect=False)
+        cluster = _Cluster()  # Avoid implicit environ check.
+        connection = self._makeOne(autoconnect=False, cluster=cluster)
+
         name = 'table-name'
         use_prefix = False
         with self.assertRaises(NotImplementedError):
             connection.table(name, use_prefix=use_prefix)
 
     def test_tables(self):
-        connection = self._makeOne(autoconnect=False)
+        cluster = _Cluster()  # Avoid implicit environ check.
+        connection = self._makeOne(autoconnect=False, cluster=cluster)
         with self.assertRaises(NotImplementedError):
             connection.tables()
 
     def test_create_table(self):
-        connection = self._makeOne(autoconnect=False)
+        cluster = _Cluster()  # Avoid implicit environ check.
+        connection = self._makeOne(autoconnect=False, cluster=cluster)
+
         name = 'table-name'
         families = {}
         with self.assertRaises(NotImplementedError):
             connection.create_table(name, families)
 
     def test_delete_table(self):
-        connection = self._makeOne(autoconnect=False)
+        cluster = _Cluster()  # Avoid implicit environ check.
+        connection = self._makeOne(autoconnect=False, cluster=cluster)
+
         name = 'table-name'
         disable = True
         with self.assertRaises(NotImplementedError):
             connection.delete_table(name, disable=disable)
 
     def test_enable_table(self):
-        connection = self._makeOne(autoconnect=False)
+        cluster = _Cluster()  # Avoid implicit environ check.
+        connection = self._makeOne(autoconnect=False, cluster=cluster)
+
         name = 'table-name'
         with self.assertRaises(NotImplementedError):
             connection.enable_table(name)
 
     def test_disable_table(self):
-        connection = self._makeOne(autoconnect=False)
+        cluster = _Cluster()  # Avoid implicit environ check.
+        connection = self._makeOne(autoconnect=False, cluster=cluster)
+
         name = 'table-name'
         with self.assertRaises(NotImplementedError):
             connection.disable_table(name)
 
     def test_is_table_enabled(self):
-        connection = self._makeOne(autoconnect=False)
+        cluster = _Cluster()  # Avoid implicit environ check.
+        connection = self._makeOne(autoconnect=False, cluster=cluster)
+
         name = 'table-name'
         with self.assertRaises(NotImplementedError):
             connection.is_table_enabled(name)
 
     def test_compact_table(self):
-        connection = self._makeOne(autoconnect=False)
+        cluster = _Cluster()  # Avoid implicit environ check.
+        connection = self._makeOne(autoconnect=False, cluster=cluster)
+
         name = 'table-name'
         major = True
         with self.assertRaises(NotImplementedError):
