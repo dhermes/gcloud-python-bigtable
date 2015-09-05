@@ -597,6 +597,18 @@ class TestClient(unittest2.TestCase):
         ]
         mock_make_stub.check_called(self, make_stub_args)
 
+    def test_is_started(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID)
+        self.assertFalse(client.is_started())
+        client._data_stub = object()
+        self.assertTrue(client.is_started())
+        client._data_stub = None
+        self.assertFalse(client.is_started())
+
     def _start_method_helper(self, admin):
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _MockWithAttachedMethods
@@ -630,6 +642,19 @@ class TestClient(unittest2.TestCase):
     def test_start_with_admin(self):
         self._start_method_helper(admin=True)
 
+    def test_start_while_started(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID)
+        client._data_stub = data_stub = object()
+        self.assertTrue(client.is_started())
+        client.start()
+
+        # Make sure the stub did not change.
+        self.assertEqual(client._data_stub, data_stub)
+
     def _stop_method_helper(self, admin):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
 
@@ -661,6 +686,22 @@ class TestClient(unittest2.TestCase):
 
     def test_stop_with_admin(self):
         self._stop_method_helper(admin=True)
+
+    def test_stop_while_stopped(self):
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID)
+        self.assertFalse(client.is_started())
+
+        # This is a bit hacky. We set the cluster stub protected value
+        # since it isn't used in is_started() and make sure that stop
+        # doesn't reset this value to None.
+        client._cluster_stub = cluster_stub = object()
+        client.stop()
+        # Make sure the cluster stub did not change.
+        self.assertEqual(client._cluster_stub, cluster_stub)
 
     def test_cluster_factory(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods

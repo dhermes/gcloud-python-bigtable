@@ -466,12 +466,23 @@ class Client(object):
         return make_stub(self, TABLE_STUB_FACTORY,
                          TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
 
+    def is_started(self):
+        """Check if the client has been started.
+
+        :rtype: bool
+        :returns: Boolean indicating if the client has been started.
+        """
+        return self._data_stub is not None
+
     def start(self):
         """Prepare the client to make requests.
 
         Activates gRPC contexts for making requests to the Bigtable
         Service(s).
         """
+        if self.is_started():
+            return
+
         self._data_stub = self._make_data_stub()
         self._data_stub.__enter__()
         if self._admin:
@@ -485,6 +496,9 @@ class Client(object):
 
     def stop(self):
         """Closes all the open gRPC clients."""
+        if not self.is_started():
+            return
+
         # When exit-ing, we pass None as the exception type, value and
         # traceback to __exit__.
         self._data_stub.__exit__(None, None, None)

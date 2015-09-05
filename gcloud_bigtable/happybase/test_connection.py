@@ -31,7 +31,6 @@ class TestConnection(unittest2.TestCase):
 
     def test_constructor_no_autoconnect(self):
         connection = self._makeOne(autoconnect=False)
-        self.assertFalse(connection._started)
         self.assertEqual(connection.timeout, None)
         self.assertEqual(connection.table_prefix, None)
         self.assertEqual(connection.table_prefix_separator, '_')
@@ -45,7 +44,6 @@ class TestConnection(unittest2.TestCase):
             autoconnect=False, timeout=timeout,
             table_prefix=table_prefix,
             table_prefix_separator=table_prefix_separator)
-        self.assertFalse(connection._started)
         self.assertEqual(connection.timeout, timeout)
         self.assertEqual(connection.table_prefix, table_prefix)
         self.assertEqual(connection.table_prefix_separator,

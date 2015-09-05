@@ -103,7 +103,6 @@ class Connection(object):
                             'received', table_prefix_separator,
                             type(table_prefix_separator))
 
-        self._started = False
         self.timeout = timeout
         self.table_prefix = table_prefix
         self.table_prefix_separator = table_prefix_separator
