@@ -78,7 +78,7 @@ class TestConnection(unittest2.TestCase):
 
     def _makeOne(self, *args, **kwargs):
         if 'cluster' not in kwargs:
-            kwargs['cluster'] = object()
+            kwargs['cluster'] = _Cluster()
         return self._getTargetClass()(*args, **kwargs)
 
     def test_constructor_defaults(self):
@@ -111,14 +111,18 @@ class TestConnection(unittest2.TestCase):
         timeout = object()
         table_prefix = 'table-prefix'
         table_prefix_separator = 'sep'
+        cluster_copy = object()
+        cluster = _Cluster(cluster_copy)
 
         connection = self._makeOne(
             autoconnect=False, timeout=timeout,
             table_prefix=table_prefix,
-            table_prefix_separator=table_prefix_separator)
+            table_prefix_separator=table_prefix_separator,
+            cluster=cluster)
         self.assertEqual(connection.table_prefix, table_prefix)
         self.assertEqual(connection.table_prefix_separator,
                          table_prefix_separator)
+        self.assertEqual(connection._cluster, cluster_copy)
 
     def test_constructor_non_string_prefix(self):
         table_prefix = object()
@@ -241,3 +245,14 @@ class _Client(object):
 class _Cluster(object):
 
     _client = None
+
+    def __init__(self, *copies):
+        self.copies = list(copies)
+
+    def copy(self):
+        if self.copies:
+            result = self.copies[0]
+            self.copies[:] = self.copies[1:]
+            return result
+        else:
+            return self

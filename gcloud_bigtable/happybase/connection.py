@@ -73,6 +73,14 @@ def _get_cluster(timeout=None):
 class Connection(object):
     """Connection to Cloud Bigtable backend.
 
+    .. note::
+
+        If you pass a ``cluster``, it will be :meth:`.Cluster.copy`-ed before
+        being stored on the new connection. This also copies the
+        :class:`.Client` that created the :class:`.Cluster` instance and the
+        :class:`Credentials <oauth2client.client.Credentials>` stored on the
+        client.
+
     :type host: :data:`NoneType <types.NoneType>`
     :param host: Unused parameter. Provided for compatibility with HappyBase,
                  but irrelevant for Cloud Bigtable since it has a fixed host.
@@ -157,9 +165,10 @@ class Connection(object):
         self.table_prefix = table_prefix
         self.table_prefix_separator = table_prefix_separator
 
-        self._cluster = cluster
-        if self._cluster is None:
+        if cluster is None:
             self._cluster = _get_cluster(timeout=timeout)
+        else:
+            self._cluster = cluster.copy()
 
         if autoconnect:
             self.open()
