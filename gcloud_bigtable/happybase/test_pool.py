@@ -23,8 +23,6 @@ class TestConnectionPool(unittest2.TestCase):
         return ConnectionPool
 
     def _makeOne(self, *args, **kwargs):
-        if 'cluster' not in kwargs:
-            kwargs['cluster'] = _Cluster()
         return self._getTargetClass()(*args, **kwargs)
 
     def test_constructor_defaults(self):
@@ -33,7 +31,10 @@ class TestConnectionPool(unittest2.TestCase):
         from gcloud_bigtable.happybase.connection import Connection
 
         size = 11
-        pool = self._makeOne(size)
+        cluster_copy = object()
+        all_copies = [cluster_copy] * size
+        cluster = _Cluster(*all_copies)  # Avoid implicit environ check.
+        pool = self._makeOne(size, cluster=cluster)
 
         self.assertTrue(isinstance(pool._lock, type(threading.Lock())))
         self.assertTrue(isinstance(pool._thread_connections, threading.local))
@@ -45,15 +46,18 @@ class TestConnectionPool(unittest2.TestCase):
         self.assertEqual(queue.maxsize, size)
         for connection in queue.queue:
             self.assertTrue(isinstance(connection, Connection))
+            self.assertTrue(connection._cluster is cluster_copy)
 
     def test_constructor_passes_kwargs(self):
         timeout = 1000
         table_prefix = 'foo'
         table_prefix_separator = '<>'
+        cluster = _Cluster()  # Avoid implicit environ check.
 
         size = 1
         pool = self._makeOne(size, timeout=timeout, table_prefix=table_prefix,
-                             table_prefix_separator=table_prefix_separator)
+                             table_prefix_separator=table_prefix_separator,
+                             cluster=cluster)
 
         for connection in pool._queue.queue:
             self.assertEqual(connection.table_prefix, table_prefix)
@@ -94,6 +98,30 @@ class TestConnectionPool(unittest2.TestCase):
             self.assertTrue(connection._cluster is cluster_copy3)
             self.assertFalse(connection._open_called)
 
+    def test_constructor_infers_cluster(self):
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable.happybase.connection import Connection
+        from gcloud_bigtable.happybase import pool as MUT
+
+        size = 1
+        cluster_copy = object()
+        all_copies = [cluster_copy] * size
+        cluster = _Cluster(*all_copies)
+
+        timeout = object()
+        mock_get_cluster = _MockCalled(cluster)
+        with _Monkey(MUT, _get_cluster=mock_get_cluster):
+            pool = self._makeOne(size, timeout=timeout)
+
+        for connection in pool._queue.queue:
+            self.assertTrue(isinstance(connection, Connection))
+            # We know that the Connection() constructor will
+            # call cluster.copy().
+            self.assertTrue(connection._cluster is cluster_copy)
+
+        mock_get_cluster.check_called(self, [()], [{'timeout': timeout}])
+
     def test_constructor_non_integer_size(self):
         size = None
         with self.assertRaises(TypeError):
@@ -110,7 +138,8 @@ class TestConnectionPool(unittest2.TestCase):
     def test_connection(self):
         size = 1
         timeout = 10
-        pool = self._makeOne(size)
+        cluster = _Cluster()  # Avoid implicit environ check.
+        pool = self._makeOne(size, cluster=cluster)
         with self.assertRaises(NotImplementedError):
             pool.connection(timeout=timeout)
 

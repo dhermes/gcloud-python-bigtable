@@ -20,6 +20,7 @@ import six
 import threading
 
 from gcloud_bigtable.happybase.connection import Connection
+from gcloud_bigtable.happybase.connection import _get_cluster
 
 
 class NoConnectionsAvailable(RuntimeError):
@@ -38,7 +39,9 @@ class ConnectionPool(object):
         All keyword arguments are passed unmodified to the
         :class:`.Connection` constructor **except** for ``autoconnect``.
         This is because the ``open`` / ``closed`` status of a connection
-        is managed by the pool.
+        is managed by the pool. In addition, if ``cluster`` is not passed,
+        the default / inferred cluster is determined by the pool and then
+        passed to each :class:`.Connection` that is created.
 
     :type size: int
     :param size: The maximum number of concurrently open connections.
@@ -65,6 +68,9 @@ class ConnectionPool(object):
 
         connection_kwargs = kwargs
         connection_kwargs['autoconnect'] = False
+        if 'cluster' not in connection_kwargs:
+            connection_kwargs['cluster'] = _get_cluster(
+                timeout=kwargs.get('timeout'))
 
         for _ in xrange(size):
             connection = Connection(**connection_kwargs)
