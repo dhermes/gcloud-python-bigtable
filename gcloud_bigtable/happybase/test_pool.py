@@ -33,7 +33,7 @@ class TestConnectionPool(unittest2.TestCase):
         size = 11
         cluster_copy = _Cluster()
         all_copies = [cluster_copy] * size
-        cluster = _Cluster(*all_copies)  # Avoid implicit environ check.
+        cluster = _Cluster(copies=all_copies)  # Avoid implicit environ check.
         pool = self._makeOne(size, cluster=cluster)
 
         self.assertTrue(isinstance(pool._lock, type(threading.Lock())))
@@ -80,7 +80,8 @@ class TestConnectionPool(unittest2.TestCase):
         cluster_copy1 = _Cluster()
         cluster_copy2 = _Cluster()
         cluster_copy3 = _Cluster()
-        cluster = _Cluster(cluster_copy1, cluster_copy2, cluster_copy3)
+        cluster = _Cluster(
+            copies=[cluster_copy1, cluster_copy2, cluster_copy3])
         connection = ConnectionWithOpen(autoconnect=False, cluster=cluster)
         self.assertFalse(connection._open_called)
         self.assertTrue(connection._cluster is cluster_copy1)
@@ -107,7 +108,7 @@ class TestConnectionPool(unittest2.TestCase):
         size = 1
         cluster_copy = _Cluster()
         all_copies = [cluster_copy] * size
-        cluster = _Cluster(*all_copies)
+        cluster = _Cluster(copies=all_copies)
 
         timeout = object()
         mock_get_cluster = _MockCalled(cluster)
@@ -155,7 +156,7 @@ class _Client(object):
 
 class _Cluster(object):
 
-    def __init__(self, *copies):
+    def __init__(self, copies=()):
         self.copies = list(copies)
         # Included to support Connection.__del__
         self.client = _Client()

@@ -36,7 +36,7 @@ class Test__get_cluster(unittest2.TestCase):
         # there is exactly one cluster.
         cluster, = clusters
         self.assertEqual(result, cluster)
-        client = cluster._client
+        client = cluster.client
         self.assertEqual(client.args, ())
         expected_kwargs = {'admin': True}
         if timeout is not None:
@@ -118,7 +118,7 @@ class TestConnection(unittest2.TestCase):
         table_prefix = 'table-prefix'
         table_prefix_separator = 'sep'
         cluster_copy = _Cluster()
-        cluster = _Cluster(cluster_copy)
+        cluster = _Cluster(copies=[cluster_copy])
 
         connection = self._makeOne(
             autoconnect=False, timeout=timeout,
@@ -266,11 +266,12 @@ class TestConnection(unittest2.TestCase):
     def test_tables(self):
         from gcloud_bigtable.table import Table
 
-        cluster = _Cluster()  # Avoid implicit environ check.
         table_name1 = 'table-name1'
         table_name2 = 'table-name2'
-        cluster.list_tables_result = [Table(table_name1, None),
-                                      Table(table_name2, None)]
+        cluster = _Cluster(list_tables_result=[
+            Table(table_name1, None),
+            Table(table_name2, None),
+        ])
         connection = self._makeOne(autoconnect=False, cluster=cluster)
         result = connection.tables()
         self.assertEqual(result, [table_name1, table_name2])
@@ -278,7 +279,6 @@ class TestConnection(unittest2.TestCase):
     def test_tables_with_prefix(self):
         from gcloud_bigtable.table import Table
 
-        cluster = _Cluster()  # Avoid implicit environ check.
         table_prefix = 'prefix'
         table_prefix_separator = '<>'
         unprefixed_table_name1 = 'table-name1'
@@ -286,8 +286,10 @@ class TestConnection(unittest2.TestCase):
         table_name1 = (table_prefix + table_prefix_separator +
                        unprefixed_table_name1)
         table_name2 = 'table-name2'
-        cluster.list_tables_result = [Table(table_name1, None),
-                                      Table(table_name2, None)]
+        cluster = _Cluster(list_tables_result=[
+            Table(table_name1, None),
+            Table(table_name2, None),
+        ])
         connection = self._makeOne(
             autoconnect=False, cluster=cluster, table_prefix=table_prefix,
             table_prefix_separator=table_prefix_separator)
@@ -351,7 +353,7 @@ class _Client(object):
     def __init__(self, *args, **kwargs):
         self.clusters = kwargs.pop('clusters', [])
         for cluster in self.clusters:
-            cluster._client = self
+            cluster.client = self
         self.failed_zones = kwargs.pop('failed_zones', [])
         self.args = args
         self.kwargs = kwargs
@@ -370,11 +372,11 @@ class _Client(object):
 
 class _Cluster(object):
 
-    def __init__(self, *copies):
+    def __init__(self, copies=(), list_tables_result=()):
         self.copies = list(copies)
         # Included to support Connection.__del__
         self.client = _Client()
-        self.list_tables_result = []
+        self.list_tables_result = list_tables_result
 
     def copy(self):
         if self.copies:
