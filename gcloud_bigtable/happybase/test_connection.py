@@ -70,6 +70,74 @@ class Test__get_cluster(unittest2.TestCase):
                          failed_zones=[failed_zone])
 
 
+class Test__parse_family_option(unittest2.TestCase):
+
+    def _callFUT(self, option):
+        from gcloud_bigtable.happybase.connection import _parse_family_option
+        return _parse_family_option(option)
+
+    def test_dictionary_no_keys(self):
+        option = {}
+        result = self._callFUT(option)
+        self.assertEqual(result, None)
+
+    def test_dictionary_bad_key(self):
+        option = {'badkey': None}
+        with self.assertRaises(ValueError):
+            self._callFUT(option)
+
+    def test_dictionary_versions_key(self):
+        from gcloud_bigtable.column_family import GarbageCollectionRule
+
+        versions = 42
+        option = {'max_versions': versions}
+        result = self._callFUT(option)
+
+        gc_rule = GarbageCollectionRule(max_num_versions=versions)
+        self.assertEqual(result, gc_rule)
+
+    def test_dictionary_ttl_key(self):
+        import datetime
+        from gcloud_bigtable.column_family import GarbageCollectionRule
+
+        time_to_live = 24 * 60 * 60
+        max_age = datetime.timedelta(days=1)
+        option = {'time_to_live': time_to_live}
+        result = self._callFUT(option)
+
+        gc_rule = GarbageCollectionRule(max_age=max_age)
+        self.assertEqual(result, gc_rule)
+
+    def test_dictionary_both_keys(self):
+        import datetime
+        from gcloud_bigtable.column_family import GarbageCollectionRule
+        from gcloud_bigtable.column_family import (
+            GarbageCollectionRuleIntersection)
+
+        versions = 42
+        time_to_live = 24 * 60 * 60
+        option = {
+            'max_versions': versions,
+            'time_to_live': time_to_live,
+        }
+        result = self._callFUT(option)
+
+        max_age = datetime.timedelta(days=1)
+        # NOTE: This relies on the order of the rules in the method we are
+        #       calling matching this order here.
+        gc_rule1 = GarbageCollectionRule(max_age=max_age)
+        gc_rule2 = GarbageCollectionRule(max_num_versions=versions)
+        gc_rule = GarbageCollectionRuleIntersection(
+            rules=[gc_rule1, gc_rule2])
+        self.assertEqual(result, gc_rule)
+
+    def test_non_dictionary(self):
+        option = object()
+        self.assertFalse(isinstance(option, dict))
+        result = self._callFUT(option)
+        self.assertEqual(result, option)
+
+
 class TestConnection(unittest2.TestCase):
 
     def _getTargetClass(self):
@@ -297,13 +365,56 @@ class TestConnection(unittest2.TestCase):
         self.assertEqual(result, [unprefixed_table_name1])
 
     def test_create_table(self):
+        import operator
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable.happybase import connection as MUT
+
         cluster = _Cluster()  # Avoid implicit environ check.
         connection = self._makeOne(autoconnect=False, cluster=cluster)
+        mock_gc_rule = object()
+        mock_parse_family_option = _MockCalled(mock_gc_rule)
 
         name = 'table-name'
-        families = {}
-        with self.assertRaises(NotImplementedError):
+        col_fam1 = 'cf1'
+        col_fam_option1 = object()
+        col_fam2 = 'cf2'
+        col_fam_option2 = object()
+        families = {
+            col_fam1: col_fam_option1,
+            # A trailing colon is also allowed.
+            col_fam2 + ':': col_fam_option2,
+        }
+        table_instances = []
+        col_fam_instances = []
+        with _Monkey(MUT, _LowLevelTable=_MockLowLevelTable,
+                     _parse_family_option=mock_parse_family_option):
+            _MockLowLevelTable._instances = table_instances
+            _MockLowLevelColumnFamily._instances = col_fam_instances
             connection.create_table(name, families)
+
+        # Just one table would have been created.
+        table_instance, = table_instances
+        self.assertEqual(table_instance.args, ('table-name', cluster))
+        self.assertEqual(table_instance.kwargs, {})
+        self.assertEqual(table_instance.create_calls, 1)
+
+        # Check if our mock was called twice, but we don't know the order.
+        mock_called = mock_parse_family_option.called_args
+        self.assertEqual(len(mock_called), 2)
+        self.assertEqual(map(len, mock_called), [1, 1])
+        self.assertEqual(set(mock_called[0] + mock_called[1]),
+                         set([col_fam_option1, col_fam_option2]))
+
+        # We expect two column family instances created, but don't know the
+        # order due to non-deterministic dict.items().
+        col_fam_instances.sort(key=operator.attrgetter('column_family_id'))
+        self.assertEqual(col_fam_instances[0].column_family_id, col_fam1)
+        self.assertEqual(col_fam_instances[0].gc_rule, mock_gc_rule)
+        self.assertEqual(col_fam_instances[0].create_calls, 1)
+        self.assertEqual(col_fam_instances[1].column_family_id, col_fam2)
+        self.assertEqual(col_fam_instances[1].gc_rule, mock_gc_rule)
+        self.assertEqual(col_fam_instances[1].create_calls, 1)
 
     def test_delete_table(self):
         from gcloud_bigtable._testing import _Monkey
@@ -312,25 +423,14 @@ class TestConnection(unittest2.TestCase):
         cluster = _Cluster()  # Avoid implicit environ check.
         connection = self._makeOne(autoconnect=False, cluster=cluster)
 
-        class MockLowLevelTable(object):
-
-            _instances = []
-
-            def __init__(self, *args, **kwargs):
-                self._instances.append(self)
-                self.args = args
-                self.kwargs = kwargs
-                self.delete_calls = 0
-
-            def delete(self):
-                self.delete_calls += 1
-
         name = 'table-name'
-        with _Monkey(MUT, _LowLevelTable=MockLowLevelTable):
+        instances = []
+        with _Monkey(MUT, _LowLevelTable=_MockLowLevelTable):
+            _MockLowLevelTable._instances = instances
             connection.delete_table(name)
 
         # Just one table would have been created.
-        table_instance, = MockLowLevelTable._instances
+        table_instance, = instances
         self.assertEqual(table_instance.args, ('table-name', cluster))
         self.assertEqual(table_instance.kwargs, {})
         self.assertEqual(table_instance.delete_calls, 1)
@@ -416,3 +516,38 @@ class _Cluster(object):
 
     def list_tables(self):
         return self.list_tables_result
+
+
+class _MockLowLevelTable(object):
+
+    _instances = []
+
+    def __init__(self, *args, **kwargs):
+        self._instances.append(self)
+        self.args = args
+        self.kwargs = kwargs
+        self.delete_calls = 0
+        self.create_calls = 0
+
+    def delete(self):
+        self.delete_calls += 1
+
+    def create(self):
+        self.create_calls += 1
+
+    def column_family(self, column_family_id, gc_rule=None):
+        return _MockLowLevelColumnFamily(column_family_id, gc_rule=gc_rule)
+
+
+class _MockLowLevelColumnFamily(object):
+
+    _instances = []
+
+    def __init__(self, column_family_id, gc_rule=None):
+        self._instances.append(self)
+        self.column_family_id = column_family_id
+        self.gc_rule = gc_rule
+        self.create_calls = 0
+
+    def create(self):
+        self.create_calls += 1
