@@ -124,16 +124,23 @@ class Table(object):
         """
         return ColumnFamily(column_family_id, self, gc_rule=gc_rule)
 
-    def row(self, row_key):
+    def row(self, row_key, filter_=None):
         """Factory to create a row associated with this table.
 
         :type row_key: bytes
         :param row_key: The key for the row being created.
 
-        :rtype: :class:`.row.Row`
+        :type filter_: :class:`.RowFilter`,
+                       :class:`.RowFilterChain`,
+                       :class:`.RowFilterUnion`, or
+                       :class:`.ConditionalRowFilter`
+        :param filter_: (Optional) Filter to be used for conditional mutations.
+                        See :class:`.Row` for more details.
+
+        :rtype: :class:`.Row`
         :returns: A row owned by this table.
         """
-        return Row(row_key, self)
+        return Row(row_key, self, filter_=filter_)
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
