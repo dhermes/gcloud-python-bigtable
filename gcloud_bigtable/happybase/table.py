@@ -454,10 +454,12 @@ class Table(object):
         :type column: str
         :param column: Column we are ``get``-ing from; of the form ``fam:col``.
 
-        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
-                 temporarily until the method is implemented.
+        :rtype: int
+        :returns: Counter value (after initializing / incrementing by 0).
         """
-        raise NotImplementedError('Temporarily not implemented.')
+        # Don't query directly, but increment with value=0 so that the counter
+        # is correctly initialised if didn't exist yet.
+        return self.counter_inc(row, column, value=0)
 
     def counter_set(self, row, column, value=0):
         """Set a counter column to a specific value.
@@ -524,7 +526,7 @@ class Table(object):
         :param value: Amount to decrement the counter by. (If negative,
                       this is equivalent to increment.)
 
-        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
-                 temporarily until the method is implemented.
+        :rtype: int
+        :returns: Counter value after decrementing.
         """
-        raise NotImplementedError('Temporarily not implemented.')
+        return self.counter_inc(row, column, -value)

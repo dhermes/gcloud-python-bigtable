@@ -372,14 +372,29 @@ class TestTable(unittest2.TestCase):
         self.assertEqual(result.kwargs, expected_kwargs)
 
     def test_counter_get(self):
+        klass = self._getTargetClass()
+        counter_value = 1337
+
+        class TableWithInc(klass):
+
+            incremented = []
+            value = counter_value
+
+            def counter_inc(self, row, column, value=1):
+                self.incremented.append((row, column, value))
+                self.value += value
+                return self.value
+
         name = 'table-name'
         connection = object()
-        table = self._makeOne(name, connection)
+        table = TableWithInc(name, connection)
 
         row = 'row-key'
         column = 'fam:col1'
-        with self.assertRaises(NotImplementedError):
-            table.counter_get(row, column)
+        self.assertEqual(TableWithInc.incremented, [])
+        result = table.counter_get(row, column)
+        self.assertEqual(result, counter_value)
+        self.assertEqual(TableWithInc.incremented, [(row, column, 0)])
 
     def test_counter_set(self):
         name = 'table-name'
@@ -404,15 +419,30 @@ class TestTable(unittest2.TestCase):
             table.counter_inc(row, column, value=value)
 
     def test_counter_dec(self):
+        klass = self._getTargetClass()
+        counter_value = 42
+
+        class TableWithInc(klass):
+
+            incremented = []
+            value = counter_value
+
+            def counter_inc(self, row, column, value=1):
+                self.incremented.append((row, column, value))
+                self.value += value
+                return self.value
+
         name = 'table-name'
         connection = object()
-        table = self._makeOne(name, connection)
+        table = TableWithInc(name, connection)
 
         row = 'row-key'
         column = 'fam:col1'
-        value = 42
-        with self.assertRaises(NotImplementedError):
-            table.counter_dec(row, column, value=value)
+        dec_value = 987
+        self.assertEqual(TableWithInc.incremented, [])
+        result = table.counter_dec(row, column, value=dec_value)
+        self.assertEqual(result, counter_value - dec_value)
+        self.assertEqual(TableWithInc.incremented, [(row, column, -dec_value)])
 
 
 class _MockLowLevelTable(object):
