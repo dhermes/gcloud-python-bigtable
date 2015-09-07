@@ -14,8 +14,11 @@
 
 """Google Cloud Bigtable HappyBase package.
 
-Intended to emulate the HappyBase library using Google Cloud Bigtable
-as the backing store.
+This package is intended to emulate the HappyBase library using
+Google Cloud Bigtable as the backing store.
+
+Differences in Public API
+-------------------------
 
 Some concepts from HBase/Thrift do not map directly to the Cloud
 Bigtable API. As a result, the following instance methods and functions
@@ -34,9 +37,7 @@ could not be implemented:
 * :meth:`Table.counter_set() \
       <gcloud_bigtable.happybase.table.Table.counter_set>` - method can't
   be atomic, so we disable it
-
-This also means that calling :meth:`.Connection.delete_table` with
-``disable=True`` can't be supported.
+* The ``__version__`` value for the HappyBase package is :data`None`
 
 In addition, the many of the constants from :mod:`.connection` are specific
 to HBase and are defined as :data:`None` in our module:
@@ -53,33 +54,70 @@ to HBase and are defined as :data:`None` in our module:
 Two of these ``DEFAULT_HOST`` and ``DEFAULT_PORT``, are even imported in
 the main ``happybase`` package.
 
-The :class:`.Connection` constructor **disables** the use of several arguments
-and will a :class:`ValueError <exceptions.ValueError>` if any of them are
-passed in as keyword arguments. The arguments are:
-
-- ``host``
-- ``port``
-- ``compat``
-- ``transport``
-- ``protocol``
-
-In order to make :class:`.Connection` compatible with Cloud Bigtable, we
-add a ``client`` keyword argument to allow user's to pass in their own
-clients (which they can construct beforehand).
-
-Any uses of the ``wal`` (Write Ahead Log) argument will result in a
-:class:`ValueError <exceptions.ValueError>` as well. This includes
-uses in:
-
-* :class:`.Batch` constructor
-* :meth:`.Batch.put`
-* :meth:`.Batch.delete`
-* :meth:`Table.put() <gcloud_bigtable.happybase.table.Table.put>`
-* :meth:`Table.delete() <gcloud_bigtable.happybase.table.Table.delete>`
-* :meth:`Table.batch() <gcloud_bigtable.happybase.table.Table.batch>` factory
-
 Finally, we do not provide the ``util`` module. Though it is public in the
 HappyBase library, it provides no core functionality.
+
+API Behavior Changes
+--------------------
+
+* Since there is no concept of an enabled / disabled table, calling
+  :meth:`.Connection.delete_table` with ``disable=True`` can't be supported.
+  Using that argument will result in a
+  :class:`ValueError <exceptions.ValueError>`.
+* The :class:`.Connection` constructor **disables** the use of several
+  arguments and will throw a :class:`ValueError <exceptions.ValueError>` if
+  any of them are passed in as keyword arguments. The arguments are:
+
+  * ``host``
+  * ``port``
+  * ``compat``
+  * ``transport``
+  * ``protocol``
+* In order to make :class:`.Connection` compatible with Cloud Bigtable, we
+  add a ``cluster`` keyword argument to allow user's to pass in their own
+  :class:`.Cluster` (which they can construct beforehand).
+
+  For example:
+
+  .. code:: python
+
+      from gcloud_bigtable.client import Client
+      client = Client(project_id=PROJECT_ID, admin=True)
+      cluster = client.cluster(zone, cluster_id)
+      cluster.reload()
+
+      from gcloud_bigtable.happybase import Connection
+      connection = Connection(cluster=cluster)
+
+* Any uses of the ``wal`` (Write Ahead Log) argument will result in a
+  :class:`ValueError <exceptions.ValueError>` as well. This includes
+  uses in:
+
+  * :class:`.Batch` constructor
+  * :meth:`.Batch.put`
+  * :meth:`.Batch.delete`
+  * :meth:`Table.put() <gcloud_bigtable.happybase.table.Table.put>`
+  * :meth:`Table.delete() <gcloud_bigtable.happybase.table.Table.delete>`
+  * :meth:`Table.batch() <gcloud_bigtable.happybase.table.Table.batch>` factory
+* When calling :meth:`.Connection.create_table`, the majority of HBase column
+  family options cannot be used. Among
+
+  * ``max_versions``
+  * ``compression``
+  * ``in_memory``
+  * ``bloom_filter_type``
+  * ``bloom_filter_vector_size``
+  * ``bloom_filter_nb_hashes``
+  * ``block_cache_enabled``
+  * ``time_to_live``
+
+  Only ``max_versions`` and ``time_to_live`` are availabe in Cloud Bigtable
+  (as ``max_num_versions`` and ``max_age``).
+
+  In addition to using a dictionary for specifying column family options,
+  we also accept instances of :class:`.GarbageCollectionRule`,
+  :class:`.GarbageCollectionRuleUnion` or
+  :class:`.GarbageCollectionRuleIntersection`.
 """
 
 from gcloud_bigtable.happybase.batch import Batch

@@ -49,13 +49,12 @@ class TestConnectionPool(unittest2.TestCase):
             self.assertTrue(connection._cluster is cluster_copy)
 
     def test_constructor_passes_kwargs(self):
-        timeout = 1000
         table_prefix = 'foo'
         table_prefix_separator = '<>'
         cluster = _Cluster()  # Avoid implicit environ check.
 
         size = 1
-        pool = self._makeOne(size, timeout=timeout, table_prefix=table_prefix,
+        pool = self._makeOne(size, table_prefix=table_prefix,
                              table_prefix_separator=table_prefix_separator,
                              cluster=cluster)
 
@@ -110,10 +109,9 @@ class TestConnectionPool(unittest2.TestCase):
         all_copies = [cluster_copy] * size
         cluster = _Cluster(copies=all_copies)
 
-        timeout = object()
         mock_get_cluster = _MockCalled(cluster)
         with _Monkey(MUT, _get_cluster=mock_get_cluster):
-            pool = self._makeOne(size, timeout=timeout)
+            pool = self._makeOne(size)
 
         for connection in pool._queue.queue:
             self.assertTrue(isinstance(connection, Connection))
@@ -121,7 +119,7 @@ class TestConnectionPool(unittest2.TestCase):
             # call cluster.copy().
             self.assertTrue(connection._cluster is cluster_copy)
 
-        mock_get_cluster.check_called(self, [()], [{'timeout': timeout}])
+        mock_get_cluster.check_called(self, [()], [{'timeout': None}])
 
     def test_constructor_non_integer_size(self):
         size = None

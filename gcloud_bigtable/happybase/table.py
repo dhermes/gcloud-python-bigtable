@@ -15,6 +15,11 @@
 """Google Cloud Bigtable HappyBase table module."""
 
 
+from gcloud_bigtable.column_family import GarbageCollectionRule
+from gcloud_bigtable.column_family import GarbageCollectionRuleIntersection
+from gcloud_bigtable.table import Table as _LowLevelTable
+
+
 def make_row(cell_map, include_timestamp):
     """Make a row dict for a Thrift cell mapping.
 
@@ -64,6 +69,55 @@ def make_ordered_row(sorted_columns, include_timestamp):
                               sorted_columns, include_timestamp)
 
 
+def _gc_rule_to_dict(gc_rule):
+    """Converts garbage collection rule to dictionary if possible.
+
+    This is in place to support dictionary values was was done
+    in HappyBase, which has somewhat different garbage collection rule
+    settings for column families.
+
+    Only does this if the garbage collection rule is:
+
+    * Simple :class:`.GarbageCollectionRule` with ``max_age``
+    * Simple :class:`.GarbageCollectionRule` with ``max_num_versions``
+    * Composite :class:`.GarbageCollectionRuleIntersection` with
+      two rules each for ``max_age`` and ``max_num_versions``
+
+    Otherwise, just returns the input without change.
+
+    :type gc_rule: :class:`.GarbageCollectionRule`,
+                   :class:`.GarbageCollectionRuleIntersection`, or
+                   :class:`.GarbageCollectionRuleUnion`
+    :param gc_rule: A garbae collection rule to convert to a dictionary
+                    (if possible).
+
+    :rtype: dict,
+            :class:`.GarbageCollectionRuleIntersection`, or
+            :class:`.GarbageCollectionRuleUnion`
+    :returns: The converted garbage collection rule.
+    """
+    result = gc_rule
+    if isinstance(gc_rule, GarbageCollectionRule):
+        result = {}
+        # We assume that the GC rule has a single value.
+        if gc_rule.max_num_versions is not None:
+            result['max_versions'] = gc_rule.max_num_versions
+        if gc_rule.max_age is not None:
+            result['time_to_live'] = gc_rule.max_age.total_seconds()
+    elif isinstance(gc_rule, GarbageCollectionRuleIntersection):
+        if len(gc_rule.rules) == 2:
+            rule1, rule2 = gc_rule.rules
+            if (isinstance(rule1, GarbageCollectionRule) and
+                    isinstance(rule2, GarbageCollectionRule)):
+                rule1 = _gc_rule_to_dict(rule1)
+                rule2 = _gc_rule_to_dict(rule2)
+                key1, = rule1.keys()
+                key2, = rule2.keys()
+                if key1 != key2:
+                    result = {key1: rule1[key1], key2: rule2[key2]}
+    return result
+
+
 class Table(object):
     """Representation of Cloud Bigtable table.
 
@@ -86,10 +140,14 @@ class Table(object):
     def families(self):
         """Retrieve the column families for this table.
 
-        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
-                 temporarily until the method is implemented.
+        :rtype: dict
+        :returns: Mapping from column family name to garbage collection rule
+                  for a column family.
         """
-        raise NotImplementedError('Temporarily not implemented.')
+        table = _LowLevelTable(self.name, self.connection._cluster)
+        column_family_map = table.list_column_families()
+        return {col_fam: _gc_rule_to_dict(col_fam_obj.gc_rule)
+                for col_fam, col_fam_obj in column_family_map.items()}
 
     def regions(self):
         """Retrieve the regions for this table.

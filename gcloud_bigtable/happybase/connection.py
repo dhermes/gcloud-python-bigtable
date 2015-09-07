@@ -223,6 +223,9 @@ class Connection(object):
         if cluster is None:
             self._cluster = _get_cluster(timeout=timeout)
         else:
+            if timeout is not None:
+                raise ValueError('Timeout cannot be used when an existing '
+                                 'cluster is passed')
             self._cluster = cluster.copy()
 
         if autoconnect:

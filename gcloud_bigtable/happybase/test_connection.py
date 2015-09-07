@@ -182,14 +182,13 @@ class TestConnection(unittest2.TestCase):
         mock_get_cluster.check_called(self, [()], [{'timeout': timeout}])
 
     def test_constructor_explicit(self):
-        timeout = object()
         table_prefix = 'table-prefix'
         table_prefix_separator = 'sep'
         cluster_copy = _Cluster()
         cluster = _Cluster(copies=[cluster_copy])
 
         connection = self._makeOne(
-            autoconnect=False, timeout=timeout,
+            autoconnect=False,
             table_prefix=table_prefix,
             table_prefix_separator=table_prefix_separator,
             cluster=cluster)
@@ -231,6 +230,10 @@ class TestConnection(unittest2.TestCase):
     def test_constructor_with_protocol(self):
         with self.assertRaises(ValueError):
             self._makeOne(protocol=object())
+
+    def test_constructor_with_timeout_and_cluster(self):
+        with self.assertRaises(ValueError):
+            self._makeOne(cluster=object(), timeout=object())
 
     def test_open(self):
         cluster = _Cluster()  # Avoid implicit environ check.
@@ -395,7 +398,7 @@ class TestConnection(unittest2.TestCase):
 
         # Just one table would have been created.
         table_instance, = table_instances
-        self.assertEqual(table_instance.args, ('table-name', cluster))
+        self.assertEqual(table_instance.args, (name, cluster))
         self.assertEqual(table_instance.kwargs, {})
         self.assertEqual(table_instance.create_calls, 1)
 
@@ -431,7 +434,7 @@ class TestConnection(unittest2.TestCase):
 
         # Just one table would have been created.
         table_instance, = instances
-        self.assertEqual(table_instance.args, ('table-name', cluster))
+        self.assertEqual(table_instance.args, (name, cluster))
         self.assertEqual(table_instance.kwargs, {})
         self.assertEqual(table_instance.delete_calls, 1)
 

@@ -38,6 +38,93 @@ class Test_make_ordered_row(unittest2.TestCase):
             self._callFUT([], False)
 
 
+class Test__gc_rule_to_dict(unittest2.TestCase):
+
+    def _callFUT(self, gc_rule):
+        from gcloud_bigtable.happybase.table import _gc_rule_to_dict
+        return _gc_rule_to_dict(gc_rule)
+
+    def test_with_max_versions(self):
+        from gcloud_bigtable.column_family import GarbageCollectionRule
+
+        max_versions = 2
+        gc_rule = GarbageCollectionRule(max_num_versions=max_versions)
+        result = self._callFUT(gc_rule)
+        expected_result = {'max_versions': max_versions}
+        self.assertEqual(result, expected_result)
+
+    def test_with_max_age(self):
+        import datetime
+        from gcloud_bigtable.column_family import GarbageCollectionRule
+
+        time_to_live = 101
+        max_age = datetime.timedelta(seconds=time_to_live)
+        gc_rule = GarbageCollectionRule(max_age=max_age)
+        result = self._callFUT(gc_rule)
+        expected_result = {'time_to_live': time_to_live}
+        self.assertEqual(result, expected_result)
+
+    def test_with_non_gc_rule(self):
+        gc_rule = object()
+        result = self._callFUT(gc_rule)
+        self.assertTrue(result is gc_rule)
+
+    def test_with_gc_rule_union(self):
+        from gcloud_bigtable.column_family import GarbageCollectionRuleUnion
+
+        gc_rule = GarbageCollectionRuleUnion()
+        result = self._callFUT(gc_rule)
+        self.assertTrue(result is gc_rule)
+
+    def test_with_intersection_other_than_two(self):
+        from gcloud_bigtable.column_family import (
+            GarbageCollectionRuleIntersection)
+
+        gc_rule = GarbageCollectionRuleIntersection(rules=[])
+        result = self._callFUT(gc_rule)
+        self.assertTrue(result is gc_rule)
+
+    def test_with_intersection_two_max_num_versions(self):
+        from gcloud_bigtable.column_family import GarbageCollectionRule
+        from gcloud_bigtable.column_family import (
+            GarbageCollectionRuleIntersection)
+
+        rule1 = GarbageCollectionRule(max_num_versions=1)
+        rule2 = GarbageCollectionRule(max_num_versions=2)
+        gc_rule = GarbageCollectionRuleIntersection(rules=[rule1, rule2])
+        result = self._callFUT(gc_rule)
+        self.assertTrue(result is gc_rule)
+
+    def test_with_intersection_two_rules(self):
+        import datetime
+        from gcloud_bigtable.column_family import GarbageCollectionRule
+        from gcloud_bigtable.column_family import (
+            GarbageCollectionRuleIntersection)
+
+        time_to_live = 101
+        max_age = datetime.timedelta(seconds=time_to_live)
+        rule1 = GarbageCollectionRule(max_age=max_age)
+        max_versions = 2
+        rule2 = GarbageCollectionRule(max_num_versions=max_versions)
+        gc_rule = GarbageCollectionRuleIntersection(rules=[rule1, rule2])
+        result = self._callFUT(gc_rule)
+        expected_result = {
+            'max_versions': max_versions,
+            'time_to_live': time_to_live,
+        }
+        self.assertEqual(result, expected_result)
+
+    def test_with_intersection_two_nested_rules(self):
+        from gcloud_bigtable.column_family import (
+            GarbageCollectionRuleIntersection)
+
+        rule1 = GarbageCollectionRuleIntersection(rules=[])
+        rule2 = GarbageCollectionRuleIntersection(rules=[])
+        gc_rule = GarbageCollectionRuleIntersection(rules=[rule1, rule2])
+        result = self._callFUT(gc_rule)
+        self.assertTrue(result is gc_rule)
+
+
 class TestTable(unittest2.TestCase):
 
     def _getTargetClass(self):
@@ -61,12 +148,43 @@ class TestTable(unittest2.TestCase):
         self.assertEqual(repr(table), '<table.Table name=\'table-name\'>')
 
     def test_families(self):
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable.happybase import table as MUT
+
         name = 'table-name'
-        connection = object()
+        cluster = object()
+        connection = _Connection(cluster)
         table = self._makeOne(name, connection)
 
-        with self.assertRaises(NotImplementedError):
-            table.families()
+        tables_constructed = []
+        col_fam_name = 'fam'
+        gc_rule = object()
+        col_fam = _MockLowLevelColumnFamily(col_fam_name, gc_rule=gc_rule)
+        col_fams = {col_fam_name: col_fam}
+
+        def make_low_level_table(*args, **kwargs):
+            result = _MockLowLevelTable(*args, **kwargs)
+            result.column_families = col_fams
+            tables_constructed.append(result)
+            return result
+
+        to_dict_result = object()
+        mock_gc_rule_to_dict = _MockCalled(to_dict_result)
+        with _Monkey(MUT, _LowLevelTable=make_low_level_table,
+                     _gc_rule_to_dict=mock_gc_rule_to_dict):
+            result = table.families()
+
+        self.assertEqual(result, {col_fam_name: to_dict_result})
+
+        # Just one table would have been created.
+        table_instance, = tables_constructed
+        self.assertEqual(table_instance.args, (name, cluster))
+        self.assertEqual(table_instance.kwargs, {})
+        self.assertEqual(table_instance.list_column_families_calls, 1)
+
+        # Check the input to our mock.
+        mock_gc_rule_to_dict.check_called(self, [(gc_rule,)])
 
     def test_regions(self):
         name = 'table-name'
@@ -217,3 +335,29 @@ class TestTable(unittest2.TestCase):
         value = 42
         with self.assertRaises(NotImplementedError):
             table.counter_dec(row, column, value=value)
+
+
+class _MockLowLevelTable(object):
+
+    def __init__(self, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
+        self.list_column_families_calls = 0
+        self.column_families = {}
+
+    def list_column_families(self):
+        self.list_column_families_calls += 1
+        return self.column_families
+
+
+class _MockLowLevelColumnFamily(object):
+
+    def __init__(self, column_family_id, gc_rule=None):
+        self.column_family_id = column_family_id
+        self.gc_rule = gc_rule
+
+
+class _Connection(object):
+
+    def __init__(self, cluster):
+        self._cluster = cluster
