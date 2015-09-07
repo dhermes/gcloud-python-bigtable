@@ -85,7 +85,8 @@ def _gc_rule_to_dict(gc_rule):
 
     Otherwise, just returns the input without change.
 
-    :type gc_rule: :class:`.GarbageCollectionRule`,
+    :type gc_rule: :data:`NoneType <types.NoneType>`,
+                   :class:`.GarbageCollectionRule`,
                    :class:`.GarbageCollectionRuleIntersection`, or
                    :class:`.GarbageCollectionRuleUnion`
     :param gc_rule: A garbae collection rule to convert to a dictionary
@@ -97,7 +98,9 @@ def _gc_rule_to_dict(gc_rule):
     :returns: The converted garbage collection rule.
     """
     result = gc_rule
-    if isinstance(gc_rule, GarbageCollectionRule):
+    if gc_rule is None:
+        result = {}
+    elif isinstance(gc_rule, GarbageCollectionRule):
         result = {}
         # We assume that the GC rule has a single value.
         if gc_rule.max_num_versions is not None:

@@ -44,6 +44,11 @@ class Test__gc_rule_to_dict(unittest2.TestCase):
         from gcloud_bigtable.happybase.table import _gc_rule_to_dict
         return _gc_rule_to_dict(gc_rule)
 
+    def test_with_null(self):
+        gc_rule = None
+        result = self._callFUT(gc_rule)
+        self.assertEqual(result, {})
+
     def test_with_max_versions(self):
         from gcloud_bigtable.column_family import GarbageCollectionRule
 
