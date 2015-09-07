@@ -17,6 +17,8 @@
 
 from gcloud_bigtable.column_family import GarbageCollectionRule
 from gcloud_bigtable.column_family import GarbageCollectionRuleIntersection
+from gcloud_bigtable.happybase.batch import Batch
+from gcloud_bigtable.happybase.batch import _WAL_SENTINEL
 from gcloud_bigtable.table import Table as _LowLevelTable
 
 
@@ -407,7 +409,7 @@ class Table(object):
         raise NotImplementedError('Temporarily not implemented.')
 
     def batch(self, timestamp=None, batch_size=None, transaction=False,
-              wal=True):
+              wal=_WAL_SENTINEL):
         """Create a new batch operation for this table.
 
         This method returns a new :class:`.Batch` instance that can be used
@@ -429,16 +431,14 @@ class Table(object):
                             committed. If ``batch_size`` is set, the mutation
                             can't be transactional.
 
-        :type wal: :data:`NoneType <types.NoneType>`
+        :type wal: object
         :param wal: Unused parameter (to be passed to the created batch).
                     Provided for compatibility with HappyBase, but irrelevant
                     for Cloud Bigtable since it does not have a Write Ahead
                     Log.
-
-        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
-                 temporarily until the method is implemented.
         """
-        raise NotImplementedError('Temporarily not implemented.')
+        return Batch(self, timestamp=timestamp, batch_size=batch_size,
+                     transaction=transaction, wal=wal)
 
     def counter_get(self, row, column):
         """Retrieve the current value of a counter column.
