@@ -265,29 +265,86 @@ class TestTable(unittest2.TestCase):
                        limit=limit, sorted_columns=sorted_columns)
 
     def test_put(self):
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable.happybase import table as MUT
+        from gcloud_bigtable.happybase.table import _WAL_SENTINEL
+
         name = 'table-name'
         connection = object()
         table = self._makeOne(name, connection)
+        batches_created = []
+
+        def make_batch(*args, **kwargs):
+            result = _MockBatch(*args, **kwargs)
+            batches_created.append(result)
+            return result
 
         row = 'row-key'
         data = {'fam:col': 'foo'}
         timestamp = None
-        with self.assertRaises(NotImplementedError):
-            table.put(row, data, timestamp=timestamp)
+        with _Monkey(MUT, Batch=make_batch):
+            result = table.put(row, data, timestamp=timestamp)
+
+        # There is no return value.
+        self.assertEqual(result, None)
+
+        # Check how the batch was created and used.
+        batch, = batches_created
+        self.assertTrue(isinstance(batch, _MockBatch))
+        self.assertEqual(batch.args, (table,))
+        expected_kwargs = {
+            'timestamp': timestamp,
+            'batch_size': None,
+            'transaction': False,
+            'wal': _WAL_SENTINEL,
+        }
+        self.assertEqual(batch.kwargs, expected_kwargs)
+        # Make sure it was a successful context manager
+        self.assertEqual(batch.exit_vals, [(None, None, None)])
+        self.assertEqual(batch.put_args, [(row, data)])
+        self.assertEqual(batch.delete_args, [])
 
     def test_delete(self):
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable.happybase import table as MUT
+        from gcloud_bigtable.happybase.table import _WAL_SENTINEL
+
         name = 'table-name'
         connection = object()
         table = self._makeOne(name, connection)
+        batches_created = []
+
+        def make_batch(*args, **kwargs):
+            result = _MockBatch(*args, **kwargs)
+            batches_created.append(result)
+            return result
 
         row = 'row-key'
         columns = ['fam:col1', 'fam:col2']
         timestamp = None
-        with self.assertRaises(NotImplementedError):
-            table.delete(row, columns=columns, timestamp=timestamp)
+        with _Monkey(MUT, Batch=make_batch):
+            result = table.delete(row, columns=columns, timestamp=timestamp)
+
+        # There is no return value.
+        self.assertEqual(result, None)
+
+        # Check how the batch was created and used.
+        batch, = batches_created
+        self.assertTrue(isinstance(batch, _MockBatch))
+        self.assertEqual(batch.args, (table,))
+        expected_kwargs = {
+            'timestamp': timestamp,
+            'batch_size': None,
+            'transaction': False,
+            'wal': _WAL_SENTINEL,
+        }
+        self.assertEqual(batch.kwargs, expected_kwargs)
+        # Make sure it was a successful context manager
+        self.assertEqual(batch.exit_vals, [(None, None, None)])
+        self.assertEqual(batch.put_args, [])
+        self.assertEqual(batch.delete_args, [(row, columns)])
 
     def test_batch(self):
-        from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable.happybase import table as MUT
 
@@ -300,20 +357,19 @@ class TestTable(unittest2.TestCase):
         transaction = False  # Must be False when batch_size is non-null
         wal = object()
 
-        batch_result = object()
-        mock_batch = _MockCalled(batch_result)
-        with _Monkey(MUT, Batch=mock_batch):
+        with _Monkey(MUT, Batch=_MockBatch):
             result = table.batch(timestamp=timestamp, batch_size=batch_size,
                                  transaction=transaction, wal=wal)
 
-        self.assertEqual(result, batch_result)
+        self.assertTrue(isinstance(result, _MockBatch))
+        self.assertEqual(result.args, (table,))
         expected_kwargs = {
             'timestamp': timestamp,
             'batch_size': batch_size,
             'transaction': transaction,
             'wal': wal,
         }
-        mock_batch.check_called(self, [(table,)], [expected_kwargs])
+        self.assertEqual(result.kwargs, expected_kwargs)
 
     def test_counter_get(self):
         name = 'table-name'
@@ -383,3 +439,25 @@ class _Connection(object):
 
     def __init__(self, cluster):
         self._cluster = cluster
+
+
+class _MockBatch(object):
+
+    def __init__(self, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
+        self.exit_vals = []
+        self.put_args = []
+        self.delete_args = []
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.exit_vals.append((exc_type, exc_value, traceback))
+
+    def put(self, *args):
+        self.put_args.append(args)
+
+    def delete(self, *args):
+        self.delete_args.append(args)

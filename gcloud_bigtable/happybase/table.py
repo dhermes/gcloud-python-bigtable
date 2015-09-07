@@ -337,7 +337,7 @@ class Table(object):
         """
         raise NotImplementedError('Temporarily not implemented.')
 
-    def put(self, row, data, timestamp=None, wal=True):
+    def put(self, row, data, timestamp=None, wal=_WAL_SENTINEL):
         """Insert data into a row in this table.
 
         .. note::
@@ -359,18 +359,16 @@ class Table(object):
         :param timestamp: (Optional) Timestamp (in milliseconds since the
                           epoch) that the mutation will be applied at.
 
-        :type wal: :data:`NoneType <types.NoneType>`
+        :type wal: object
         :param wal: Unused parameter (to be passed to a created batch).
                     Provided for compatibility with HappyBase, but irrelevant
                     for Cloud Bigtable since it does not have a Write Ahead
                     Log.
-
-        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
-                 temporarily until the method is implemented.
         """
-        raise NotImplementedError('Temporarily not implemented.')
+        with self.batch(timestamp=timestamp, wal=wal) as batch:
+            batch.put(row, data)
 
-    def delete(self, row, columns=None, timestamp=None, wal=True):
+    def delete(self, row, columns=None, timestamp=None, wal=_WAL_SENTINEL):
         """Delete data from a row in this table.
 
         This method deletes the entire ``row`` if ``columns`` is not
@@ -397,16 +395,14 @@ class Table(object):
         :param timestamp: (Optional) Timestamp (in milliseconds since the
                           epoch) that the mutation will be applied at.
 
-        :type wal: :data:`NoneType <types.NoneType>`
+        :type wal: object
         :param wal: Unused parameter (to be passed to a created batch).
                     Provided for compatibility with HappyBase, but irrelevant
                     for Cloud Bigtable since it does not have a Write Ahead
                     Log.
-
-        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
-                 temporarily until the method is implemented.
         """
-        raise NotImplementedError('Temporarily not implemented.')
+        with self.batch(timestamp=timestamp, wal=wal) as batch:
+            batch.delete(row, columns)
 
     def batch(self, timestamp=None, batch_size=None, transaction=False,
               wal=_WAL_SENTINEL):
