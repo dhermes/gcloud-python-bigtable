@@ -15,6 +15,8 @@
 """Google Cloud Bigtable HappyBase table module."""
 
 
+import struct
+
 from gcloud_bigtable.column_family import GarbageCollectionRule
 from gcloud_bigtable.column_family import GarbageCollectionRuleIntersection
 from gcloud_bigtable.happybase.batch import Batch
@@ -503,10 +505,20 @@ class Table(object):
         :param value: Amount to increment the counter by. (If negative,
                       this is equivalent to decrement.)
 
-        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
-                 temporarily until the method is implemented.
+        :rtype: int
+        :returns: Counter value after incrementing.
         """
-        raise NotImplementedError('Temporarily not implemented.')
+        table = _LowLevelTable(self.name, self.connection._cluster)
+        row = table.row(row)
+        column_family_id, column_qualifier = column.split(':')
+        row.increment_cell_value(column_family_id, column_qualifier, value)
+        modified_cells = row.commit_modifications()
+        column_cells = modified_cells[column_family_id][column_qualifier]
+        if len(column_cells) != 1:
+            raise ValueError('Expected server to return one modified cell.')
+        bytes_value = column_cells[0][0]
+        int_value, = struct.unpack('>q', bytes_value)
+        return int_value
 
     def counter_dec(self, row, column, value=1):
         """Atomically decrement a counter column.

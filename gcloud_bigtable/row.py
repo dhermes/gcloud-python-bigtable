@@ -217,7 +217,7 @@ class Row(object):
             This method adds a read-modify rule protobuf to the accumulated
             read-modify rules on this :class:`Row`, but does not make an API
             request. To actually send an API request (with the rules) to the
-            Google Cloud Bigtable API, call :meth:`commit`.
+            Google Cloud Bigtable API, call :meth:`commit_modifications`.
 
         :type column_family_id: str
         :param column_family_id: The column family that contains the column.
@@ -251,7 +251,7 @@ class Row(object):
             This method adds a read-modify rule protobuf to the accumulated
             read-modify rules on this :class:`Row`, but does not make an API
             request. To actually send an API request (with the rules) to the
-            Google Cloud Bigtable API, call :meth:`commit`.
+            Google Cloud Bigtable API, call :meth:`commit_modifications`.
 
         :type column_family_id: str
         :param column_family_id: The column family that contains the column.

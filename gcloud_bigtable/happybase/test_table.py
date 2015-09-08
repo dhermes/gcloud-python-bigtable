@@ -407,17 +407,6 @@ class TestTable(unittest2.TestCase):
         with self.assertRaises(NotImplementedError):
             table.counter_set(row, column, value=value)
 
-    def test_counter_inc(self):
-        name = 'table-name'
-        connection = object()
-        table = self._makeOne(name, connection)
-
-        row = 'row-key'
-        column = 'fam:col1'
-        value = 42
-        with self.assertRaises(NotImplementedError):
-            table.counter_inc(row, column, value=value)
-
     def test_counter_dec(self):
         klass = self._getTargetClass()
         counter_value = 42
@@ -444,6 +433,105 @@ class TestTable(unittest2.TestCase):
         self.assertEqual(result, counter_value - dec_value)
         self.assertEqual(TableWithInc.incremented, [(row, column, -dec_value)])
 
+    def _counter_inc_helper(self, row, column, value, commit_result):
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable.happybase import table as MUT
+
+        name = 'table-name'
+        cluster = object()
+        connection = _Connection(cluster)
+        table = self._makeOne(name, connection)
+        tables_constructed = []
+
+        def make_low_level_table(*args, **kwargs):
+            result = _MockLowLevelTable(*args, **kwargs)
+            tables_constructed.append(result)
+            result.row_values[row] = _MockLowLevelRow(
+                row, commit_result=commit_result)
+            return result
+
+        with _Monkey(MUT, _LowLevelTable=make_low_level_table):
+            result = table.counter_inc(row, column, value=value)
+
+        incremented_value = value + _MockLowLevelRow.COUNTER_DEFAULT
+        self.assertEqual(result, incremented_value)
+
+        # Just one table would have been created.
+        table_instance, = tables_constructed
+        self.assertEqual(table_instance.args, (name, cluster))
+        self.assertEqual(table_instance.kwargs, {})
+
+        # Check the row values returned.
+        row_obj = table_instance.row_values[row]
+        self.assertEqual(row_obj.counts,
+                         {tuple(column.split(':')): incremented_value})
+
+    def test_counter_inc(self):
+        import struct
+
+        row = 'row-key'
+        col_fam = 'fam'
+        col_qual = 'col1'
+        column = col_fam + ':' + col_qual
+        value = 42
+        packed_value = struct.pack('>q', value)
+        fake_timestamp = None
+        commit_result = {
+            col_fam: {
+                col_qual: [(packed_value, fake_timestamp)],
+            }
+        }
+        self._counter_inc_helper(row, column, value, commit_result)
+
+    def test_counter_inc_bad_result(self):
+        row = 'row-key'
+        col_fam = 'fam'
+        col_qual = 'col1'
+        column = col_fam + ':' + col_qual
+        value = 42
+        commit_result = None
+        with self.assertRaises(TypeError):
+            self._counter_inc_helper(row, column, value, commit_result)
+
+    def test_counter_inc_result_key_error(self):
+        row = 'row-key'
+        col_fam = 'fam'
+        col_qual = 'col1'
+        column = col_fam + ':' + col_qual
+        value = 42
+        commit_result = {}
+        with self.assertRaises(KeyError):
+            self._counter_inc_helper(row, column, value, commit_result)
+
+    def test_counter_inc_result_nested_key_error(self):
+        row = 'row-key'
+        col_fam = 'fam'
+        col_qual = 'col1'
+        column = col_fam + ':' + col_qual
+        value = 42
+        commit_result = {col_fam: {}}
+        with self.assertRaises(KeyError):
+            self._counter_inc_helper(row, column, value, commit_result)
+
+    def test_counter_inc_result_non_unique_cell(self):
+        row = 'row-key'
+        col_fam = 'fam'
+        col_qual = 'col1'
+        column = col_fam + ':' + col_qual
+        value = 42
+        fake_timestamp = None
+        packed_value = None
+        commit_result = {
+            col_fam: {
+                col_qual: [
+                    (packed_value, fake_timestamp),
+                    (packed_value, fake_timestamp),
+                ],
+            }
+        }
+        with self.assertRaises(ValueError):
+            self._counter_inc_helper(row, column, value, commit_result)
+
 
 class _MockLowLevelTable(object):
 
@@ -452,10 +540,14 @@ class _MockLowLevelTable(object):
         self.kwargs = kwargs
         self.list_column_families_calls = 0
         self.column_families = {}
+        self.row_values = {}
 
     def list_column_families(self):
         self.list_column_families_calls += 1
         return self.column_families
+
+    def row(self, row_key):
+        return self.row_values[row_key]
 
 
 class _MockLowLevelColumnFamily(object):
@@ -491,3 +583,21 @@ class _MockBatch(object):
 
     def delete(self, *args):
         self.delete_args.append(args)
+
+
+class _MockLowLevelRow(object):
+
+    COUNTER_DEFAULT = 0
+
+    def __init__(self, row_key, commit_result=None):
+        self.row_key = row_key
+        self.counts = {}
+        self.commit_result = commit_result
+
+    def increment_cell_value(self, column_family_id, column, int_value):
+        count = self.counts.setdefault((column_family_id, column),
+                                       self.COUNTER_DEFAULT)
+        self.counts[(column_family_id, column)] = count + int_value
+
+    def commit_modifications(self):
+        return self.commit_result
