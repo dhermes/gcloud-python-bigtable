@@ -26,9 +26,9 @@ class _SendMixin(object):
 
 class Test__get_column_pairs(unittest2.TestCase):
 
-    def _callFUT(self, columns):
+    def _callFUT(self, *args, **kwargs):
         from gcloud_bigtable.happybase.batch import _get_column_pairs
-        return _get_column_pairs(columns)
+        return _get_column_pairs(*args, **kwargs)
 
     def test_it(self):
         columns = ['cf1', 'cf2:', 'cf3::', 'cf3:name1', 'cf3:name2']
@@ -56,6 +56,11 @@ class Test__get_column_pairs(unittest2.TestCase):
         columns = None
         with self.assertRaises(TypeError):
             self._callFUT(columns)
+
+    def test_column_family_with_require_qualifier(self):
+        columns = ['a:']
+        with self.assertRaises(ValueError):
+            self._callFUT(columns, require_qualifier=True)
 
 
 class TestBatch(unittest2.TestCase):
@@ -241,15 +246,78 @@ class TestBatch(unittest2.TestCase):
         # Check how the batch was updated.
         self.assertEqual(batch._row_map, {row_key: mock_row})
 
-    def test_put(self):
+    def test_put_bad_wal(self):
+        from gcloud_bigtable.happybase.batch import _WAL_SENTINEL
+
         table = object()
         batch = self._makeOne(table)
 
         row = 'row-key'
         data = {}
         wal = None
-        with self.assertRaises(NotImplementedError):
+
+        self.assertNotEqual(wal, _WAL_SENTINEL)
+        with self.assertRaises(ValueError):
             batch.put(row, data, wal=wal)
+
+    def test_put(self):
+        import operator
+
+        table = object()
+        batch = self._makeOne(table)
+        batch._timestamp = timestamp = object()
+        row_key = 'row-key'
+        batch._row_map[row_key] = row = _MockRow()
+
+        col1_fam = 'cf1'
+        col1_qual = 'qual1'
+        value1 = 'value1'
+        col2_fam = 'cf2'
+        col2_qual = 'qual2'
+        value2 = 'value2'
+        data = {col1_fam + ':' + col1_qual: value1,
+                col2_fam + ':' + col2_qual: value2}
+
+        self.assertEqual(batch._mutation_count, 0)
+        self.assertEqual(row.set_cell_calls, [])
+        batch.put(row_key, data)
+        self.assertEqual(batch._mutation_count, 2)
+        # Since the calls depend on data.keys(), the order
+        # is non-deterministic.
+        first_elt = operator.itemgetter(0)
+        ordered_calls = sorted(row.set_cell_calls, key=first_elt)
+
+        cell1_args = (col1_fam, col1_qual, value1)
+        cell1_kwargs = {'timestamp': timestamp}
+        cell2_args = (col2_fam, col2_qual, value2)
+        cell2_kwargs = {'timestamp': timestamp}
+        self.assertEqual(ordered_calls, [
+            (cell1_args, cell1_kwargs),
+            (cell2_args, cell2_kwargs),
+        ])
+
+    def test_put_call_try_send(self):
+        klass = self._getTargetClass()
+
+        class CallTrySend(klass):
+
+            try_send_calls = 0
+
+            def _try_send(self):
+                self.try_send_calls += 1
+
+        table = object()
+        batch = CallTrySend(table)
+
+        row_key = 'row-key'
+        batch._row_map[row_key] = _MockRow()
+
+        self.assertEqual(batch._mutation_count, 0)
+        self.assertEqual(batch.try_send_calls, 0)
+        # No data so that nothing happens
+        batch.put(row_key, data={})
+        self.assertEqual(batch._mutation_count, 0)
+        self.assertEqual(batch.try_send_calls, 1)
 
     def test__delete_columns(self):
         table = object()
@@ -418,6 +486,7 @@ class _MockRow(object):
     def __init__(self):
         self.commits = 0
         self.deletes = 0
+        self.set_cell_calls = []
         self.delete_cell_calls = []
         self.delete_cells_calls = []
 
@@ -426,6 +495,9 @@ class _MockRow(object):
 
     def delete(self):
         self.deletes += 1
+
+    def set_cell(self, *args, **kwargs):
+        self.set_cell_calls.append((args, kwargs))
 
     def delete_cell(self, *args, **kwargs):
         self.delete_cell_calls.append((args, kwargs))

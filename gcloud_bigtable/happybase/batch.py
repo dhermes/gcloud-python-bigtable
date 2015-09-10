@@ -16,6 +16,7 @@
 
 
 import datetime
+import six
 
 from gcloud_bigtable._helpers import _microseconds_to_timestamp
 from gcloud_bigtable.row import TimestampRange
@@ -27,7 +28,7 @@ _WAL_SENTINEL = object()
 _ONE_MILLISECOND = datetime.timedelta(microseconds=1000)
 
 
-def _get_column_pairs(columns):
+def _get_column_pairs(columns, require_qualifier=False):
     """Turns a list of column or column families in parsed pairs.
 
     Turns a column family (``fam`` or ``fam:``) into a pair such
@@ -41,12 +42,19 @@ def _get_column_pairs(columns):
                       * an entire column family: ``fam`` or ``fam:``
                       * an single column: ``fam:col``
 
+    :type require_qualifier: bool
+    :param require_qualifier: Boolean indicating if the columns should
+                              all have a qualifier or not.
+
     :rtype: list
     :returns: List of pairs, where the first element in each pair is the
               column family and the second is the column qualifier
               (or :data:`None`).
     :raises: :class:`ValueError <exceptions.ValueError>` if any of the columns
              are not of the expected format.
+             :class:`ValueError <exceptions.ValueError>` if
+             ``require_qualifier`` is :data:`True` and one of the values is
+             for an entire column family
     """
     column_pairs = []
     for column in columns:
@@ -55,7 +63,11 @@ def _get_column_pairs(columns):
         num_colons = column.count(':')
         if num_colons == 0:
             # column is a column family.
-            column_pairs.append([column, None])
+            if require_qualifier:
+                raise ValueError('column does not contain a qualifier',
+                                 column)
+            else:
+                column_pairs.append([column, None])
         elif num_colons == 1:
             column_pairs.append(column.split(':'))
         else:
@@ -184,7 +196,22 @@ class Batch(object):
         :raises: :class:`ValueError <exceptions.ValueError>` if ``wal``
                  is used.
         """
-        raise NotImplementedError('Temporarily not implemented.')
+        if wal is not _WAL_SENTINEL:
+            raise ValueError('The wal argument cannot be used with '
+                             'Cloud Bigtable.')
+
+        row_object = self._get_row(row)
+        # Make sure all the keys are valid before beginning
+        # to add mutations.
+        column_pairs = _get_column_pairs(six.iterkeys(data),
+                                         require_qualifier=True)
+        for column_family_id, column_qualifier in column_pairs:
+            value = data[column_family_id + ':' + column_qualifier]
+            row_object.set_cell(column_family_id, column_qualifier,
+                                value, timestamp=self._timestamp)
+
+        self._mutation_count += len(data)
+        self._try_send()
 
     def _delete_columns(self, columns, row_object):
         """Adds delete mutations for a list of columns and column families.
