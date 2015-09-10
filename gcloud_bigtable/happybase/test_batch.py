@@ -16,6 +16,14 @@
 import unittest2
 
 
+class _SendMixin(object):
+
+    _send_called = False
+
+    def send(self):
+        self._send_called = True
+
+
 class Test__get_column_pairs(unittest2.TestCase):
 
     def _callFUT(self, columns):
@@ -223,6 +231,8 @@ class TestBatch(unittest2.TestCase):
         with _Monkey(MUT, _LowLevelTable=make_low_level_table):
             result = batch._get_row(row_key)
 
+        self.assertEqual(result, mock_row)
+
         # Check all the things that were constructed.
         table_instance, = tables_constructed
         self.assertEqual(table_instance.args, (name, cluster))
@@ -306,7 +316,7 @@ class TestBatch(unittest2.TestCase):
         batch = CallTrySend(table)
 
         row_key = 'row-key'
-        batch._row_map[row_key] = row = _MockRow()
+        batch._row_map[row_key] = _MockRow()
 
         self.assertEqual(batch._mutation_count, 0)
         self.assertEqual(batch.try_send_calls, 0)
@@ -448,11 +458,3 @@ class _MockLowLevelTable(object):
     def row(self, row_key):
         self.rows_made.append(row_key)
         return self.mock_row
-
-
-class _SendMixin(object):
-
-    _send_called = False
-
-    def send(self):
-        self._send_called = True
