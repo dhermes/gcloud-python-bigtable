@@ -130,6 +130,34 @@ class Test__gc_rule_to_dict(unittest2.TestCase):
         self.assertTrue(result is gc_rule)
 
 
+class Test__convert_to_time_range(unittest2.TestCase):
+
+    def _callFUT(self, timestamp=None):
+        from gcloud_bigtable.happybase.table import _convert_to_time_range
+        return _convert_to_time_range(timestamp=timestamp)
+
+    def test_null(self):
+        timestamp = None
+        result = self._callFUT(timestamp=timestamp)
+        self.assertEqual(result, None)
+
+    def test_invalid_type(self):
+        timestamp = object()
+        with self.assertRaises(TypeError):
+            self._callFUT(timestamp=timestamp)
+
+    def test_success(self):
+        from gcloud_bigtable._helpers import _microseconds_to_timestamp
+        from gcloud_bigtable.row import TimestampRange
+
+        timestamp = 1441928298571
+        next_ts = _microseconds_to_timestamp(1000 * (timestamp + 1))
+        result = self._callFUT(timestamp=timestamp)
+        self.assertTrue(isinstance(result, TimestampRange))
+        self.assertEqual(result.start, None)
+        self.assertEqual(result.end, next_ts)
+
+
 class TestTable(unittest2.TestCase):
 
     def _getTargetClass(self):

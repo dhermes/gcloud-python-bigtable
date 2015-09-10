@@ -17,10 +17,12 @@
 
 import struct
 
+from gcloud_bigtable._helpers import _microseconds_to_timestamp
 from gcloud_bigtable.column_family import GarbageCollectionRule
 from gcloud_bigtable.column_family import GarbageCollectionRuleIntersection
 from gcloud_bigtable.happybase.batch import Batch
 from gcloud_bigtable.happybase.batch import _WAL_SENTINEL
+from gcloud_bigtable.row import TimestampRange
 from gcloud_bigtable.table import Table as _LowLevelTable
 
 
@@ -123,6 +125,29 @@ def _gc_rule_to_dict(gc_rule):
                 if key1 != key2:
                     result = {key1: rule1[key1], key2: rule2[key2]}
     return result
+
+
+def _convert_to_time_range(timestamp=None):
+    """Create a timestamp range from an HBase / HappyBase timestamp.
+
+    HBase uses timestamp as an argument to specify an inclusive end
+    deadline. Since Cloud Bigtable uses exclusive end times, we increment
+    by one millisecond (the lowest granularity allowed).
+
+    :type timestamp: int
+    :param timestamp: (Optional) Timestamp (in milliseconds since the
+                      epoch). Intended to be used as the end of an HBase
+                      time range, which is inclusive.
+
+    :rtype: :class:`.TimestampRange`, :data:`NoneType <types.NoneType>`
+    :returns: The timestamp range corresponding to the passed in
+              ``timestamp``.
+    """
+    if timestamp is None:
+        return None
+
+    next_timestamp = _microseconds_to_timestamp(1000 * (timestamp + 1))
+    return TimestampRange(end=next_timestamp)
 
 
 class Table(object):
