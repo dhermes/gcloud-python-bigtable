@@ -118,6 +118,13 @@ API Behavior Changes
   we also accept instances of :class:`.GarbageCollectionRule`,
   :class:`.GarbageCollectionRuleUnion` or
   :class:`.GarbageCollectionRuleIntersection`.
+* The ``batch_size`` attribute in :class:`.Batch` cannot be truly mapped
+  from HBase to Cloud Bigtable. The main reason for this is that the Cloud
+  Bigtable API can only send mutations for a single row (via ``MutateRow``,
+  ``CheckAndMutateRow``, and ``ReadModifyWriteRow``) whereas HBase sends
+  all mutations at once. This requires a single request to be sent for each
+  mutated row in the batch. This should not noticeable since gRPC
+  uses HTTP/2.
 """
 
 from gcloud_bigtable.happybase.batch import Batch
