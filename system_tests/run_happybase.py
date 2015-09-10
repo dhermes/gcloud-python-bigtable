@@ -46,6 +46,8 @@ class Config(object):
 
 # BEGIN: Backend dependent values.
 IGNORE_TTL = True
+
+
 def get_connection():
     if Config.connection is None:
         Config.connection = Connection()
