@@ -164,7 +164,13 @@ class Table(object):
 
     def __init__(self, name, connection):
         self.name = name
+        # This remains as legacy for HappyBase, but only the cluster
+        # from it is needed.
         self.connection = connection
+        self._low_level_table = None
+        if self.connection is not None:
+            self._low_level_table = _LowLevelTable(self.name,
+                                                   self.connection._cluster)
 
     def __repr__(self):
         return '<table.Table name=%r>' % (self.name,)

@@ -168,15 +168,40 @@ class TestTable(unittest2.TestCase):
         return self._getTargetClass()(*args, **kwargs)
 
     def test_constructor(self):
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable.happybase import table as MUT
+
         name = 'table-name'
-        connection = object()
-        table = self._makeOne(name, connection)
+        cluster = object()
+        connection = _Connection(cluster)
+        tables_constructed = []
+
+        def make_low_level_table(*args, **kwargs):
+            result = _MockLowLevelTable(*args, **kwargs)
+            tables_constructed.append(result)
+            return result
+
+        with _Monkey(MUT, _LowLevelTable=make_low_level_table):
+            table = self._makeOne(name, connection)
         self.assertEqual(table.name, name)
         self.assertEqual(table.connection, connection)
 
+        table_instance, = tables_constructed
+        self.assertEqual(table._low_level_table, table_instance)
+        self.assertEqual(table_instance.args, (name, cluster))
+        self.assertEqual(table_instance.kwargs, {})
+
+    def test_constructor_null_connection(self):
+        name = 'table-name'
+        connection = None
+        table = self._makeOne(name, connection)
+        self.assertEqual(table.name, name)
+        self.assertEqual(table.connection, connection)
+        self.assertEqual(table._low_level_table, None)
+
     def test___repr__(self):
         name = 'table-name'
-        connection = object()
+        connection = None
         table = self._makeOne(name, connection)
         self.assertEqual(repr(table), '<table.Table name=\'table-name\'>')
 
@@ -221,7 +246,7 @@ class TestTable(unittest2.TestCase):
 
     def test_regions(self):
         name = 'table-name'
-        connection = object()
+        connection = None
         table = self._makeOne(name, connection)
 
         with self.assertRaises(NotImplementedError):
@@ -229,7 +254,7 @@ class TestTable(unittest2.TestCase):
 
     def test_row(self):
         name = 'table-name'
-        connection = object()
+        connection = None
         table = self._makeOne(name, connection)
 
         row_key = 'row-key'
@@ -242,7 +267,7 @@ class TestTable(unittest2.TestCase):
 
     def test_rows(self):
         name = 'table-name'
-        connection = object()
+        connection = None
         table = self._makeOne(name, connection)
 
         row_keys = ['row-key']
@@ -255,7 +280,7 @@ class TestTable(unittest2.TestCase):
 
     def test_cells(self):
         name = 'table-name'
-        connection = object()
+        connection = None
         table = self._makeOne(name, connection)
 
         row_key = 'row-key'
@@ -270,7 +295,7 @@ class TestTable(unittest2.TestCase):
 
     def test_scan(self):
         name = 'table-name'
-        connection = object()
+        connection = None
         table = self._makeOne(name, connection)
 
         row_start = 'row-start'
@@ -298,7 +323,7 @@ class TestTable(unittest2.TestCase):
         from gcloud_bigtable.happybase.table import _WAL_SENTINEL
 
         name = 'table-name'
-        connection = object()
+        connection = None
         table = self._makeOne(name, connection)
         batches_created = []
 
@@ -338,7 +363,7 @@ class TestTable(unittest2.TestCase):
         from gcloud_bigtable.happybase.table import _WAL_SENTINEL
 
         name = 'table-name'
-        connection = object()
+        connection = None
         table = self._makeOne(name, connection)
         batches_created = []
 
@@ -377,7 +402,7 @@ class TestTable(unittest2.TestCase):
         from gcloud_bigtable.happybase import table as MUT
 
         name = 'table-name'
-        connection = object()
+        connection = None
         table = self._makeOne(name, connection)
 
         timestamp = object()
@@ -414,7 +439,7 @@ class TestTable(unittest2.TestCase):
                 return self.value
 
         name = 'table-name'
-        connection = object()
+        connection = None
         table = TableWithInc(name, connection)
 
         row = 'row-key'
@@ -426,7 +451,7 @@ class TestTable(unittest2.TestCase):
 
     def test_counter_set(self):
         name = 'table-name'
-        connection = object()
+        connection = None
         table = self._makeOne(name, connection)
 
         row = 'row-key'
@@ -450,7 +475,7 @@ class TestTable(unittest2.TestCase):
                 return self.value
 
         name = 'table-name'
-        connection = object()
+        connection = None
         table = TableWithInc(name, connection)
 
         row = 'row-key'
