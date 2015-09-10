@@ -123,8 +123,9 @@ API Behavior Changes
   Bigtable API can only send mutations for a single row (via ``MutateRow``,
   ``CheckAndMutateRow``, and ``ReadModifyWriteRow``) whereas HBase sends
   all mutations at once. This requires a single request to be sent for each
-  mutated row in the batch. This should not noticeable since gRPC
-  uses HTTP/2.
+  mutated row in the batch. This should not be noticeable since gRPC
+  uses HTTP/2. However, some of the requests may fail part way through and
+  the process of applying all mutations cannot be rolled back.
 """
 
 from gcloud_bigtable.happybase.batch import Batch
