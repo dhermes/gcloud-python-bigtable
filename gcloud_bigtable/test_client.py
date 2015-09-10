@@ -409,7 +409,6 @@ class TestClient(unittest2.TestCase):
         self.assertEqual(new_client._table_stub, None)
 
     def test_copy_partial_failure(self):
-        import copy
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import client as MUT
