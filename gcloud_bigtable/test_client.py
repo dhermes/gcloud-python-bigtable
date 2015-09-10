@@ -408,6 +408,46 @@ class TestClient(unittest2.TestCase):
         self.assertEqual(new_client._operations_stub, None)
         self.assertEqual(new_client._table_stub, None)
 
+    def test_copy_partial_failure(self):
+        import copy
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import client as MUT
+
+        captured_stubs = {}
+
+        def always_fail(client_to_copy):
+            captured_stubs['data_stub'] = client_to_copy._data_stub
+            captured_stubs['cluster_stub'] = client_to_copy._cluster_stub
+            captured_stubs['operations_stub'] = client_to_copy._operations_stub
+            captured_stubs['table_stub'] = client_to_copy._table_stub
+            raise ValueError('cannot copy', client_to_copy)
+
+        scoped_creds = object()
+        credentials = _MockWithAttachedMethods(scoped_creds)
+        client = self._makeOne(credentials, project_id=PROJECT_ID)
+
+        client._data_stub = data_stub = object()
+        client._cluster_stub = cluster_stub = object()
+        client._operations_stub = operations_stub = object()
+        client._table_stub = table_stub = object()
+        with _Monkey(MUT.copy, deepcopy=always_fail):
+            with self.assertRaises(ValueError):
+                client.copy()
+
+        # Make sure none of the stubs were present in the deepcopy().
+        self.assertEqual(captured_stubs, {
+            'data_stub': None,
+            'cluster_stub': None,
+            'operations_stub': None,
+            'table_stub': None,
+        })
+        # Make sure **all** the stubs were restored after the failure.
+        self.assertEqual(client._data_stub, data_stub)
+        self.assertEqual(client._cluster_stub, cluster_stub)
+        self.assertEqual(client._operations_stub, operations_stub)
+        self.assertEqual(client._table_stub, table_stub)
+
     def test_credentials_getter(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
 

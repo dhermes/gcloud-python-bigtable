@@ -339,12 +339,21 @@ class Client(object):
         :rtype: :class:`.Client`
         :returns: A copy of the current client.
         """
-        new_client = copy.deepcopy(self)
-        new_client._data_stub = None
-        new_client._cluster_stub = None
-        new_client._operations_stub = None
-        new_client._table_stub = None
-        return new_client
+        data_stub = self._data_stub
+        cluster_stub = self._cluster_stub
+        operations_stub = self._operations_stub
+        table_stub = self._table_stub
+        try:
+            self._data_stub = None
+            self._cluster_stub = None
+            self._operations_stub = None
+            self._table_stub = None
+            return copy.deepcopy(self)
+        finally:
+            self._data_stub = data_stub
+            self._cluster_stub = cluster_stub
+            self._operations_stub = operations_stub
+            self._table_stub = table_stub
 
     @property
     def credentials(self):
