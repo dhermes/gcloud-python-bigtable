@@ -293,8 +293,9 @@ class Table(object):
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on table.
 
-        :rtype: :class:`.PartialRowData`
-        :returns: The contents of the row.
+        :rtype: :class:`.PartialRowData`, :data:`NoneType <types.NoneType>`
+        :returns: The contents of the row if any chunks were returned in
+                  the response, otherwise :data:`None`.
         :raises: :class:`ValueError <exceptions.ValueError>` if a commit row
                  chunk is never encountered.
         """
@@ -308,6 +309,9 @@ class Table(object):
         for read_rows_response in response_iterator:
             result.update_from_read_rows(read_rows_response)
 
+        # Make sure the result actually contains data.
+        if not result._chunks_encountered:
+            return None
         # Make sure the result was committed by the back-end.
         if not result.committed:
             raise ValueError('The row remains partial / is not committed.')

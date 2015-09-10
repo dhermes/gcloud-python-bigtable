@@ -318,8 +318,12 @@ class TestTable(unittest2.TestCase):
         client.data_stub = stub = StubMock(response_iterator)
 
         # Create expected_result.
-        expected_result = PartialRowData(row_key)
-        expected_result._committed = True
+        if chunks:
+            expected_result = PartialRowData(row_key)
+            expected_result._committed = True
+            expected_result._chunks_encountered = True
+        else:
+            expected_result = None
 
         # Perform the method and check the result.
         filter_obj = object()
@@ -346,9 +350,17 @@ class TestTable(unittest2.TestCase):
         chunks = [chunk]
         self._read_row_helper(chunks)
 
-    def test_read_row_still_partial(self):
-        # No chunks means there is never a "commit row".
+    def test_read_empty_row(self):
         chunks = []
+        self._read_row_helper(chunks)
+
+    def test_read_row_still_partial(self):
+        from gcloud_bigtable._generated import (
+            bigtable_service_messages_pb2 as messages_pb2)
+
+        # There is never a "commit row".
+        chunk = messages_pb2.ReadRowsResponse.Chunk(reset_row=True)
+        chunks = [chunk]
         with self.assertRaises(ValueError):
             self._read_row_helper(chunks)
 

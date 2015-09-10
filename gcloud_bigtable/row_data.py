@@ -71,12 +71,14 @@ class PartialRowData(object):
         self._row_key = row_key
         self._cells = {}
         self._committed = False
+        self._chunks_encountered = False
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
         return (other._row_key == self._row_key and
                 other._committed == self._committed and
+                other._chunks_encountered == self._chunks_encountered and
                 other._cells == self._cells)
 
     def __ne__(self, other):
@@ -115,6 +117,7 @@ class PartialRowData(object):
     def clear(self):
         """Clears all cells that have been added."""
         self._committed = False
+        self._chunks_encountered = False
         self._cells.clear()
 
     def _handle_commit_row(self, chunk, index, last_chunk_index):
@@ -213,6 +216,8 @@ class PartialRowData(object):
                 #       want a value to be set
                 raise ValueError('Unexpected chunk property: %s' % (
                     chunk_property,))
+
+            self._chunks_encountered = True
 
 
 class PartialRowsData(object):
