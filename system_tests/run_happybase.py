@@ -497,6 +497,40 @@ class TestTable(unittest2.TestCase):
         self.assertEqual(row1, (ROW_KEY1, row1_data))
         self.assertEqual(row2, (ROW_KEY2, row2_data))
 
+    def test_rows_with_returned_timestamps(self):
+        table = get_table()
+        value1 = 'value1'
+        value2 = 'value2'
+        value3 = 'value3'
+        row1_data = {COL1: value1, COL2: value2}
+        row2_data = {COL1: value3}
+
+        # Need to clean-up row1 and row2 after.
+        self.rows_to_delete.append(ROW_KEY1)
+        self.rows_to_delete.append(ROW_KEY2)
+        with table.batch() as batch:
+            batch.put(ROW_KEY1, row1_data)
+            batch.put(ROW_KEY2, row2_data)
+
+        rows = table.rows([ROW_KEY1, ROW_KEY2], include_timestamp=True)
+        first_elt = operator.itemgetter(0)
+        rows.sort(key=first_elt)
+
+        row1, row2 = rows
+        self.assertEqual(row1[0], ROW_KEY1)
+        self.assertEqual(row2[0], ROW_KEY2)
+
+        # Drop the keys now that we have checked.
+        _, row1 = row1
+        _, row2 = row2
+
+        ts = row1[COL1][1]
+        # All will have the same timestamp since we used batch.
+        expected_row1_result = {COL1: (value1, ts), COL2: (value2, ts)}
+        self.assertEqual(row1, expected_row1_result)
+        expected_row2_result = {COL1: (value3, ts)}
+        self.assertEqual(row2, expected_row2_result)
+
     def test_counter_get(self):
         table = get_table()
 
