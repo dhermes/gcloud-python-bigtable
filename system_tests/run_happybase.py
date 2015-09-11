@@ -23,13 +23,13 @@ from happybase import Connection
 NOW_MILLIS = int(1000 * time.time())
 TABLE_NAME = 'table-name'
 ALT_TABLE_NAME = 'other-table'
-TTL_DAY = 24 * 60 * 60
+TTL_FOR_TEST = 3
 COL_FAM1 = 'cf1'
 COL_FAM2 = 'cf2'
 COL_FAM3 = 'cf3'
 FAMILIES = {
     COL_FAM1: {'max_versions': 10},
-    COL_FAM2: {'max_versions': 1, 'time_to_live': TTL_DAY},
+    COL_FAM2: {'max_versions': 1, 'time_to_live': TTL_FOR_TEST},
     COL_FAM3: {},  # use defaults
 }
 ROW_KEY1 = 'row-key1'
@@ -98,7 +98,7 @@ class TestConnection(unittest2.TestCase):
             retrieved = families[col_fam]
             for key, value in settings.items():
                 if key == 'time_to_live' and USING_HBASE:
-                    # The Thrift API seems to fail here for some reason
+                    # The Thrift API fails to retrieve the TTL for some reason.
                     continue
                 self.assertEqual(retrieved[key], value)
 
@@ -184,6 +184,34 @@ class TestTable(unittest2.TestCase):
         table.put(ROW_KEY1, {chosen_col: value2})
         all_values_after = table.cells(ROW_KEY1, chosen_col, versions=2)
         self.assertEqual(all_values_after, [value2])
+
+    def test_put_ttl_eviction(self):
+        table = get_table()
+        # The Thrift API fails to retrieve the TTL for some reason.
+        if USING_HBASE:
+            families = FAMILIES
+        else:
+            families = table.families()
+
+        cell_tll = TTL_FOR_TEST
+        chosen_fam = COL_FAM2
+        self.assertEqual(families[chosen_fam]['time_to_live'], cell_tll)
+        chosen_col = COL3
+        self.assertTrue(chosen_col.startswith(chosen_fam + ':'))
+
+        value1 = 'value1'
+
+        # Need to clean-up row1 after.
+        self.rows_to_delete.append(ROW_KEY1)
+        table.put(ROW_KEY1, {chosen_col: value1})
+
+        all_values_before = table.cells(ROW_KEY1, chosen_col)
+        self.assertEqual(all_values_before, [value1])
+
+        # Wait for time-to-live eviction to occur.
+        time.sleep(cell_tll + 0.5)
+        all_values_after = table.cells(ROW_KEY1, chosen_col)
+        self.assertEqual(all_values_after, [])
 
     def test_cells(self):
         table = get_table()
