@@ -81,6 +81,11 @@ class Test__parse_family_option(unittest2.TestCase):
         result = self._callFUT(option)
         self.assertEqual(result, None)
 
+    def test_null(self):
+        option = None
+        result = self._callFUT(option)
+        self.assertEqual(result, None)
+
     def test_dictionary_bad_key(self):
         option = {'badkey': None}
         with self.assertRaises(ValueError):

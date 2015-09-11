@@ -81,8 +81,11 @@ def _parse_family_option(option):
     .. note::
 
         If ``option`` is not a dictionary, the type is not checked.
+        If ``option`` is :data:`None`, there is nothing to do, since this
+        is the correct output.
 
     :type option: :class:`dict`,
+                  :data:`NoneType <types.NoneType>`,
                   :class:`.GarbageCollectionRule`,
                   :class:`.GarbageCollectionRuleUnion`,
                   :class:`.GarbageCollectionRuleIntersection`

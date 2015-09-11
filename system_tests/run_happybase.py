@@ -73,8 +73,10 @@ def setUpModule():
 
 
 def tearDownModule():
-    # connection.delete_table(TABLE_NAME, disable=True)
-    pass
+    connection = get_connection()
+    connection.close()
+    if not USING_HBASE:
+        connection.delete_table(TABLE_NAME)
 
 
 class TestConnection(unittest2.TestCase):
