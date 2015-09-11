@@ -14,11 +14,15 @@
 
 from __future__ import print_function
 
+import operator
+import struct
 import time
 import unittest2
 
 from happybase import Connection
 
+
+_PACK_I64 = struct.Struct('>q').pack
 
 NOW_MILLIS = int(1000 * time.time())
 TABLE_NAME = 'table-name'
@@ -471,9 +475,29 @@ class TestTable(unittest2.TestCase):
             COL1: (value1, ts1),
         })
 
-    def test_counter_get(self):
-        import struct
+    def test_rows(self):
+        table = get_table()
+        value1 = 'value1'
+        value2 = 'value2'
+        value3 = 'value3'
+        row1_data = {COL1: value1, COL2: value2}
+        row2_data = {COL1: value3}
 
+        # Need to clean-up row1 and row2 after.
+        self.rows_to_delete.append(ROW_KEY1)
+        self.rows_to_delete.append(ROW_KEY2)
+        table.put(ROW_KEY1, row1_data)
+        table.put(ROW_KEY2, row2_data)
+
+        rows = table.rows([ROW_KEY1, ROW_KEY2])
+        first_elt = operator.itemgetter(0)
+        rows.sort(key=first_elt)
+
+        row1, row2 = rows
+        self.assertEqual(row1, (ROW_KEY1, row1_data))
+        self.assertEqual(row2, (ROW_KEY2, row2_data))
+
+    def test_counter_get(self):
         table = get_table()
 
         # Need to clean-up row1 after.
@@ -488,11 +512,9 @@ class TestTable(unittest2.TestCase):
             self.assertEqual(table.row(ROW_KEY1, columns=[COL1]), {})
         else:
             self.assertEqual(table.row(ROW_KEY1, columns=[COL1]),
-                             {COL1: struct.pack('>q', 0)})
+                             {COL1: _PACK_I64(0)})
 
     def test_counter_inc(self):
-        import struct
-
         table = get_table()
 
         # Need to clean-up row1 after.
@@ -508,11 +530,9 @@ class TestTable(unittest2.TestCase):
 
         # Check that the value is set (does not seem to occur on HBase).
         self.assertEqual(table.row(ROW_KEY1, columns=[COL1]),
-                         {COL1: struct.pack('>q', inc_value)})
+                         {COL1: _PACK_I64(inc_value)})
 
     def test_counter_dec(self):
-        import struct
-
         table = get_table()
 
         # Need to clean-up row1 after.
@@ -528,4 +548,4 @@ class TestTable(unittest2.TestCase):
 
         # Check that the value is set (does not seem to occur on HBase).
         self.assertEqual(table.row(ROW_KEY1, columns=[COL1]),
-                         {COL1: struct.pack('>q', -dec_value)})
+                         {COL1: _PACK_I64(-dec_value)})
