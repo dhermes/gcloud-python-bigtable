@@ -14,11 +14,13 @@
 
 from __future__ import print_function
 
+import time
 import unittest2
 
 from happybase import Connection
 
 
+NOW_MILLIS = int(1000 * time.time())
 TABLE_NAME = 'table-name'
 ALT_TABLE_NAME = 'other-table'
 TTL_DAY = 24 * 60 * 60
@@ -118,7 +120,7 @@ class TestTable(unittest2.TestCase):
         self.assertEqual(row1, {})
         self.assertEqual(row2, {})
 
-    def test_put_success(self):
+    def test_put(self):
         table = get_table()
         value1 = 'value1'
         value2 = 'value2'
@@ -139,4 +141,21 @@ class TestTable(unittest2.TestCase):
 
         row1_data_with_timestamps = {COL1: (value1, timestamp1),
                                      COL2: (value2, timestamp2)}
+
+    @unittest2.skip('HBase fails to write with a timestamp')
+    def test_put_with_timestamps(self):
+        table = get_table()
+        value1 = 'value1'
+        value2 = 'value2'
+        row1_data = {COL1: value1, COL2: value2}
+        ts = NOW_MILLIS
+
+        # Make sure to delete before put(), in case it fails.
+        self.rows_to_delete.append(ROW_KEY1)
+        table.put(ROW_KEY1, row1_data, timestamp=ts)
+
+        # Check again, but this time with timestamps.
+        row1 = table.row(ROW_KEY1, include_timestamp=True)
+        row1_data_with_timestamps = {COL1: (value1, ts),
+                                     COL2: (value2, ts)}
         self.assertEqual(row1, row1_data_with_timestamps)
