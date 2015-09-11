@@ -37,6 +37,7 @@ ROW_KEY2 = 'row-key2'
 COL1 = COL_FAM1 + ':qual1'
 COL2 = COL_FAM1 + ':qual2'
 COL3 = COL_FAM2 + ':qual1'
+COL4 = COL_FAM3 + ':qual3'
 
 
 class Config(object):
@@ -200,3 +201,38 @@ class TestTable(unittest2.TestCase):
         first_cell = table.cells(ROW_KEY1, COL1, include_timestamp=True,
                                  timestamp=ts2)
         self.assertEqual(first_cell, [(value1, ts1)])
+
+    def test_row_with_columns(self):
+        table = get_table()
+        value1 = 'value1'
+        value2 = 'value2'
+        value3 = 'value3'
+        value4 = 'value4'
+        row1_data = {
+            COL1: value1,
+            COL2: value2,
+            COL3: value3,
+            COL4: value4,
+        }
+
+        # Need to clean-up row1 after.
+        self.rows_to_delete.append(ROW_KEY1)
+        table.put(ROW_KEY1, row1_data)
+
+        # Make sure the vanilla write succeeded.
+        row1 = table.row(ROW_KEY1)
+        self.assertEqual(row1, row1_data)
+
+        # Pick out specific columns.
+        row1_diff_fams = table.row(ROW_KEY1, columns=[COL1, COL4])
+        self.assertEqual(row1_diff_fams, {COL1: value1, COL4: value4})
+        row1_single_col = table.row(ROW_KEY1, columns=[COL3])
+        self.assertEqual(row1_single_col, {COL3: value3})
+        row1_col_fam = table.row(ROW_KEY1, columns=[COL_FAM1])
+        self.assertEqual(row1_col_fam, {COL1: value1, COL2: value2})
+        row1_fam_qual_overlap1 = table.row(ROW_KEY1, columns=[COL1, COL_FAM1])
+        self.assertEqual(row1_fam_qual_overlap1, {COL1: value1, COL2: value2})
+        # NOTE: This behavior seems to be "incorrect" but that is how
+        #       happybase works.
+        row1_fam_qual_overlap2 = table.row(ROW_KEY1, columns=[COL_FAM1, COL1])
+        self.assertEqual(row1_fam_qual_overlap2, {COL1: value1})
