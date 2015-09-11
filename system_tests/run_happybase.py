@@ -126,7 +126,7 @@ class TestTable(unittest2.TestCase):
         value2 = 'value2'
         row1_data = {COL1: value1, COL2: value2}
 
-        # Make sure to delete before put(), in case it fails.
+        # Need to clean-up row1 after.
         self.rows_to_delete.append(ROW_KEY1)
         table.put(ROW_KEY1, row1_data)
 
@@ -143,14 +143,14 @@ class TestTable(unittest2.TestCase):
                                      COL2: (value2, timestamp2)}
 
     @unittest2.skip('HBase fails to write with a timestamp')
-    def test_put_with_timestamps(self):
+    def test_put_with_timestamp(self):
         table = get_table()
         value1 = 'value1'
         value2 = 'value2'
         row1_data = {COL1: value1, COL2: value2}
         ts = NOW_MILLIS
 
-        # Make sure to delete before put(), in case it fails.
+        # Need to clean-up row1 after.
         self.rows_to_delete.append(ROW_KEY1)
         table.put(ROW_KEY1, row1_data, timestamp=ts)
 
@@ -159,3 +159,44 @@ class TestTable(unittest2.TestCase):
         row1_data_with_timestamps = {COL1: (value1, ts),
                                      COL2: (value2, ts)}
         self.assertEqual(row1, row1_data_with_timestamps)
+
+    def test_cells(self):
+        table = get_table()
+        value1 = 'value1'
+        value2 = 'value2'
+        value3 = 'value3'
+
+        # Need to clean-up row1 after.
+        self.rows_to_delete.append(ROW_KEY1)
+        table.put(ROW_KEY1, {COL1: value1})
+        table.put(ROW_KEY1, {COL1: value2})
+        table.put(ROW_KEY1, {COL1: value3})
+
+        # Check with no extra arguments.
+        all_values = table.cells(ROW_KEY1, COL1)
+        self.assertEqual(all_values, [value3, value2, value1])
+
+        # Check the timestamp on all the cells.
+        all_cells = table.cells(ROW_KEY1, COL1, include_timestamp=True)
+        self.assertEqual(len(all_cells), 3)
+
+        ts3 = all_cells[0][1]
+        ts2 = all_cells[1][1]
+        ts1 = all_cells[2][1]
+        self.assertEqual(all_cells,
+                         [(value3, ts3), (value2, ts2), (value1, ts1)])
+
+        # Limit to the two latest cells.
+        latest_two = table.cells(ROW_KEY1, COL1, include_timestamp=True,
+                                 versions=2)
+        self.assertEqual(latest_two, [(value3, ts3), (value2, ts2)])
+
+        # Limit to cells before the 2nd timestamp (inclusive).
+        first_two = table.cells(ROW_KEY1, COL1, include_timestamp=True,
+                                timestamp=ts2 + 1)
+        self.assertEqual(first_two, [(value2, ts2), (value1, ts1)])
+
+        # Limit to cells before the 2nd timestamp (exclusive).
+        first_cell = table.cells(ROW_KEY1, COL1, include_timestamp=True,
+                                 timestamp=ts2)
+        self.assertEqual(first_cell, [(value1, ts1)])
