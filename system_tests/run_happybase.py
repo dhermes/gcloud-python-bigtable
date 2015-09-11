@@ -23,6 +23,7 @@ from happybase import Connection
 
 
 _PACK_I64 = struct.Struct('>q').pack
+_FIRST_ELT = operator.itemgetter(0)
 
 NOW_MILLIS = int(1000 * time.time())
 TABLE_NAME = 'table-name'
@@ -426,7 +427,7 @@ class TestTable(unittest2.TestCase):
         row1_fam_qual_overlap1 = table.row(ROW_KEY1, columns=[COL1, COL_FAM1])
         self.assertEqual(row1_fam_qual_overlap1, {COL1: value1, COL2: value2})
         # NOTE: This behavior seems to be "incorrect" but that is how
-        #       happybase works.
+        #       HappyBase / HBase works.
         row1_fam_qual_overlap2 = table.row(ROW_KEY1, columns=[COL_FAM1, COL1])
         self.assertEqual(row1_fam_qual_overlap2, {COL1: value1})
         row1_multiple_col_fams = table.row(ROW_KEY1,
@@ -490,8 +491,7 @@ class TestTable(unittest2.TestCase):
         table.put(ROW_KEY2, row2_data)
 
         rows = table.rows([ROW_KEY1, ROW_KEY2])
-        first_elt = operator.itemgetter(0)
-        rows.sort(key=first_elt)
+        rows.sort(key=_FIRST_ELT)
 
         row1, row2 = rows
         self.assertEqual(row1, (ROW_KEY1, row1_data))
@@ -513,8 +513,7 @@ class TestTable(unittest2.TestCase):
             batch.put(ROW_KEY2, row2_data)
 
         rows = table.rows([ROW_KEY1, ROW_KEY2], include_timestamp=True)
-        first_elt = operator.itemgetter(0)
-        rows.sort(key=first_elt)
+        rows.sort(key=_FIRST_ELT)
 
         row1, row2 = rows
         self.assertEqual(row1[0], ROW_KEY1)
@@ -530,6 +529,60 @@ class TestTable(unittest2.TestCase):
         self.assertEqual(row1, expected_row1_result)
         expected_row2_result = {COL1: (value3, ts)}
         self.assertEqual(row2, expected_row2_result)
+
+    def test_rows_with_columns(self):
+        table = get_table()
+        value1 = 'value1'
+        value2 = 'value2'
+        value3 = 'value3'
+        row1_data = {COL1: value1, COL2: value2}
+        row2_data = {COL1: value3}
+
+        # Need to clean-up row1 and row2 after.
+        self.rows_to_delete.append(ROW_KEY1)
+        self.rows_to_delete.append(ROW_KEY2)
+        table.put(ROW_KEY1, row1_data)
+        table.put(ROW_KEY2, row2_data)
+
+        # Filter a single column present in both rows.
+        rows_col1 = table.rows([ROW_KEY1, ROW_KEY2], columns=[COL1])
+        rows_col1.sort(key=_FIRST_ELT)
+        row1, row2 = rows_col1
+        self.assertEqual(row1, (ROW_KEY1, {COL1: value1}))
+        self.assertEqual(row2, (ROW_KEY2, {COL1: value3}))
+
+        # Filter a column not present in one row.
+        rows_col2 = table.rows([ROW_KEY1, ROW_KEY2], columns=[COL2])
+        self.assertEqual(rows_col2, [(ROW_KEY1, {COL2: value2})])
+
+        # Filter a column family.
+        rows_col_fam1 = table.rows([ROW_KEY1, ROW_KEY2], columns=[COL_FAM1])
+        rows_col_fam1.sort(key=_FIRST_ELT)
+        row1, row2 = rows_col_fam1
+        self.assertEqual(row1, (ROW_KEY1, row1_data))
+        self.assertEqual(row2, (ROW_KEY2, row2_data))
+
+        # Filter a column family with no entries.
+        rows_col_fam2 = table.rows([ROW_KEY1, ROW_KEY2], columns=[COL_FAM2])
+        self.assertEqual(rows_col_fam2, [])
+
+        # Filter a column family that overlaps with a column.
+        rows_col_fam_overlap1 = table.rows([ROW_KEY1, ROW_KEY2],
+                                           columns=[COL1, COL_FAM1])
+        rows_col_fam_overlap1.sort(key=_FIRST_ELT)
+        row1, row2 = rows_col_fam_overlap1
+        self.assertEqual(row1, (ROW_KEY1, row1_data))
+        self.assertEqual(row2, (ROW_KEY2, row2_data))
+
+        # Filter a column family that overlaps with a column (opposite order).
+        # NOTE: This behavior seems to be "incorrect" but that is how
+        #       HappyBase / HBase works.
+        rows_col_fam_overlap2 = table.rows([ROW_KEY1, ROW_KEY2],
+                                           columns=[COL_FAM1, COL1])
+        rows_col_fam_overlap2.sort(key=_FIRST_ELT)
+        row1, row2 = rows_col_fam_overlap2
+        self.assertEqual(row1, (ROW_KEY1, {COL1: value1}))
+        self.assertEqual(row2, (ROW_KEY2, {COL1: value3}))
 
     def test_counter_get(self):
         table = get_table()
