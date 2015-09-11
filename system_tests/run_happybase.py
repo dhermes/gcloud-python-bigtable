@@ -584,6 +584,63 @@ class TestTable(unittest2.TestCase):
         self.assertEqual(row1, (ROW_KEY1, {COL1: value1}))
         self.assertEqual(row2, (ROW_KEY2, {COL1: value3}))
 
+    def test_rows_with_timestamp(self):
+        table = get_table()
+        value1 = 'value1'
+        value2 = 'value2'
+        value3 = 'value3'
+        value4 = 'value4'
+
+        # Need to clean-up row1 and row2 after.
+        self.rows_to_delete.append(ROW_KEY1)
+        self.rows_to_delete.append(ROW_KEY2)
+        table.put(ROW_KEY1, {COL1: value1})
+        table.put(ROW_KEY2, {COL1: value2})
+        table.put(ROW_KEY1, {COL2: value3})
+        table.put(ROW_KEY1, {COL4: value4})
+
+        # Just grab the timestamps
+        rows = table.rows([ROW_KEY1, ROW_KEY2], include_timestamp=True)
+        rows.sort(key=_FIRST_ELT)
+        row1, row2 = rows
+        self.assertEqual(row1[0], ROW_KEY1)
+        self.assertEqual(row2[0], ROW_KEY2)
+        _, row1 = row1
+        _, row2 = row2
+        ts1 = row1[COL1][1]
+        ts2 = row2[COL1][1]
+        ts3 = row1[COL2][1]
+        ts4 = row1[COL4][1]
+
+        # Make sure the timestamps are (strictly) ascending.
+        self.assertTrue(ts1 < ts2 < ts3 < ts4)
+
+        # Rows before the third timestamp (assumes exclusive endpoint).
+        rows = table.rows([ROW_KEY1, ROW_KEY2], timestamp=ts3,
+                          include_timestamp=True)
+        rows.sort(key=_FIRST_ELT)
+        row1, row2 = rows
+        self.assertEqual(row1, (ROW_KEY1, {COL1: (value1, ts1)}))
+        self.assertEqual(row2, (ROW_KEY2, {COL1: (value2, ts2)}))
+
+        # All writes (bump the exclusive endpoint by 1 millisecond).
+        rows = table.rows([ROW_KEY1, ROW_KEY2], timestamp=ts4 + 1,
+                          include_timestamp=True)
+        rows.sort(key=_FIRST_ELT)
+        row1, row2 = rows
+        row1_all_data = {
+            COL1: (value1, ts1),
+            COL2: (value3, ts3),
+            COL4: (value4, ts4),
+        }
+        self.assertEqual(row1, (ROW_KEY1, row1_all_data))
+        self.assertEqual(row2, (ROW_KEY2, {COL1: (value2, ts2)}))
+
+        # First three writes, restricted to column 2.
+        rows = table.rows([ROW_KEY1, ROW_KEY2], timestamp=ts4,
+                          columns=[COL2], include_timestamp=True)
+        self.assertEqual(rows, [(ROW_KEY1, {COL2: (value3, ts3)})])
+
     def test_counter_get(self):
         table = get_table()
 
