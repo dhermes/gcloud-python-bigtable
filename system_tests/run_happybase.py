@@ -79,7 +79,7 @@ def tearDownModule():
 
 class TestConnection(unittest2.TestCase):
 
-    @unittest2.skip('Creation takes longer than I want for now')
+    @unittest2.skip('Creation hangs on some runs, bad for rapid development')
     def test_create_and_delete_table(self):
         connection = get_connection()
 
@@ -161,6 +161,30 @@ class TestTable(unittest2.TestCase):
                                      COL2: (value2, ts)}
         self.assertEqual(row1, row1_data_with_timestamps)
 
+    def test_put_versions_restricted(self):
+        table = get_table()
+        families = table.families()
+
+        chosen_fam = COL_FAM2
+        self.assertEqual(families[chosen_fam]['max_versions'], 1)
+        chosen_col = COL3
+        self.assertTrue(chosen_col.startswith(chosen_fam + ':'))
+
+        value1 = 'value1'
+        value2 = 'value2'
+
+        # Need to clean-up row1 after.
+        self.rows_to_delete.append(ROW_KEY1)
+        table.put(ROW_KEY1, {chosen_col: value1})
+
+        all_values_before = table.cells(ROW_KEY1, chosen_col, versions=2)
+        self.assertEqual(all_values_before, [value1])
+
+        # Putting another value should evict the first one.
+        table.put(ROW_KEY1, {chosen_col: value2})
+        all_values_after = table.cells(ROW_KEY1, chosen_col, versions=2)
+        self.assertEqual(all_values_after, [value2])
+
     def test_cells(self):
         table = get_table()
         value1 = 'value1'
@@ -236,3 +260,7 @@ class TestTable(unittest2.TestCase):
         #       happybase works.
         row1_fam_qual_overlap2 = table.row(ROW_KEY1, columns=[COL_FAM1, COL1])
         self.assertEqual(row1_fam_qual_overlap2, {COL1: value1})
+        row1_multiple_col_fams = table.row(ROW_KEY1,
+                                           columns=[COL_FAM1, COL_FAM2])
+        self.assertEqual(row1_multiple_col_fams,
+                         {COL1: value1, COL2: value2, COL3: value3})
