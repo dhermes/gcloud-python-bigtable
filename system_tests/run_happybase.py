@@ -234,6 +234,68 @@ class TestTable(unittest2.TestCase):
         row1_after = table.row(ROW_KEY1)
         self.assertEqual(row1_after, {})
 
+    def test_delete_with_columns(self):
+        table = get_table()
+        value1 = 'value1'
+        value2 = 'value2'
+        row1_data = {COL1: value1, COL2: value2}
+
+        # Need to clean-up row1 after.
+        self.rows_to_delete.append(ROW_KEY1)
+        table.put(ROW_KEY1, row1_data)
+
+        row1 = table.row(ROW_KEY1)
+        self.assertEqual(row1, row1_data)
+
+        table.delete(ROW_KEY1, columns=[COL1])
+        row1_after = table.row(ROW_KEY1)
+        self.assertEqual(row1_after, {COL2: value2})
+
+    def test_delete_with_column_family(self):
+        table = get_table()
+        value1 = 'value1'
+        value2 = 'value2'
+        value3 = 'value3'
+        row1_data = {COL1: value1, COL2: value2, COL4: value3}
+
+        # Need to clean-up row1 after.
+        self.rows_to_delete.append(ROW_KEY1)
+        table.put(ROW_KEY1, row1_data)
+
+        row1 = table.row(ROW_KEY1)
+        self.assertEqual(row1, row1_data)
+
+        table.delete(ROW_KEY1, columns=[COL_FAM1])
+        row1_after = table.row(ROW_KEY1)
+        self.assertEqual(row1_after, {COL4: value3})
+
+    def test_delete_with_columns_family_overlap(self):
+        table = get_table()
+        value1 = 'value1'
+        value2 = 'value2'
+        row1_data = {COL1: value1, COL2: value2}
+
+        # Need to clean-up row1 after.
+        self.rows_to_delete.append(ROW_KEY1)
+
+        # First go-around, use [COL_FAM1, COL1]
+        table.put(ROW_KEY1, row1_data)
+        row1 = table.row(ROW_KEY1)
+        self.assertEqual(row1, row1_data)
+
+        table.delete(ROW_KEY1, columns=[COL_FAM1, COL1])
+        row1_after = table.row(ROW_KEY1)
+        self.assertEqual(row1_after, {})
+
+        # Second go-around, use [COL1, COL_FAM1]
+        table.put(ROW_KEY1, row1_data)
+        row1 = table.row(ROW_KEY1)
+        self.assertEqual(row1, row1_data)
+
+        table.delete(ROW_KEY1, columns=[COL1, COL_FAM1])
+        row1_after = table.row(ROW_KEY1)
+        self.assertEqual(row1_after, {})
+
     def test_cells(self):
         table = get_table()
         value1 = 'value1'
