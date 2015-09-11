@@ -20,7 +20,6 @@ import six
 
 from gcloud_bigtable._helpers import _microseconds_to_timestamp
 from gcloud_bigtable.row import TimestampRange
-from gcloud_bigtable.table import Table as _LowLevelTable
 
 
 _WAL_SENTINEL = object()
@@ -170,8 +169,7 @@ class Batch(object):
         :returns: The newly created or stored row that will hold mutations.
         """
         if row_key not in self._row_map:
-            table = _LowLevelTable(self._table.name,
-                                   self._table.connection._cluster)
+            table = self._table._low_level_table
             self._row_map[row_key] = table.row(row_key)
 
         return self._row_map[row_key]

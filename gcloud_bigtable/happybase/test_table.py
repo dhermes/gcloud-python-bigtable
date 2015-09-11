@@ -211,35 +211,24 @@ class TestTable(unittest2.TestCase):
         from gcloud_bigtable.happybase import table as MUT
 
         name = 'table-name'
-        cluster = object()
-        connection = _Connection(cluster)
+        connection = None
         table = self._makeOne(name, connection)
+        table._low_level_table = _MockLowLevelTable()
 
-        tables_constructed = []
+        # Mock the column families to be returned.
         col_fam_name = 'fam'
         gc_rule = object()
         col_fam = _MockLowLevelColumnFamily(col_fam_name, gc_rule=gc_rule)
         col_fams = {col_fam_name: col_fam}
-
-        def make_low_level_table(*args, **kwargs):
-            result = _MockLowLevelTable(*args, **kwargs)
-            result.column_families = col_fams
-            tables_constructed.append(result)
-            return result
+        table._low_level_table.column_families = col_fams
 
         to_dict_result = object()
         mock_gc_rule_to_dict = _MockCalled(to_dict_result)
-        with _Monkey(MUT, _LowLevelTable=make_low_level_table,
-                     _gc_rule_to_dict=mock_gc_rule_to_dict):
+        with _Monkey(MUT, _gc_rule_to_dict=mock_gc_rule_to_dict):
             result = table.families()
 
         self.assertEqual(result, {col_fam_name: to_dict_result})
-
-        # Just one table would have been created.
-        table_instance, = tables_constructed
-        self.assertEqual(table_instance.args, (name, cluster))
-        self.assertEqual(table_instance.kwargs, {})
-        self.assertEqual(table_instance.list_column_families_calls, 1)
+        self.assertEqual(table._low_level_table.list_column_families_calls, 1)
 
         # Check the input to our mock.
         mock_gc_rule_to_dict.check_called(self, [(gc_rule,)])
@@ -487,35 +476,21 @@ class TestTable(unittest2.TestCase):
         self.assertEqual(TableWithInc.incremented, [(row, column, -dec_value)])
 
     def _counter_inc_helper(self, row, column, value, commit_result):
-        from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable.happybase import table as MUT
-
         name = 'table-name'
-        cluster = object()
-        connection = _Connection(cluster)
+        connection = None
         table = self._makeOne(name, connection)
-        tables_constructed = []
+        # Mock the return values.
+        table._low_level_table = _MockLowLevelTable()
+        table._low_level_table.row_values[row] = _MockLowLevelRow(
+            row, commit_result=commit_result)
 
-        def make_low_level_table(*args, **kwargs):
-            result = _MockLowLevelTable(*args, **kwargs)
-            tables_constructed.append(result)
-            result.row_values[row] = _MockLowLevelRow(
-                row, commit_result=commit_result)
-            return result
-
-        with _Monkey(MUT, _LowLevelTable=make_low_level_table):
-            result = table.counter_inc(row, column, value=value)
+        result = table.counter_inc(row, column, value=value)
 
         incremented_value = value + _MockLowLevelRow.COUNTER_DEFAULT
         self.assertEqual(result, incremented_value)
 
-        # Just one table would have been created.
-        table_instance, = tables_constructed
-        self.assertEqual(table_instance.args, (name, cluster))
-        self.assertEqual(table_instance.kwargs, {})
-
         # Check the row values returned.
-        row_obj = table_instance.row_values[row]
+        row_obj = table._low_level_table.row_values[row]
         self.assertEqual(row_obj.counts,
                          {tuple(column.split(':')): incremented_value})
 

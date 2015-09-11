@@ -182,8 +182,7 @@ class Table(object):
         :returns: Mapping from column family name to garbage collection rule
                   for a column family.
         """
-        table = _LowLevelTable(self.name, self.connection._cluster)
-        column_family_map = table.list_column_families()
+        column_family_map = self._low_level_table.list_column_families()
         return {col_fam: _gc_rule_to_dict(col_fam_obj.gc_rule)
                 for col_fam, col_fam_obj in column_family_map.items()}
 
@@ -539,8 +538,7 @@ class Table(object):
         :rtype: int
         :returns: Counter value after incrementing.
         """
-        table = _LowLevelTable(self.name, self.connection._cluster)
-        row = table.row(row)
+        row = self._low_level_table.row(row)
         column_family_id, column_qualifier = column.split(':')
         row.increment_cell_value(column_family_id, column_qualifier, value)
         modified_cells = row.commit_modifications()

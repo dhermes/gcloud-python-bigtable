@@ -208,41 +208,24 @@ class TestBatch(unittest2.TestCase):
         self.assertEqual(result, row_obj)
 
     def test__get_row_create_new(self):
-        from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable.happybase import batch as MUT
-
         # Make mock batch and make sure we can create a low-level table.
-        cluster = object()
-        connection = _MockConnection(cluster)
-        name = 'name'
-        table = _MockTable(name, connection)
+        low_level_table = _MockLowLevelTable()
+        table = _MockTable(low_level_table)
         batch = self._makeOne(table)
 
         # Make sure row map is empty.
         self.assertEqual(batch._row_map, {})
 
         # Customize/capture mock table creation.
-        row_key = 'row-key'
-        mock_row = object()
-        tables_constructed = []
-
-        def make_low_level_table(*args, **kwargs):
-            result = _MockLowLevelTable(*args, **kwargs)
-            tables_constructed.append(result)
-            result.mock_row = mock_row
-            return result
+        low_level_table.mock_row = mock_row = object()
 
         # Actually get the row (which creates a row via a low-level table).
-        with _Monkey(MUT, _LowLevelTable=make_low_level_table):
-            result = batch._get_row(row_key)
-
+        row_key = 'row-key'
+        result = batch._get_row(row_key)
         self.assertEqual(result, mock_row)
 
         # Check all the things that were constructed.
-        table_instance, = tables_constructed
-        self.assertEqual(table_instance.args, (name, cluster))
-        self.assertEqual(table_instance.kwargs, {})
-        self.assertEqual(table_instance.rows_made, [row_key])
+        self.assertEqual(low_level_table.rows_made, [row_key])
         # Check how the batch was updated.
         self.assertEqual(batch._row_map, {row_key: mock_row})
 
@@ -506,17 +489,10 @@ class _MockRow(object):
         self.delete_cells_calls.append((args, kwargs))
 
 
-class _MockConnection(object):
-
-    def __init__(self, cluster):
-        self._cluster = cluster
-
-
 class _MockTable(object):
 
-    def __init__(self, name, connection):
-        self.name = name
-        self.connection = connection
+    def __init__(self, low_level_table):
+        self._low_level_table = low_level_table
 
 
 class _MockLowLevelTable(object):
