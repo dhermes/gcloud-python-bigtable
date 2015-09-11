@@ -48,7 +48,7 @@ class Config(object):
 
 
 # BEGIN: Backend dependent values.
-IGNORE_TTL = True
+USING_HBASE = True
 
 
 def get_connection():
@@ -97,7 +97,7 @@ class TestConnection(unittest2.TestCase):
         for col_fam, settings in FAMILIES.items():
             retrieved = families[col_fam]
             for key, value in settings.items():
-                if key == 'time_to_live' and IGNORE_TTL:
+                if key == 'time_to_live' and USING_HBASE:
                     # The Thrift API seems to fail here for some reason
                     continue
                 self.assertEqual(retrieved[key], value)
@@ -143,7 +143,7 @@ class TestTable(unittest2.TestCase):
         row1_data_with_timestamps = {COL1: (value1, timestamp1),
                                      COL2: (value2, timestamp2)}
 
-    @unittest2.skip('HBase fails to write with a timestamp')
+    @unittest2.skipIf(USING_HBASE, 'HBase fails to write with a timestamp')
     def test_put_with_timestamp(self):
         table = get_table()
         value1 = 'value1'
