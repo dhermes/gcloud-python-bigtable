@@ -142,6 +142,7 @@ class TestTable(unittest2.TestCase):
 
         row1_data_with_timestamps = {COL1: (value1, timestamp1),
                                      COL2: (value2, timestamp2)}
+        self.assertEqual(row1, row1_data_with_timestamps)
 
     @unittest2.skipIf(USING_HBASE, 'HBase fails to write with a timestamp')
     def test_put_with_timestamp(self):
@@ -295,3 +296,44 @@ class TestTable(unittest2.TestCase):
                                            columns=[COL_FAM1, COL_FAM2])
         self.assertEqual(row1_multiple_col_fams,
                          {COL1: value1, COL2: value2, COL3: value3})
+
+    def test_row_with_timestamp(self):
+        table = get_table()
+        value1 = 'value1'
+        value2 = 'value2'
+        value3 = 'value3'
+
+        # Need to clean-up row1 after.
+        self.rows_to_delete.append(ROW_KEY1)
+        table.put(ROW_KEY1, {COL1: value1})
+        table.put(ROW_KEY1, {COL2: value2})
+        table.put(ROW_KEY1, {COL3: value3})
+
+        # Make sure the vanilla write succeeded.
+        row1 = table.row(ROW_KEY1, include_timestamp=True)
+        ts1 = row1[COL1][1]
+        ts2 = row1[COL2][1]
+        ts3 = row1[COL3][1]
+
+        expected_row = {
+            COL1: (value1, ts1),
+            COL2: (value2, ts2),
+            COL3: (value3, ts3),
+        }
+        self.assertEqual(row1, expected_row)
+
+        # Make sure the timestamps are (strictly) ascending.
+        self.assertTrue(ts1 < ts2 < ts3)
+
+        # Use timestamps to retrieve row.
+        first_two = table.row(ROW_KEY1, timestamp=ts2 + 1,
+                              include_timestamp=True)
+        self.assertEqual(first_two, {
+            COL1: (value1, ts1),
+            COL2: (value2, ts2),
+        })
+        first_one = table.row(ROW_KEY1, timestamp=ts2,
+                              include_timestamp=True)
+        self.assertEqual(first_one, {
+            COL1: (value1, ts1),
+        })
