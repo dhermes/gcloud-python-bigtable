@@ -32,6 +32,9 @@ from gcloud_bigtable.row import TimestampRange
 from gcloud_bigtable.table import Table as _LowLevelTable
 
 
+_UNPACK_I64 = struct.Struct('>q').unpack
+
+
 def make_row(cell_map, include_timestamp):
     """Make a row dict for a Thrift cell mapping.
 
@@ -699,7 +702,7 @@ class Table(object):
         if len(column_cells) != 1:
             raise ValueError('Expected server to return one modified cell.')
         bytes_value = column_cells[0][0]
-        int_value, = struct.unpack('>q', bytes_value)
+        int_value, = _UNPACK_I64(bytes_value)
         return int_value
 
     def counter_dec(self, row, column, value=1):

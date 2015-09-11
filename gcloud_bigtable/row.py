@@ -27,6 +27,7 @@ from gcloud_bigtable._helpers import _to_bytes
 
 
 _MAX_MUTATIONS = 100000
+_PACK_I64 = struct.Struct('>q').pack
 
 
 class Row(object):
@@ -192,7 +193,7 @@ class Row(object):
         """
         column = _to_bytes(column)
         if isinstance(value, six.integer_types):
-            value = struct.pack('>q', value)
+            value = _PACK_I64(value)
         value = _to_bytes(value)
         if timestamp is None:
             # Use -1 for current Bigtable server time.
