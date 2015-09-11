@@ -337,3 +337,22 @@ class TestTable(unittest2.TestCase):
         self.assertEqual(first_one, {
             COL1: (value1, ts1),
         })
+
+    def test_counter_get(self):
+        import struct
+
+        table = get_table()
+
+        # Need to clean-up row1 after.
+        self.rows_to_delete.append(ROW_KEY1)
+
+        self.assertEqual(table.row(ROW_KEY1, columns=[COL1]), {})
+        initial_counter = table.counter_get(ROW_KEY1, COL1)
+        self.assertEqual(initial_counter, 0)
+
+        # Check that the value is set (does not seem to occur on HBase).
+        if USING_HBASE:
+            self.assertEqual(table.row(ROW_KEY1, columns=[COL1]), {})
+        else:
+            self.assertEqual(table.row(ROW_KEY1, columns=[COL1]),
+                             {COL1: struct.pack('>q', 0)})
