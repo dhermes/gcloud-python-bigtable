@@ -296,6 +296,58 @@ class TestTable(unittest2.TestCase):
         row1_after = table.row(ROW_KEY1)
         self.assertEqual(row1_after, {})
 
+    def test_delete_with_timestamp(self):
+        table = get_table()
+        value1 = 'value1'
+        value2 = 'value2'
+
+        # Need to clean-up row1 after.
+        self.rows_to_delete.append(ROW_KEY1)
+        table.put(ROW_KEY1, {COL1: value1})
+        table.put(ROW_KEY1, {COL2: value2})
+
+        row1 = table.row(ROW_KEY1, include_timestamp=True)
+        ts1 = row1[COL1][1]
+        ts2 = row1[COL2][1]
+
+        # This assumes the timestamp is inclusive at the endpoint.
+        table.delete(ROW_KEY1, timestamp=ts1 - 1)
+        row1_after_early_delete = table.row(ROW_KEY1, include_timestamp=True)
+        self.assertEqual(row1_after_early_delete, row1)
+
+        # This assumes the timestamp is inclusive at the endpoint.
+        table.delete(ROW_KEY1, timestamp=ts1)
+        row1_after_incl_delete = table.row(ROW_KEY1, include_timestamp=True)
+        self.assertEqual(row1_after_incl_delete, {COL2: (value2, ts2)})
+
+    def test_delete_with_columns_and_timestamp(self):
+        table = get_table()
+        value1 = 'value1'
+        value2 = 'value2'
+
+        # Need to clean-up row1 after.
+        self.rows_to_delete.append(ROW_KEY1)
+        table.put(ROW_KEY1, {COL1: value1})
+        table.put(ROW_KEY1, {COL2: value2})
+
+        row1 = table.row(ROW_KEY1, include_timestamp=True)
+        ts1 = row1[COL1][1]
+        ts2 = row1[COL2][1]
+
+        # Delete with conditions that have no matches.
+        table.delete(ROW_KEY1, timestamp=ts1, columns=[COL2])
+        row1_after_delete = table.row(ROW_KEY1, include_timestamp=True)
+        # NOTE: COL2 is still present since it occurs after ts1 and
+        #       COL1 is still present since it is not in `columns`.
+        self.assertEqual(row1_after_delete, row1)
+
+        # Delete with conditions that have no matches.
+        table.delete(ROW_KEY1, timestamp=ts1, columns=[COL_FAM1])
+        row1_delete_fam = table.row(ROW_KEY1, include_timestamp=True)
+        # NOTE: COL2 is still present since it occurs after ts1 and
+        #       COL1 is still present since it is not in `columns`.
+        self.assertEqual(row1_delete_fam, {COL2: (value2, ts2)})
+
     def test_cells(self):
         table = get_table()
         value1 = 'value1'
