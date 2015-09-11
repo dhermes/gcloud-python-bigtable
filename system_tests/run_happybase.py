@@ -185,6 +185,7 @@ class TestTable(unittest2.TestCase):
         all_values_after = table.cells(ROW_KEY1, chosen_col, versions=2)
         self.assertEqual(all_values_after, [value2])
 
+    @unittest2.skip('Sleeping 3.5 seconds is bad for rapid development')
     def test_put_ttl_eviction(self):
         table = get_table()
         # The Thrift API fails to retrieve the TTL for some reason.
@@ -208,6 +209,8 @@ class TestTable(unittest2.TestCase):
         all_values_before = table.cells(ROW_KEY1, chosen_col)
         self.assertEqual(all_values_before, [value1])
 
+        # Make sure we don't sleep for a problematic length.
+        self.assertTrue(cell_tll < 10)
         # Wait for time-to-live eviction to occur.
         time.sleep(cell_tll + 0.5)
         all_values_after = table.cells(ROW_KEY1, chosen_col)
