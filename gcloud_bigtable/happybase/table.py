@@ -18,10 +18,13 @@
 import struct
 
 from gcloud_bigtable._helpers import _microseconds_to_timestamp
+from gcloud_bigtable._helpers import _timestamp_to_microseconds
 from gcloud_bigtable.column_family import GarbageCollectionRule
 from gcloud_bigtable.column_family import GarbageCollectionRuleIntersection
 from gcloud_bigtable.happybase.batch import Batch
 from gcloud_bigtable.happybase.batch import _WAL_SENTINEL
+from gcloud_bigtable.row import RowFilter
+from gcloud_bigtable.row import RowFilterChain
 from gcloud_bigtable.row import TimestampRange
 from gcloud_bigtable.table import Table as _LowLevelTable
 
@@ -148,6 +151,63 @@ def _convert_to_time_range(timestamp=None):
 
     next_timestamp = _microseconds_to_timestamp(1000 * (timestamp + 1))
     return TimestampRange(end=next_timestamp)
+
+
+def _cells_to_pairs(cells, include_timestamp=False):
+    """Converts list of cells to HappyBase format.
+
+    :type cells: list
+    :param cells: List of :class:`.Cell` returned from a read request.
+
+    :type include_timestamp: bool
+    :param include_timestamp: Flag to indicate if cell timestamps should be
+                              included with the output.
+
+    :rtype: list
+    :returns: List of values in the cell. If ``include_timestamp=True``, each
+              value will be a pair, with the first part the bytes value in
+              the cell and the second part the number of milliseconds in the
+              timestamp on the cell.
+    """
+    result = []
+    for cell in cells:
+        if include_timestamp:
+            ts_millis = _timestamp_to_microseconds(cell.timestamp) // 1000
+            result.append((cell.value, ts_millis))
+        else:
+            result.append(cell.value)
+    return result
+
+
+def _filter_for_cell(column, versions=None, timestamp=None):
+    """Create filter chain to isolate a single column in a row.
+
+    :type column: str
+    :param column: The column (``fam:col``) to be selected
+                   with the filter.
+
+    :type versions: int
+    :param versions: (Optional) The maximum number of cells to return.
+
+    :type timestamp: int
+    :param timestamp: (Optional) Timestamp (in milliseconds since the
+                      epoch). If specified, only cells returned before (or
+                      at) the timestamp will be matched.
+
+    :rtype: :class:`.RowFilterChain`
+    :returns: The chained filter which identifies a single column.
+    """
+    column_family_id, column_qualifier = column.split(':')
+    fam_filter = RowFilter(family_name_regex_filter=column_family_id)
+    qual_filter = RowFilter(column_qualifier_regex_filter=column_qualifier)
+    filters = [fam_filter, qual_filter]
+    if versions is not None:
+        filters.append(RowFilter(cells_per_column_limit_filter=versions))
+    time_range = _convert_to_time_range(timestamp=timestamp)
+    if time_range is not None:
+        filters.append(RowFilter(timestamp_range_filter=time_range))
+
+    return RowFilterChain(filters=filters)
 
 
 class Table(object):
@@ -284,10 +344,24 @@ class Table(object):
         :param include_timestamp: Flag to indicate if cell timestamps should be
                                   included with the output.
 
-        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
-                 temporarily until the method is implemented.
+        :rtype: list
+        :returns: List of values in the cell (with timestamps if
+                  ``include_timestamp`` is :data:`True`).
         """
-        raise NotImplementedError('Temporarily not implemented.')
+        filter_ = _filter_for_cell(column, versions=versions,
+                                   timestamp=timestamp)
+        partial_row_data = self._low_level_table.read_row(row, filter_=filter_)
+        if partial_row_data is None:
+            return []
+        else:
+            cells = partial_row_data._cells
+            # NOTE: We expect the only key in `cells` is `column_family_id`
+            #       and the only key `cells[column_family_id]` is
+            #       `column_qualifier`. But we don't check that this is true.
+            column_family_id, column_qualifier = column.split(':')
+            curr_cells = cells[column_family_id][column_qualifier]
+            return _cells_to_pairs(
+                curr_cells, include_timestamp=include_timestamp)
 
     def scan(self, row_start=None, row_stop=None, row_prefix=None,
              columns=None, filter=None, timestamp=None,

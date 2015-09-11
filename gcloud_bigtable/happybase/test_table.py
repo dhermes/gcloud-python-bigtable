@@ -40,9 +40,9 @@ class Test_make_ordered_row(unittest2.TestCase):
 
 class Test__gc_rule_to_dict(unittest2.TestCase):
 
-    def _callFUT(self, gc_rule):
+    def _callFUT(self, *args, **kwargs):
         from gcloud_bigtable.happybase.table import _gc_rule_to_dict
-        return _gc_rule_to_dict(gc_rule)
+        return _gc_rule_to_dict(*args, **kwargs)
 
     def test_with_null(self):
         gc_rule = None
@@ -158,6 +158,111 @@ class Test__convert_to_time_range(unittest2.TestCase):
         self.assertEqual(result.end, next_ts)
 
 
+class Test__cells_to_pairs(unittest2.TestCase):
+
+    def _callFUT(self, *args, **kwargs):
+        from gcloud_bigtable.happybase.table import _cells_to_pairs
+        return _cells_to_pairs(*args, **kwargs)
+
+    def test_without_timestamp(self):
+        from gcloud_bigtable.row_data import Cell
+
+        value1 = 'foo'
+        cell1 = Cell(value=value1, timestamp=None)
+        value2 = 'bar'
+        cell2 = Cell(value=value2, timestamp=None)
+
+        result = self._callFUT([cell1, cell2])
+        self.assertEqual(result, [value1, value2])
+
+    def test_with_timestamp(self):
+        from gcloud_bigtable._helpers import _microseconds_to_timestamp
+        from gcloud_bigtable.row_data import Cell
+
+        value1 = 'foo'
+        ts1_millis = 1221934570148
+        ts1 = _microseconds_to_timestamp(ts1_millis * 1000)
+        cell1 = Cell(value=value1, timestamp=ts1)
+
+        value2 = 'bar'
+        ts2_millis = 1221955575548
+        ts2 = _microseconds_to_timestamp(ts2_millis * 1000)
+        cell2 = Cell(value=value2, timestamp=ts2)
+
+        result = self._callFUT([cell1, cell2], include_timestamp=True)
+        self.assertEqual(result,
+                         [(value1, ts1_millis), (value2, ts2_millis)])
+
+
+class Test__filter_for_cell(unittest2.TestCase):
+
+    def _callFUT(self, *args, **kwargs):
+        from gcloud_bigtable.happybase.table import _filter_for_cell
+        return _filter_for_cell(*args, **kwargs)
+
+    def _helper(self, num_filters, versions=None, timestamp=None):
+        from gcloud_bigtable.row import RowFilter
+        from gcloud_bigtable.row import RowFilterChain
+
+        col_fam = 'cf1'
+        qual = 'qual'
+        column = col_fam + ':' + qual
+        result = self._callFUT(column, versions=versions, timestamp=timestamp)
+        self.assertTrue(isinstance(result, RowFilterChain))
+
+        self.assertEqual(len(result.filters), num_filters)
+        fam_filter = result.filters[0]
+        qual_filter = result.filters[1]
+        self.assertTrue(isinstance(fam_filter, RowFilter))
+        self.assertTrue(isinstance(qual_filter, RowFilter))
+
+        # Relies on the fact that RowFilter instances can
+        # only have one value set.
+        self.assertEqual(fam_filter.family_name_regex_filter, col_fam)
+        self.assertEqual(qual_filter.column_qualifier_regex_filter, qual)
+
+        return result
+
+    def test_column_only(self):
+        self._helper(num_filters=2)
+
+    def test_with_versions(self):
+        from gcloud_bigtable.row import RowFilter
+
+        versions = 11
+        result = self._helper(num_filters=3, versions=versions)
+
+        version_filter = result.filters[2]
+        self.assertTrue(isinstance(version_filter, RowFilter))
+        # Relies on the fact that RowFilter instances can
+        # only have one value set.
+        self.assertEqual(version_filter.cells_per_column_limit_filter,
+                         versions)
+
+    def test_with_timestamp(self):
+        from gcloud_bigtable._helpers import _microseconds_to_timestamp
+        from gcloud_bigtable.row import RowFilter
+        from gcloud_bigtable.row import TimestampRange
+
+        timestamp = 1441928298571
+        result = self._helper(num_filters=3, timestamp=timestamp)
+
+        range_filter = result.filters[2]
+        self.assertTrue(isinstance(range_filter, RowFilter))
+        # Relies on the fact that RowFilter instances can
+        # only have one value set.
+        time_range = range_filter.timestamp_range_filter
+        self.assertTrue(isinstance(time_range, TimestampRange))
+        self.assertEqual(time_range.start, None)
+        next_ts = _microseconds_to_timestamp(1000 * (timestamp + 1))
+        self.assertEqual(time_range.end, next_ts)
+
+    def test_with_all_options(self):
+        versions = 11
+        timestamp = 1441928298571
+        self._helper(num_filters=4, versions=versions, timestamp=timestamp)
+
+
 class TestTable(unittest2.TestCase):
 
     def _getTargetClass(self):
@@ -267,20 +372,87 @@ class TestTable(unittest2.TestCase):
             table.rows(row_keys, columns=columns, timestamp=timestamp,
                        include_timestamp=include_timestamp)
 
-    def test_cells(self):
+    def test_cells_empty_row(self):
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable.happybase import table as MUT
+
         name = 'table-name'
         connection = None
         table = self._makeOne(name, connection)
+        table._low_level_table = _MockLowLevelTable()
+        table._low_level_table.read_row_result = None
+
+        fake_filter = object()
+        mock_filter_for_cell = _MockCalled(fake_filter)
 
         row_key = 'row-key'
         column = 'fam:col1'
-        versions = 11
-        timestamp = None
-        include_timestamp = True
-        with self.assertRaises(NotImplementedError):
-            table.cells(row_key, column, versions=versions,
-                        timestamp=timestamp,
-                        include_timestamp=include_timestamp)
+        with _Monkey(MUT, _filter_for_cell=mock_filter_for_cell):
+            result = table.cells(row_key, column)
+
+        # read_row_result == None --> No results.
+        self.assertEqual(result, [])
+
+        read_row_args = (row_key,)
+        read_row_kwargs = {'filter_': fake_filter}
+        self.assertEqual(table._low_level_table.read_row_calls, [
+            (read_row_args, read_row_kwargs),
+        ])
+
+        expected_kwargs = {'versions': None, 'timestamp': None}
+        mock_filter_for_cell.check_called(
+            self, [(column,)], [expected_kwargs])
+
+    def test_cells_with_results(self):
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable.happybase import table as MUT
+        from gcloud_bigtable.row_data import PartialRowData
+
+        row_key = 'row-key'
+        name = 'table-name'
+        connection = None
+        table = self._makeOne(name, connection)
+        table._low_level_table = _MockLowLevelTable()
+        partial_row = PartialRowData(row_key)
+        table._low_level_table.read_row_result = partial_row
+
+        # These are all passed to mocks.
+        versions = object()
+        timestamp = object()
+        include_timestamp = object()
+
+        fake_filter = object()
+        mock_filter_for_cell = _MockCalled(fake_filter)
+        fake_result = object()
+        mock_cells_to_pairs = _MockCalled(fake_result)
+
+        col_fam = 'cf1'
+        qual = 'qual'
+        fake_cells = object()
+        partial_row._cells = {col_fam: {qual: fake_cells}}
+        column = col_fam + ':' + qual
+        with _Monkey(MUT, _filter_for_cell=mock_filter_for_cell,
+                     _cells_to_pairs=mock_cells_to_pairs):
+            result = table.cells(row_key, column, versions=versions,
+                                 timestamp=timestamp,
+                                 include_timestamp=include_timestamp)
+
+        self.assertEqual(result, fake_result)
+
+        read_row_args = (row_key,)
+        read_row_kwargs = {'filter_': fake_filter}
+        self.assertEqual(table._low_level_table.read_row_calls, [
+            (read_row_args, read_row_kwargs),
+        ])
+
+        filter_kwargs = {'versions': versions, 'timestamp': timestamp}
+        mock_filter_for_cell.check_called(
+            self, [(column,)], [filter_kwargs])
+        to_pairs_kwargs = {'include_timestamp': include_timestamp}
+        mock_cells_to_pairs.check_called(
+            self, [(fake_cells,)], [to_pairs_kwargs])
 
     def test_scan(self):
         name = 'table-name'
@@ -569,6 +741,8 @@ class _MockLowLevelTable(object):
         self.list_column_families_calls = 0
         self.column_families = {}
         self.row_values = {}
+        self.read_row_calls = []
+        self.read_row_result = None
 
     def list_column_families(self):
         self.list_column_families_calls += 1
@@ -576,6 +750,10 @@ class _MockLowLevelTable(object):
 
     def row(self, row_key):
         return self.row_values[row_key]
+
+    def read_row(self, *args, **kwargs):
+        self.read_row_calls.append((args, kwargs))
+        return self.read_row_result
 
 
 class _MockLowLevelColumnFamily(object):
