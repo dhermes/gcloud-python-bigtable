@@ -132,6 +132,39 @@ class TestPartialRowData(unittest2.TestCase):
         partial_row_data2 = self._makeOne(row_key)
         self.assertNotEqual(partial_row_data1, partial_row_data2)
 
+    def test_to_dict(self):
+        cell1 = object()
+        cell2 = object()
+        cell3 = object()
+
+        family_name1 = u'name1'
+        family_name2 = u'name2'
+        qual1 = b'col1'
+        qual2 = b'col2'
+        qual3 = b'col3'
+
+        partial_row_data = self._makeOne(None)
+        partial_row_data._cells = {
+            family_name1: {
+                qual1: cell1,
+                qual2: cell2,
+            },
+            family_name2: {
+                qual3: cell3,
+            },
+        }
+
+        result = partial_row_data.to_dict()
+        col1 = family_name1 + b':' + qual1
+        col2 = family_name1 + b':' + qual2
+        col3 = family_name2 + b':' + qual3
+        expected_result = {
+            col1: cell1,
+            col2: cell2,
+            col3: cell3,
+        }
+        self.assertEqual(result, expected_result)
+
     def test_cells_property(self):
         partial_row_data = self._makeOne(None)
         cells = {1: 2}

@@ -16,6 +16,7 @@
 
 
 import copy
+import six
 
 from gcloud_bigtable._helpers import _microseconds_to_timestamp
 
@@ -83,6 +84,22 @@ class PartialRowData(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def to_dict(self):
+        """Convert the cells to a dictionary.
+
+        This is intended to be used with HappyBase, so the column family and
+        column qualiers are combined (with ``:``).
+
+        :rtype: dict
+        :returns: Dictionary containing all the data in the cells of this row.
+        """
+        result = {}
+        for column_family_id, columns in six.iteritems(self._cells):
+            for column_qual, cells in six.iteritems(columns):
+                key = column_family_id + ':' + column_qual
+                result[key] = cells
+        return result
 
     @property
     def cells(self):
