@@ -110,7 +110,7 @@ class TestConnection(unittest2.TestCase):
                 self.assertEqual(retrieved[key], value)
 
 
-class TestTable(unittest2.TestCase):
+class BaseTableTest(unittest2.TestCase):
 
     def setUp(self):
         self.rows_to_delete = []
@@ -120,13 +120,8 @@ class TestTable(unittest2.TestCase):
         for row_key in self.rows_to_delete:
             table.delete(row_key)
 
-    def test_empty_rows(self):
-        table = get_table()
-        row1 = table.row(ROW_KEY1)
-        row2 = table.row(ROW_KEY2)
 
-        self.assertEqual(row1, {})
-        self.assertEqual(row2, {})
+class TestTable_put(BaseTableTest):
 
     def test_put(self):
         table = get_table()
@@ -223,6 +218,9 @@ class TestTable(unittest2.TestCase):
         time.sleep(cell_tll + 0.5)
         all_values_after = table.cells(ROW_KEY1, chosen_col)
         self.assertEqual(all_values_after, [])
+
+
+class TestTable_delete(BaseTableTest):
 
     def test_delete(self):
         table = get_table()
@@ -355,6 +353,9 @@ class TestTable(unittest2.TestCase):
         #       COL1 is still present since it is not in `columns`.
         self.assertEqual(row1_delete_fam, {COL2: (value2, ts2)})
 
+
+class TestTable_cells(BaseTableTest):
+
     def test_cells(self):
         table = get_table()
         value1 = 'value1'
@@ -395,6 +396,17 @@ class TestTable(unittest2.TestCase):
         first_cell = table.cells(ROW_KEY1, COL1, include_timestamp=True,
                                  timestamp=ts2)
         self.assertEqual(first_cell, [(value1, ts1)])
+
+
+class TestTable_row(BaseTableTest):
+
+    def test_row_when_empty(self):
+        table = get_table()
+        row1 = table.row(ROW_KEY1)
+        row2 = table.row(ROW_KEY2)
+
+        self.assertEqual(row1, {})
+        self.assertEqual(row2, {})
 
     def test_row_with_columns(self):
         table = get_table()
@@ -475,6 +487,9 @@ class TestTable(unittest2.TestCase):
         self.assertEqual(first_one, {
             COL1: (value1, ts1),
         })
+
+
+class TestTable_rows(BaseTableTest):
 
     def test_rows(self):
         table = get_table()
@@ -640,6 +655,9 @@ class TestTable(unittest2.TestCase):
         rows = table.rows([ROW_KEY1, ROW_KEY2], timestamp=ts4,
                           columns=[COL2], include_timestamp=True)
         self.assertEqual(rows, [(ROW_KEY1, {COL2: (value3, ts3)})])
+
+
+class TestTableCounterMethods(BaseTableTest):
 
     def test_counter_get(self):
         table = get_table()
