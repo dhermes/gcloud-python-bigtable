@@ -38,8 +38,8 @@ FAMILIES = {
     COL_FAM3: {},  # use defaults
 }
 ROW_KEY1 = 'row-key1'
-ROW_KEY2 = 'row-key2'
-ROW_KEY3 = 'row-key3'
+ROW_KEY2 = 'row-key2a'
+ROW_KEY3 = 'row-key2b'
 COL1 = COL_FAM1 + ':qual1'
 COL2 = COL_FAM1 + ':qual2'
 COL3 = COL_FAM2 + ':qual1'
@@ -598,6 +598,15 @@ class TestTable_scan(BaseTableTest):
         scan_result = list(table.scan(limit=1))
         self.assertEqual(scan_result, [
             (ROW_KEY1, row1_data),
+        ])
+
+        # Scan with a row prefix.
+        prefix = ROW_KEY2[:-1]
+        self.assertEqual(prefix, ROW_KEY3[:-1])
+        scan_result_prefixed = list(table.scan(row_prefix=prefix))
+        self.assertEqual(scan_result_prefixed, [
+            (ROW_KEY2, row2_data),
+            (ROW_KEY3, row3_data),
         ])
 
         # Make sure our keys are sorted in order
