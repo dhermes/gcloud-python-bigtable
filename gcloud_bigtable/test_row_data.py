@@ -155,9 +155,9 @@ class TestPartialRowData(unittest2.TestCase):
         }
 
         result = partial_row_data.to_dict()
-        col1 = family_name1 + b':' + qual1
-        col2 = family_name1 + b':' + qual2
-        col3 = family_name2 + b':' + qual3
+        col1 = family_name1.encode('ascii') + b':' + qual1
+        col2 = family_name1.encode('ascii') + b':' + qual2
+        col3 = family_name2.encode('ascii') + b':' + qual3
         expected_result = {
             col1: cell1,
             col2: cell2,
@@ -509,4 +509,4 @@ class _MockCancellableIterator(object):
         self.cancel_calls += 1
 
     def next(self):
-        return self.iter_values.next()
+        return next(self.iter_values)

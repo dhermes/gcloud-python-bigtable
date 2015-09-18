@@ -205,7 +205,7 @@ class TestRow(unittest2.TestCase):
         row = self._makeOne(ROW_KEY, table)
         value = object()  # Not bytes
         with self.assertRaises(TypeError):
-            row.set_cell(None, None, value)
+            row.set_cell(COLUMN_FAMILY_ID, COLUMN, value)
 
     def test_set_cell_with_non_null_timestamp(self):
         import datetime

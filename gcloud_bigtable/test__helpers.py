@@ -305,33 +305,6 @@ class Test__microseconds_to_timestamp(unittest2.TestCase):
         self.assertEqual(timestamp, self._callFUT(microseconds))
 
 
-class Test__to_bytes(unittest2.TestCase):
-
-    def _callFUT(self, value):
-        from gcloud_bigtable._helpers import _to_bytes
-        return _to_bytes(value)
-
-    def test_with_bytes(self):
-        value = b'value'
-        result = self._callFUT(value)
-        # Only necessary in Py2
-        self.assertEqual(type(result), type(value))
-        self.assertEqual(result, value)
-
-    def test_with_string(self):
-        value = u'value'
-        bytes_val = b'value'
-        result = self._callFUT(value)
-        # Only necessary in Py2
-        self.assertNotEqual(type(result), type(value))
-        self.assertEqual(result, bytes_val)
-
-    def test_with_non_string_types(self):
-        value = object()
-        with self.assertRaises(TypeError):
-            self._callFUT(value)
-
-
 class Test__set_certs(unittest2.TestCase):
 
     def _callFUT(self):
@@ -528,3 +501,30 @@ class Test__parse_family_pb(unittest2.TestCase):
             ],
         )
         self.assertEqual(expected_output, self._callFUT(sample_input))
+
+
+class Test__to_bytes(unittest2.TestCase):
+
+    def _callFUT(self, *args, **kwargs):
+        from gcloud_bigtable._helpers import _to_bytes
+        return _to_bytes(*args, **kwargs)
+
+    def test_with_bytes(self):
+        value = b'bytes-val'
+        self.assertEqual(self._callFUT(value), value)
+
+    def test_with_unicode(self):
+        value = u'string-val'
+        encoded_value = b'string-val'
+        self.assertEqual(self._callFUT(value), encoded_value)
+
+    def test_unicode_non_ascii(self):
+        value = u'\u2013'  # Long hyphen
+        encoded_value = b'\xe2\x80\x93'
+        self.assertRaises(UnicodeEncodeError, self._callFUT, value)
+        self.assertEqual(self._callFUT(value, encoding='utf-8'),
+                         encoded_value)
+
+    def test_with_nonstring_type(self):
+        value = object()
+        self.assertRaises(TypeError, self._callFUT, value)

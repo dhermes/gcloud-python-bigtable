@@ -97,6 +97,15 @@ class TestConnection(unittest2.TestCase):
         connection.delete_table(ALT_TABLE_NAME, disable=True)
         self.assertFalse(ALT_TABLE_NAME in connection.tables())
 
+    def test_create_table_failure(self):
+        connection = get_connection()
+
+        self.assertFalse(ALT_TABLE_NAME in connection.tables())
+        empty_families = {}
+        with self.assertRaises(ValueError):
+            connection.create_table(ALT_TABLE_NAME, empty_families)
+        self.assertFalse(ALT_TABLE_NAME in connection.tables())
+
 
 class BaseTableTest(unittest2.TestCase):
 

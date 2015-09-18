@@ -424,6 +424,24 @@ class TestConnection(unittest2.TestCase):
         self.assertEqual(col_fam_instances[1].gc_rule, mock_gc_rule)
         self.assertEqual(col_fam_instances[1].create_calls, 1)
 
+    def test_create_table_bad_type(self):
+        cluster = _Cluster()  # Avoid implicit environ check.
+        connection = self._makeOne(autoconnect=False, cluster=cluster)
+
+        name = 'table-name'
+        families = None
+        with self.assertRaises(TypeError):
+            connection.create_table(name, families)
+
+    def test_create_table_bad_value(self):
+        cluster = _Cluster()  # Avoid implicit environ check.
+        connection = self._makeOne(autoconnect=False, cluster=cluster)
+
+        name = 'table-name'
+        families = {}
+        with self.assertRaises(ValueError):
+            connection.create_table(name, families)
+
     def test_delete_table(self):
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable.happybase import connection as MUT

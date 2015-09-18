@@ -364,7 +364,19 @@ class Connection(object):
                          * :class:`.GarbageCollectionRule`
                          * :class:`.GarbageCollectionRuleUnion`
                          * :class:`.GarbageCollectionRuleIntersection`
+
+        :raises: :class:`TypeError <exceptions.TypeError>` if ``families`` is
+                 not a dictionary,
+                 :class:`ValueError <exceptions.ValueError>` if ``families``
+                 has no entries
         """
+        if not isinstance(families, dict):
+            raise TypeError('families arg must be a dictionary')
+
+        if not families:
+            raise ValueError('Cannot create table %r (no column '
+                             'families specified)' % (name,))
+
         # Parse all keys before making any API requests.
         gc_rule_dict = {}
         for column_family_name, option in families.items():

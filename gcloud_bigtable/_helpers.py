@@ -239,24 +239,6 @@ def _microseconds_to_timestamp(microseconds):
     return EPOCH + datetime.timedelta(microseconds=microseconds)
 
 
-def _to_bytes(value):
-    """Converts a value to bytes (or checks that it already is).
-
-    :type value: bytes
-    :param value: The value to ensure is converted to bytes.
-
-    :rtype: bytes
-    :returns: The ``value`` as bytes.
-    :raises: :class:`TypeError <exceptions.TypeError>` if the ``value`` is not
-             bytes or string.
-    """
-    if isinstance(value, six.text_type):
-        value = value.encode('utf-8')
-    if not isinstance(value, bytes):
-        raise TypeError('Row key must be bytes.')
-    return value
-
-
 def _set_certs():
     """Sets the cached root certificates locally."""
     with open(SSL_CERT_FILE, mode='rb') as file_obj:
@@ -353,3 +335,34 @@ def _parse_family_pb(family_pb):
             cells.append(val_pair)
 
     return family_pb.name, result
+
+
+def _to_bytes(value, encoding='ascii'):
+    """Converts a string value to bytes, if necessary.
+
+    Unfortunately, ``six.b`` is insufficient for this task since in
+    Python2 it does not modify ``unicode`` objects.
+
+    :type value: str / bytes or unicode
+    :param value: The string/bytes value to be converted.
+
+    :type encoding: str
+    :param encoding: The encoding to use to convert unicode to bytes. Defaults
+                     to "ascii", which will not allow any characters from
+                     ordinals larger than 127. Other useful values are
+                     "latin-1", which which will only allows byte ordinals
+                     (up to 255) and "utf-8", which will encode any unicode
+                     that needs to be.
+
+    :rtype: str / bytes
+    :returns: The original value converted to bytes (if unicode) or as passed
+              in if it started out as bytes.
+    :raises: :class:`TypeError <exceptions.TypeError>` if the value
+             could not be converted to bytes.
+    """
+    result = (value.encode(encoding)
+              if isinstance(value, six.text_type) else value)
+    if isinstance(result, six.binary_type):
+        return result
+    else:
+        raise TypeError('%r could not be converted to bytes' % (value,))

@@ -26,7 +26,7 @@ class TestConnectionPool(unittest2.TestCase):
         return self._getTargetClass()(*args, **kwargs)
 
     def test_constructor_defaults(self):
-        from Queue import LifoQueue
+        import six
         import threading
         from gcloud_bigtable.happybase.connection import Connection
 
@@ -41,7 +41,7 @@ class TestConnectionPool(unittest2.TestCase):
         self.assertEqual(pool._thread_connections.__dict__, {})
 
         queue = pool._queue
-        self.assertTrue(isinstance(queue, LifoQueue))
+        self.assertTrue(isinstance(queue, six.moves.queue.LifoQueue))
         self.assertTrue(queue.full())
         self.assertEqual(queue.maxsize, size)
         for connection in queue.queue:

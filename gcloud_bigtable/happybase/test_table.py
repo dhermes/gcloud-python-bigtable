@@ -515,8 +515,8 @@ class TestTable(unittest2.TestCase):
         fake_pair = object()
         mock_cells_to_pairs = _MockCalled([fake_pair])
 
-        col_fam = 'cf1'
-        qual = 'qual'
+        col_fam = u'cf1'
+        qual = b'qual'
         fake_cells = object()
         partial_row._cells = {col_fam: {qual: fake_cells}}
         include_timestamp = object()
@@ -525,7 +525,7 @@ class TestTable(unittest2.TestCase):
             result = table.row(row_key, include_timestamp=include_timestamp)
 
         # The results come from _cells_to_pairs.
-        expected_result = {col_fam + ':' + qual: fake_pair}
+        expected_result = {col_fam.encode('ascii') + b':' + qual: fake_pair}
         self.assertEqual(result, expected_result)
 
         read_row_args = (row_key,)

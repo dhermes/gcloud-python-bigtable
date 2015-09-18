@@ -15,7 +15,6 @@
 """Google Cloud Bigtable HappyBase pool module."""
 
 
-from Queue import LifoQueue
 import six
 import threading
 
@@ -63,7 +62,7 @@ class ConnectionPool(object):
             raise ValueError('Pool size must be positive')
 
         self._lock = threading.Lock()
-        self._queue = LifoQueue(maxsize=size)
+        self._queue = six.moves.queue.LifoQueue(maxsize=size)
         self._thread_connections = threading.local()
 
         connection_kwargs = kwargs
@@ -72,7 +71,7 @@ class ConnectionPool(object):
             connection_kwargs['cluster'] = _get_cluster(
                 timeout=kwargs.get('timeout'))
 
-        for _ in xrange(size):
+        for _ in six.moves.range(size):
             connection = Connection(**connection_kwargs)
             self._queue.put(connection)
 

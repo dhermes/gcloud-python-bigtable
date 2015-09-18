@@ -19,6 +19,7 @@ import copy
 import six
 
 from gcloud_bigtable._helpers import _microseconds_to_timestamp
+from gcloud_bigtable._helpers import _to_bytes
 
 
 class Cell(object):
@@ -97,7 +98,8 @@ class PartialRowData(object):
         result = {}
         for column_family_id, columns in six.iteritems(self._cells):
             for column_qual, cells in six.iteritems(columns):
-                key = column_family_id + ':' + column_qual
+                key = (_to_bytes(column_family_id) + b':' +
+                       _to_bytes(column_qual))
                 result[key] = cells
         return result
 
