@@ -642,6 +642,75 @@ class TestTable_scan(BaseTableTest):
             (ROW_KEY3, {COL3: '', COL4: ''}),  # Keys only
         ])
 
+    def test_scan_timestamp(self):
+        table = get_table()
+        value1 = 'value1'
+        value2 = 'value2'
+        value3 = 'value3'
+        value4 = 'value4'
+        value5 = 'value5'
+        value6 = 'value6'
+
+        # Need to clean-up row1/2/3 after.
+        self.rows_to_delete.append(ROW_KEY1)
+        self.rows_to_delete.append(ROW_KEY2)
+        self.rows_to_delete.append(ROW_KEY3)
+        table.put(ROW_KEY3, {COL4: value6})
+        table.put(ROW_KEY2, {COL3: value4})
+        table.put(ROW_KEY2, {COL2: value3})
+        table.put(ROW_KEY1, {COL2: value2})
+        table.put(ROW_KEY3, {COL3: value5})
+        table.put(ROW_KEY1, {COL1: value1})
+
+        # Retrieve all the timestamps so we can filter with them.
+        scan_result = list(table.scan(include_timestamp=True))
+        self.assertEqual(len(scan_result), 3)
+        row1, row2, row3 = scan_result
+        self.assertEqual(row1[0], ROW_KEY1)
+        self.assertEqual(row2[0], ROW_KEY2)
+        self.assertEqual(row3[0], ROW_KEY3)
+
+        # Drop the keys now that we have checked.
+        _, row1 = row1
+        _, row2 = row2
+        _, row3 = row3
+
+        # These are numbered in order of insertion, **not** in
+        # the order of the values.
+        ts1 = row3[COL4][1]
+        ts2 = row2[COL3][1]
+        ts3 = row2[COL2][1]
+        ts4 = row1[COL2][1]
+        ts5 = row3[COL3][1]
+        ts6 = row1[COL1][1]
+
+        self.assertEqual(row1, {COL1: (value1, ts6), COL2: (value2, ts4)})
+        self.assertEqual(row2, {COL2: (value3, ts3), COL3: (value4, ts2)})
+        self.assertEqual(row3, {COL3: (value5, ts5), COL4: (value6, ts1)})
+
+        # All cells before ts1 (exclusive)
+        scan_result_before_ts1 = list(table.scan(timestamp=ts1,
+                                                 include_timestamp=True))
+        self.assertEqual(scan_result_before_ts1, [])
+
+        # All cells before ts2 (inclusive)
+        scan_result_before_ts2 = list(table.scan(timestamp=ts2 + 1,
+                                                 include_timestamp=True))
+        self.assertEqual(scan_result_before_ts2, [
+            (ROW_KEY2, {COL3: (value4, ts2)}),
+            (ROW_KEY3, {COL4: (value6, ts1)}),
+        ])
+
+        # All cells before ts6 (exclusive)
+        scan_result_before_ts6 = list(table.scan(timestamp=ts6,
+                                                 include_timestamp=True))
+        self.assertEqual(scan_result_before_ts6, [
+            (ROW_KEY1, {COL2: (value2, ts4)}),
+            (ROW_KEY2, {COL2: (value3, ts3), COL3: (value4, ts2)}),
+            (ROW_KEY3, {COL3: (value5, ts5), COL4: (value6, ts1)}),
+        ])
+
+
 
 class TestTable_delete(BaseTableTest):
 
