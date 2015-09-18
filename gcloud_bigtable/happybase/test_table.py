@@ -796,6 +796,13 @@ class TestTable(unittest2.TestCase):
         with self.assertRaises(ValueError):
             table.scan(scan_batching=object())
 
+    def test_scan_with_sorted_columns(self):
+        name = 'table-name'
+        connection = None
+        table = self._makeOne(name, connection)
+        with self.assertRaises(ValueError):
+            table.scan(sorted_columns=object())
+
     def test_scan_with_invalid_limit(self):
         name = 'table-name'
         connection = None
@@ -822,13 +829,11 @@ class TestTable(unittest2.TestCase):
         timestamp = None
         include_timestamp = True
         limit = 123
-        sorted_columns = True
         with self.assertRaises(NotImplementedError):
             table.scan(row_start=row_start, row_stop=row_stop,
                        columns=columns, filter=filter_,
                        timestamp=timestamp,
-                       include_timestamp=include_timestamp,
-                       limit=limit, sorted_columns=sorted_columns)
+                       include_timestamp=include_timestamp, limit=limit)
 
     def test_put(self):
         from gcloud_bigtable._testing import _Monkey

@@ -35,6 +35,7 @@ from gcloud_bigtable.table import Table as _LowLevelTable
 _UNPACK_I64 = struct.Struct('>q').unpack
 _DEFAULT_BATCH_SIZE = object()
 _DEFAULT_SCAN_BATCHING = object()
+_DEFAULT_SORTED_COLUMNS = object()
 
 
 def make_row(cell_map, include_timestamp):
@@ -522,7 +523,7 @@ class Table(object):
              columns=None, filter=None, timestamp=None,
              include_timestamp=False, batch_size=_DEFAULT_BATCH_SIZE,
              scan_batching=_DEFAULT_SCAN_BATCHING,
-             limit=None, sorted_columns=False):
+             limit=None, sorted_columns=_DEFAULT_SORTED_COLUMNS):
         """Create a scanner for data in this table.
 
         This method returns a generator that can be used for looping over the
@@ -593,8 +594,9 @@ class Table(object):
         :param limit: (Optional) Maximum number of rows to return.
 
         :type sorted_columns: bool
-        :param sorted_columns: Flag to indicate if the returned columns need
-                               to be sorted.
+        :param sorted_columns: Unused parameter. Provided compatibility with
+                               HappyBase, but irrelevant for Cloud Bigtable
+                               since it cannot return sorted columns.
 
         :raises: :class:`ValueError <exceptions.ValueError>` if ``batch_size``
                  or ``scan_batching`` are used, or if ``limit`` is set but
@@ -607,6 +609,9 @@ class Table(object):
                              'HappyBase module')
         if scan_batching is not _DEFAULT_SCAN_BATCHING:
             raise ValueError('Scan batching cannot be set for gcloud '
+                             'HappyBase module')
+        if sorted_columns is not _DEFAULT_SORTED_COLUMNS:
+            raise ValueError('Sorted columns cannot be set for gcloud '
                              'HappyBase module')
         if limit is not None and limit < 1:
             raise ValueError('limit must be positive')
