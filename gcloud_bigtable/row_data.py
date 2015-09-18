@@ -268,7 +268,7 @@ class PartialRowsData(object):
         :rtype: dict
         :returns: Dictionary of :class:`PartialRowData`.
         """
-        # NOTE: To avoid duplication large objects, this is just the
+        # NOTE: To avoid duplicating large objects, this is just the
         #       mutable private data.
         return self._rows
 

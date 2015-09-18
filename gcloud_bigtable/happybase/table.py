@@ -236,7 +236,7 @@ def _filter_chain_helper(column=None, versions=None, timestamp=None,
 def _columns_filter_helper(columns):
     """Creates a union filter for a list of columns.
 
-    :type columns:
+    :type columns: list
     :param columns: Iterable containing column names (as strings). Each column
                     name can be either
 
@@ -268,6 +268,56 @@ def _columns_filter_helper(columns):
         return filters[0]
     else:
         return RowFilterUnion(filters=filters)
+
+
+def _row_keys_filter_helper(row_keys):
+    """Creates a union filter for a list of rows.
+
+    :type row_keys: list
+    :param row_keys: Iterable containing row keys (as strings).
+
+    :rtype: :class:`.RowFilterUnion`, :class:`.RowFilter`
+    :returns: The union filter created containing all of the row keys.
+    :raises: :class:`ValueError <exceptions.ValueError>` if there are no
+             filters to union.
+    """
+    filters = []
+    for row_key in row_keys:
+        filters.append(RowFilter(row_key_regex_filter=row_key))
+
+    num_filters = len(filters)
+    if num_filters == 0:
+        raise ValueError('Must have at least one filter.')
+    elif num_filters == 1:
+        return filters[0]
+    else:
+        return RowFilterUnion(filters=filters)
+
+
+def _partial_row_to_dict(partial_row_data, include_timestamp=False):
+    """Convert a low-level row data object to a dictionary.
+
+    Assumes only the latest value in each row are needed (e.g. different
+    behavior than in :meth:`Table.cells`).
+
+    :type partial_row_data: :class:`.row_data.PartialRowData`
+    :param partial_row_data: Row data consumed from a stream.
+
+    :type include_timestamp: bool
+    :param include_timestamp: Flag to indicate if cell timestamps should be
+                              included with the output.
+
+    :rtype: dict
+    :returns: The row data converted to a dictionary.
+    """
+    result = {}
+    for column, cells in six.iteritems(partial_row_data.to_dict()):
+        cell_vals = _cells_to_pairs(cells,
+                                    include_timestamp=include_timestamp)
+        # NOTE: We assume there is exactly 1 version since we used that in
+        #       our filter, but we don't check this.
+        result[column] = cell_vals[0]
+    return result
 
 
 class Table(object):
@@ -361,14 +411,8 @@ class Table(object):
         if partial_row_data is None:
             return {}
 
-        result = {}
-        for column, cells in six.iteritems(partial_row_data.to_dict()):
-            cell_vals = _cells_to_pairs(cells,
-                                        include_timestamp=include_timestamp)
-            # NOTE: We assume there is exactly 1 version since we used that in
-            #       our filter, but we don't check this.
-            result[column] = cell_vals[0]
-        return result
+        return _partial_row_to_dict(partial_row_data,
+                                    include_timestamp=include_timestamp)
 
     def rows(self, rows, columns=None, timestamp=None,
              include_timestamp=False):
@@ -396,10 +440,37 @@ class Table(object):
         :param include_timestamp: Flag to indicate if cell timestamps should be
                                   included with the output.
 
-        :raises: :class:`NotImplementedError <exceptions.NotImplementedError>`
-                 temporarily until the method is implemented.
+        :rtype: list
+        :returns: A list of pairs, where the first is the row key and the
+                  second is a dictionary with the filtered values returned.
         """
-        raise NotImplementedError('Temporarily not implemented.')
+        if not rows:
+            # Avoid round-trip if the result is empty anyway
+            return []
+
+        filters = []
+        if columns is not None:
+            filters.append(_columns_filter_helper(columns))
+        filters.append(_row_keys_filter_helper(rows))
+        # versions == 1 since we only want the latest.
+        filter_ = _filter_chain_helper(versions=1, timestamp=timestamp,
+                                       filters=filters)
+
+        partial_rows_data = self._low_level_table.read_rows(filter_=filter_)
+        # NOTE: We could use max_loops = 1000 or some similar value to ensure
+        #       that the stream isn't open too long.
+        partial_rows_data.consume_all()
+
+        result = []
+        for row_key in rows:
+            if row_key not in partial_rows_data.rows:
+                continue
+            curr_row_data = partial_rows_data.rows[row_key]
+            curr_row_dict = _partial_row_to_dict(
+                curr_row_data, include_timestamp=include_timestamp)
+            result.append((row_key, curr_row_dict))
+
+        return result
 
     def cells(self, row, column, versions=None, timestamp=None,
               include_timestamp=False):
