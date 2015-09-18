@@ -594,6 +594,12 @@ class TestTable_scan(BaseTableTest):
             (ROW_KEY3, row3_data),
         ])
 
+        # Limit the size of the scan
+        scan_result = list(table.scan(limit=1))
+        self.assertEqual(scan_result, [
+            (ROW_KEY1, row1_data),
+        ])
+
         # Make sure our keys are sorted in order
         row_keys = [ROW_KEY1, ROW_KEY2, ROW_KEY3]
         self.assertEqual(row_keys, sorted(row_keys))
