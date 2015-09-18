@@ -782,6 +782,20 @@ class TestTable(unittest2.TestCase):
         mock_cells_to_pairs.check_called(
             self, [(fake_cells,)], [to_pairs_kwargs])
 
+    def test_scan_with_batch_size(self):
+        name = 'table-name'
+        connection = None
+        table = self._makeOne(name, connection)
+        with self.assertRaises(ValueError):
+            table.scan(batch_size=object())
+
+    def test_scan_with_scan_batching(self):
+        name = 'table-name'
+        connection = None
+        table = self._makeOne(name, connection)
+        with self.assertRaises(ValueError):
+            table.scan(scan_batching=object())
+
     def test_scan(self):
         name = 'table-name'
         connection = None
@@ -794,8 +808,6 @@ class TestTable(unittest2.TestCase):
         filter_ = 'KeyOnlyFilter ()'
         timestamp = None
         include_timestamp = True
-        batch_size = 1337
-        scan_batching = None
         limit = 123
         sorted_columns = True
         with self.assertRaises(NotImplementedError):
@@ -803,7 +815,6 @@ class TestTable(unittest2.TestCase):
                        row_prefix=row_prefix, columns=columns, filter=filter_,
                        timestamp=timestamp,
                        include_timestamp=include_timestamp,
-                       batch_size=batch_size, scan_batching=scan_batching,
                        limit=limit, sorted_columns=sorted_columns)
 
     def test_put(self):
