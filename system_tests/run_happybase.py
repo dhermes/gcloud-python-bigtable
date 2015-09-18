@@ -428,105 +428,6 @@ class TestTable_cells(BaseTableTest):
         self.assertEqual(first_cell, [(value1, ts1)])
 
 
-class TestTable_put(BaseTableTest):
-
-    def test_put(self):
-        table = get_table()
-        value1 = 'value1'
-        value2 = 'value2'
-        row1_data = {COL1: value1, COL2: value2}
-
-        # Need to clean-up row1 after.
-        self.rows_to_delete.append(ROW_KEY1)
-        table.put(ROW_KEY1, row1_data)
-
-        row1 = table.row(ROW_KEY1)
-        self.assertEqual(row1, row1_data)
-
-        # Check again, but this time with timestamps.
-        row1 = table.row(ROW_KEY1, include_timestamp=True)
-        timestamp1 = row1[COL1][1]
-        timestamp2 = row1[COL2][1]
-        self.assertEqual(timestamp1, timestamp2)
-
-        row1_data_with_timestamps = {COL1: (value1, timestamp1),
-                                     COL2: (value2, timestamp2)}
-        self.assertEqual(row1, row1_data_with_timestamps)
-
-    @unittest2.skipIf(USING_HBASE, 'HBase fails to write with a timestamp')
-    def test_put_with_timestamp(self):
-        table = get_table()
-        value1 = 'value1'
-        value2 = 'value2'
-        row1_data = {COL1: value1, COL2: value2}
-        ts = NOW_MILLIS
-
-        # Need to clean-up row1 after.
-        self.rows_to_delete.append(ROW_KEY1)
-        table.put(ROW_KEY1, row1_data, timestamp=ts)
-
-        # Check again, but this time with timestamps.
-        row1 = table.row(ROW_KEY1, include_timestamp=True)
-        row1_data_with_timestamps = {COL1: (value1, ts),
-                                     COL2: (value2, ts)}
-        self.assertEqual(row1, row1_data_with_timestamps)
-
-    def test_put_versions_restricted(self):
-        table = get_table()
-        families = table.families()
-
-        chosen_fam = COL_FAM2
-        self.assertEqual(families[chosen_fam]['max_versions'], 1)
-        chosen_col = COL3
-        self.assertTrue(chosen_col.startswith(chosen_fam + ':'))
-
-        value1 = 'value1'
-        value2 = 'value2'
-
-        # Need to clean-up row1 after.
-        self.rows_to_delete.append(ROW_KEY1)
-        table.put(ROW_KEY1, {chosen_col: value1})
-
-        all_values_before = table.cells(ROW_KEY1, chosen_col, versions=2)
-        self.assertEqual(all_values_before, [value1])
-
-        # Putting another value should evict the first one.
-        table.put(ROW_KEY1, {chosen_col: value2})
-        all_values_after = table.cells(ROW_KEY1, chosen_col, versions=2)
-        self.assertEqual(all_values_after, [value2])
-
-    @unittest2.skip('Sleeping 3.5 seconds is bad for rapid development')
-    def test_put_ttl_eviction(self):
-        table = get_table()
-        # The Thrift API fails to retrieve the TTL for some reason.
-        if USING_HBASE:
-            families = FAMILIES
-        else:
-            families = table.families()
-
-        cell_tll = TTL_FOR_TEST
-        chosen_fam = COL_FAM2
-        self.assertEqual(families[chosen_fam]['time_to_live'], cell_tll)
-        chosen_col = COL3
-        self.assertTrue(chosen_col.startswith(chosen_fam + ':'))
-
-        value1 = 'value1'
-
-        # Need to clean-up row1 after.
-        self.rows_to_delete.append(ROW_KEY1)
-        table.put(ROW_KEY1, {chosen_col: value1})
-
-        all_values_before = table.cells(ROW_KEY1, chosen_col)
-        self.assertEqual(all_values_before, [value1])
-
-        # Make sure we don't sleep for a problematic length.
-        self.assertTrue(cell_tll < 10)
-        # Wait for time-to-live eviction to occur.
-        time.sleep(cell_tll + 0.5)
-        all_values_after = table.cells(ROW_KEY1, chosen_col)
-        self.assertEqual(all_values_after, [])
-
-
 class TestTable_scan(BaseTableTest):
 
     def test_scan_when_empty(self):
@@ -710,6 +611,104 @@ class TestTable_scan(BaseTableTest):
             (ROW_KEY3, {COL3: (value5, ts5), COL4: (value6, ts1)}),
         ])
 
+
+class TestTable_put(BaseTableTest):
+
+    def test_put(self):
+        table = get_table()
+        value1 = 'value1'
+        value2 = 'value2'
+        row1_data = {COL1: value1, COL2: value2}
+
+        # Need to clean-up row1 after.
+        self.rows_to_delete.append(ROW_KEY1)
+        table.put(ROW_KEY1, row1_data)
+
+        row1 = table.row(ROW_KEY1)
+        self.assertEqual(row1, row1_data)
+
+        # Check again, but this time with timestamps.
+        row1 = table.row(ROW_KEY1, include_timestamp=True)
+        timestamp1 = row1[COL1][1]
+        timestamp2 = row1[COL2][1]
+        self.assertEqual(timestamp1, timestamp2)
+
+        row1_data_with_timestamps = {COL1: (value1, timestamp1),
+                                     COL2: (value2, timestamp2)}
+        self.assertEqual(row1, row1_data_with_timestamps)
+
+    @unittest2.skipIf(USING_HBASE, 'HBase fails to write with a timestamp')
+    def test_put_with_timestamp(self):
+        table = get_table()
+        value1 = 'value1'
+        value2 = 'value2'
+        row1_data = {COL1: value1, COL2: value2}
+        ts = NOW_MILLIS
+
+        # Need to clean-up row1 after.
+        self.rows_to_delete.append(ROW_KEY1)
+        table.put(ROW_KEY1, row1_data, timestamp=ts)
+
+        # Check again, but this time with timestamps.
+        row1 = table.row(ROW_KEY1, include_timestamp=True)
+        row1_data_with_timestamps = {COL1: (value1, ts),
+                                     COL2: (value2, ts)}
+        self.assertEqual(row1, row1_data_with_timestamps)
+
+    def test_put_versions_restricted(self):
+        table = get_table()
+        families = table.families()
+
+        chosen_fam = COL_FAM2
+        self.assertEqual(families[chosen_fam]['max_versions'], 1)
+        chosen_col = COL3
+        self.assertTrue(chosen_col.startswith(chosen_fam + ':'))
+
+        value1 = 'value1'
+        value2 = 'value2'
+
+        # Need to clean-up row1 after.
+        self.rows_to_delete.append(ROW_KEY1)
+        table.put(ROW_KEY1, {chosen_col: value1})
+
+        all_values_before = table.cells(ROW_KEY1, chosen_col, versions=2)
+        self.assertEqual(all_values_before, [value1])
+
+        # Putting another value should evict the first one.
+        table.put(ROW_KEY1, {chosen_col: value2})
+        all_values_after = table.cells(ROW_KEY1, chosen_col, versions=2)
+        self.assertEqual(all_values_after, [value2])
+
+    @unittest2.skip('Sleeping 3.5 seconds is bad for rapid development')
+    def test_put_ttl_eviction(self):
+        table = get_table()
+        # The Thrift API fails to retrieve the TTL for some reason.
+        if USING_HBASE:
+            families = FAMILIES
+        else:
+            families = table.families()
+
+        cell_tll = TTL_FOR_TEST
+        chosen_fam = COL_FAM2
+        self.assertEqual(families[chosen_fam]['time_to_live'], cell_tll)
+        chosen_col = COL3
+        self.assertTrue(chosen_col.startswith(chosen_fam + ':'))
+
+        value1 = 'value1'
+
+        # Need to clean-up row1 after.
+        self.rows_to_delete.append(ROW_KEY1)
+        table.put(ROW_KEY1, {chosen_col: value1})
+
+        all_values_before = table.cells(ROW_KEY1, chosen_col)
+        self.assertEqual(all_values_before, [value1])
+
+        # Make sure we don't sleep for a problematic length.
+        self.assertTrue(cell_tll < 10)
+        # Wait for time-to-live eviction to occur.
+        time.sleep(cell_tll + 0.5)
+        all_values_after = table.cells(ROW_KEY1, chosen_col)
+        self.assertEqual(all_values_after, [])
 
 
 class TestTable_delete(BaseTableTest):
