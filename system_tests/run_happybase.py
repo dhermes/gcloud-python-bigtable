@@ -39,6 +39,7 @@ FAMILIES = {
 }
 ROW_KEY1 = 'row-key1'
 ROW_KEY2 = 'row-key2'
+ROW_KEY3 = 'row-key3'
 COL1 = COL_FAM1 + ':qual1'
 COL2 = COL_FAM1 + ':qual2'
 COL3 = COL_FAM2 + ':qual1'
@@ -524,6 +525,73 @@ class TestTable_put(BaseTableTest):
         time.sleep(cell_tll + 0.5)
         all_values_after = table.cells(ROW_KEY1, chosen_col)
         self.assertEqual(all_values_after, [])
+
+
+class TestTable_scan(BaseTableTest):
+
+    def test_scan_when_empty(self):
+        table = get_table()
+        scan_result = list(table.scan())
+        self.assertEqual(scan_result, [])
+
+    def test_scan_single_row(self):
+        table = get_table()
+        value1 = 'value1'
+        value2 = 'value2'
+        row1_data = {COL1: value1, COL2: value2}
+
+        # Need to clean-up row1 after.
+        self.rows_to_delete.append(ROW_KEY1)
+        table.put(ROW_KEY1, row1_data)
+
+        scan_result = list(table.scan())
+        self.assertEqual(scan_result, [(ROW_KEY1, row1_data)])
+
+        scan_result_cols = list(table.scan(columns=[COL1]))
+        self.assertEqual(scan_result_cols, [(ROW_KEY1, {COL1: value1})])
+
+        scan_result_ts = list(table.scan(include_timestamp=True))
+        self.assertEqual(len(scan_result_ts), 1)
+        only_row = scan_result_ts[0]
+        self.assertEqual(only_row[0], ROW_KEY1)
+        row_values = only_row[1]
+        ts = row_values[COL1][1]
+        self.assertEqual(row_values, {COL1: (value1, ts), COL2: (value2, ts)})
+
+        scan_result_sorted = list(table.scan(sorted_columns=True))
+        self.assertEqual(len(scan_result_sorted), 1)
+        only_row = scan_result_sorted[0]
+        self.assertEqual(only_row[0], ROW_KEY1)
+        row1_ordered = row1_data.items()
+        row1_ordered.sort(key=_FIRST_ELT)
+        self.assertEqual(only_row[1].items(), row1_ordered)
+
+    def test_scan_multiple_rows(self):
+        table = get_table()
+        value1 = 'value1'
+        value2 = 'value2'
+        value3 = 'value3'
+        value4 = 'value4'
+        value5 = 'value5'
+        value6 = 'value6'
+        row1_data = {COL1: value1, COL2: value2}
+        row2_data = {COL2: value3, COL3: value4}
+        row3_data = {COL3: value5, COL4: value6}
+
+        # Need to clean-up row1/2/3 after.
+        self.rows_to_delete.append(ROW_KEY1)
+        self.rows_to_delete.append(ROW_KEY2)
+        self.rows_to_delete.append(ROW_KEY3)
+        table.put(ROW_KEY1, row1_data)
+        table.put(ROW_KEY2, row2_data)
+        table.put(ROW_KEY3, row3_data)
+
+        scan_result = list(table.scan())
+        self.assertEqual(scan_result, [
+            (ROW_KEY1, row1_data),
+            (ROW_KEY2, row2_data),
+            (ROW_KEY3, row3_data),
+        ])
 
 
 class TestTable_delete(BaseTableTest):
