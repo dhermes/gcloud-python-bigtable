@@ -503,9 +503,11 @@ class Table(object):
                                   included with the output.
 
         :type batch_size: int
-        :param batch_size: Number of results to retrieve per batch. Defaults
-                           to 1000. Should be kept large unless individual
-                           row results are very large.
+        :param batch_size: Unused parameter. This determines the number of
+                           results to retrieve per request. The HBase scanner
+                           defaults to reading one record at a time, so this
+                           increases that number. The Cloud Bigtable API uses
+                           HTTP/2 streaming and this value can't be set.
 
         :type scan_batching: bool
         :param scan_batching: Unused parameter. Provided for compatibility
