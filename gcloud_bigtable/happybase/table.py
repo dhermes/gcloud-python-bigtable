@@ -597,7 +597,8 @@ class Table(object):
                                to be sorted.
 
         :raises: :class:`ValueError <exceptions.ValueError>` if ``batch_size``
-                 or ``scan_batching`` are used,
+                 or ``scan_batching`` are used, or if ``limit`` is set but
+                 non-positive, or if row prefix is used with row start/stop,
                  :class:`NotImplementedError <exceptions.NotImplementedError>`
                  temporarily until the method is implemented.
         """
@@ -607,6 +608,13 @@ class Table(object):
         if scan_batching is not _DEFAULT_SCAN_BATCHING:
             raise ValueError('Scan batching cannot be set for gcloud '
                              'HappyBase module')
+        if limit is not None and limit < 1:
+            raise ValueError('limit must be positive')
+        if row_prefix is not None:
+            if row_start is not None or row_stop is not None:
+                raise ValueError('row_prefix cannot be combined with '
+                                 'row_start or row_stop')
+
         raise NotImplementedError('Temporarily not implemented.')
 
     def put(self, row, data, timestamp=None, wal=_WAL_SENTINEL):

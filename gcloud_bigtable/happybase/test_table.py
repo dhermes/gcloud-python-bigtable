@@ -796,6 +796,20 @@ class TestTable(unittest2.TestCase):
         with self.assertRaises(ValueError):
             table.scan(scan_batching=object())
 
+    def test_scan_with_invalid_limit(self):
+        name = 'table-name'
+        connection = None
+        table = self._makeOne(name, connection)
+        with self.assertRaises(ValueError):
+            table.scan(limit=-10)
+
+    def test_scan_with_row_prefix_and_row_start(self):
+        name = 'table-name'
+        connection = None
+        table = self._makeOne(name, connection)
+        with self.assertRaises(ValueError):
+            table.scan(row_prefix='a', row_stop='abc')
+
     def test_scan(self):
         name = 'table-name'
         connection = None
@@ -803,7 +817,6 @@ class TestTable(unittest2.TestCase):
 
         row_start = 'row-start'
         row_stop = 'row-stop'
-        row_prefix = 'row-prefix'
         columns = ['fam:col1', 'fam:col2']
         filter_ = 'KeyOnlyFilter ()'
         timestamp = None
@@ -812,7 +825,7 @@ class TestTable(unittest2.TestCase):
         sorted_columns = True
         with self.assertRaises(NotImplementedError):
             table.scan(row_start=row_start, row_stop=row_stop,
-                       row_prefix=row_prefix, columns=columns, filter=filter_,
+                       columns=columns, filter=filter_,
                        timestamp=timestamp,
                        include_timestamp=include_timestamp,
                        limit=limit, sorted_columns=sorted_columns)
