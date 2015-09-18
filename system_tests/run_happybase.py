@@ -566,7 +566,7 @@ class TestTable_scan(BaseTableTest):
         row1_ordered.sort(key=_FIRST_ELT)
         self.assertEqual(only_row[1].items(), row1_ordered)
 
-    def test_scan_multiple_rows(self):
+    def test_scan_filters(self):
         table = get_table()
         value1 = 'value1'
         value2 = 'value2'
@@ -586,11 +586,45 @@ class TestTable_scan(BaseTableTest):
         table.put(ROW_KEY2, row2_data)
         table.put(ROW_KEY3, row3_data)
 
+        # Basic scan (no filters)
         scan_result = list(table.scan())
         self.assertEqual(scan_result, [
             (ROW_KEY1, row1_data),
             (ROW_KEY2, row2_data),
             (ROW_KEY3, row3_data),
+        ])
+
+        # Make sure our keys are sorted in order
+        row_keys = [ROW_KEY1, ROW_KEY2, ROW_KEY3]
+        self.assertEqual(row_keys, sorted(row_keys))
+
+        # row_start alone (inclusive)
+        scan_result_row_start = list(table.scan(row_start=ROW_KEY2))
+        self.assertEqual(scan_result_row_start, [
+            (ROW_KEY2, row2_data),
+            (ROW_KEY3, row3_data),
+        ])
+
+        # row_stop alone (exclusive)
+        scan_result_row_stop = list(table.scan(row_stop=ROW_KEY2))
+        self.assertEqual(scan_result_row_stop, [
+            (ROW_KEY1, row1_data),
+        ])
+
+        # Both row_start and row_stop
+        scan_result_row_stop_and_start = list(
+            table.scan(row_start=ROW_KEY1, row_stop=ROW_KEY3))
+        self.assertEqual(scan_result_row_stop_and_start, [
+            (ROW_KEY1, row1_data),
+            (ROW_KEY2, row2_data),
+        ])
+
+        # Using a filter.
+        scan_result_filter = list(table.scan(filter='KeyOnlyFilter ()'))
+        self.assertEqual(scan_result_filter, [
+            (ROW_KEY1, {COL1: '', COL2: ''}),  # Keys only
+            (ROW_KEY2, {COL2: '', COL3: ''}),  # Keys only
+            (ROW_KEY3, {COL3: '', COL4: ''}),  # Keys only
         ])
 
 
