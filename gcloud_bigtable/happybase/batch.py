@@ -70,7 +70,7 @@ def _get_column_pairs(columns, require_qualifier=False):
         elif num_colons == 1:
             column_pairs.append(column.split(':'))
         else:
-            raise ValueError('')
+            raise ValueError('Column contains the : separator more than once')
 
     return column_pairs
 

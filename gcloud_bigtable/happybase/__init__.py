@@ -37,9 +37,9 @@ could not be implemented:
 * :meth:`Table.counter_set() \
       <gcloud_bigtable.happybase.table.Table.counter_set>` - method can't
   be atomic, so we disable it
-* The ``__version__`` value for the HappyBase package is :data`None`
+* The ``__version__`` value for the HappyBase package is :data:`None`
 
-In addition, the many of the constants from :mod:`.connection` are specific
+In addition, many of the constants from :mod:`.connection` are specific
 to HBase and are defined as :data:`None` in our module:
 
 * ``COMPAT_MODES``
@@ -126,6 +126,25 @@ API Behavior Changes
   mutated row in the batch. This should not be noticeable since gRPC
   uses HTTP/2. However, some of the requests may fail part way through and
   the process of applying all mutations cannot be rolled back.
+* :meth:`Table.scan() <gcloud_bigtable.happybase.table.Table.scan>` no longer
+  accepts the following arguments (which will result in a
+  :class:`ValueError <exceptions.ValueError>`):
+
+  * ``batch_size``
+  * ``scan_batching``
+  * ``sorted_columns``
+
+* Using a HBase filter string in
+  :meth:`Table.scan() <gcloud_bigtable.happybase.table.Table.scan>` is
+  not possible with Cloud Bigtable and will result in a
+  :class:`TypeError <exceptions.TypeError>`. However, the method now accepts
+  :class:`.RowFilter` instances (and related classes).
+* :meth:`.Batch.delete` (and hence
+  :meth:`Table.delete() <gcloud_bigtable.happybase.table.Table.delete>`)
+  will fail when either a row or column family delete is attempted with
+  a ``timestamp``. This is because the Cloud Bigtable API uses the
+  ``DeleteFromFamily`` and ``DeleteFromRow`` mutations for these deletes, and
+  neither of these mutations support a timestamp.
 """
 
 from gcloud_bigtable.happybase.batch import Batch
