@@ -376,6 +376,16 @@ class Test__row_keys_filter_helper(unittest2.TestCase):
         self.assertEqual(result, expected_result)
 
 
+class Test__string_successor(unittest2.TestCase):
+
+    def _callFUT(self, *args, **kwargs):
+        from gcloud_bigtable.happybase.table import _string_successor
+        return _string_successor(*args, **kwargs)
+
+    def test_with_alphanumeric(self):
+        self.assertEqual(self._callFUT('boa'), 'bob')
+
+
 class TestTable(unittest2.TestCase):
 
     def _getTargetClass(self):
@@ -787,53 +797,133 @@ class TestTable(unittest2.TestCase):
         connection = None
         table = self._makeOne(name, connection)
         with self.assertRaises(ValueError):
-            table.scan(batch_size=object())
+            list(table.scan(batch_size=object()))
 
     def test_scan_with_scan_batching(self):
         name = 'table-name'
         connection = None
         table = self._makeOne(name, connection)
         with self.assertRaises(ValueError):
-            table.scan(scan_batching=object())
+            list(table.scan(scan_batching=object()))
 
     def test_scan_with_sorted_columns(self):
         name = 'table-name'
         connection = None
         table = self._makeOne(name, connection)
         with self.assertRaises(ValueError):
-            table.scan(sorted_columns=object())
+            list(table.scan(sorted_columns=object()))
 
     def test_scan_with_invalid_limit(self):
         name = 'table-name'
         connection = None
         table = self._makeOne(name, connection)
         with self.assertRaises(ValueError):
-            table.scan(limit=-10)
+            list(table.scan(limit=-10))
 
     def test_scan_with_row_prefix_and_row_start(self):
         name = 'table-name'
         connection = None
         table = self._makeOne(name, connection)
         with self.assertRaises(ValueError):
-            table.scan(row_prefix='a', row_stop='abc')
+            list(table.scan(row_prefix='a', row_stop='abc'))
 
-    def test_scan(self):
+    def _scan_test_helper(self, row_start=None, row_stop=None, row_prefix=None,
+                          columns=None, timestamp=None,
+                          include_timestamp=False, limit=None, rr_result=None,
+                          expected_result=None):
+        import types
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable.happybase import table as MUT
+
         name = 'table-name'
         connection = None
         table = self._makeOne(name, connection)
+        table._low_level_table = _MockLowLevelTable()
+        rr_result = rr_result or _MockPartialRowsData()
+        table._low_level_table.read_rows_result = rr_result
+        self.assertEqual(rr_result.consume_next_calls, 0)
 
-        row_start = 'row-start'
-        row_stop = 'row-stop'
-        columns = ['fam:col1', 'fam:col2']
-        filter_ = 'KeyOnlyFilter ()'
-        timestamp = None
-        include_timestamp = True
-        limit = 123
-        with self.assertRaises(NotImplementedError):
-            table.scan(row_start=row_start, row_stop=row_stop,
-                       columns=columns, filter=filter_,
-                       timestamp=timestamp,
-                       include_timestamp=include_timestamp, limit=limit)
+        fake_col_filter = object()
+        mock_columns_filter_helper = _MockCalled(fake_col_filter)
+        fake_filter = object()
+        mock_filter_chain_helper = _MockCalled(fake_filter)
+
+        with _Monkey(MUT, _filter_chain_helper=mock_filter_chain_helper,
+                     _columns_filter_helper=mock_columns_filter_helper):
+            result = table.scan(row_start=row_start, row_stop=row_stop,
+                                row_prefix=row_prefix, columns=columns,
+                                timestamp=timestamp,
+                                include_timestamp=include_timestamp,
+                                limit=limit)
+            self.assertTrue(isinstance(result, types.GeneratorType))
+            # Need to consume the result while the monkey patch is applied.
+            # read_rows_result == Empty PartialRowsData --> No results.
+            expected_result = expected_result or []
+            self.assertEqual(list(result), expected_result)
+
+        read_rows_args = ()
+        if row_prefix:
+            row_start = row_prefix
+            row_stop = MUT._string_successor(row_prefix)
+        read_rows_kwargs = {
+            'end_key': row_stop,
+            'filter_': fake_filter,
+            'limit': limit,
+            'start_key': row_start,
+        }
+        self.assertEqual(table._low_level_table.read_rows_calls, [
+            (read_rows_args, read_rows_kwargs),
+        ])
+        self.assertEqual(rr_result.consume_next_calls,
+                         rr_result.iterations + 1)
+
+        if columns is not None:
+            mock_columns_filter_helper.check_called(self, [(columns,)])
+        else:
+            mock_columns_filter_helper.check_called(self, [])
+
+        if columns:
+            filters = [fake_col_filter]
+        else:
+            filters = []
+        expected_kwargs = {
+            'filters': filters,
+            'versions': 1,
+            'timestamp': timestamp,
+        }
+        mock_filter_chain_helper.check_called(self, [()], [expected_kwargs])
+
+    def test_scan_with_columns(self):
+        columns = object()
+        self._scan_test_helper(columns=columns)
+
+    def test_scan_with_row_start_and_stop(self):
+        row_start = 'bar'
+        row_stop = 'foo'
+        self._scan_test_helper(row_start=row_start, row_stop=row_stop)
+
+    def test_scan_with_row_prefix(self):
+        row_prefix = 'row-prefi'
+        self._scan_test_helper(row_prefix=row_prefix)
+
+    def test_scan_with_no_results(self):
+        limit = 1337
+        timestamp = object()
+        self._scan_test_helper(timestamp=timestamp, limit=limit)
+
+    def test_scan_with_results(self):
+        from gcloud_bigtable.row_data import PartialRowData
+
+        row_key1 = 'row-key1'
+        row1 = PartialRowData(row_key1)
+        rr_result = _MockPartialRowsData(rows={row_key1: row1}, iterations=1)
+
+        include_timestamp = object()
+        expected_result = [(row_key1, {})]
+        self._scan_test_helper(include_timestamp=include_timestamp,
+                               rr_result=rr_result,
+                               expected_result=expected_result)
 
     def test_put(self):
         from gcloud_bigtable._testing import _Monkey
@@ -1174,9 +1264,16 @@ class _MockLowLevelRow(object):
 
 class _MockPartialRowsData(object):
 
-    def __init__(self, rows=None):
+    def __init__(self, rows=None, iterations=0):
         self.rows = rows or {}
         self.consume_all_calls = 0
+        self.consume_next_calls = 0
+        self.iterations = iterations
 
     def consume_all(self):
         self.consume_all_calls += 1
+
+    def consume_next(self):
+        self.consume_next_calls += 1
+        if self.consume_next_calls > self.iterations:
+            raise StopIteration

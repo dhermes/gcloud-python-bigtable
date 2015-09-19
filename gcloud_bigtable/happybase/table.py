@@ -20,6 +20,7 @@ import struct
 
 from gcloud_bigtable._helpers import _microseconds_to_timestamp
 from gcloud_bigtable._helpers import _timestamp_to_microseconds
+from gcloud_bigtable._helpers import _to_bytes
 from gcloud_bigtable.column_family import GarbageCollectionRule
 from gcloud_bigtable.column_family import GarbageCollectionRuleIntersection
 from gcloud_bigtable.happybase.batch import Batch
@@ -323,6 +324,40 @@ def _partial_row_to_dict(partial_row_data, include_timestamp=False):
     return result
 
 
+def _string_successor(str_val):
+    """Increment and truncate a byte string.
+
+    Determines shortest string that sorts after the given string when
+    compared using regular string comparison semantics.
+
+    Borrowed from gcloud-golang.
+
+    Increments the last byte that is smaller than ``0xFF``, and
+    drops everything after it. If the string only contains ``0xFF`` bytes,
+    ``''`` is returned.
+
+    :type str_val: str
+    :param str_val: String to increment.
+
+    :rtype: str
+    :returns: The next string in lexical order after ``str_val``.
+    """
+    if str_val == b'':
+        return str_val
+
+    n = len(str_val)
+    index = n - 1
+    while index >= 0:
+        if str_val[index] != b'\xff':
+            break
+        index -= 1
+
+    if index == -1:
+        return b''
+
+    return str_val[:index] + chr(ord(str_val[index]) + 1)
+
+
 class Table(object):
     """Representation of Cloud Bigtable table.
 
@@ -619,8 +654,32 @@ class Table(object):
             if row_start is not None or row_stop is not None:
                 raise ValueError('row_prefix cannot be combined with '
                                  'row_start or row_stop')
+            row_start = row_prefix
+            row_stop = _string_successor(row_prefix)
 
-        raise NotImplementedError('Temporarily not implemented.')
+        filters = []
+        if columns is not None:
+            filters.append(_columns_filter_helper(columns))
+        # versions == 1 since we only want the latest.
+        filter_ = _filter_chain_helper(versions=1, timestamp=timestamp,
+                                       filters=filters)
+
+        partial_rows_data = self._low_level_table.read_rows(
+            start_key=row_start, end_key=row_stop,
+            limit=limit, filter_=filter_)
+
+        # Mutable copy of data.
+        rows_dict = partial_rows_data.rows
+        while True:
+            try:
+                partial_rows_data.consume_next()
+                row_key, curr_row_data = rows_dict.popitem()
+                # NOTE: We expect len(rows_dict) == 0, but don't check it.
+                curr_row_dict = _partial_row_to_dict(
+                    curr_row_data, include_timestamp=include_timestamp)
+                yield (row_key, curr_row_dict)
+            except StopIteration:
+                break
 
     def put(self, row, data, timestamp=None, wal=_WAL_SENTINEL):
         """Insert data into a row in this table.
