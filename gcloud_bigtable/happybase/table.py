@@ -622,10 +622,13 @@ class Table(object):
                           * an entire column family: ``fam`` or ``fam:``
                           * an single column: ``fam:col``
 
-        :type filter: str
-        :param filter: (Optional) An HBase filter string. See
+        :type filter: :class:`RowFilter`, :class:`RowFilterChain`,
+                      :class:`RowFilterUnion` or :class:`ConditionalRowFilter`
+        :param filter: (Optional) An additional filter (beyond column and
+                       row range filters supported here). HappyBase / HBase
+                       users will have used this as an HBase filter string. See
                        http://hbase.apache.org/0.94/book/thrift.html
-                       for more details.
+                       for more details on those filters.
 
         :type timestamp: int
         :param timestamp: (Optional) Timestamp (in milliseconds since the
@@ -661,7 +664,9 @@ class Table(object):
                  or ``scan_batching`` are used, or if ``limit`` is set but
                  non-positive, or if row prefix is used with row start/stop,
                  :class:`NotImplementedError <exceptions.NotImplementedError>`
-                 temporarily until the method is implemented.
+                 temporarily until the method is implemented,
+                 :class:`TypeError <exceptions.TypeError>` if a string
+                 ``filter`` is used.
         """
         if batch_size is not _DEFAULT_BATCH_SIZE:
             raise ValueError('Batch size cannot be set for gcloud '
@@ -682,6 +687,13 @@ class Table(object):
             row_stop = _string_successor(row_prefix)
 
         filters = []
+        if isinstance(filter, six.string_types):
+            raise TypeError('HBase filter strings not supported by Cloud '
+                            'Bigtable. RowFilter\'s from row module may be '
+                            'used instead.')
+        elif filter is not None:
+            filters.append(filter)
+
         if columns is not None:
             filters.append(_columns_filter_helper(columns))
         # versions == 1 since we only want the latest.

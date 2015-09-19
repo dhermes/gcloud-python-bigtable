@@ -223,11 +223,18 @@ class Batch(object):
 
         :type row_object: :class:`Row <gcloud_bigtable.row.Row>`
         :param row_object: The row which will hold the delete mutations.
+
+        :raises: :class:`ValueError <exceptions.ValueError>` if the delete
+                 timestamp range is set on the current batch, but a
+                 column family delete is attempted.
         """
         column_pairs = _get_column_pairs(columns)
         for column_family_id, column_qualifier in column_pairs:
             if column_qualifier is None:
-                # NOTE: time_range not part of `DeleteFromFamily`
+                if self._delete_range is not None:
+                    raise ValueError('The Cloud Bigtable API does not support '
+                                     'adding a timestamp to '
+                                     '"DeleteFromFamily" ')
                 row_object.delete_cells(column_family_id,
                                         columns=row_object.ALL_COLUMNS)
             else:
@@ -257,7 +264,8 @@ class Batch(object):
                     Write Ahead Log.
 
         :raises: :class:`ValueError <exceptions.ValueError>` if ``wal``
-                 is used.
+                 is used, or if if the delete timestamp range is set on the
+                 current batch, but a full row delete is attempted.
         """
         if wal is not _WAL_SENTINEL:
             raise ValueError('The wal argument cannot be used with '
@@ -267,8 +275,11 @@ class Batch(object):
 
         if columns is None:
             # Delete entire row.
+            if self._delete_range is not None:
+                raise ValueError('The Cloud Bigtable API does not support '
+                                 'adding a timestamp to "DeleteFromRow" '
+                                 'mutations')
             row_object.delete()
-            # NOTE: time_range not part of `DeleteFromRow`
             self._mutation_count += 1
         else:
             self._delete_columns(columns, row_object)

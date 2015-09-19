@@ -151,11 +151,11 @@ class Test__convert_to_time_range(unittest2.TestCase):
         from gcloud_bigtable.row import TimestampRange
 
         timestamp = 1441928298571
-        next_ts = _microseconds_to_timestamp(1000 * (timestamp + 1))
+        ts_dt = _microseconds_to_timestamp(1000 * timestamp)
         result = self._callFUT(timestamp=timestamp)
         self.assertTrue(isinstance(result, TimestampRange))
         self.assertEqual(result.start, None)
-        self.assertEqual(result.end, next_ts)
+        self.assertEqual(result.end, ts_dt)
 
 
 class Test__cells_to_pairs(unittest2.TestCase):
@@ -282,8 +282,8 @@ class Test__filter_chain_helper(unittest2.TestCase):
         time_range = range_filter.timestamp_range_filter
         self.assertTrue(isinstance(time_range, TimestampRange))
         self.assertEqual(time_range.start, None)
-        next_ts = _microseconds_to_timestamp(1000 * (timestamp + 1))
-        self.assertEqual(time_range.end, next_ts)
+        ts_dt = _microseconds_to_timestamp(1000 * timestamp)
+        self.assertEqual(time_range.end, ts_dt)
 
     def test_with_all_options(self):
         versions = 11
@@ -840,8 +840,15 @@ class TestTable(unittest2.TestCase):
         with self.assertRaises(ValueError):
             list(table.scan(row_prefix='a', row_stop='abc'))
 
+    def test_scan_with_string_filter(self):
+        name = 'table-name'
+        connection = None
+        table = self._makeOne(name, connection)
+        with self.assertRaises(TypeError):
+            list(table.scan(filter='some-string'))
+
     def _scan_test_helper(self, row_start=None, row_stop=None, row_prefix=None,
-                          columns=None, timestamp=None,
+                          columns=None, filter_=None, timestamp=None,
                           include_timestamp=False, limit=None, rr_result=None,
                           expected_result=None):
         import types
@@ -866,7 +873,7 @@ class TestTable(unittest2.TestCase):
                      _columns_filter_helper=mock_columns_filter_helper):
             result = table.scan(row_start=row_start, row_stop=row_stop,
                                 row_prefix=row_prefix, columns=columns,
-                                timestamp=timestamp,
+                                filter=filter_, timestamp=timestamp,
                                 include_timestamp=include_timestamp,
                                 limit=limit)
             self.assertTrue(isinstance(result, types.GeneratorType))
@@ -896,10 +903,11 @@ class TestTable(unittest2.TestCase):
         else:
             mock_columns_filter_helper.check_called(self, [])
 
+        filters = []
+        if filter_ is not None:
+            filters.append(filter_)
         if columns:
-            filters = [fake_col_filter]
-        else:
-            filters = []
+            filters.append(fake_col_filter)
         expected_kwargs = {
             'filters': filters,
             'versions': 1,
@@ -919,6 +927,10 @@ class TestTable(unittest2.TestCase):
     def test_scan_with_row_prefix(self):
         row_prefix = 'row-prefi'
         self._scan_test_helper(row_prefix=row_prefix)
+
+    def test_scan_with_filter(self):
+        mock_filter = object()
+        self._scan_test_helper(filter_=mock_filter)
 
     def test_scan_with_no_results(self):
         limit = 1337

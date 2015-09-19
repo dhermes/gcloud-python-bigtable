@@ -302,9 +302,8 @@ class TestBatch(unittest2.TestCase):
         self.assertEqual(batch._mutation_count, 0)
         self.assertEqual(batch.try_send_calls, 1)
 
-    def test__delete_columns(self):
+    def _delete_columns_test_helper(self, time_range=None):
         table = object()
-        time_range = object()
         batch = self._makeOne(table)
         batch._delete_range = time_range
 
@@ -325,6 +324,14 @@ class TestBatch(unittest2.TestCase):
         fam_deleted_kwargs = {'columns': row_object.ALL_COLUMNS}
         self.assertEqual(row_object.delete_cells_calls,
                          [(fam_deleted_args, fam_deleted_kwargs)])
+
+    def test__delete_columns(self):
+        self._delete_columns_test_helper()
+
+    def test__delete_columns_w_time_and_col_fam(self):
+        time_range = object()
+        with self.assertRaises(ValueError):
+            self._delete_columns_test_helper(time_range=time_range)
 
     def test_delete_bad_wal(self):
         from gcloud_bigtable.happybase.batch import _WAL_SENTINEL
@@ -352,6 +359,21 @@ class TestBatch(unittest2.TestCase):
         batch.delete(row_key, columns=None)
         self.assertEqual(row.deletes, 1)
         self.assertEqual(batch._mutation_count, 1)
+
+    def test_delete_entire_row_with_ts(self):
+        table = object()
+        batch = self._makeOne(table)
+        batch._delete_range = object()
+
+        row_key = 'row-key'
+        batch._row_map[row_key] = row = _MockRow()
+
+        self.assertEqual(row.deletes, 0)
+        self.assertEqual(batch._mutation_count, 0)
+        with self.assertRaises(ValueError):
+            batch.delete(row_key, columns=None)
+        self.assertEqual(row.deletes, 0)
+        self.assertEqual(batch._mutation_count, 0)
 
     def test_delete_call_try_send(self):
         klass = self._getTargetClass()
