@@ -150,7 +150,7 @@ def _convert_to_time_range(timestamp=None):
     :type timestamp: int
     :param timestamp: (Optional) Timestamp (in milliseconds since the
                       epoch). Intended to be used as the end of an HBase
-                      time range, which is inclusive.
+                      time range, which is exclusive.
 
     :rtype: :class:`.TimestampRange`, :data:`NoneType <types.NoneType>`
     :returns: The timestamp range corresponding to the passed in
@@ -159,7 +159,7 @@ def _convert_to_time_range(timestamp=None):
     if timestamp is None:
         return None
 
-    next_timestamp = _microseconds_to_timestamp(1000 * (timestamp + 1))
+    next_timestamp = _microseconds_to_timestamp(1000 * timestamp)
     return TimestampRange(end=next_timestamp)
 
 
@@ -450,8 +450,8 @@ class Table(object):
 
         :type timestamp: int
         :param timestamp: (Optional) Timestamp (in milliseconds since the
-                          epoch). If specified, only cells returned before (or
-                          at) the timestamp will be returned.
+                          epoch). If specified, only cells returned before the
+                          the timestamp will be returned.
 
         :type include_timestamp: bool
         :param include_timestamp: Flag to indicate if cell timestamps should be

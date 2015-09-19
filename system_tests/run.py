@@ -33,7 +33,8 @@ from gcloud_bigtable.row_data import PartialRowData
 
 PROJECT_ID = os.getenv('GCLOUD_TESTS_PROJECT_ID')
 CENTRAL_1C_ZONE = 'us-central1-c'
-CLUSTER_ID = 'gcloud-python'
+NOW_MILLIS = int(1000 * time.time())
+CLUSTER_ID = 'gcloud-python-%d' % (NOW_MILLIS,)
 SERVE_NODES = 3
 TABLE_ID = 'gcloud-python-test-table'
 COLUMN_FAMILY_ID1 = u'col-fam-id1'
@@ -113,7 +114,7 @@ class TestClusterAdminAPI(unittest2.TestCase):
         self.assertEqual(cluster.serve_nodes, CLUSTER.serve_nodes)
 
     def test_create_cluster(self):
-        cluster_id = '%s-%d' % (CLUSTER_ID, 1000 * time.time())
+        cluster_id = '%s-a' % (CLUSTER_ID,)
         cluster = CLIENT.cluster(CENTRAL_1C_ZONE, cluster_id)
         cluster.create()
         # Make sure this cluster gets deleted after the test case.

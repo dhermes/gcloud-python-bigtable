@@ -19,12 +19,11 @@ import struct
 import time
 import unittest2
 
-from happybase import Connection
-
 
 _PACK_I64 = struct.Struct('>q').pack
 _FIRST_ELT = operator.itemgetter(0)
 
+USING_HBASE = False
 NOW_MILLIS = int(1000 * time.time())
 TABLE_NAME = 'table-name'
 ALT_TABLE_NAME = 'other-table'
@@ -53,15 +52,36 @@ class Config(object):
     table = None
 
 
-# BEGIN: Backend dependent values.
-USING_HBASE = True
+def set_hbase_connection():
+    from happybase import Connection
+    Config.connection = Connection()
+
+
+def set_cloud_bigtable_connection():
+    from gcloud_bigtable import client as client_mod
+    from gcloud_bigtable.happybase import Connection
+
+    # NOTE: This assumes that the "gcloud-python" cluster in the
+    #       "us-central1-c" zone already exists for this project.
+    #       We are avoided checking "client.reload()" since the
+    #       alpha version of grcpio does not correctly handle
+    #       request timeouts.
+    client_mod.PROJECT_ENV_VAR = 'GCLOUD_TESTS_PROJECT_ID'
+    client = client_mod.Client(admin=True)
+    zone = 'us-central1-c'
+    cluster_id = 'gcloud-python'
+    cluster = client.cluster(zone, cluster_id)
+
+    Config.connection = Connection(cluster=cluster)
 
 
 def get_connection():
     if Config.connection is None:
-        Config.connection = Connection()
+        if USING_HBASE:
+            set_hbase_connection()
+        else:
+            set_cloud_bigtable_connection()
     return Config.connection
-#   END: Backend dependent values.
 
 
 def get_table():
@@ -80,21 +100,23 @@ def setUpModule():
 
 def tearDownModule():
     connection = get_connection()
-    connection.close()
     if not USING_HBASE:
         connection.delete_table(TABLE_NAME)
+    connection.close()
 
 
 class TestConnection(unittest2.TestCase):
 
-    @unittest2.skip('Creation hangs on some runs, bad for rapid development')
     def test_create_and_delete_table(self):
         connection = get_connection()
 
         self.assertFalse(ALT_TABLE_NAME in connection.tables())
         connection.create_table(ALT_TABLE_NAME, {COL_FAM1: {}})
         self.assertTrue(ALT_TABLE_NAME in connection.tables())
-        connection.delete_table(ALT_TABLE_NAME, disable=True)
+        if USING_HBASE:
+            connection.delete_table(ALT_TABLE_NAME, disable=True)
+        else:
+            connection.delete_table(ALT_TABLE_NAME)
         self.assertFalse(ALT_TABLE_NAME in connection.tables())
 
     def test_create_table_failure(self):
@@ -174,10 +196,14 @@ class TestTable_row(BaseTableTest):
         self.assertEqual(row1_col_fam, {COL1: value1, COL2: value2})
         row1_fam_qual_overlap1 = table.row(ROW_KEY1, columns=[COL1, COL_FAM1])
         self.assertEqual(row1_fam_qual_overlap1, {COL1: value1, COL2: value2})
-        # NOTE: This behavior seems to be "incorrect" but that is how
-        #       HappyBase / HBase works.
         row1_fam_qual_overlap2 = table.row(ROW_KEY1, columns=[COL_FAM1, COL1])
-        self.assertEqual(row1_fam_qual_overlap2, {COL1: value1})
+        if USING_HBASE:
+            # NOTE: This behavior seems to be "incorrect" but that is how
+            #       HappyBase / HBase works.
+            self.assertEqual(row1_fam_qual_overlap2, {COL1: value1})
+        else:
+            self.assertEqual(row1_fam_qual_overlap2,
+                             {COL1: value1, COL2: value2})
         row1_multiple_col_fams = table.row(ROW_KEY1,
                                            columns=[COL_FAM1, COL_FAM2])
         self.assertEqual(row1_multiple_col_fams,
@@ -278,7 +304,16 @@ class TestTable_rows(BaseTableTest):
         # All will have the same timestamp since we used batch.
         expected_row1_result = {COL1: (value1, ts), COL2: (value2, ts)}
         self.assertEqual(row1, expected_row1_result)
-        expected_row2_result = {COL1: (value3, ts)}
+        if USING_HBASE:
+            expected_row2_result = {COL1: (value3, ts)}
+        else:
+            # NOTE: Since Cloud Bigtable has no concept of batching, the
+            #       server-side timestamps correspond to separate calls
+            #       to row.commit(). We could circumvent this by manually
+            #       using the local time and storing it on mutations before
+            #       sending.
+            ts3 = row2[COL1][1]
+            expected_row2_result = {COL1: (value3, ts3)}
         self.assertEqual(row2, expected_row2_result)
 
     def test_rows_with_columns(self):
@@ -326,14 +361,17 @@ class TestTable_rows(BaseTableTest):
         self.assertEqual(row2, (ROW_KEY2, row2_data))
 
         # Filter a column family that overlaps with a column (opposite order).
-        # NOTE: This behavior seems to be "incorrect" but that is how
-        #       HappyBase / HBase works.
         rows_col_fam_overlap2 = table.rows([ROW_KEY1, ROW_KEY2],
                                            columns=[COL_FAM1, COL1])
         rows_col_fam_overlap2.sort(key=_FIRST_ELT)
         row1, row2 = rows_col_fam_overlap2
-        self.assertEqual(row1, (ROW_KEY1, {COL1: value1}))
-        self.assertEqual(row2, (ROW_KEY2, {COL1: value3}))
+        if USING_HBASE:
+            # NOTE: This behavior seems to be "incorrect" but that is how
+            #       HappyBase / HBase works.
+            self.assertEqual(row1, (ROW_KEY1, {COL1: value1}))
+        else:
+            self.assertEqual(row1, (ROW_KEY1, row1_data))
+        self.assertEqual(row2, (ROW_KEY2, row2_data))
 
     def test_rows_with_timestamp(self):
         table = get_table()
@@ -468,13 +506,14 @@ class TestTable_scan(BaseTableTest):
         ts = row_values[COL1][1]
         self.assertEqual(row_values, {COL1: (value1, ts), COL2: (value2, ts)})
 
-        scan_result_sorted = list(table.scan(sorted_columns=True))
-        self.assertEqual(len(scan_result_sorted), 1)
-        only_row = scan_result_sorted[0]
-        self.assertEqual(only_row[0], ROW_KEY1)
-        row1_ordered = row1_data.items()
-        row1_ordered.sort(key=_FIRST_ELT)
-        self.assertEqual(only_row[1].items(), row1_ordered)
+        if USING_HBASE:
+            scan_result_sorted = list(table.scan(sorted_columns=True))
+            self.assertEqual(len(scan_result_sorted), 1)
+            only_row = scan_result_sorted[0]
+            self.assertEqual(only_row[0], ROW_KEY1)
+            row1_ordered = row1_data.items()
+            row1_ordered.sort(key=_FIRST_ELT)
+            self.assertEqual(only_row[1].items(), row1_ordered)
 
     def test_scan_filters(self):
         table = get_table()
@@ -544,13 +583,14 @@ class TestTable_scan(BaseTableTest):
             (ROW_KEY2, row2_data),
         ])
 
-        # Using a filter.
-        scan_result_filter = list(table.scan(filter='KeyOnlyFilter ()'))
-        self.assertEqual(scan_result_filter, [
-            (ROW_KEY1, {COL1: '', COL2: ''}),  # Keys only
-            (ROW_KEY2, {COL2: '', COL3: ''}),  # Keys only
-            (ROW_KEY3, {COL3: '', COL4: ''}),  # Keys only
-        ])
+        if USING_HBASE:
+            # Using a filter.
+            scan_result_filter = list(table.scan(filter='KeyOnlyFilter ()'))
+            self.assertEqual(scan_result_filter, [
+                (ROW_KEY1, {COL1: '', COL2: ''}),  # Keys only
+                (ROW_KEY2, {COL2: '', COL3: ''}),  # Keys only
+                (ROW_KEY3, {COL3: '', COL4: ''}),  # Keys only
+            ])
 
     def test_scan_timestamp(self):
         table = get_table()
@@ -664,6 +704,8 @@ class TestTable_put(BaseTableTest):
                                      COL2: (value2, ts)}
         self.assertEqual(row1, row1_data_with_timestamps)
 
+    @unittest2.skipIf(not USING_HBASE, ('Cloud Bigtable evictions do not seem '
+                                        'to occur immediately'))
     def test_put_versions_restricted(self):
         table = get_table()
         families = table.families()
@@ -688,7 +730,8 @@ class TestTable_put(BaseTableTest):
         all_values_after = table.cells(ROW_KEY1, chosen_col, versions=2)
         self.assertEqual(all_values_after, [value2])
 
-    @unittest2.skip('Sleeping 3.5 seconds is bad for rapid development')
+    @unittest2.skipIf(not USING_HBASE, ('Cloud Bigtable evictions do not seem '
+                                        'to occur immediately'))
     def test_put_ttl_eviction(self):
         table = get_table()
         # The Thrift API fails to retrieve the TTL for some reason.
@@ -815,13 +858,31 @@ class TestTable_delete(BaseTableTest):
         ts1 = row1[COL1][1]
         ts2 = row1[COL2][1]
 
-        # This assumes the timestamp is inclusive at the endpoint.
-        table.delete(ROW_KEY1, timestamp=ts1 - 1)
+        self.assertTrue(ts1 < ts2)
+
+        if USING_HBASE:
+            # NOTE: HBase deletes use an inclusive timestamp at the endpoint.
+            table.delete(ROW_KEY1, timestamp=ts1 - 1)
+        else:
+            # NOTE: The Cloud Bigtable "Mutation.DeleteFromRow" mutation does
+            #       not support timestamps. Even attempting to send one
+            #       conditionally(via CheckAndMutateRowRequest) deletes the
+            #       entire row.
+            # NOTE: Cloud Bigtable deletes **ALSO** use an inclusive timestamp
+            #       at the endpoint, but only because we fake this when
+            #       creating Batch._delete_range.
+            table.delete(ROW_KEY1, columns=[COL1, COL2], timestamp=ts1 - 1)
         row1_after_early_delete = table.row(ROW_KEY1, include_timestamp=True)
         self.assertEqual(row1_after_early_delete, row1)
 
-        # This assumes the timestamp is inclusive at the endpoint.
-        table.delete(ROW_KEY1, timestamp=ts1)
+        if USING_HBASE:
+            # NOTE: HBase deletes use an inclusive timestamp at the endpoint.
+            table.delete(ROW_KEY1, timestamp=ts1)
+        else:
+            # NOTE: Cloud Bigtable deletes **ALSO** use an inclusive timestamp
+            #       at the endpoint, but only because we fake this when
+            #       creating Batch._delete_range.
+            table.delete(ROW_KEY1, columns=[COL1, COL2], timestamp=ts1)
         row1_after_incl_delete = table.row(ROW_KEY1, include_timestamp=True)
         self.assertEqual(row1_after_incl_delete, {COL2: (value2, ts2)})
 
@@ -847,7 +908,17 @@ class TestTable_delete(BaseTableTest):
         self.assertEqual(row1_after_delete, row1)
 
         # Delete with conditions that have no matches.
-        table.delete(ROW_KEY1, timestamp=ts1, columns=[COL_FAM1])
+        if USING_HBASE:
+            # NOTE: HBase deletes use an inclusive timestamp at the endpoint.
+            table.delete(ROW_KEY1, timestamp=ts1, columns=[COL_FAM1])
+        else:
+            # NOTE: Cloud Bigtable can't use a timestamp with column families
+            #       since "Mutation.DeleteFromFamily" does not include a
+            #       timestamp range.
+            # NOTE: Cloud Bigtable deletes **ALSO** use an inclusive timestamp
+            #       at the endpoint, but only because we fake this when
+            #       creating Batch._delete_range.
+            table.delete(ROW_KEY1, timestamp=ts1, columns=[COL1, COL2])
         row1_delete_fam = table.row(ROW_KEY1, include_timestamp=True)
         # NOTE: COL2 is still present since it occurs after ts1 and
         #       COL1 is still present since it is not in `columns`.
