@@ -383,7 +383,20 @@ class Test__string_successor(unittest2.TestCase):
         return _string_successor(*args, **kwargs)
 
     def test_with_alphanumeric(self):
-        self.assertEqual(self._callFUT('boa'), 'bob')
+        self.assertEqual(self._callFUT(b'boa'), b'bob')
+        self.assertEqual(self._callFUT(b'abc1'), b'abc2')
+
+    def test_with_last_byte(self):
+        self.assertEqual(self._callFUT(b'boa\xff'), b'bob')
+
+    def test_with_empty_string(self):
+        self.assertEqual(self._callFUT(b''), b'')
+
+    def test_with_all_last_bytes(self):
+        self.assertEqual(self._callFUT(b'\xff\xff\xff'), b'')
+
+    def test_with_unicode_input(self):
+        self.assertEqual(self._callFUT(u'boa'), b'bob')
 
 
 class TestTable(unittest2.TestCase):

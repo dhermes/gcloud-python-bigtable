@@ -324,6 +324,26 @@ def _partial_row_to_dict(partial_row_data, include_timestamp=False):
     return result
 
 
+def _next_char(str_val, index):
+    """Gets the next character based on a position in a string.
+
+    :type str_val: str
+    :param str_val: A string containing the character to update.
+
+    :type index: int
+    :param index: An integer index in ``str_val``.
+
+    :rtype: str
+    :returns: The next character after the character at ``index``
+              in ``str_val``.
+    """
+    if six.PY3:  # pragma: NO COVER
+        ord_val = str_val[index]
+    else:
+        ord_val = ord(str_val[index])
+    return _to_bytes(chr(ord_val + 1), encoding='latin-1')
+
+
 def _string_successor(str_val):
     """Increment and truncate a byte string.
 
@@ -342,20 +362,24 @@ def _string_successor(str_val):
     :rtype: str
     :returns: The next string in lexical order after ``str_val``.
     """
+    str_val = _to_bytes(str_val, encoding='latin-1')
     if str_val == b'':
         return str_val
 
-    n = len(str_val)
-    index = n - 1
+    index = len(str_val) - 1
     while index >= 0:
-        if str_val[index] != b'\xff':
-            break
+        if six.PY3:  # pragma: NO COVER
+            if str_val[index] != 0xff:
+                break
+        else:
+            if str_val[index] != b'\xff':
+                break
         index -= 1
 
     if index == -1:
         return b''
 
-    return str_val[:index] + chr(ord(str_val[index]) + 1)
+    return str_val[:index] + _next_char(str_val, index)
 
 
 class Table(object):
