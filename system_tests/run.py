@@ -333,6 +333,7 @@ class TestDataAPI(unittest2.TestCase):
         #       Instead we should make the values public or provide factories
         #       for constructing objects with them.
         row_data = PartialRowData(ROW_KEY)
+        row_data._chunks_encountered = True
         row_data._committed = True
         row_data._cells = {
             COLUMN_FAMILY_ID1: {
@@ -342,6 +343,7 @@ class TestDataAPI(unittest2.TestCase):
         }
 
         row_alt_data = PartialRowData(ROW_KEY_ALT)
+        row_alt_data._chunks_encountered = True
         row_alt_data._committed = True
         row_alt_data._cells = {
             COLUMN_FAMILY_ID1: {
