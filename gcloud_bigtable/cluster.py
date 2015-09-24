@@ -100,8 +100,7 @@ class Cluster(object):
 
     .. note::
 
-        For now, we leave out the properties ``hdd_bytes`` and ``ssd_bytes``
-        (both integers) and also the ``default_storage_type`` (an enum)
+        For now, we leave out the ``default_storage_type`` (an enum)
         which if not sent will end up as :data:`.data_pb2.STORAGE_SSD`.
 
     :type zone: str
