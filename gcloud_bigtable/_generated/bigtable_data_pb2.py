@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='google/bigtable/v1/bigtable_data.proto',
   package='google.bigtable.v1',
   syntax='proto3',
-  serialized_pb=_b('\n&google/bigtable/v1/bigtable_data.proto\x12\x12google.bigtable.v1\"@\n\x03Row\x12\x0b\n\x03key\x18\x01 \x01(\x0c\x12,\n\x08\x66\x61milies\x18\x02 \x03(\x0b\x32\x1a.google.bigtable.v1.Family\"C\n\x06\x46\x61mily\x12\x0c\n\x04name\x18\x01 \x01(\t\x12+\n\x07\x63olumns\x18\x02 \x03(\x0b\x32\x1a.google.bigtable.v1.Column\"D\n\x06\x43olumn\x12\x11\n\tqualifier\x18\x01 \x01(\x0c\x12\'\n\x05\x63\x65lls\x18\x02 \x03(\x0b\x32\x18.google.bigtable.v1.Cell\"/\n\x04\x43\x65ll\x12\x18\n\x10timestamp_micros\x18\x01 \x01(\x03\x12\r\n\x05value\x18\x02 \x01(\x0c\".\n\x08RowRange\x12\x11\n\tstart_key\x18\x02 \x01(\x0c\x12\x0f\n\x07\x65nd_key\x18\x03 \x01(\x0c\"\xd6\x01\n\x0b\x43olumnRange\x12\x13\n\x0b\x66\x61mily_name\x18\x01 \x01(\t\x12#\n\x19start_qualifier_inclusive\x18\x02 \x01(\x0cH\x00\x12#\n\x19start_qualifier_exclusive\x18\x03 \x01(\x0cH\x00\x12!\n\x17\x65nd_qualifier_inclusive\x18\x04 \x01(\x0cH\x01\x12!\n\x17\x65nd_qualifier_exclusive\x18\x05 \x01(\x0cH\x01\x42\x11\n\x0fstart_qualifierB\x0f\n\rend_qualifier\"N\n\x0eTimestampRange\x12\x1e\n\x16start_timestamp_micros\x18\x01 \x01(\x03\x12\x1c\n\x14\x65nd_timestamp_micros\x18\x02 \x01(\x03\"\xa8\x01\n\nValueRange\x12\x1f\n\x15start_value_inclusive\x18\x01 \x01(\x0cH\x00\x12\x1f\n\x15start_value_exclusive\x18\x02 \x01(\x0cH\x00\x12\x1d\n\x13\x65nd_value_inclusive\x18\x03 \x01(\x0cH\x01\x12\x1d\n\x13\x65nd_value_exclusive\x18\x04 \x01(\x0cH\x01\x42\r\n\x0bstart_valueB\x0b\n\tend_value\"\xf5\x07\n\tRowFilter\x12\x34\n\x05\x63hain\x18\x01 \x01(\x0b\x32#.google.bigtable.v1.RowFilter.ChainH\x00\x12>\n\ninterleave\x18\x02 \x01(\x0b\x32(.google.bigtable.v1.RowFilter.InterleaveH\x00\x12<\n\tcondition\x18\x03 \x01(\x0b\x32\'.google.bigtable.v1.RowFilter.ConditionH\x00\x12\x1e\n\x14row_key_regex_filter\x18\x04 \x01(\x0cH\x00\x12\x1b\n\x11row_sample_filter\x18\x0e \x01(\x01H\x00\x12\"\n\x18\x66\x61mily_name_regex_filter\x18\x05 \x01(\tH\x00\x12\'\n\x1d\x63olumn_qualifier_regex_filter\x18\x06 \x01(\x0cH\x00\x12>\n\x13\x63olumn_range_filter\x18\x07 \x01(\x0b\x32\x1f.google.bigtable.v1.ColumnRangeH\x00\x12\x44\n\x16timestamp_range_filter\x18\x08 \x01(\x0b\x32\".google.bigtable.v1.TimestampRangeH\x00\x12\x1c\n\x12value_regex_filter\x18\t \x01(\x0cH\x00\x12<\n\x12value_range_filter\x18\x0f \x01(\x0b\x32\x1e.google.bigtable.v1.ValueRangeH\x00\x12%\n\x1b\x63\x65lls_per_row_offset_filter\x18\n \x01(\x05H\x00\x12$\n\x1a\x63\x65lls_per_row_limit_filter\x18\x0b \x01(\x05H\x00\x12\'\n\x1d\x63\x65lls_per_column_limit_filter\x18\x0c \x01(\x05H\x00\x12!\n\x17strip_value_transformer\x18\r \x01(\x08H\x00\x1a\x37\n\x05\x43hain\x12.\n\x07\x66ilters\x18\x01 \x03(\x0b\x32\x1d.google.bigtable.v1.RowFilter\x1a<\n\nInterleave\x12.\n\x07\x66ilters\x18\x01 \x03(\x0b\x32\x1d.google.bigtable.v1.RowFilter\x1a\xad\x01\n\tCondition\x12\x37\n\x10predicate_filter\x18\x01 \x01(\x0b\x32\x1d.google.bigtable.v1.RowFilter\x12\x32\n\x0btrue_filter\x18\x02 \x01(\x0b\x32\x1d.google.bigtable.v1.RowFilter\x12\x33\n\x0c\x66\x61lse_filter\x18\x03 \x01(\x0b\x32\x1d.google.bigtable.v1.RowFilterB\x08\n\x06\x66ilter\"\xc9\x04\n\x08Mutation\x12\x38\n\x08set_cell\x18\x01 \x01(\x0b\x32$.google.bigtable.v1.Mutation.SetCellH\x00\x12K\n\x12\x64\x65lete_from_column\x18\x02 \x01(\x0b\x32-.google.bigtable.v1.Mutation.DeleteFromColumnH\x00\x12K\n\x12\x64\x65lete_from_family\x18\x03 \x01(\x0b\x32-.google.bigtable.v1.Mutation.DeleteFromFamilyH\x00\x12\x45\n\x0f\x64\x65lete_from_row\x18\x04 \x01(\x0b\x32*.google.bigtable.v1.Mutation.DeleteFromRowH\x00\x1a\x61\n\x07SetCell\x12\x13\n\x0b\x66\x61mily_name\x18\x01 \x01(\t\x12\x18\n\x10\x63olumn_qualifier\x18\x02 \x01(\x0c\x12\x18\n\x10timestamp_micros\x18\x03 \x01(\x03\x12\r\n\x05value\x18\x04 \x01(\x0c\x1ay\n\x10\x44\x65leteFromColumn\x12\x13\n\x0b\x66\x61mily_name\x18\x01 \x01(\t\x12\x18\n\x10\x63olumn_qualifier\x18\x02 \x01(\x0c\x12\x36\n\ntime_range\x18\x03 \x01(\x0b\x32\".google.bigtable.v1.TimestampRange\x1a\'\n\x10\x44\x65leteFromFamily\x12\x13\n\x0b\x66\x61mily_name\x18\x01 \x01(\t\x1a\x0f\n\rDeleteFromRowB\n\n\x08mutation\"\x80\x01\n\x13ReadModifyWriteRule\x12\x13\n\x0b\x66\x61mily_name\x18\x01 \x01(\t\x12\x18\n\x10\x63olumn_qualifier\x18\x02 \x01(\x0c\x12\x16\n\x0c\x61ppend_value\x18\x03 \x01(\x0cH\x00\x12\x1a\n\x10increment_amount\x18\x04 \x01(\x03H\x00\x42\x06\n\x04ruleB-\n\x16\x63om.google.bigtable.v1B\x11\x42igtableDataProtoP\x01\x62\x06proto3')
+  serialized_pb=_b('\n&google/bigtable/v1/bigtable_data.proto\x12\x12google.bigtable.v1\"@\n\x03Row\x12\x0b\n\x03key\x18\x01 \x01(\x0c\x12,\n\x08\x66\x61milies\x18\x02 \x03(\x0b\x32\x1a.google.bigtable.v1.Family\"C\n\x06\x46\x61mily\x12\x0c\n\x04name\x18\x01 \x01(\t\x12+\n\x07\x63olumns\x18\x02 \x03(\x0b\x32\x1a.google.bigtable.v1.Column\"D\n\x06\x43olumn\x12\x11\n\tqualifier\x18\x01 \x01(\x0c\x12\'\n\x05\x63\x65lls\x18\x02 \x03(\x0b\x32\x18.google.bigtable.v1.Cell\"?\n\x04\x43\x65ll\x12\x18\n\x10timestamp_micros\x18\x01 \x01(\x03\x12\r\n\x05value\x18\x02 \x01(\x0c\x12\x0e\n\x06labels\x18\x03 \x03(\t\".\n\x08RowRange\x12\x11\n\tstart_key\x18\x02 \x01(\x0c\x12\x0f\n\x07\x65nd_key\x18\x03 \x01(\x0c\"\xd6\x01\n\x0b\x43olumnRange\x12\x13\n\x0b\x66\x61mily_name\x18\x01 \x01(\t\x12#\n\x19start_qualifier_inclusive\x18\x02 \x01(\x0cH\x00\x12#\n\x19start_qualifier_exclusive\x18\x03 \x01(\x0cH\x00\x12!\n\x17\x65nd_qualifier_inclusive\x18\x04 \x01(\x0cH\x01\x12!\n\x17\x65nd_qualifier_exclusive\x18\x05 \x01(\x0cH\x01\x42\x11\n\x0fstart_qualifierB\x0f\n\rend_qualifier\"N\n\x0eTimestampRange\x12\x1e\n\x16start_timestamp_micros\x18\x01 \x01(\x03\x12\x1c\n\x14\x65nd_timestamp_micros\x18\x02 \x01(\x03\"\xa8\x01\n\nValueRange\x12\x1f\n\x15start_value_inclusive\x18\x01 \x01(\x0cH\x00\x12\x1f\n\x15start_value_exclusive\x18\x02 \x01(\x0cH\x00\x12\x1d\n\x13\x65nd_value_inclusive\x18\x03 \x01(\x0cH\x01\x12\x1d\n\x13\x65nd_value_exclusive\x18\x04 \x01(\x0cH\x01\x42\r\n\x0bstart_valueB\x0b\n\tend_value\"\xdf\x08\n\tRowFilter\x12\x34\n\x05\x63hain\x18\x01 \x01(\x0b\x32#.google.bigtable.v1.RowFilter.ChainH\x00\x12>\n\ninterleave\x18\x02 \x01(\x0b\x32(.google.bigtable.v1.RowFilter.InterleaveH\x00\x12<\n\tcondition\x18\x03 \x01(\x0b\x32\'.google.bigtable.v1.RowFilter.ConditionH\x00\x12\x0e\n\x04sink\x18\x10 \x01(\x08H\x00\x12\x19\n\x0fpass_all_filter\x18\x11 \x01(\x08H\x00\x12\x1a\n\x10\x62lock_all_filter\x18\x12 \x01(\x08H\x00\x12\x1e\n\x14row_key_regex_filter\x18\x04 \x01(\x0cH\x00\x12\x1b\n\x11row_sample_filter\x18\x0e \x01(\x01H\x00\x12\"\n\x18\x66\x61mily_name_regex_filter\x18\x05 \x01(\tH\x00\x12\'\n\x1d\x63olumn_qualifier_regex_filter\x18\x06 \x01(\x0cH\x00\x12>\n\x13\x63olumn_range_filter\x18\x07 \x01(\x0b\x32\x1f.google.bigtable.v1.ColumnRangeH\x00\x12\x44\n\x16timestamp_range_filter\x18\x08 \x01(\x0b\x32\".google.bigtable.v1.TimestampRangeH\x00\x12\x1c\n\x12value_regex_filter\x18\t \x01(\x0cH\x00\x12<\n\x12value_range_filter\x18\x0f \x01(\x0b\x32\x1e.google.bigtable.v1.ValueRangeH\x00\x12%\n\x1b\x63\x65lls_per_row_offset_filter\x18\n \x01(\x05H\x00\x12$\n\x1a\x63\x65lls_per_row_limit_filter\x18\x0b \x01(\x05H\x00\x12\'\n\x1d\x63\x65lls_per_column_limit_filter\x18\x0c \x01(\x05H\x00\x12!\n\x17strip_value_transformer\x18\r \x01(\x08H\x00\x12!\n\x17\x61pply_label_transformer\x18\x13 \x01(\tH\x00\x1a\x37\n\x05\x43hain\x12.\n\x07\x66ilters\x18\x01 \x03(\x0b\x32\x1d.google.bigtable.v1.RowFilter\x1a<\n\nInterleave\x12.\n\x07\x66ilters\x18\x01 \x03(\x0b\x32\x1d.google.bigtable.v1.RowFilter\x1a\xad\x01\n\tCondition\x12\x37\n\x10predicate_filter\x18\x01 \x01(\x0b\x32\x1d.google.bigtable.v1.RowFilter\x12\x32\n\x0btrue_filter\x18\x02 \x01(\x0b\x32\x1d.google.bigtable.v1.RowFilter\x12\x33\n\x0c\x66\x61lse_filter\x18\x03 \x01(\x0b\x32\x1d.google.bigtable.v1.RowFilterB\x08\n\x06\x66ilter\"\xc9\x04\n\x08Mutation\x12\x38\n\x08set_cell\x18\x01 \x01(\x0b\x32$.google.bigtable.v1.Mutation.SetCellH\x00\x12K\n\x12\x64\x65lete_from_column\x18\x02 \x01(\x0b\x32-.google.bigtable.v1.Mutation.DeleteFromColumnH\x00\x12K\n\x12\x64\x65lete_from_family\x18\x03 \x01(\x0b\x32-.google.bigtable.v1.Mutation.DeleteFromFamilyH\x00\x12\x45\n\x0f\x64\x65lete_from_row\x18\x04 \x01(\x0b\x32*.google.bigtable.v1.Mutation.DeleteFromRowH\x00\x1a\x61\n\x07SetCell\x12\x13\n\x0b\x66\x61mily_name\x18\x01 \x01(\t\x12\x18\n\x10\x63olumn_qualifier\x18\x02 \x01(\x0c\x12\x18\n\x10timestamp_micros\x18\x03 \x01(\x03\x12\r\n\x05value\x18\x04 \x01(\x0c\x1ay\n\x10\x44\x65leteFromColumn\x12\x13\n\x0b\x66\x61mily_name\x18\x01 \x01(\t\x12\x18\n\x10\x63olumn_qualifier\x18\x02 \x01(\x0c\x12\x36\n\ntime_range\x18\x03 \x01(\x0b\x32\".google.bigtable.v1.TimestampRange\x1a\'\n\x10\x44\x65leteFromFamily\x12\x13\n\x0b\x66\x61mily_name\x18\x01 \x01(\t\x1a\x0f\n\rDeleteFromRowB\n\n\x08mutation\"\x80\x01\n\x13ReadModifyWriteRule\x12\x13\n\x0b\x66\x61mily_name\x18\x01 \x01(\t\x12\x18\n\x10\x63olumn_qualifier\x18\x02 \x01(\x0c\x12\x16\n\x0c\x61ppend_value\x18\x03 \x01(\x0cH\x00\x12\x1a\n\x10increment_amount\x18\x04 \x01(\x03H\x00\x42\x06\n\x04ruleB-\n\x16\x63om.google.bigtable.v1B\x11\x42igtableDataProtoP\x01\x62\x06proto3')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -161,6 +161,13 @@ _CELL = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
+    _descriptor.FieldDescriptor(
+      name='labels', full_name='google.bigtable.v1.Cell.labels', index=2,
+      number=3, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
@@ -174,7 +181,7 @@ _CELL = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=267,
-  serialized_end=314,
+  serialized_end=330,
 )
 
 
@@ -211,8 +218,8 @@ _ROWRANGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=316,
-  serialized_end=362,
+  serialized_start=332,
+  serialized_end=378,
 )
 
 
@@ -276,8 +283,8 @@ _COLUMNRANGE = _descriptor.Descriptor(
       name='end_qualifier', full_name='google.bigtable.v1.ColumnRange.end_qualifier',
       index=1, containing_type=None, fields=[]),
   ],
-  serialized_start=365,
-  serialized_end=579,
+  serialized_start=381,
+  serialized_end=595,
 )
 
 
@@ -314,8 +321,8 @@ _TIMESTAMPRANGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=581,
-  serialized_end=659,
+  serialized_start=597,
+  serialized_end=675,
 )
 
 
@@ -372,8 +379,8 @@ _VALUERANGE = _descriptor.Descriptor(
       name='end_value', full_name='google.bigtable.v1.ValueRange.end_value',
       index=1, containing_type=None, fields=[]),
   ],
-  serialized_start=662,
-  serialized_end=830,
+  serialized_start=678,
+  serialized_end=846,
 )
 
 
@@ -403,8 +410,8 @@ _ROWFILTER_CHAIN = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1543,
-  serialized_end=1598,
+  serialized_start=1665,
+  serialized_end=1720,
 )
 
 _ROWFILTER_INTERLEAVE = _descriptor.Descriptor(
@@ -433,8 +440,8 @@ _ROWFILTER_INTERLEAVE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1600,
-  serialized_end=1660,
+  serialized_start=1722,
+  serialized_end=1782,
 )
 
 _ROWFILTER_CONDITION = _descriptor.Descriptor(
@@ -477,8 +484,8 @@ _ROWFILTER_CONDITION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1663,
-  serialized_end=1836,
+  serialized_start=1785,
+  serialized_end=1958,
 )
 
 _ROWFILTER = _descriptor.Descriptor(
@@ -510,86 +517,114 @@ _ROWFILTER = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='row_key_regex_filter', full_name='google.bigtable.v1.RowFilter.row_key_regex_filter', index=3,
+      name='sink', full_name='google.bigtable.v1.RowFilter.sink', index=3,
+      number=16, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='pass_all_filter', full_name='google.bigtable.v1.RowFilter.pass_all_filter', index=4,
+      number=17, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='block_all_filter', full_name='google.bigtable.v1.RowFilter.block_all_filter', index=5,
+      number=18, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='row_key_regex_filter', full_name='google.bigtable.v1.RowFilter.row_key_regex_filter', index=6,
       number=4, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='row_sample_filter', full_name='google.bigtable.v1.RowFilter.row_sample_filter', index=4,
+      name='row_sample_filter', full_name='google.bigtable.v1.RowFilter.row_sample_filter', index=7,
       number=14, type=1, cpp_type=5, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='family_name_regex_filter', full_name='google.bigtable.v1.RowFilter.family_name_regex_filter', index=5,
+      name='family_name_regex_filter', full_name='google.bigtable.v1.RowFilter.family_name_regex_filter', index=8,
       number=5, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='column_qualifier_regex_filter', full_name='google.bigtable.v1.RowFilter.column_qualifier_regex_filter', index=6,
+      name='column_qualifier_regex_filter', full_name='google.bigtable.v1.RowFilter.column_qualifier_regex_filter', index=9,
       number=6, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='column_range_filter', full_name='google.bigtable.v1.RowFilter.column_range_filter', index=7,
+      name='column_range_filter', full_name='google.bigtable.v1.RowFilter.column_range_filter', index=10,
       number=7, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='timestamp_range_filter', full_name='google.bigtable.v1.RowFilter.timestamp_range_filter', index=8,
+      name='timestamp_range_filter', full_name='google.bigtable.v1.RowFilter.timestamp_range_filter', index=11,
       number=8, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='value_regex_filter', full_name='google.bigtable.v1.RowFilter.value_regex_filter', index=9,
+      name='value_regex_filter', full_name='google.bigtable.v1.RowFilter.value_regex_filter', index=12,
       number=9, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='value_range_filter', full_name='google.bigtable.v1.RowFilter.value_range_filter', index=10,
+      name='value_range_filter', full_name='google.bigtable.v1.RowFilter.value_range_filter', index=13,
       number=15, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='cells_per_row_offset_filter', full_name='google.bigtable.v1.RowFilter.cells_per_row_offset_filter', index=11,
+      name='cells_per_row_offset_filter', full_name='google.bigtable.v1.RowFilter.cells_per_row_offset_filter', index=14,
       number=10, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='cells_per_row_limit_filter', full_name='google.bigtable.v1.RowFilter.cells_per_row_limit_filter', index=12,
+      name='cells_per_row_limit_filter', full_name='google.bigtable.v1.RowFilter.cells_per_row_limit_filter', index=15,
       number=11, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='cells_per_column_limit_filter', full_name='google.bigtable.v1.RowFilter.cells_per_column_limit_filter', index=13,
+      name='cells_per_column_limit_filter', full_name='google.bigtable.v1.RowFilter.cells_per_column_limit_filter', index=16,
       number=12, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='strip_value_transformer', full_name='google.bigtable.v1.RowFilter.strip_value_transformer', index=14,
+      name='strip_value_transformer', full_name='google.bigtable.v1.RowFilter.strip_value_transformer', index=17,
       number=13, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='apply_label_transformer', full_name='google.bigtable.v1.RowFilter.apply_label_transformer', index=18,
+      number=19, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
@@ -608,8 +643,8 @@ _ROWFILTER = _descriptor.Descriptor(
       name='filter', full_name='google.bigtable.v1.RowFilter.filter',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=833,
-  serialized_end=1846,
+  serialized_start=849,
+  serialized_end=1968,
 )
 
 
@@ -660,8 +695,8 @@ _MUTATION_SETCELL = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2144,
-  serialized_end=2241,
+  serialized_start=2266,
+  serialized_end=2363,
 )
 
 _MUTATION_DELETEFROMCOLUMN = _descriptor.Descriptor(
@@ -704,8 +739,8 @@ _MUTATION_DELETEFROMCOLUMN = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2243,
-  serialized_end=2364,
+  serialized_start=2365,
+  serialized_end=2486,
 )
 
 _MUTATION_DELETEFROMFAMILY = _descriptor.Descriptor(
@@ -734,8 +769,8 @@ _MUTATION_DELETEFROMFAMILY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2366,
-  serialized_end=2405,
+  serialized_start=2488,
+  serialized_end=2527,
 )
 
 _MUTATION_DELETEFROMROW = _descriptor.Descriptor(
@@ -757,8 +792,8 @@ _MUTATION_DELETEFROMROW = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2407,
-  serialized_end=2422,
+  serialized_start=2529,
+  serialized_end=2544,
 )
 
 _MUTATION = _descriptor.Descriptor(
@@ -811,8 +846,8 @@ _MUTATION = _descriptor.Descriptor(
       name='mutation', full_name='google.bigtable.v1.Mutation.mutation',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=1849,
-  serialized_end=2434,
+  serialized_start=1971,
+  serialized_end=2556,
 )
 
 
@@ -866,8 +901,8 @@ _READMODIFYWRITERULE = _descriptor.Descriptor(
       name='rule', full_name='google.bigtable.v1.ReadModifyWriteRule.rule',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=2437,
-  serialized_end=2565,
+  serialized_start=2559,
+  serialized_end=2687,
 )
 
 _ROW.fields_by_name['families'].message_type = _FAMILY
@@ -921,6 +956,15 @@ _ROWFILTER.oneofs_by_name['filter'].fields.append(
   _ROWFILTER.fields_by_name['condition'])
 _ROWFILTER.fields_by_name['condition'].containing_oneof = _ROWFILTER.oneofs_by_name['filter']
 _ROWFILTER.oneofs_by_name['filter'].fields.append(
+  _ROWFILTER.fields_by_name['sink'])
+_ROWFILTER.fields_by_name['sink'].containing_oneof = _ROWFILTER.oneofs_by_name['filter']
+_ROWFILTER.oneofs_by_name['filter'].fields.append(
+  _ROWFILTER.fields_by_name['pass_all_filter'])
+_ROWFILTER.fields_by_name['pass_all_filter'].containing_oneof = _ROWFILTER.oneofs_by_name['filter']
+_ROWFILTER.oneofs_by_name['filter'].fields.append(
+  _ROWFILTER.fields_by_name['block_all_filter'])
+_ROWFILTER.fields_by_name['block_all_filter'].containing_oneof = _ROWFILTER.oneofs_by_name['filter']
+_ROWFILTER.oneofs_by_name['filter'].fields.append(
   _ROWFILTER.fields_by_name['row_key_regex_filter'])
 _ROWFILTER.fields_by_name['row_key_regex_filter'].containing_oneof = _ROWFILTER.oneofs_by_name['filter']
 _ROWFILTER.oneofs_by_name['filter'].fields.append(
@@ -956,6 +1000,9 @@ _ROWFILTER.fields_by_name['cells_per_column_limit_filter'].containing_oneof = _R
 _ROWFILTER.oneofs_by_name['filter'].fields.append(
   _ROWFILTER.fields_by_name['strip_value_transformer'])
 _ROWFILTER.fields_by_name['strip_value_transformer'].containing_oneof = _ROWFILTER.oneofs_by_name['filter']
+_ROWFILTER.oneofs_by_name['filter'].fields.append(
+  _ROWFILTER.fields_by_name['apply_label_transformer'])
+_ROWFILTER.fields_by_name['apply_label_transformer'].containing_oneof = _ROWFILTER.oneofs_by_name['filter']
 _MUTATION_SETCELL.containing_type = _MUTATION
 _MUTATION_DELETEFROMCOLUMN.fields_by_name['time_range'].message_type = _TIMESTAMPRANGE
 _MUTATION_DELETEFROMCOLUMN.containing_type = _MUTATION
