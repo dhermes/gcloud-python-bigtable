@@ -189,8 +189,8 @@ class Table(object):
             table_id=self.table_id,
         )
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client.table_stub.CreateTable.async(request_pb,
-                                                            timeout_seconds)
+        response = self.client._table_stub.CreateTable.async(request_pb,
+                                                             timeout_seconds)
         # We expect a `._generated.bigtable_table_data_pb2.Table`
         response.result()
 
@@ -223,8 +223,8 @@ class Table(object):
             new_id=new_table_id,
         )
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client.table_stub.RenameTable.async(request_pb,
-                                                            timeout_seconds)
+        response = self.client._table_stub.RenameTable.async(request_pb,
+                                                             timeout_seconds)
         # We expect a `._generated.empty_pb2.Empty`
         response.result()
 
@@ -239,8 +239,8 @@ class Table(object):
         """
         request_pb = messages_pb2.DeleteTableRequest(name=self.name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client.table_stub.DeleteTable.async(request_pb,
-                                                            timeout_seconds)
+        response = self.client._table_stub.DeleteTable.async(request_pb,
+                                                             timeout_seconds)
         # We expect a `._generated.empty_pb2.Empty`
         response.result()
 
@@ -260,8 +260,8 @@ class Table(object):
         """
         request_pb = messages_pb2.GetTableRequest(name=self.name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client.table_stub.GetTable.async(request_pb,
-                                                         timeout_seconds)
+        response = self.client._table_stub.GetTable.async(request_pb,
+                                                          timeout_seconds)
         # We expect a `._generated.bigtable_table_data_pb2.Table`
         table_pb = response.result()
 
@@ -302,8 +302,8 @@ class Table(object):
         request_pb = _create_row_request(self.name, row_key=row_key,
                                          filter_=filter_)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response_iterator = self.client.data_stub.ReadRows(request_pb,
-                                                           timeout_seconds)
+        response_iterator = self.client._data_stub.ReadRows(request_pb,
+                                                            timeout_seconds)
         # We expect an iterator of `data_messages_pb2.ReadRowsResponse`
         result = PartialRowData(row_key)
         for read_rows_response in response_iterator:
@@ -372,8 +372,8 @@ class Table(object):
             self.name, start_key=start_key, end_key=end_key, filter_=filter_,
             allow_row_interleaving=allow_row_interleaving, limit=limit)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response_iterator = self.client.data_stub.ReadRows(request_pb,
-                                                           timeout_seconds)
+        response_iterator = self.client._data_stub.ReadRows(request_pb,
+                                                            timeout_seconds)
         # We expect an iterator of `data_messages_pb2.ReadRowsResponse`
         return PartialRowsData(response_iterator)
 
@@ -415,7 +415,7 @@ class Table(object):
         request_pb = data_messages_pb2.SampleRowKeysRequest(
             table_name=self.name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response_iterator = self.client.data_stub.SampleRowKeys(
+        response_iterator = self.client._data_stub.SampleRowKeys(
             request_pb, timeout_seconds)
         return response_iterator
 

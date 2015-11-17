@@ -366,7 +366,7 @@ class TestColumnFamily(unittest2.TestCase):
         response_pb = data_pb2.ColumnFamily()
 
         # Patch the stub used by the API method.
-        client.table_stub = stub = StubMock(response_pb)
+        client._table_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None  # create() has no return value.
@@ -414,7 +414,7 @@ class TestColumnFamily(unittest2.TestCase):
         response_pb = data_pb2.ColumnFamily()
 
         # Patch the stub used by the API method.
-        client.table_stub = stub = StubMock(response_pb)
+        client._table_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None  # update() has no return value.
@@ -458,7 +458,7 @@ class TestColumnFamily(unittest2.TestCase):
         response_pb = empty_pb2.Empty()
 
         # Patch the stub used by the API method.
-        client.table_stub = stub = StubMock(response_pb)
+        client._table_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None  # delete() has no return value.

@@ -56,7 +56,7 @@ EXPECTED_ZONES = (
 )
 EXISTING_CLUSTERS = []
 CREDENTIALS = GoogleCredentials.get_application_default()
-CLIENT = Client(CREDENTIALS, project_id=PROJECT_ID, admin=True)
+CLIENT = Client(project=PROJECT_ID, credentials=CREDENTIALS, admin=True)
 CLUSTER = CLIENT.cluster(CENTRAL_1C_ZONE, CLUSTER_ID,
                          display_name=CLUSTER_ID)
 

@@ -16,35 +16,35 @@
 import unittest2
 
 
-PROJECT_ID = 'project-id'
+PROJECT = 'project-id'
 
 
-class Test__project_id_from_environment(unittest2.TestCase):
+class Test__project_from_environment(unittest2.TestCase):
 
     def _callFUT(self):
-        from gcloud_bigtable.client import _project_id_from_environment
-        return _project_id_from_environment()
+        from gcloud_bigtable.client import _project_from_environment
+        return _project_from_environment()
 
     def test_it(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import client as MUT
 
-        fake_project_id = object()
-        mock_os = _MockWithAttachedMethods(fake_project_id)
+        fake_project = object()
+        mock_os = _MockWithAttachedMethods(fake_project)
         with _Monkey(MUT, os=mock_os):
             result = self._callFUT()
 
-        self.assertTrue(result is fake_project_id)
+        self.assertTrue(result is fake_project)
         self.assertEqual(mock_os._called,
                          [('getenv', (MUT.PROJECT_ENV_VAR,), {})])
 
 
-class Test__project_id_from_app_engine(unittest2.TestCase):
+class Test__project_from_app_engine(unittest2.TestCase):
 
     def _callFUT(self):
-        from gcloud_bigtable.client import _project_id_from_app_engine
-        return _project_id_from_app_engine()
+        from gcloud_bigtable.client import _project_from_app_engine
+        return _project_from_app_engine()
 
     def test_without_app_engine(self):
         from gcloud_bigtable._testing import _Monkey
@@ -60,21 +60,21 @@ class Test__project_id_from_app_engine(unittest2.TestCase):
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import client as MUT
 
-        fake_project_id = object()
-        mock_app_identity = _MockWithAttachedMethods(fake_project_id)
+        fake_project = object()
+        mock_app_identity = _MockWithAttachedMethods(fake_project)
         with _Monkey(MUT, app_identity=mock_app_identity):
             result = self._callFUT()
 
-        self.assertTrue(result is fake_project_id)
+        self.assertTrue(result is fake_project)
         self.assertEqual(mock_app_identity._called,
                          [('get_application_id', (), {})])
 
 
-class Test__project_id_from_compute_engine(unittest2.TestCase):
+class Test__project_from_compute_engine(unittest2.TestCase):
 
     def _callFUT(self):
-        from gcloud_bigtable.client import _project_id_from_compute_engine
-        return _project_id_from_compute_engine()
+        from gcloud_bigtable.client import _project_from_compute_engine
+        return _project_from_compute_engine()
 
     @staticmethod
     def _make_http_connection_response(status_code, read_result,
@@ -104,9 +104,9 @@ class Test__project_id_from_compute_engine(unittest2.TestCase):
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import client as MUT
 
-        fake_project_id = object()
+        fake_project = object()
         response = self._make_http_connection_response(
-            status, fake_project_id, raise_socket_err=raise_socket_err)
+            status, fake_project, raise_socket_err=raise_socket_err)
         # The connection does the bulk of the work.
         mock_connection = _MockWithAttachedMethods(None, response, None)
         # The http_client module holds the connection constructor.
@@ -118,7 +118,7 @@ class Test__project_id_from_compute_engine(unittest2.TestCase):
             result = self._callFUT()
 
         if status == 200 and not raise_socket_err:
-            self.assertEqual(result, fake_project_id)
+            self.assertEqual(result, fake_project)
         else:
             self.assertEqual(result, None)
 
@@ -157,33 +157,33 @@ class Test__project_id_from_compute_engine(unittest2.TestCase):
         self._helper(200, raise_socket_err=True)
 
 
-class Test__determine_project_id(unittest2.TestCase):
+class Test__determine_project(unittest2.TestCase):
 
-    def _callFUT(self, project_id):
-        from gcloud_bigtable.client import _determine_project_id
-        return _determine_project_id(project_id)
+    def _callFUT(self, project):
+        from gcloud_bigtable.client import _determine_project
+        return _determine_project(project)
 
     def _helper(self, num_mocks_called, mock_output, method_input):
         from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import client as MUT
 
-        mock_project_id_from_environment = _MockCalled(None)
-        mock_project_id_from_app_engine = _MockCalled(None)
-        mock_project_id_from_compute_engine = _MockCalled(None)
+        mock_project_from_environment = _MockCalled(None)
+        mock_project_from_app_engine = _MockCalled(None)
+        mock_project_from_compute_engine = _MockCalled(None)
 
         monkey_kwargs = {
-            '_project_id_from_environment': mock_project_id_from_environment,
-            '_project_id_from_app_engine': mock_project_id_from_app_engine,
-            '_project_id_from_compute_engine': (
-                mock_project_id_from_compute_engine),
+            '_project_from_environment': mock_project_from_environment,
+            '_project_from_app_engine': mock_project_from_app_engine,
+            '_project_from_compute_engine': (
+                mock_project_from_compute_engine),
         }
         # Need the mocks in order they are called, so we can
         # access them based on `num_mocks_called`.
         mocks = [
-            mock_project_id_from_environment,
-            mock_project_id_from_app_engine,
-            mock_project_id_from_compute_engine,
+            mock_project_from_environment,
+            mock_project_from_app_engine,
+            mock_project_from_compute_engine,
         ]
         mocks[num_mocks_called - 1].result = mock_output
 
@@ -207,18 +207,18 @@ class Test__determine_project_id(unittest2.TestCase):
 
     def test_with_explicit_value(self):
         self._helper(num_mocks_called=0, mock_output=None,
-                     method_input=PROJECT_ID)
+                     method_input=PROJECT)
 
     def test_from_environment(self):
-        self._helper(num_mocks_called=1, mock_output=PROJECT_ID,
+        self._helper(num_mocks_called=1, mock_output=PROJECT,
                      method_input=None)
 
     def test_from_app_engine(self):
-        self._helper(num_mocks_called=2, mock_output=PROJECT_ID,
+        self._helper(num_mocks_called=2, mock_output=PROJECT,
                      method_input=None)
 
     def test_from_compute_engine(self):
-        self._helper(num_mocks_called=3, mock_output=PROJECT_ID,
+        self._helper(num_mocks_called=3, mock_output=PROJECT,
                      method_input=None)
 
 
@@ -231,7 +231,7 @@ class TestClient(unittest2.TestCase):
     def _makeOne(self, *args, **kwargs):
         return self._getTargetClass()(*args, **kwargs)
 
-    def _constructor_test_helper(self, expected_scopes, project_id=None,
+    def _constructor_test_helper(self, expected_scopes, project=None,
                                  read_only=False, admin=False,
                                  user_agent=None):
         from gcloud_bigtable._testing import _MockCalled
@@ -241,10 +241,10 @@ class TestClient(unittest2.TestCase):
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        determined_project_id = object()
-        mock_determine_project_id = _MockCalled(determined_project_id)
-        with _Monkey(MUT, _determine_project_id=mock_determine_project_id):
-            client = self._makeOne(credentials, project_id=project_id,
+        determined_project = object()
+        mock_determine_project = _MockCalled(determined_project)
+        with _Monkey(MUT, _determine_project=mock_determine_project):
+            client = self._makeOne(project=project, credentials=credentials,
                                    read_only=read_only, admin=admin,
                                    user_agent=user_agent)
 
@@ -252,10 +252,10 @@ class TestClient(unittest2.TestCase):
         self.assertEqual(credentials._called, [
             ('create_scoped', (expected_scopes,), {}),
         ])
-        self.assertTrue(client._project_id is determined_project_id)
+        self.assertTrue(client.project is determined_project)
         self.assertEqual(client.timeout_seconds, MUT.DEFAULT_TIMEOUT_SECONDS)
         self.assertEqual(client.user_agent, user_agent)
-        mock_determine_project_id.check_called(self, [(project_id,)])
+        mock_determine_project.check_called(self, [(project,)])
 
     def test_constructor_default(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
@@ -267,9 +267,9 @@ class TestClient(unittest2.TestCase):
         mock_creds_class = _MockWithAttachedMethods(credentials)
 
         with _Monkey(MUT, GoogleCredentials=mock_creds_class):
-            client = self._makeOne(project_id=PROJECT_ID)
+            client = self._makeOne(project=PROJECT)
 
-        self.assertEqual(client.project_id, PROJECT_ID)
+        self.assertEqual(client.project, PROJECT)
         self.assertTrue(client._credentials is scoped_creds)
         self.assertEqual(client.user_agent, MUT.DEFAULT_USER_AGENT)
         self.assertEqual(mock_creds_class._called,
@@ -284,10 +284,10 @@ class TestClient(unittest2.TestCase):
         expected_scopes = [MUT.DATA_SCOPE]
         self._constructor_test_helper(expected_scopes)
 
-    def test_constructor_with_explicit_project_id(self):
+    def test_constructor_with_explicit_project(self):
         from gcloud_bigtable import client as MUT
         expected_scopes = [MUT.DATA_SCOPE]
-        self._constructor_test_helper(expected_scopes, project_id=PROJECT_ID)
+        self._constructor_test_helper(expected_scopes, project=PROJECT)
 
     def test_constructor_with_explicit_user_agent(self):
         from gcloud_bigtable import client as MUT
@@ -307,7 +307,8 @@ class TestClient(unittest2.TestCase):
 
     def test_constructor_both_admin_and_read_only(self):
         with self.assertRaises(ValueError):
-            self._makeOne(None, admin=True, read_only=True)
+            self._makeOne(project=PROJECT, credentials=None,
+                          admin=True, read_only=True)
 
     def test_from_service_account_json(self):
         from gcloud_bigtable._testing import _MockCalled
@@ -324,9 +325,9 @@ class TestClient(unittest2.TestCase):
         with _Monkey(MUT,
                      _get_application_default_credential_from_file=get_adc):
             client = klass.from_service_account_json(
-                json_credentials_path, project_id=PROJECT_ID)
+                json_credentials_path, project=PROJECT)
 
-        self.assertEqual(client.project_id, PROJECT_ID)
+        self.assertEqual(client.project, PROJECT)
         self.assertTrue(client._credentials is scoped_creds)
 
         expected_scopes = [MUT.DATA_SCOPE]
@@ -355,9 +356,9 @@ class TestClient(unittest2.TestCase):
         with _Monkey(MUT, SignedJwtAssertionCredentials=signed_creds,
                      _get_contents=mock_get_contents):
             client = klass.from_service_account_p12(
-                client_email, private_key_path, project_id=PROJECT_ID)
+                client_email, private_key_path, project=PROJECT)
 
-        self.assertEqual(client.project_id, PROJECT_ID)
+        self.assertEqual(client.project, PROJECT)
         self.assertTrue(client._credentials is scoped_creds)
         expected_scopes = [MUT.DATA_SCOPE]
         self.assertEqual(credentials._called, [
@@ -385,13 +386,13 @@ class TestClient(unittest2.TestCase):
 
         scoped_creds = Credentials('value')
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID)
+        client = self._makeOne(project=PROJECT, credentials=credentials)
         # Put some fake stubs in place so that we can verify they
         # don't get copied.
-        client._data_stub = object()
-        client._cluster_stub = object()
-        client._operations_stub = object()
-        client._table_stub = object()
+        client._data_stub_internal = object()
+        client._cluster_stub_internal = object()
+        client._operations_stub_internal = object()
+        client._table_stub_internal = object()
 
         new_client = client.copy()
         self.assertEqual(new_client._admin, client._admin)
@@ -399,14 +400,14 @@ class TestClient(unittest2.TestCase):
         # Make sure credentials (a non-simple type) gets copied
         # to a new instance.
         self.assertFalse(new_client._credentials is client._credentials)
-        self.assertEqual(new_client._project_id, client._project_id)
+        self.assertEqual(new_client.project, client.project)
         self.assertEqual(new_client.user_agent, client.user_agent)
         self.assertEqual(new_client.timeout_seconds, client.timeout_seconds)
         # Make sure stubs are not preserved.
-        self.assertEqual(new_client._data_stub, None)
-        self.assertEqual(new_client._cluster_stub, None)
-        self.assertEqual(new_client._operations_stub, None)
-        self.assertEqual(new_client._table_stub, None)
+        self.assertEqual(new_client._data_stub_internal, None)
+        self.assertEqual(new_client._cluster_stub_internal, None)
+        self.assertEqual(new_client._operations_stub_internal, None)
+        self.assertEqual(new_client._table_stub_internal, None)
 
     def test_copy_partial_failure(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
@@ -416,20 +417,22 @@ class TestClient(unittest2.TestCase):
         captured_stubs = {}
 
         def always_fail(client_to_copy):
-            captured_stubs['data_stub'] = client_to_copy._data_stub
-            captured_stubs['cluster_stub'] = client_to_copy._cluster_stub
-            captured_stubs['operations_stub'] = client_to_copy._operations_stub
-            captured_stubs['table_stub'] = client_to_copy._table_stub
+            captured_stubs['data_stub'] = client_to_copy._data_stub_internal
+            captured_stubs['cluster_stub'] = (
+                client_to_copy._cluster_stub_internal)
+            captured_stubs['operations_stub'] = (
+                client_to_copy._operations_stub_internal)
+            captured_stubs['table_stub'] = client_to_copy._table_stub_internal
             raise ValueError('cannot copy', client_to_copy)
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID)
+        client = self._makeOne(project=PROJECT, credentials=credentials)
 
-        client._data_stub = data_stub = object()
-        client._cluster_stub = cluster_stub = object()
-        client._operations_stub = operations_stub = object()
-        client._table_stub = table_stub = object()
+        client._data_stub_internal = data_stub = object()
+        client._cluster_stub_internal = cluster_stub = object()
+        client._operations_stub_internal = operations_stub = object()
+        client._table_stub_internal = table_stub = object()
         with _Monkey(MUT.copy, deepcopy=always_fail):
             with self.assertRaises(ValueError):
                 client.copy()
@@ -442,123 +445,125 @@ class TestClient(unittest2.TestCase):
             'table_stub': None,
         })
         # Make sure **all** the stubs were restored after the failure.
-        self.assertEqual(client._data_stub, data_stub)
-        self.assertEqual(client._cluster_stub, cluster_stub)
-        self.assertEqual(client._operations_stub, operations_stub)
-        self.assertEqual(client._table_stub, table_stub)
+        self.assertEqual(client._data_stub_internal, data_stub)
+        self.assertEqual(client._cluster_stub_internal, cluster_stub)
+        self.assertEqual(client._operations_stub_internal, operations_stub)
+        self.assertEqual(client._table_stub_internal, table_stub)
 
     def test_credentials_getter(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID)
+        client = self._makeOne(project=PROJECT, credentials=credentials)
         self.assertTrue(client.credentials is scoped_creds)
-
-    def test_project_id_getter(self):
-        from gcloud_bigtable._testing import _MockWithAttachedMethods
-
-        scoped_creds = object()
-        credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID)
-        self.assertEqual(client.project_id, PROJECT_ID)
 
     def test_project_name_property(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        project_name = 'projects/' + PROJECT_ID
-        client = self._makeOne(credentials, project_id=PROJECT_ID)
+        project_name = 'projects/' + PROJECT
+        client = self._makeOne(project=PROJECT, credentials=credentials)
         self.assertEqual(client.project_name, project_name)
 
     def test_data_stub_getter(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID)
-        client._data_stub = object()
-        self.assertTrue(client.data_stub is client._data_stub)
+        client = self._makeOne(project=PROJECT, credentials=credentials)
+        client._data_stub_internal = object()
+        self.assertTrue(client._data_stub is client._data_stub_internal)
 
     def test_data_stub_failure(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID)
+        client = self._makeOne(project=PROJECT, credentials=credentials)
         with self.assertRaises(ValueError):
-            getattr(client, 'data_stub')
+            getattr(client, '_data_stub')
 
     def test_cluster_stub_getter(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=True)
-        client._cluster_stub = object()
-        self.assertTrue(client.cluster_stub is client._cluster_stub)
+        client = self._makeOne(project=PROJECT,
+                               credentials=credentials, admin=True)
+        client._cluster_stub_internal = object()
+        self.assertTrue(client._cluster_stub is client._cluster_stub_internal)
 
     def test_cluster_stub_non_admin_failure(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=False)
+        client = self._makeOne(project=PROJECT,
+                               credentials=credentials, admin=False)
         with self.assertRaises(ValueError):
-            getattr(client, 'cluster_stub')
+            getattr(client, '_cluster_stub')
 
     def test_cluster_stub_unset_failure(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=True)
+        client = self._makeOne(project=PROJECT,
+                               credentials=credentials, admin=True)
         with self.assertRaises(ValueError):
-            getattr(client, 'cluster_stub')
+            getattr(client, '_cluster_stub')
 
     def test_operations_stub_getter(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=True)
-        client._operations_stub = object()
-        self.assertTrue(client.operations_stub is client._operations_stub)
+        client = self._makeOne(project=PROJECT,
+                               credentials=credentials, admin=True)
+        client._operations_stub_internal = object()
+        self.assertTrue(client._operations_stub is
+                        client._operations_stub_internal)
 
     def test_operations_stub_non_admin_failure(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=False)
+        client = self._makeOne(project=PROJECT,
+                               credentials=credentials, admin=False)
         with self.assertRaises(ValueError):
-            getattr(client, 'operations_stub')
+            getattr(client, '_operations_stub')
 
     def test_operations_stub_unset_failure(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=True)
+        client = self._makeOne(project=PROJECT,
+                               credentials=credentials, admin=True)
         with self.assertRaises(ValueError):
-            getattr(client, 'operations_stub')
+            getattr(client, '_operations_stub')
 
     def test_table_stub_getter(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=True)
-        client._table_stub = object()
-        self.assertTrue(client.table_stub is client._table_stub)
+        client = self._makeOne(project=PROJECT,
+                               credentials=credentials, admin=True)
+        client._table_stub_internal = object()
+        self.assertTrue(client._table_stub is client._table_stub_internal)
 
     def test_table_stub_non_admin_failure(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=False)
+        client = self._makeOne(project=PROJECT,
+                               credentials=credentials, admin=False)
         with self.assertRaises(ValueError):
-            getattr(client, 'table_stub')
+            getattr(client, '_table_stub')
 
     def test_table_stub_unset_failure(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=True)
+        client = self._makeOne(project=PROJECT,
+                               credentials=credentials, admin=True)
         with self.assertRaises(ValueError):
-            getattr(client, 'table_stub')
+            getattr(client, '_table_stub')
 
     def test__make_data_stub(self):
         from gcloud_bigtable._testing import _MockCalled
@@ -571,7 +576,7 @@ class TestClient(unittest2.TestCase):
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID)
+        client = self._makeOne(project=PROJECT, credentials=credentials)
         expected_result = object()
         mock_make_stub = _MockCalled(expected_result)
         with _Monkey(MUT, make_stub=mock_make_stub):
@@ -599,7 +604,7 @@ class TestClient(unittest2.TestCase):
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID)
+        client = self._makeOne(project=PROJECT, credentials=credentials)
         expected_result = object()
         mock_make_stub = _MockCalled(expected_result)
         with _Monkey(MUT, make_stub=mock_make_stub):
@@ -627,7 +632,7 @@ class TestClient(unittest2.TestCase):
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID)
+        client = self._makeOne(project=PROJECT, credentials=credentials)
         expected_result = object()
         mock_make_stub = _MockCalled(expected_result)
         with _Monkey(MUT, make_stub=mock_make_stub):
@@ -655,7 +660,7 @@ class TestClient(unittest2.TestCase):
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID)
+        client = self._makeOne(project=PROJECT, credentials=credentials)
         expected_result = object()
         mock_make_stub = _MockCalled(expected_result)
         with _Monkey(MUT, make_stub=mock_make_stub):
@@ -677,11 +682,11 @@ class TestClient(unittest2.TestCase):
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID)
+        client = self._makeOne(project=PROJECT, credentials=credentials)
         self.assertFalse(client.is_started())
-        client._data_stub = object()
+        client._data_stub_internal = object()
         self.assertTrue(client.is_started())
-        client._data_stub = None
+        client._data_stub_internal = None
         self.assertFalse(client.is_started())
 
     def _start_method_helper(self, admin):
@@ -692,22 +697,23 @@ class TestClient(unittest2.TestCase):
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=admin)
+        client = self._makeOne(project=PROJECT,
+                               credentials=credentials, admin=admin)
         stub = _FakeStub()
         mock_make_stub = _MockCalled(stub)
         with _Monkey(MUT, make_stub=mock_make_stub):
             client.start()
 
-        self.assertTrue(client._data_stub is stub)
+        self.assertTrue(client._data_stub_internal is stub)
         if admin:
-            self.assertTrue(client._cluster_stub is stub)
-            self.assertTrue(client._operations_stub is stub)
-            self.assertTrue(client._table_stub is stub)
+            self.assertTrue(client._cluster_stub_internal is stub)
+            self.assertTrue(client._operations_stub_internal is stub)
+            self.assertTrue(client._table_stub_internal is stub)
             self.assertEqual(stub._entered, 4)
         else:
-            self.assertTrue(client._cluster_stub is None)
-            self.assertTrue(client._operations_stub is None)
-            self.assertTrue(client._table_stub is None)
+            self.assertTrue(client._cluster_stub_internal is None)
+            self.assertTrue(client._operations_stub_internal is None)
+            self.assertTrue(client._table_stub_internal is None)
             self.assertEqual(stub._entered, 1)
         self.assertEqual(stub._exited, [])
 
@@ -722,31 +728,32 @@ class TestClient(unittest2.TestCase):
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID)
-        client._data_stub = data_stub = object()
+        client = self._makeOne(project=PROJECT, credentials=credentials)
+        client._data_stub_internal = data_stub = object()
         self.assertTrue(client.is_started())
         client.start()
 
         # Make sure the stub did not change.
-        self.assertEqual(client._data_stub, data_stub)
+        self.assertEqual(client._data_stub_internal, data_stub)
 
     def _stop_method_helper(self, admin):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=admin)
+        client = self._makeOne(project=PROJECT,
+                               credentials=credentials, admin=admin)
         stub1 = _FakeStub()
         stub2 = _FakeStub()
-        client._data_stub = stub1
-        client._cluster_stub = stub2
-        client._operations_stub = stub2
-        client._table_stub = stub2
+        client._data_stub_internal = stub1
+        client._cluster_stub_internal = stub2
+        client._operations_stub_internal = stub2
+        client._table_stub_internal = stub2
         client.stop()
-        self.assertTrue(client._data_stub is None)
-        self.assertTrue(client._cluster_stub is None)
-        self.assertTrue(client._operations_stub is None)
-        self.assertTrue(client._table_stub is None)
+        self.assertTrue(client._data_stub_internal is None)
+        self.assertTrue(client._cluster_stub_internal is None)
+        self.assertTrue(client._operations_stub_internal is None)
+        self.assertTrue(client._table_stub_internal is None)
         self.assertEqual(stub1._entered, 0)
         self.assertEqual(stub2._entered, 0)
         exc_none_triple = (None, None, None)
@@ -767,16 +774,16 @@ class TestClient(unittest2.TestCase):
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID)
+        client = self._makeOne(project=PROJECT, credentials=credentials)
         self.assertFalse(client.is_started())
 
         # This is a bit hacky. We set the cluster stub protected value
         # since it isn't used in is_started() and make sure that stop
         # doesn't reset this value to None.
-        client._cluster_stub = cluster_stub = object()
+        client._cluster_stub_internal = cluster_stub = object()
         client.stop()
         # Make sure the cluster stub did not change.
-        self.assertEqual(client._cluster_stub, cluster_stub)
+        self.assertEqual(client._cluster_stub_internal, cluster_stub)
 
     def test_cluster_factory(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
@@ -784,7 +791,7 @@ class TestClient(unittest2.TestCase):
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID)
+        client = self._makeOne(project=PROJECT, credentials=credentials)
 
         zone = 'zone'
         cluster_id = 'cluster-id'
@@ -804,11 +811,12 @@ class TestClient(unittest2.TestCase):
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=True)
+        client = self._makeOne(project=PROJECT,
+                               credentials=credentials, admin=True)
 
         # Create request_pb
         request_pb = messages_pb2.ListZonesRequest(
-            name='projects/' + PROJECT_ID,
+            name='projects/' + PROJECT,
         )
 
         # Create response_pb
@@ -822,7 +830,7 @@ class TestClient(unittest2.TestCase):
         )
 
         # Patch the stub used by the API method.
-        client._cluster_stub = stub = StubMock(response_pb)
+        client._cluster_stub_internal = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = [zone1, zone2]
@@ -858,11 +866,12 @@ class TestClient(unittest2.TestCase):
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(credentials, project_id=PROJECT_ID, admin=True)
+        client = self._makeOne(project=PROJECT,
+                               credentials=credentials, admin=True)
 
         # Create request_pb
         request_pb = messages_pb2.ListClustersRequest(
-            name='projects/' + PROJECT_ID,
+            name='projects/' + PROJECT,
         )
 
         # Create response_pb
@@ -870,9 +879,9 @@ class TestClient(unittest2.TestCase):
         failed_zone = 'bar'
         cluster_id1 = 'cluster-id1'
         cluster_id2 = 'cluster-id2'
-        cluster_name1 = ('projects/' + PROJECT_ID + '/zones/' + zone +
+        cluster_name1 = ('projects/' + PROJECT + '/zones/' + zone +
                          '/clusters/' + cluster_id1)
-        cluster_name2 = ('projects/' + PROJECT_ID + '/zones/' + zone +
+        cluster_name2 = ('projects/' + PROJECT + '/zones/' + zone +
                          '/clusters/' + cluster_id2)
         response_pb = messages_pb2.ListClustersResponse(
             failed_zones=[
@@ -893,7 +902,7 @@ class TestClient(unittest2.TestCase):
         )
 
         # Patch the stub used by the API method.
-        client._cluster_stub = stub = StubMock(response_pb)
+        client._cluster_stub_internal = stub = StubMock(response_pb)
 
         # Create expected_result.
         failed_zones = [failed_zone]

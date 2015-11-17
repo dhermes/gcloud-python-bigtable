@@ -134,7 +134,7 @@ class TestTable(unittest2.TestCase):
         response_pb = data_pb2.Table()
 
         # Patch the stub used by the API method.
-        client.table_stub = stub = StubMock(response_pb)
+        client._table_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None  # create() has no return value.
@@ -184,7 +184,7 @@ class TestTable(unittest2.TestCase):
         response_pb = empty_pb2.Empty()
 
         # Patch the stub used by the API method.
-        client.table_stub = stub = StubMock(response_pb)
+        client._table_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None  # rename() has no return value.
@@ -219,7 +219,7 @@ class TestTable(unittest2.TestCase):
         response_pb = empty_pb2.Empty()
 
         # Patch the stub used by the API method.
-        client.table_stub = stub = StubMock(response_pb)
+        client._table_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None  # delete() has no return value.
@@ -263,7 +263,7 @@ class TestTable(unittest2.TestCase):
         )
 
         # Patch the stub used by the API method.
-        client.table_stub = stub = StubMock(response_pb)
+        client._table_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = {
@@ -315,7 +315,7 @@ class TestTable(unittest2.TestCase):
         response_iterator = [response_pb]
 
         # Patch the stub used by the API method.
-        client.data_stub = stub = StubMock(response_iterator)
+        client._data_stub = stub = StubMock(response_iterator)
 
         # Create expected_result.
         if chunks:
@@ -385,7 +385,7 @@ class TestTable(unittest2.TestCase):
         response_iterator = object()
 
         # Patch the stub used by the API method.
-        client.data_stub = stub = StubMock(response_iterator)
+        client._data_stub = stub = StubMock(response_iterator)
 
         # Create expected_result.
         expected_result = PartialRowsData(response_iterator)
@@ -438,7 +438,7 @@ class TestTable(unittest2.TestCase):
         response_iterator = object()  # Just passed to a mock.
 
         # Patch the stub used by the API method.
-        client.data_stub = stub = StubMock(response_iterator)
+        client._data_stub = stub = StubMock(response_iterator)
 
         # Create expected_result.
         expected_result = response_iterator

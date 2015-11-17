@@ -82,7 +82,7 @@ API Behavior Changes
   .. code:: python
 
       from gcloud_bigtable.client import Client
-      client = Client(project_id=PROJECT_ID, admin=True)
+      client = Client(project=PROJECT_ID, admin=True)
       cluster = client.cluster(zone, cluster_id)
       cluster.reload()
 

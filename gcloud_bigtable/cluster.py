@@ -29,7 +29,7 @@ from gcloud_bigtable._helpers import _require_pb_property
 from gcloud_bigtable.table import Table
 
 
-_CLUSTER_NAME_RE = re.compile(r'^projects/(?P<project_id>[^/]+)/'
+_CLUSTER_NAME_RE = re.compile(r'^projects/(?P<project>[^/]+)/'
                               r'zones/(?P<zone>[^/]+)/clusters/'
                               r'(?P<cluster_id>[a-z][-a-z0-9]*)$')
 _OPERATION_NAME_RE = re.compile(r'^operations/projects/([^/]+)/zones/([^/]+)/'
@@ -46,7 +46,7 @@ def _prepare_create_request(cluster):
     :rtype: :class:`.messages_pb2.CreateClusterRequest`
     :returns: The CreateCluster request object containing the cluster info.
     """
-    zone_full_name = ('projects/' + cluster.project_id +
+    zone_full_name = ('projects/' + cluster.project +
                       '/zones/' + cluster.zone)
     return messages_pb2.CreateClusterRequest(
         name=zone_full_name,
@@ -161,7 +161,7 @@ class Cluster(object):
         if match is None:
             raise ValueError('Cluster protobuf name was not in the '
                              'expected format.', cluster_pb.name)
-        if match.group('project_id') != client.project_id:
+        if match.group('project') != client.project:
             raise ValueError('Project ID on cluster does not match the '
                              'project ID on the client')
 
@@ -194,13 +194,13 @@ class Cluster(object):
         return self._client
 
     @property
-    def project_id(self):
+    def project(self):
         """Getter for cluster's project ID.
 
         :rtype: str
         :returns: The project ID for the cluster (is stored on the client).
         """
-        return self._client.project_id
+        return self._client.project
 
     @property
     def timeout_seconds(self):
@@ -221,7 +221,7 @@ class Cluster(object):
 
         The cluster name is of the form
 
-            ``"projects/{project_id}/zones/{zone}/clusters/{cluster_id}"``
+            ``"projects/{project}/zones/{zone}/clusters/{cluster_id}"``
 
         :rtype: str
         :returns: The cluster name.
@@ -246,7 +246,7 @@ class Cluster(object):
         # NOTE: This does not compare the configuration values, such as
         #       the serve_nodes or display_name. This is intentional, since
         #       the same cluster can be in different states if not
-        #       synchronized. This suggests we should use `project_id`
+        #       synchronized. This suggests we should use `project`
         #       instead of `client` for the third comparison.
         return (other.zone == self.zone and
                 other.cluster_id == self.cluster_id and
@@ -265,8 +265,8 @@ class Cluster(object):
         """
         request_pb = messages_pb2.GetClusterRequest(name=self.name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client.cluster_stub.GetCluster.async(request_pb,
-                                                             timeout_seconds)
+        response = self.client._cluster_stub.GetCluster.async(request_pb,
+                                                              timeout_seconds)
         # We expect a `._generated.bigtable_cluster_data_pb2.Cluster`.
         cluster_pb = response.result()
 
@@ -294,7 +294,7 @@ class Cluster(object):
                           '/operations/%d' % (self._operation_id,))
         request_pb = operations_pb2.GetOperationRequest(name=operation_name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client.operations_stub.GetOperation.async(
+        response = self.client._operations_stub.GetOperation.async(
             request_pb, timeout_seconds)
         # We expact a `._generated.operations_pb2.Operation`.
         operation_pb = response.result()
@@ -312,7 +312,7 @@ class Cluster(object):
 
         .. note::
 
-            Uses the ``project_id``, ``zone`` and ``cluster_id`` on the current
+            Uses the ``project``, ``zone`` and ``cluster_id`` on the current
             :class:`Cluster` in addition to the ``display_name`` and
             ``serve_nodes``. If you'd like to change them before creating,
             reset the values via
@@ -331,7 +331,7 @@ class Cluster(object):
         """
         request_pb = _prepare_create_request(self)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client.cluster_stub.CreateCluster.async(
+        response = self.client._cluster_stub.CreateCluster.async(
             request_pb, timeout_seconds)
         # We expect an `operations_pb2.Operation`.
         cluster_pb = response.result()
@@ -366,7 +366,7 @@ class Cluster(object):
             serve_nodes=self.serve_nodes,
         )
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client.cluster_stub.UpdateCluster.async(
+        response = self.client._cluster_stub.UpdateCluster.async(
             request_pb, timeout_seconds)
         # We expect a `._generated.bigtable_cluster_data_pb2.Cluster`.
         cluster_pb = response.result()
@@ -385,7 +385,7 @@ class Cluster(object):
         """
         request_pb = messages_pb2.DeleteClusterRequest(name=self.name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client.cluster_stub.DeleteCluster.async(
+        response = self.client._cluster_stub.DeleteCluster.async(
             request_pb, timeout_seconds)
         # We expect a `._generated.empty_pb2.Empty`
         response.result()
@@ -400,7 +400,7 @@ class Cluster(object):
         """
         request_pb = messages_pb2.UndeleteClusterRequest(name=self.name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client.cluster_stub.UndeleteCluster.async(
+        response = self.client._cluster_stub.UndeleteCluster.async(
             request_pb, timeout_seconds)
         # We expect a `._generated.operations_pb2.Operation`
         operation_pb2 = response.result()
@@ -424,8 +424,8 @@ class Cluster(object):
         """
         request_pb = table_messages_pb2.ListTablesRequest(name=self.name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client.table_stub.ListTables.async(request_pb,
-                                                           timeout_seconds)
+        response = self.client._table_stub.ListTables.async(request_pb,
+                                                            timeout_seconds)
         # We expect a `table_messages_pb2.ListTablesResponse`
         table_list_pb = response.result()
 

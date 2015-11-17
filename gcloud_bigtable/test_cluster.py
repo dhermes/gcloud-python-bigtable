@@ -16,7 +16,7 @@
 import unittest2
 
 
-PROJECT_ID = 'project-id'
+PROJECT = 'project-id'
 ZONE = 'zone'
 CLUSTER_ID = 'cluster-id'
 
@@ -36,14 +36,14 @@ class Test__prepare_create_request(unittest2.TestCase):
         display_name = 'DISPLAY_NAME'
         serve_nodes = 8
 
-        cluster = Cluster(ZONE, CLUSTER_ID, _Client(PROJECT_ID),
+        cluster = Cluster(ZONE, CLUSTER_ID, _Client(PROJECT),
                           display_name=display_name, serve_nodes=serve_nodes)
         request_pb = self._callFUT(cluster)
         self.assertTrue(isinstance(request_pb,
                                    messages_pb2.CreateClusterRequest))
         self.assertEqual(request_pb.cluster_id, CLUSTER_ID)
         self.assertEqual(request_pb.name,
-                         'projects/' + PROJECT_ID + '/zones/' + ZONE)
+                         'projects/' + PROJECT + '/zones/' + ZONE)
         self.assertTrue(isinstance(request_pb.cluster, data_pb2.Cluster))
         self.assertEqual(request_pb.cluster.display_name, display_name)
         self.assertEqual(request_pb.cluster.serve_nodes, serve_nodes)
@@ -65,7 +65,7 @@ class Test__process_operation(unittest2.TestCase):
 
         expected_operation_id = 234
         operation_name = ('operations/projects/%s/zones/%s/clusters/%s/'
-                          'operations/%d' % (PROJECT_ID, ZONE, CLUSTER_ID,
+                          'operations/%d' % (PROJECT, ZONE, CLUSTER_ID,
                                              expected_operation_id))
 
         current_op = operations_pb2.Operation(name=operation_name)
@@ -127,7 +127,7 @@ class TestCluster(unittest2.TestCase):
         self.assertTrue(cluster._client is client)
 
     def test_copy(self):
-        client = _Client(PROJECT_ID)
+        client = _Client(PROJECT)
         display_name = 'DISPLAY_NAME'
         serve_nodes = 8
         cluster = self._makeOne(ZONE, CLUSTER_ID, client,
@@ -150,15 +150,15 @@ class TestCluster(unittest2.TestCase):
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
         self.assertTrue(cluster.client is client)
 
-    def test_project_id_getter(self):
+    def test_project_getter(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable.client import Client
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = Client(credentials, project_id=PROJECT_ID)
+        client = Client(project=PROJECT, credentials=credentials)
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
-        self.assertEqual(cluster.project_id, PROJECT_ID)
+        self.assertEqual(cluster.project, PROJECT)
 
     def test_timeout_seconds_getter(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
@@ -167,7 +167,7 @@ class TestCluster(unittest2.TestCase):
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
         timeout_seconds = 77
-        client = Client(credentials, project_id=PROJECT_ID,
+        client = Client(project=PROJECT, credentials=credentials,
                         timeout_seconds=timeout_seconds)
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
         self.assertEqual(cluster.timeout_seconds, timeout_seconds)
@@ -178,9 +178,9 @@ class TestCluster(unittest2.TestCase):
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = Client(credentials, project_id=PROJECT_ID)
+        client = Client(project=PROJECT, credentials=credentials)
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
-        cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+        cluster_name = ('projects/' + PROJECT + '/zones/' + ZONE +
                         '/clusters/' + CLUSTER_ID)
         self.assertEqual(cluster.name, cluster_name)
 
@@ -202,9 +202,9 @@ class TestCluster(unittest2.TestCase):
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        client = Client(credentials, project_id=PROJECT_ID)
+        client = Client(project=PROJECT, credentials=credentials)
 
-        cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+        cluster_name = ('projects/' + PROJECT + '/zones/' + ZONE +
                         '/clusters/' + CLUSTER_ID)
         cluster_pb = data_pb2.Cluster(
             name=cluster_name,
@@ -230,7 +230,7 @@ class TestCluster(unittest2.TestCase):
         with self.assertRaises(ValueError):
             klass.from_pb(cluster_pb, None)
 
-    def test_from_pb_project_id_mistmatch(self):
+    def test_from_pb_project_mistmatch(self):
         from gcloud_bigtable._generated import (
             bigtable_cluster_data_pb2 as data_pb2)
         from gcloud_bigtable._testing import _MockWithAttachedMethods
@@ -238,12 +238,12 @@ class TestCluster(unittest2.TestCase):
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        alt_project_id = 'ALT_PROJECT_ID'
-        client = Client(credentials, project_id=alt_project_id)
+        alt_project = 'ALT_PROJECT'
+        client = Client(project=alt_project, credentials=credentials)
 
-        self.assertNotEqual(PROJECT_ID, alt_project_id)
+        self.assertNotEqual(PROJECT, alt_project)
 
-        cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+        cluster_name = ('projects/' + PROJECT + '/zones/' + ZONE +
                         '/clusters/' + CLUSTER_ID)
         cluster_pb = data_pb2.Cluster(name=cluster_name)
 
@@ -285,11 +285,11 @@ class TestCluster(unittest2.TestCase):
             bigtable_cluster_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable._grpc_mocks import StubMock
 
-        client = _Client(PROJECT_ID)
+        client = _Client(PROJECT)
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
 
         # Create request_pb
-        cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+        cluster_name = ('projects/' + PROJECT + '/zones/' + ZONE +
                         '/clusters/' + CLUSTER_ID)
         request_pb = messages_pb2.GetClusterRequest(name=cluster_name)
 
@@ -300,7 +300,7 @@ class TestCluster(unittest2.TestCase):
         )
 
         # Patch the stub used by the API method.
-        client.cluster_stub = stub = StubMock(response_pb)
+        client._cluster_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None  # reload() has no return value.
@@ -325,7 +325,7 @@ class TestCluster(unittest2.TestCase):
         from gcloud_bigtable._generated import operations_pb2
         from gcloud_bigtable._grpc_mocks import StubMock
 
-        client = _Client(PROJECT_ID)
+        client = _Client(PROJECT)
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
 
         # Patch up the cluster's operation attributes.
@@ -334,7 +334,7 @@ class TestCluster(unittest2.TestCase):
         cluster._operation_type = op_type = object()
 
         # Create request_pb
-        op_name = ('operations/projects/' + PROJECT_ID + '/zones/' +
+        op_name = ('operations/projects/' + PROJECT + '/zones/' +
                    ZONE + '/clusters/' + CLUSTER_ID +
                    '/operations/%d' % (op_id,))
         request_pb = operations_pb2.GetOperationRequest(name=op_name)
@@ -343,7 +343,7 @@ class TestCluster(unittest2.TestCase):
         response_pb = operations_pb2.Operation(done=done)
 
         # Patch the stub used by the API method.
-        client.operations_stub = stub = StubMock(response_pb)
+        client._operations_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = done
@@ -382,7 +382,7 @@ class TestCluster(unittest2.TestCase):
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster as MUT
 
-        client = _Client(PROJECT_ID)
+        client = _Client(PROJECT)
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
 
         # Create request_pb. Just a mock since we monkey patch
@@ -394,7 +394,7 @@ class TestCluster(unittest2.TestCase):
         response_pb = data_pb2.Cluster(current_operation=current_op)
 
         # Patch the stub used by the API method.
-        client.cluster_stub = stub = StubMock(response_pb)
+        client._cluster_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None
@@ -430,7 +430,7 @@ class TestCluster(unittest2.TestCase):
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster as MUT
 
-        client = _Client(PROJECT_ID)
+        client = _Client(PROJECT)
         serve_nodes = 81
         display_name = 'display_name'
         cluster = self._makeOne(ZONE, CLUSTER_ID, client,
@@ -438,7 +438,7 @@ class TestCluster(unittest2.TestCase):
                                 serve_nodes=serve_nodes)
 
         # Create request_pb
-        cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+        cluster_name = ('projects/' + PROJECT + '/zones/' + ZONE +
                         '/clusters/' + CLUSTER_ID)
         request_pb = data_pb2.Cluster(
             name=cluster_name,
@@ -451,7 +451,7 @@ class TestCluster(unittest2.TestCase):
         response_pb = data_pb2.Cluster(current_operation=current_op)
 
         # Patch the stub used by the API method.
-        client.cluster_stub = stub = StubMock(response_pb)
+        client._cluster_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None
@@ -482,11 +482,11 @@ class TestCluster(unittest2.TestCase):
         from gcloud_bigtable._generated import empty_pb2
         from gcloud_bigtable._grpc_mocks import StubMock
 
-        client = _Client(PROJECT_ID)
+        client = _Client(PROJECT)
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
 
         # Create request_pb
-        cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+        cluster_name = ('projects/' + PROJECT + '/zones/' + ZONE +
                         '/clusters/' + CLUSTER_ID)
         request_pb = messages_pb2.DeleteClusterRequest(name=cluster_name)
 
@@ -494,7 +494,7 @@ class TestCluster(unittest2.TestCase):
         response_pb = empty_pb2.Empty()
 
         # Patch the stub used by the API method.
-        client.cluster_stub = stub = StubMock(response_pb)
+        client._cluster_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None  # delete() has no return value.
@@ -518,11 +518,11 @@ class TestCluster(unittest2.TestCase):
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster as MUT
 
-        client = _Client(PROJECT_ID)
+        client = _Client(PROJECT)
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
 
         # Create request_pb
-        cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+        cluster_name = ('projects/' + PROJECT + '/zones/' + ZONE +
                         '/clusters/' + CLUSTER_ID)
         request_pb = messages_pb2.UndeleteClusterRequest(name=cluster_name)
 
@@ -530,7 +530,7 @@ class TestCluster(unittest2.TestCase):
         response_pb = operations_pb2.Operation()
 
         # Patch the stub used by the API method.
-        client.cluster_stub = stub = StubMock(response_pb)
+        client._cluster_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None
@@ -562,11 +562,11 @@ class TestCluster(unittest2.TestCase):
             bigtable_table_service_messages_pb2 as table_messages_pb2)
         from gcloud_bigtable._grpc_mocks import StubMock
 
-        client = _Client(PROJECT_ID)
+        client = _Client(PROJECT)
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
 
         # Create request_
-        cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
+        cluster_name = ('projects/' + PROJECT + '/zones/' + ZONE +
                         '/clusters/' + CLUSTER_ID)
         request_pb = table_messages_pb2.ListTablesRequest(name=cluster_name)
 
@@ -579,7 +579,7 @@ class TestCluster(unittest2.TestCase):
         )
 
         # Patch the stub used by the API method.
-        client.table_stub = stub = StubMock(response_pb)
+        client._table_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_table = cluster.table(table_id)
@@ -606,7 +606,7 @@ class TestCluster(unittest2.TestCase):
     def test_list_tables_failure_name_bad_before(self):
         table_id = 'table_id'
         bad_table_name = ('nonempty-section-before' +
-                          'projects/' + PROJECT_ID + '/zones/' + ZONE +
+                          'projects/' + PROJECT + '/zones/' + ZONE +
                           '/clusters/' + CLUSTER_ID + '/tables/' + table_id)
         with self.assertRaises(ValueError):
             self._list_tables_helper(table_id, table_name=bad_table_name)
@@ -618,9 +618,9 @@ class _Client(object):
     operations_stub = None
     table_stub = None
 
-    def __init__(self, project_id):
-        self.project_id = project_id
-        self.project_name = 'projects/' + project_id
+    def __init__(self, project):
+        self.project = project
+        self.project_name = 'projects/' + project
 
     def copy(self):
         import copy as copy_module

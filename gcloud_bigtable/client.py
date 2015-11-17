@@ -93,7 +93,7 @@ DEFAULT_USER_AGENT = 'gcloud-bigtable-python'
 """The default user agent for API requests."""
 
 
-def _project_id_from_environment():
+def _project_from_environment():
     """Attempts to get the project ID from an environment variable.
 
     :rtype: :class:`str` or :data:`NoneType <types.NoneType>`
@@ -102,7 +102,7 @@ def _project_id_from_environment():
     return os.getenv(PROJECT_ENV_VAR)
 
 
-def _project_id_from_app_engine():
+def _project_from_app_engine():
     """Gets the App Engine application ID if it can be inferred.
 
     :rtype: :class:`str` or :data:`NoneType <types.NoneType>`
@@ -115,7 +115,7 @@ def _project_id_from_app_engine():
     return app_identity.get_application_id()
 
 
-def _project_id_from_compute_engine():
+def _project_from_compute_engine():
     """Gets the Compute Engine project ID if it can be inferred.
 
     Uses 169.254.169.254 for the metadata server to avoid request
@@ -148,7 +148,7 @@ def _project_id_from_compute_engine():
         connection.close()
 
 
-def _determine_project_id(project_id=None):
+def _determine_project(project=None):
     """Determine the project ID from the input or environment.
 
     When checking the environment, the following precedence is observed:
@@ -157,34 +157,44 @@ def _determine_project_id(project_id=None):
     * Google App Engine application ID
     * Google Compute Engine project ID (from metadata server)
 
-    :type project_id: str
-    :param project_id: (Optional) The ID of the project which owns the
-                       clusters, tables and data. If not provided, will attempt
-                       to determine from the environment.
+    :type project: str
+    :param project: (Optional) The ID of the project which owns the
+                    clusters, tables and data. If not provided, will attempt
+                    to determine from the environment.
 
     :rtype: str
     :returns: The project ID provided or inferred from the environment.
     :raises: :class:`EnvironmentError` if the project ID was not
              passed in and can't be inferred from the environment.
     """
-    if project_id is None:
-        project_id = _project_id_from_environment()
+    if project is None:
+        project = _project_from_environment()
 
-    if project_id is None:
-        project_id = _project_id_from_app_engine()
+    if project is None:
+        project = _project_from_app_engine()
 
-    if project_id is None:
-        project_id = _project_id_from_compute_engine()
+    if project is None:
+        project = _project_from_compute_engine()
 
-    if project_id is None:
+    if project is None:
         raise EnvironmentError('Project ID was not provided and could not '
                                'be determined from environment.')
 
-    return project_id
+    return project
 
 
 class Client(object):
     """Client for interacting with Google Cloud Bigtable API.
+
+    .. note::
+
+        Since the Cloud Bigtable API requires the gRPC transport, no
+        ``http`` argument is accepted by this class.
+
+    :type project: :class:`str` or :func:`unicode <unicode>`
+    :param project: (Optional) The ID of the project which owns the
+                    clusters, tables and data. If not provided, will
+                    attempt to determine from the environment.
 
     :type credentials:
         :class:`OAuth2Credentials <oauth2client.client.OAuth2Credentials>` or
@@ -192,11 +202,6 @@ class Client(object):
     :param credentials: (Optional) The OAuth2 Credentials to use for this
                         cluster. If not provided, defaulst to the Google
                         Application Default Credentials.
-
-    :type project_id: :class:`str` or :func:`unicode <unicode>`
-    :param project_id: (Optional) The ID of the project which owns the
-                       clusters, tables and data. If not provided, will
-                       attempt to determine from the environment.
 
     :type read_only: bool
     :param read_only: (Optional) Boolean indicating if the data scope should be
@@ -221,15 +226,16 @@ class Client(object):
              and ``admin`` are :data:`True`
     """
 
-    def __init__(self, credentials=None, project_id=None,
+    def __init__(self, project=None, credentials=None,
                  read_only=False, admin=False, user_agent=DEFAULT_USER_AGENT,
                  timeout_seconds=DEFAULT_TIMEOUT_SECONDS):
+        self.project = _determine_project(project)
+        if credentials is None:
+            credentials = GoogleCredentials.get_application_default()
+
         if read_only and admin:
             raise ValueError('A read-only client cannot also perform'
                              'administrative actions.')
-
-        if credentials is None:
-            credentials = GoogleCredentials.get_application_default()
 
         scopes = []
         if read_only:
@@ -242,18 +248,17 @@ class Client(object):
 
         self._admin = bool(admin)
         self._credentials = credentials.create_scoped(scopes)
-        self._project_id = _determine_project_id(project_id)
         self.user_agent = user_agent
         self.timeout_seconds = timeout_seconds
 
         # These will be set in start().
-        self._data_stub = None
-        self._cluster_stub = None
-        self._operations_stub = None
-        self._table_stub = None
+        self._data_stub_internal = None
+        self._cluster_stub_internal = None
+        self._operations_stub_internal = None
+        self._table_stub_internal = None
 
     @classmethod
-    def from_service_account_json(cls, json_credentials_path, project_id=None,
+    def from_service_account_json(cls, json_credentials_path, project=None,
                                   read_only=False, admin=False):
         """Factory to retrieve JSON credentials while creating client object.
 
@@ -265,8 +270,8 @@ class Client(object):
                                       other credentials information (downloaded
                                       from the Google APIs console).
 
-        :type project_id: str
-        :param project_id: The ID of the project which owns the clusters,
+        :type project: str
+        :param project: The ID of the project which owns the clusters,
                            tables and data. Will be passed to :class:`Client`
                            constructor.
 
@@ -285,12 +290,12 @@ class Client(object):
         """
         credentials = _get_application_default_credential_from_file(
             json_credentials_path)
-        return cls(credentials=credentials, project_id=project_id,
+        return cls(credentials=credentials, project=project,
                    read_only=read_only, admin=admin)
 
     @classmethod
     def from_service_account_p12(cls, client_email, private_key_path,
-                                 project_id=None, read_only=False,
+                                 project=None, read_only=False,
                                  admin=False):
         """Factory to retrieve P12 credentials while creating client object.
 
@@ -306,8 +311,8 @@ class Client(object):
                                  given to you when you created the service
                                  account). This file must be in P12 format.
 
-        :type project_id: str
-        :param project_id: The ID of the project which owns the clusters,
+        :type project: str
+        :param project: The ID of the project which owns the clusters,
                            tables and data. Will be passed to :class:`Client`
                            constructor.
 
@@ -327,7 +332,7 @@ class Client(object):
         credentials = SignedJwtAssertionCredentials(
             service_account_name=client_email,
             private_key=_get_contents(private_key_path))
-        return cls(credentials=credentials, project_id=project_id,
+        return cls(credentials=credentials, project=project,
                    read_only=read_only, admin=admin)
 
     def copy(self):
@@ -339,21 +344,21 @@ class Client(object):
         :rtype: :class:`.Client`
         :returns: A copy of the current client.
         """
-        data_stub = self._data_stub
-        cluster_stub = self._cluster_stub
-        operations_stub = self._operations_stub
-        table_stub = self._table_stub
+        data_stub = self._data_stub_internal
+        cluster_stub = self._cluster_stub_internal
+        operations_stub = self._operations_stub_internal
+        table_stub = self._table_stub_internal
         try:
-            self._data_stub = None
-            self._cluster_stub = None
-            self._operations_stub = None
-            self._table_stub = None
+            self._data_stub_internal = None
+            self._cluster_stub_internal = None
+            self._operations_stub_internal = None
+            self._table_stub_internal = None
             return copy.deepcopy(self)
         finally:
-            self._data_stub = data_stub
-            self._cluster_stub = cluster_stub
-            self._operations_stub = operations_stub
-            self._table_stub = table_stub
+            self._data_stub_internal = data_stub
+            self._cluster_stub_internal = cluster_stub
+            self._operations_stub_internal = operations_stub
+            self._table_stub_internal = table_stub
 
     @property
     def credentials(self):
@@ -366,34 +371,25 @@ class Client(object):
         return self._credentials
 
     @property
-    def project_id(self):
-        """Getter for client's project ID.
-
-        :rtype: str
-        :returns: The project ID stored on the client.
-        """
-        return self._project_id
-
-    @property
     def project_name(self):
         """Project name to be used with Cluster Admin API.
 
         .. note::
-          This property will not change if ``project_id`` does not, but the
+          This property will not change if ``project`` does not, but the
           return value is not cached.
 
         The project name is of the form
 
-            ``"projects/{project_id}"``
+            ``"projects/{project}"``
 
         :rtype: str
         :returns: The project name to be used with the Cloud Bigtable Admin
                   API RPC service.
         """
-        return 'projects/' + self.project_id
+        return 'projects/' + self.project
 
     @property
-    def data_stub(self):
+    def _data_stub(self):
         """Getter for the gRPC stub used for the Data API.
 
         :rtype: :class:`grpc.early_adopter.implementations._Stub`
@@ -401,12 +397,12 @@ class Client(object):
         :raises: :class:`ValueError <exceptions.ValueError>` if the current
                  client has not been :meth:`start`-ed.
         """
-        if self._data_stub is None:
+        if self._data_stub_internal is None:
             raise ValueError('Client has not been started.')
-        return self._data_stub
+        return self._data_stub_internal
 
     @property
-    def cluster_stub(self):
+    def _cluster_stub(self):
         """Getter for the gRPC stub used for the Cluster Admin API.
 
         :rtype: :class:`grpc.early_adopter.implementations._Stub`
@@ -417,12 +413,12 @@ class Client(object):
         """
         if not self._admin:
             raise ValueError('Client is not an admin client.')
-        if self._cluster_stub is None:
+        if self._cluster_stub_internal is None:
             raise ValueError('Client has not been started.')
-        return self._cluster_stub
+        return self._cluster_stub_internal
 
     @property
-    def operations_stub(self):
+    def _operations_stub(self):
         """Getter for the gRPC stub used for the Operations API.
 
         :rtype: :class:`grpc.early_adopter.implementations._Stub`
@@ -433,12 +429,12 @@ class Client(object):
         """
         if not self._admin:
             raise ValueError('Client is not an admin client.')
-        if self._operations_stub is None:
+        if self._operations_stub_internal is None:
             raise ValueError('Client has not been started.')
-        return self._operations_stub
+        return self._operations_stub_internal
 
     @property
-    def table_stub(self):
+    def _table_stub(self):
         """Getter for the gRPC stub used for the Table Admin API.
 
         :rtype: :class:`grpc.early_adopter.implementations._Stub`
@@ -449,9 +445,9 @@ class Client(object):
         """
         if not self._admin:
             raise ValueError('Client is not an admin client.')
-        if self._table_stub is None:
+        if self._table_stub_internal is None:
             raise ValueError('Client has not been started.')
-        return self._table_stub
+        return self._table_stub_internal
 
     def _make_data_stub(self):
         """Creates gRPC stub to make requests to the Data API.
@@ -498,7 +494,7 @@ class Client(object):
         :rtype: bool
         :returns: Boolean indicating if the client has been started.
         """
-        return self._data_stub is not None
+        return self._data_stub_internal is not None
 
     def start(self):
         """Prepare the client to make requests.
@@ -509,16 +505,16 @@ class Client(object):
         if self.is_started():
             return
 
-        self._data_stub = self._make_data_stub()
-        self._data_stub.__enter__()
+        self._data_stub_internal = self._make_data_stub()
+        self._data_stub_internal.__enter__()
         if self._admin:
-            self._cluster_stub = self._make_cluster_stub()
-            self._operations_stub = self._make_operations_stub()
-            self._table_stub = self._make_table_stub()
+            self._cluster_stub_internal = self._make_cluster_stub()
+            self._operations_stub_internal = self._make_operations_stub()
+            self._table_stub_internal = self._make_table_stub()
 
-            self._cluster_stub.__enter__()
-            self._operations_stub.__enter__()
-            self._table_stub.__enter__()
+            self._cluster_stub_internal.__enter__()
+            self._operations_stub_internal.__enter__()
+            self._table_stub_internal.__enter__()
 
     def stop(self):
         """Closes all the open gRPC clients."""
@@ -527,16 +523,16 @@ class Client(object):
 
         # When exit-ing, we pass None as the exception type, value and
         # traceback to __exit__.
-        self._data_stub.__exit__(None, None, None)
+        self._data_stub_internal.__exit__(None, None, None)
         if self._admin:
-            self._cluster_stub.__exit__(None, None, None)
-            self._operations_stub.__exit__(None, None, None)
-            self._table_stub.__exit__(None, None, None)
+            self._cluster_stub_internal.__exit__(None, None, None)
+            self._operations_stub_internal.__exit__(None, None, None)
+            self._table_stub_internal.__exit__(None, None, None)
 
-        self._data_stub = None
-        self._cluster_stub = None
-        self._operations_stub = None
-        self._table_stub = None
+        self._data_stub_internal = None
+        self._cluster_stub_internal = None
+        self._operations_stub_internal = None
+        self._table_stub_internal = None
 
     def cluster(self, zone, cluster_id, display_name=None, serve_nodes=3):
         """Factory to create a cluster associated with this client.
@@ -577,8 +573,8 @@ class Client(object):
         """
         request_pb = messages_pb2.ListZonesRequest(name=self.project_name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.cluster_stub.ListZones.async(request_pb,
-                                                     timeout_seconds)
+        response = self._cluster_stub.ListZones.async(request_pb,
+                                                      timeout_seconds)
         # We expect a `.messages_pb2.ListZonesResponse`
         list_zones_response = response.result()
 
@@ -604,8 +600,8 @@ class Client(object):
         """
         request_pb = messages_pb2.ListClustersRequest(name=self.project_name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.cluster_stub.ListClusters.async(request_pb,
-                                                        timeout_seconds)
+        response = self._cluster_stub.ListClusters.async(request_pb,
+                                                         timeout_seconds)
         # We expect a `.messages_pb2.ListClustersResponse`
         list_clusters_response = response.result()
 

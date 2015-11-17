@@ -32,9 +32,9 @@ class TestMetadataTransformer(unittest2.TestCase):
 
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        project_id = 'PROJECT_ID'
+        project = 'PROJECT'
         user_agent = 'USER_AGENT'
-        client = Client(credentials, project_id=project_id,
+        client = Client(project=project, credentials=credentials,
                         user_agent=user_agent)
         transformer = self._makeOne(client)
         self.assertTrue(transformer._credentials is scoped_creds)
@@ -56,8 +56,8 @@ class TestMetadataTransformer(unittest2.TestCase):
 
         scoped_creds = _MockWithAttachedMethods(_ReturnVal)
         credentials = _MockWithAttachedMethods(scoped_creds)
-        project_id = 'PROJECT_ID'
-        client = Client(credentials, project_id=project_id)
+        project = 'PROJECT'
+        client = Client(project=project, credentials=credentials)
 
         transformer = self._makeOne(client)
         result = transformer(None)

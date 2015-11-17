@@ -416,8 +416,8 @@ class Row(object):
             mutations=mutations_list,
         )
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client.data_stub.MutateRow.async(request_pb,
-                                                         timeout_seconds)
+        response = self.client._data_stub.MutateRow.async(request_pb,
+                                                          timeout_seconds)
         # We expect a `._generated.empty_pb2.Empty`.
         response.result()
 
@@ -458,7 +458,7 @@ class Row(object):
             false_mutations=false_mutations,
         )
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client.data_stub.CheckAndMutateRow.async(
+        response = self.client._data_stub.CheckAndMutateRow.async(
             request_pb, timeout_seconds)
         # We expect a `.messages_pb2.CheckAndMutateRowResponse`
         check_and_mutate_row_response = response.result()
@@ -566,7 +566,7 @@ class Row(object):
             rules=self._rule_pb_list,
         )
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client.data_stub.ReadModifyWriteRow.async(
+        response = self.client._data_stub.ReadModifyWriteRow.async(
             request_pb, timeout_seconds)
         # We expect a `.data_pb2.Row`
         row_response = response.result()

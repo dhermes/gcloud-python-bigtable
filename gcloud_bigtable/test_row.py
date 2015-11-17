@@ -394,7 +394,7 @@ class TestRow(unittest2.TestCase):
         response_pb = empty_pb2.Empty()
 
         # Patch the stub used by the API method.
-        client.data_stub = stub = StubMock(response_pb)
+        client._data_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = None  # commit() has no return value when no filter.
@@ -434,7 +434,7 @@ class TestRow(unittest2.TestCase):
         self.assertEqual(row._pb_mutations, [])
 
         # Patch the stub used by the API method.
-        client.data_stub = stub = StubMock()
+        client._data_stub = stub = StubMock()
 
         # Perform the method and check the result.
         result = row.commit()
@@ -478,7 +478,7 @@ class TestRow(unittest2.TestCase):
             predicate_matched=predicate_matched)
 
         # Patch the stub used by the API method.
-        client.data_stub = stub = StubMock(response_pb)
+        client._data_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = predicate_matched
@@ -521,7 +521,7 @@ class TestRow(unittest2.TestCase):
         self.assertEqual(row._false_pb_mutations, [])
 
         # Patch the stub used by the API method.
-        client.data_stub = stub = StubMock()
+        client._data_stub = stub = StubMock()
 
         # Perform the method and check the result.
         result = row.commit()
@@ -561,7 +561,7 @@ class TestRow(unittest2.TestCase):
         response_pb = object()
 
         # Patch the stub used by the API method.
-        client.data_stub = stub = StubMock(response_pb)
+        client._data_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
         expected_result = object()
@@ -596,7 +596,7 @@ class TestRow(unittest2.TestCase):
         self.assertEqual(row._rule_pb_list, [])
 
         # Patch the stub used by the API method.
-        client.data_stub = stub = StubMock()
+        client._data_stub = stub = StubMock()
 
         # Perform the method and check the result.
         result = row.commit_modifications()

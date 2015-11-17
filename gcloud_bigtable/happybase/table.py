@@ -143,9 +143,9 @@ def _gc_rule_to_dict(gc_rule):
 def _convert_to_time_range(timestamp=None):
     """Create a timestamp range from an HBase / HappyBase timestamp.
 
-    HBase uses timestamp as an argument to specify an inclusive end
-    deadline. Since Cloud Bigtable uses exclusive end times, we increment
-    by one millisecond (the lowest granularity allowed).
+    HBase uses timestamp as an argument to specify an exclusive end
+    deadline. Cloud Bigtable also uses exclusive end times, so
+    the behavior matches.
 
     :type timestamp: int
     :param timestamp: (Optional) Timestamp (in milliseconds since the

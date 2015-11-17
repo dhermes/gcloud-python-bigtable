@@ -255,7 +255,7 @@ class ColumnFamily(object):
             column_family=column_family,
         )
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client.table_stub.CreateColumnFamily.async(
+        response = self.client._table_stub.CreateColumnFamily.async(
             request_pb, timeout_seconds)
         # We expect a `.data_pb2.ColumnFamily`
         response.result()
@@ -282,7 +282,7 @@ class ColumnFamily(object):
             request_kwargs['gc_rule'] = self.gc_rule.to_pb()
         request_pb = data_pb2.ColumnFamily(**request_kwargs)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client.table_stub.UpdateColumnFamily.async(
+        response = self.client._table_stub.UpdateColumnFamily.async(
             request_pb, timeout_seconds)
         # We expect a `.data_pb2.ColumnFamily`
         response.result()
@@ -297,7 +297,7 @@ class ColumnFamily(object):
         """
         request_pb = messages_pb2.DeleteColumnFamilyRequest(name=self.name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client.table_stub.DeleteColumnFamily.async(
+        response = self.client._table_stub.DeleteColumnFamily.async(
             request_pb, timeout_seconds)
         # We expect a `._generated.empty_pb2.Empty`
         response.result()

@@ -117,7 +117,7 @@ with :meth:`reload() <gcloud_bigtable.cluster.Cluster.reload>`:
     cluster.reload()
 
 This will load ``serve_nodes`` and ``display_name`` for the existing
-``cluster`` in addition to the ``cluster_id``, ``zone`` and ``project_id``
+``cluster`` in addition to the ``cluster_id``, ``zone`` and ``project``
 already set on the :class:`Cluster <gcloud_bigtable.cluster.Cluster>` object.
 
 Update an existing Cluster

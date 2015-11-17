@@ -47,12 +47,12 @@ Project ID
 
     Be sure to use the **Project ID**, not the **Project Number**.
 
-You can also explicitly provide the ``project_id`` rather than relying
+You can also explicitly provide the ``project`` rather than relying
 on the inferred value:
 
 .. code:: python
 
-    client = Client(project_id='my-cloud-console-project')
+    client = Client(project='my-cloud-console-project')
 
 When implicit, the value is inferred from the environment in the following
 order:
