@@ -27,6 +27,9 @@ from gcloud_bigtable._helpers import _microseconds_to_timestamp
 from gcloud_bigtable._helpers import _timestamp_to_microseconds
 from gcloud_bigtable.client import Client
 from gcloud_bigtable.column_family import GarbageCollectionRule
+from gcloud_bigtable.row import RowFilter
+from gcloud_bigtable.row import RowFilterChain
+from gcloud_bigtable.row import RowFilterUnion
 from gcloud_bigtable.row_data import Cell
 from gcloud_bigtable.row_data import PartialRowData
 
@@ -360,3 +363,50 @@ class TestDataAPI(unittest2.TestCase):
             ROW_KEY_ALT: row_alt_data,
         }
         self.assertEqual(rows_data.rows, expected_rows)
+
+    def test_read_with_label_applied(self):
+        row = self._table.row(ROW_KEY)
+        self.rows_to_delete.append(row)
+
+        cell1, _, cell3, _ = self._write_to_row(row, None, row)
+        row.commit()
+
+        # Combine a label with column 1.
+        label1 = u'label-red'
+        label1_filter = RowFilter(apply_label_transformer=label1)
+        col1_filter = RowFilter(column_qualifier_regex_filter=COL_NAME1)
+        chain1 = RowFilterChain(filters=[col1_filter, label1_filter])
+
+        # Combine a label with column 2.
+        label2 = u'label-blue'
+        label2_filter = RowFilter(apply_label_transformer=label2)
+        col2_filter = RowFilter(column_qualifier_regex_filter=COL_NAME2)
+        chain2 = RowFilterChain(filters=[col2_filter, label2_filter])
+
+        # Bring our two labeled columns together.
+        row_filter = RowFilterUnion(filters=[chain1, chain2])
+        partial_row_data = self._table.read_row(ROW_KEY, filter_=row_filter)
+        self.assertTrue(partial_row_data.committed)
+        self.assertEqual(partial_row_data.row_key, ROW_KEY)
+
+        cells_returned = partial_row_data.cells
+        col_fam1 = cells_returned.pop(COLUMN_FAMILY_ID1)
+        # Make sure COLUMN_FAMILY_ID1 was the only key.
+        self.assertEqual(len(cells_returned), 0)
+
+        cell1_new, = col_fam1.pop(COL_NAME1)
+        cell3_new, = col_fam1.pop(COL_NAME2)
+        # Make sure COL_NAME1 and COL_NAME2 were the only keys.
+        self.assertEqual(len(col_fam1), 0)
+
+        # Check that cell1 has matching values and gained a label.
+        self.assertEqual(cell1_new.value, cell1.value)
+        self.assertEqual(cell1_new.timestamp, cell1.timestamp)
+        self.assertEqual(cell1.labels, [])
+        self.assertEqual(cell1_new.labels, [label1])
+
+        # Check that cell3 has matching values and gained a label.
+        self.assertEqual(cell3_new.value, cell3.value)
+        self.assertEqual(cell3_new.timestamp, cell3.timestamp)
+        self.assertEqual(cell3.labels, [])
+        self.assertEqual(cell3_new.labels, [label2])
