@@ -30,11 +30,15 @@ class Cell(object):
 
     :type timestamp: :class:`datetime.datetime`
     :param timestamp: The timestamp when the cell was stored.
+
+    :type labels: list
+    :param labels: (Optional) List of strings. Labels applied to the cell.
     """
 
-    def __init__(self, value, timestamp):
+    def __init__(self, value, timestamp, labels=()):
         self.value = value
         self.timestamp = timestamp
+        self.labels = list(labels)
 
     @classmethod
     def from_pb(cls, cell_pb):
@@ -47,13 +51,17 @@ class Cell(object):
         :returns: The cell corresponding to the protobuf.
         """
         timestamp = _microseconds_to_timestamp(cell_pb.timestamp_micros)
-        return cls(cell_pb.value, timestamp)
+        if cell_pb.labels:
+            return cls(cell_pb.value, timestamp, labels=cell_pb.labels)
+        else:
+            return cls(cell_pb.value, timestamp)
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
         return (other.value == self.value and
-                other.timestamp == self.timestamp)
+                other.timestamp == self.timestamp and
+                other.labels == self.labels)
 
     def __ne__(self, other):
         return not self.__eq__(other)

@@ -25,7 +25,7 @@ class TestCell(unittest2.TestCase):
     def _makeOne(self, *args, **kwargs):
         return self._getTargetClass()(*args, **kwargs)
 
-    def test_from_pb(self):
+    def _from_pb_test_helper(self, labels=None):
         import datetime
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
         from gcloud_bigtable._helpers import EPOCH
@@ -33,12 +33,27 @@ class TestCell(unittest2.TestCase):
         timestamp_micros = 18738724000  # Make sure millis granularity
         timestamp = EPOCH + datetime.timedelta(microseconds=timestamp_micros)
         value = b'value-bytes'
-        cell_expected = self._makeOne(value, timestamp)
 
-        cell_pb = data_pb2.Cell(value=value, timestamp_micros=timestamp_micros)
+        if labels is None:
+            cell_pb = data_pb2.Cell(value=value,
+                                    timestamp_micros=timestamp_micros)
+            cell_expected = self._makeOne(value, timestamp)
+        else:
+            cell_pb = data_pb2.Cell(value=value,
+                                    timestamp_micros=timestamp_micros,
+                                    labels=labels)
+            cell_expected = self._makeOne(value, timestamp, labels=labels)
+
         klass = self._getTargetClass()
         result = klass.from_pb(cell_pb)
         self.assertEqual(result, cell_expected)
+
+    def test_from_pb(self):
+        self._from_pb_test_helper()
+
+    def test_from_pb_with_labels(self):
+        labels = [u'label1', u'label2']
+        self._from_pb_test_helper(labels)
 
     def test_constructor(self):
         value = object()

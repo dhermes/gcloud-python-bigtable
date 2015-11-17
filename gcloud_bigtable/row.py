@@ -583,6 +583,9 @@ class Row(object):
 #       than actually listing every single argument. However, for the sake
 #       of users and documentation, listing every single argument is more
 #       useful.
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-branches
 class RowFilter(object):
     """Basic filter to apply to cells in a row.
 
@@ -845,6 +848,9 @@ class RowFilter(object):
             row_filter_kwargs['apply_label_transformer'] = (
                 self.apply_label_transformer)
         return data_pb2.RowFilter(**row_filter_kwargs)
+# pylint: enable=too-many-instance-attributes
+# pylint: enable=too-many-arguments
+# pylint: enable=too-many-branches
 
 
 class TimestampRange(object):
@@ -963,7 +969,7 @@ class ColumnRange(object):
 class CellValueRange(object):
     """A range of values to restrict to in a row filter.
 
-    With only match cells that have values in this range.
+    Will only match cells that have values in this range.
 
     Both the start and end value can be included or excluded in the range.
     By default, we include them both, but this can be changed with optional
