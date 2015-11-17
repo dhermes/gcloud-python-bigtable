@@ -607,12 +607,35 @@ class RowFilter(object):
         character will not match the new line character ``\\n``, which may be
         present in a binary value.
 
+    :type sink: bool
+    :param sink: ADVANCED USE ONLY. Hook for introspection into the RowFilter.
+                 Outputs all cells directly to the output of the read rather
+                 than to any parent filter. Cannot be used within the
+                 ``predicate_filter``, ``true_filter``, or ``false_filter``
+                 of a :class:`ConditionalRowFilter`.
+
+    :type pass_all_filter: bool
+    :param pass_all_filter: Matches all cells, regardless of input.
+                            Functionally equivalent to leaving ``filter``
+                            unset, but included for completeness.
+
+    :type block_all_filter: bool
+    :param block_all_filter: Does not match any cells, regardless of input.
+                             Useful for temporarily disabling just part of
+                             a filter.
+
     :type row_key_regex_filter: bytes
     :param row_key_regex_filter: A regular expression (RE2) to match cells from
                                  rows with row keys that satisfy this regex.
                                  For a ``CheckAndMutateRowRequest``, this
                                  filter is unnecessary since the row key is
                                  already specified.
+
+    :type row_sample_filter: float
+    :param row_sample_filter: Non-deterministic filter. Matches all cells from
+                              a row with probability p, and matches no cells
+                              from the row with probability 1-p. (Here, the
+                              probability p is ``row_sample_filter``.)
 
     :type family_name_regex_filter: str
     :param family_name_regex_filter: A regular expression (RE2) to match cells
@@ -627,16 +650,16 @@ class RowFilter(object):
                                           regex (irrespective of column
                                           family).
 
-    :type value_regex_filter: bytes
-    :param value_regex_filter: A regular expression (RE2) to match cells with
-                               values that match this regex.
-
     :type column_range_filter: :class:`ColumnRange`
     :param column_range_filter: Range of columns to limit cells to.
 
     :type timestamp_range_filter: :class:`TimestampRange`
     :param timestamp_range_filter: Range of time that cells should match
                                    against.
+
+    :type value_regex_filter: bytes
+    :param value_regex_filter: A regular expression (RE2) to match cells with
+                               values that match this regex.
 
     :type value_range_filter: :class:`CellValueRange`
     :param value_range_filter: Range of cell values to filter for.
@@ -654,47 +677,62 @@ class RowFilter(object):
                                           (family name, column) pair, based on
                                           timestamps of each cell.
 
-    :type row_sample_filter: float
-    :param row_sample_filter: Non-deterministic filter. Matches all cells from
-                              a row with probability p, and matches no cells
-                              from the row with probability 1-p. (Here, the
-                              probability p is ``row_sample_filter``.)
-
     :type strip_value_transformer: bool
     :param strip_value_transformer: If :data:`True`, replaces each cell's value
                                     with the empty string. As the name
                                     indicates, this is more useful as a
                                     transformer than a generic query / filter.
 
+    :type apply_label_transformer: str
+    :param apply_label_transformer: Applies the given label to all cells in the
+                                    output row. This allows the client to
+                                    determine which results were produced from
+                                    which part of the filter.
+
+                                    Values must be at most 15 characters long,
+                                    and match the pattern [a-z0-9\\-]+.
+
+                                    Due to a technical limitation, it is not
+                                    currently possible to apply multiple labels
+                                    to a cell.
+
     :raises: :class:`TypeError <exceptions.TypeError>` if not exactly one
              value set in the constructor.
     """
 
     def __init__(self,
+                 sink=None,
+                 pass_all_filter=None,
+                 block_all_filter=None,
                  row_key_regex_filter=None,
+                 row_sample_filter=None,
                  family_name_regex_filter=None,
                  column_qualifier_regex_filter=None,
-                 value_regex_filter=None,
                  column_range_filter=None,
                  timestamp_range_filter=None,
+                 value_regex_filter=None,
                  value_range_filter=None,
                  cells_per_row_offset_filter=None,
                  cells_per_row_limit_filter=None,
                  cells_per_column_limit_filter=None,
-                 row_sample_filter=None,
-                 strip_value_transformer=None):
+                 strip_value_transformer=None,
+                 apply_label_transformer=None):
+        self.sink = sink
+        self.pass_all_filter = pass_all_filter
+        self.block_all_filter = block_all_filter
         self.row_key_regex_filter = row_key_regex_filter
+        self.row_sample_filter = row_sample_filter
         self.family_name_regex_filter = family_name_regex_filter
         self.column_qualifier_regex_filter = column_qualifier_regex_filter
-        self.value_regex_filter = value_regex_filter
         self.column_range_filter = column_range_filter
         self.timestamp_range_filter = timestamp_range_filter
+        self.value_regex_filter = value_regex_filter
         self.value_range_filter = value_range_filter
         self.cells_per_row_offset_filter = cells_per_row_offset_filter
         self.cells_per_row_limit_filter = cells_per_row_limit_filter
         self.cells_per_column_limit_filter = cells_per_column_limit_filter
-        self.row_sample_filter = row_sample_filter
         self.strip_value_transformer = strip_value_transformer
+        self.apply_label_transformer = apply_label_transformer
         self._check_single_value()
 
     def _check_single_value(self):
@@ -704,18 +742,22 @@ class RowFilter(object):
                  value set on the instance.
         """
         values_set = (
+            int(self.sink is not None) +
+            int(self.pass_all_filter is not None) +
+            int(self.block_all_filter is not None) +
             int(self.row_key_regex_filter is not None) +
+            int(self.row_sample_filter is not None) +
             int(self.family_name_regex_filter is not None) +
             int(self.column_qualifier_regex_filter is not None) +
-            int(self.value_regex_filter is not None) +
             int(self.column_range_filter is not None) +
             int(self.timestamp_range_filter is not None) +
+            int(self.value_regex_filter is not None) +
             int(self.value_range_filter is not None) +
             int(self.cells_per_row_offset_filter is not None) +
             int(self.cells_per_row_limit_filter is not None) +
             int(self.cells_per_column_limit_filter is not None) +
-            int(self.row_sample_filter is not None) +
-            int(self.strip_value_transformer is not None)
+            int(self.strip_value_transformer is not None) +
+            int(self.apply_label_transformer is not None)
         )
         if values_set != 1:
             raise TypeError('Exactly one value must be set in a row filter')
@@ -724,13 +766,17 @@ class RowFilter(object):
         if not isinstance(other, self.__class__):
             return False
         return (
+            other.sink == self.sink and
+            other.pass_all_filter == self.pass_all_filter and
+            other.block_all_filter == self.block_all_filter and
             other.row_key_regex_filter == self.row_key_regex_filter and
+            other.row_sample_filter == self.row_sample_filter and
             other.family_name_regex_filter == self.family_name_regex_filter and
             (other.column_qualifier_regex_filter ==
              self.column_qualifier_regex_filter) and
-            other.value_regex_filter == self.value_regex_filter and
             other.column_range_filter == self.column_range_filter and
             other.timestamp_range_filter == self.timestamp_range_filter and
+            other.value_regex_filter == self.value_regex_filter and
             other.value_range_filter == self.value_range_filter and
             (other.cells_per_row_offset_filter ==
              self.cells_per_row_offset_filter) and
@@ -738,8 +784,8 @@ class RowFilter(object):
              self.cells_per_row_limit_filter) and
             (other.cells_per_column_limit_filter ==
              self.cells_per_column_limit_filter) and
-            other.row_sample_filter == self.row_sample_filter and
-            other.strip_value_transformer == self.strip_value_transformer
+            other.strip_value_transformer == self.strip_value_transformer and
+            other.apply_label_transformer == self.apply_label_transformer
         )
 
     def __ne__(self, other):
@@ -753,24 +799,33 @@ class RowFilter(object):
         """
         self._check_single_value()
         row_filter_kwargs = {}
+        if self.sink is not None:
+            row_filter_kwargs['sink'] = self.sink
+        if self.pass_all_filter is not None:
+            row_filter_kwargs['pass_all_filter'] = self.pass_all_filter
+        if self.block_all_filter is not None:
+            row_filter_kwargs['block_all_filter'] = self.block_all_filter
         if self.row_key_regex_filter is not None:
             row_filter_kwargs['row_key_regex_filter'] = _to_bytes(
                 self.row_key_regex_filter)
+        if self.row_sample_filter is not None:
+            row_filter_kwargs['row_sample_filter'] = (
+                self.row_sample_filter)
         if self.family_name_regex_filter is not None:
             row_filter_kwargs['family_name_regex_filter'] = (
                 self.family_name_regex_filter)
         if self.column_qualifier_regex_filter is not None:
             row_filter_kwargs['column_qualifier_regex_filter'] = _to_bytes(
                 self.column_qualifier_regex_filter)
-        if self.value_regex_filter is not None:
-            row_filter_kwargs['value_regex_filter'] = _to_bytes(
-                self.value_regex_filter)
         if self.column_range_filter is not None:
             row_filter_kwargs['column_range_filter'] = (
                 self.column_range_filter.to_pb())
         if self.timestamp_range_filter is not None:
             row_filter_kwargs['timestamp_range_filter'] = (
                 self.timestamp_range_filter.to_pb())
+        if self.value_regex_filter is not None:
+            row_filter_kwargs['value_regex_filter'] = _to_bytes(
+                self.value_regex_filter)
         if self.value_range_filter is not None:
             row_filter_kwargs['value_range_filter'] = (
                 self.value_range_filter.to_pb())
@@ -783,12 +838,12 @@ class RowFilter(object):
         if self.cells_per_column_limit_filter is not None:
             row_filter_kwargs['cells_per_column_limit_filter'] = (
                 self.cells_per_column_limit_filter)
-        if self.row_sample_filter is not None:
-            row_filter_kwargs['row_sample_filter'] = (
-                self.row_sample_filter)
         if self.strip_value_transformer is not None:
             row_filter_kwargs['strip_value_transformer'] = (
                 self.strip_value_transformer)
+        if self.apply_label_transformer is not None:
+            row_filter_kwargs['apply_label_transformer'] = (
+                self.apply_label_transformer)
         return data_pb2.RowFilter(**row_filter_kwargs)
 
 

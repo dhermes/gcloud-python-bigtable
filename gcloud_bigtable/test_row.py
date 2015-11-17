@@ -694,18 +694,22 @@ class Test__parse_rmw_row_response(unittest2.TestCase):
 class TestRowFilter(unittest2.TestCase):
 
     _PROPERTIES = (
+        'sink',
+        'pass_all_filter',
+        'block_all_filter',
         'row_key_regex_filter',
+        'row_sample_filter',
         'family_name_regex_filter',
         'column_qualifier_regex_filter',
-        'value_regex_filter',
         'column_range_filter',
         'timestamp_range_filter',
+        'value_regex_filter',
         'value_range_filter',
         'cells_per_row_offset_filter',
         'cells_per_row_limit_filter',
         'cells_per_column_limit_filter',
-        'row_sample_filter',
         'strip_value_transformer',
+        'apply_label_transformer',
     )
 
     def _getTargetClass(self):
@@ -734,11 +738,31 @@ class TestRowFilter(unittest2.TestCase):
             else:
                 self.assertTrue(prop_value is None)
 
+    def test_constructor_sink(self):
+        value = True
+        row_filter = self._makeOne(sink=value)
+        self._row_filter_values_check(row_filter, 'sink', value)
+
+    def test_constructor_pass_all_filter(self):
+        value = True
+        row_filter = self._makeOne(pass_all_filter=value)
+        self._row_filter_values_check(row_filter, 'pass_all_filter', value)
+
+    def test_constructor_block_all_filter(self):
+        value = True
+        row_filter = self._makeOne(block_all_filter=value)
+        self._row_filter_values_check(row_filter, 'block_all_filter', value)
+
     def test_constructor_row_key_regex_filter(self):
         value = b'row-key-regex'
         row_filter = self._makeOne(row_key_regex_filter=value)
         self._row_filter_values_check(
             row_filter, 'row_key_regex_filter', value)
+
+    def test_constructor_row_sample_filter(self):
+        value = 0.25
+        row_filter = self._makeOne(row_sample_filter=value)
+        self._row_filter_values_check(row_filter, 'row_sample_filter', value)
 
     def test_constructor_family_name_regex_filter(self):
         value = u'family-regex'
@@ -751,11 +775,6 @@ class TestRowFilter(unittest2.TestCase):
         row_filter = self._makeOne(column_qualifier_regex_filter=value)
         self._row_filter_values_check(
             row_filter, 'column_qualifier_regex_filter', value)
-
-    def test_constructor_value_regex_filter(self):
-        value = b'value-regex'
-        row_filter = self._makeOne(value_regex_filter=value)
-        self._row_filter_values_check(row_filter, 'value_regex_filter', value)
 
     def test_constructor_column_range_filter(self):
         from gcloud_bigtable.row import ColumnRange
@@ -770,6 +789,11 @@ class TestRowFilter(unittest2.TestCase):
         row_filter = self._makeOne(timestamp_range_filter=value)
         self._row_filter_values_check(row_filter, 'timestamp_range_filter',
                                       value)
+
+    def test_constructor_value_regex_filter(self):
+        value = b'value-regex'
+        row_filter = self._makeOne(value_regex_filter=value)
+        self._row_filter_values_check(row_filter, 'value_regex_filter', value)
 
     def test_constructor_value_range_filter(self):
         from gcloud_bigtable.row import CellValueRange
@@ -796,15 +820,16 @@ class TestRowFilter(unittest2.TestCase):
         self._row_filter_values_check(
             row_filter, 'cells_per_column_limit_filter', value)
 
-    def test_constructor_row_sample_filter(self):
-        value = 0.25
-        row_filter = self._makeOne(row_sample_filter=value)
-        self._row_filter_values_check(row_filter, 'row_sample_filter', value)
-
     def test_constructor_strip_value_transformer(self):
         value = True
         row_filter = self._makeOne(strip_value_transformer=value)
         self._row_filter_values_check(row_filter, 'strip_value_transformer',
+                                      value)
+
+    def test_constructor_apply_label_transformer(self):
+        value = u'label'
+        row_filter = self._makeOne(apply_label_transformer=value)
+        self._row_filter_values_check(row_filter, 'apply_label_transformer',
                                       value)
 
     def test___eq__(self):
@@ -849,9 +874,25 @@ class TestRowFilter(unittest2.TestCase):
         expected_pb = data_pb2.RowFilter(**kwargs)
         self.assertEqual(pb_val, expected_pb)
 
+    def test_to_pb_with_sink(self):
+        value = True
+        self._to_pb_test_helper(sink=value)
+
+    def test_to_pb_with_pass_all_filter(self):
+        value = True
+        self._to_pb_test_helper(pass_all_filter=value)
+
+    def test_to_pb_with_block_all_filter(self):
+        value = True
+        self._to_pb_test_helper(block_all_filter=value)
+
     def test_to_pb_with_row_key_regex_filter(self):
         value = b'row-key-regex'
         self._to_pb_test_helper(row_key_regex_filter=value)
+
+    def test_to_pb_with_row_sample_filter(self):
+        value = 0.25
+        self._to_pb_test_helper(row_sample_filter=value)
 
     def test_to_pb_with_family_name_regex_filter(self):
         value = u'family-regex'
@@ -860,10 +901,6 @@ class TestRowFilter(unittest2.TestCase):
     def test_to_pb_with_column_qualifier_regex_filter(self):
         value = b'column-regex'
         self._to_pb_test_helper(column_qualifier_regex_filter=value)
-
-    def test_to_pb_with_value_regex_filter(self):
-        value = b'value-regex'
-        self._to_pb_test_helper(value_regex_filter=value)
 
     def test_to_pb_with_column_range_filter(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
@@ -886,6 +923,10 @@ class TestRowFilter(unittest2.TestCase):
         pb_val = row_filter.to_pb()
         expected_pb = data_pb2.RowFilter(timestamp_range_filter=value.to_pb())
         self.assertEqual(pb_val, expected_pb)
+
+    def test_to_pb_with_value_regex_filter(self):
+        value = b'value-regex'
+        self._to_pb_test_helper(value_regex_filter=value)
 
     def test_to_pb_with_value_range_filter(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
@@ -910,13 +951,13 @@ class TestRowFilter(unittest2.TestCase):
         value = 10
         self._to_pb_test_helper(cells_per_column_limit_filter=value)
 
-    def test_to_pb_with_row_sample_filter(self):
-        value = 0.25
-        self._to_pb_test_helper(row_sample_filter=value)
-
     def test_to_pb_with_strip_value_transformer(self):
         value = True
         self._to_pb_test_helper(strip_value_transformer=value)
+
+    def test_to_pb_with_apply_label_transformer(self):
+        value = u'label'
+        self._to_pb_test_helper(apply_label_transformer=value)
 
 
 class TestTimestampRange(unittest2.TestCase):
