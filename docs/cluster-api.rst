@@ -30,6 +30,13 @@ with :meth:`Client.list_zones() <gcloud_bigtable.client.Client.list_zones>`:
 You can choose a :class:`string <str>` from among the result to pass to
 the :class:`Cluster <gcloud_bigtable.cluster.Cluster>` constructor.
 
+As of right now, the available zones are
+
+.. code:: python
+
+    >>> zones
+    [u'asia-east1-b', u'europe-west1-c', u'us-central1-c', u'us-central1-b']
+
 Cluster Factory
 ---------------
 
