@@ -16,6 +16,8 @@ to support via HTTP/1.1.
 
 ## Installing gRPC
 
+**NOTE**: These are out-of-date (as of November 18, 2015).
+
 Make sure you have downloaded [`homebrew`][6] on OS X or
 [`linuxbrew`][7] on Linux. (On Linux, also be sure to
 add `brew` to `${PATH}` as instructed.)
