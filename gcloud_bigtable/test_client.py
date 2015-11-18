@@ -373,20 +373,28 @@ class TestClient(unittest2.TestCase):
         # Load private key (via _get_contents) from the key path.
         mock_get_contents.check_called(self, [(private_key_path,)])
 
-    def test_copy(self):
-        from gcloud_bigtable._testing import _MockWithAttachedMethods
-
+    def _copy_test_helper(self, read_only=False, admin=False):
         class Credentials(object):
 
-            def __init__(self, value):
+            scopes = None
+
+            def __init__(self, value=None):
                 self.value = value
+
+            def create_scoped(self, scope):
+                self.scopes = scope
+                return self
 
             def __eq__(self, other):
                 return self.value == other.value
 
-        scoped_creds = Credentials('value')
-        credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(project=PROJECT, credentials=credentials)
+        credentials = Credentials('value')
+        timeout_seconds = 123
+        user_agent = 'you-sir-age-int'
+        client = self._makeOne(project=PROJECT, credentials=credentials,
+                               read_only=read_only, admin=admin,
+                               timeout_seconds=timeout_seconds,
+                               user_agent=user_agent)
         # Put some fake stubs in place so that we can verify they
         # don't get copied.
         client._data_stub_internal = object()
@@ -409,46 +417,14 @@ class TestClient(unittest2.TestCase):
         self.assertEqual(new_client._operations_stub_internal, None)
         self.assertEqual(new_client._table_stub_internal, None)
 
-    def test_copy_partial_failure(self):
-        from gcloud_bigtable._testing import _MockWithAttachedMethods
-        from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable import client as MUT
+    def test_copy(self):
+        self._copy_test_helper()
 
-        captured_stubs = {}
+    def test_copy_admin(self):
+        self._copy_test_helper(admin=True)
 
-        def always_fail(client_to_copy):
-            captured_stubs['data_stub'] = client_to_copy._data_stub_internal
-            captured_stubs['cluster_stub'] = (
-                client_to_copy._cluster_stub_internal)
-            captured_stubs['operations_stub'] = (
-                client_to_copy._operations_stub_internal)
-            captured_stubs['table_stub'] = client_to_copy._table_stub_internal
-            raise ValueError('cannot copy', client_to_copy)
-
-        scoped_creds = object()
-        credentials = _MockWithAttachedMethods(scoped_creds)
-        client = self._makeOne(project=PROJECT, credentials=credentials)
-
-        client._data_stub_internal = data_stub = object()
-        client._cluster_stub_internal = cluster_stub = object()
-        client._operations_stub_internal = operations_stub = object()
-        client._table_stub_internal = table_stub = object()
-        with _Monkey(MUT.copy, deepcopy=always_fail):
-            with self.assertRaises(ValueError):
-                client.copy()
-
-        # Make sure none of the stubs were present in the deepcopy().
-        self.assertEqual(captured_stubs, {
-            'data_stub': None,
-            'cluster_stub': None,
-            'operations_stub': None,
-            'table_stub': None,
-        })
-        # Make sure **all** the stubs were restored after the failure.
-        self.assertEqual(client._data_stub_internal, data_stub)
-        self.assertEqual(client._cluster_stub_internal, cluster_stub)
-        self.assertEqual(client._operations_stub_internal, operations_stub)
-        self.assertEqual(client._table_stub_internal, table_stub)
+    def test_copy_read_only(self):
+        self._copy_test_helper(read_only=True)
 
     def test_credentials_getter(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
