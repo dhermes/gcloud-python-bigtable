@@ -265,10 +265,9 @@ class Cluster(object):
         """
         request_pb = messages_pb2.GetClusterRequest(name=self.name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client._cluster_stub.GetCluster.async(request_pb,
-                                                              timeout_seconds)
         # We expect a `._generated.bigtable_cluster_data_pb2.Cluster`.
-        cluster_pb = response.result()
+        cluster_pb = self.client._cluster_stub.GetCluster(request_pb,
+                                                          timeout_seconds)
 
         # NOTE: _update_from_pb does not check that the project, zone and
         #       cluster ID on the response match the request.
@@ -330,10 +329,9 @@ class Cluster(object):
         """
         request_pb = _prepare_create_request(self)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client._cluster_stub.CreateCluster.async(
-            request_pb, timeout_seconds)
         # We expect an `operations_pb2.Operation`.
-        cluster_pb = response.result()
+        cluster_pb = self.client._cluster_stub.CreateCluster(
+            request_pb, timeout_seconds)
 
         self._operation_type = 'create'
         self._operation_id, self._operation_begin = _process_operation(
@@ -365,10 +363,9 @@ class Cluster(object):
             serve_nodes=self.serve_nodes,
         )
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client._cluster_stub.UpdateCluster.async(
-            request_pb, timeout_seconds)
         # We expect a `._generated.bigtable_cluster_data_pb2.Cluster`.
-        cluster_pb = response.result()
+        cluster_pb = self.client._cluster_stub.UpdateCluster(
+            request_pb, timeout_seconds)
 
         self._operation_type = 'update'
         self._operation_id, self._operation_begin = _process_operation(
@@ -384,10 +381,8 @@ class Cluster(object):
         """
         request_pb = messages_pb2.DeleteClusterRequest(name=self.name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client._cluster_stub.DeleteCluster.async(
-            request_pb, timeout_seconds)
         # We expect a `._generated.empty_pb2.Empty`
-        response.result()
+        self.client._cluster_stub.DeleteCluster(request_pb, timeout_seconds)
 
     def undelete(self, timeout_seconds=None):
         """Undelete this cluster.
@@ -399,10 +394,9 @@ class Cluster(object):
         """
         request_pb = messages_pb2.UndeleteClusterRequest(name=self.name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client._cluster_stub.UndeleteCluster.async(
-            request_pb, timeout_seconds)
         # We expect a `._generated.operations_pb2.Operation`
-        operation_pb2 = response.result()
+        operation_pb2 = self.client._cluster_stub.UndeleteCluster(
+            request_pb, timeout_seconds)
 
         self._operation_type = 'undelete'
         self._operation_id, self._operation_begin = _process_operation(
