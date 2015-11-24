@@ -294,10 +294,9 @@ class Cluster(object):
                           '/operations/%d' % (self._operation_id,))
         request_pb = operations_pb2.GetOperationRequest(name=operation_name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client._operations_stub.GetOperation.async(
-            request_pb, timeout_seconds)
         # We expact a `._generated.operations_pb2.Operation`.
-        operation_pb = response.result()
+        operation_pb = self.client._operations_stub.GetOperation(
+            request_pb, timeout_seconds)
 
         if operation_pb.done:
             self._operation_type = None
