@@ -286,11 +286,11 @@ def beta_create_BigtableClusterService_server(servicer, pool=None, pool_size=Non
   }
   response_serializers = {
     ('google.bigtable.admin.cluster.v1.BigtableClusterService', 'CreateCluster'): google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2.Cluster.SerializeToString,
-    ('google.bigtable.admin.cluster.v1.BigtableClusterService', 'DeleteCluster'): google.protobuf.empty_pb2.Empty.SerializeToString,
+    ('google.bigtable.admin.cluster.v1.BigtableClusterService', 'DeleteCluster'): gcloud_bigtable._generated.empty_pb2.Empty.SerializeToString,
     ('google.bigtable.admin.cluster.v1.BigtableClusterService', 'GetCluster'): google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2.Cluster.SerializeToString,
     ('google.bigtable.admin.cluster.v1.BigtableClusterService', 'ListClusters'): google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.ListClustersResponse.SerializeToString,
     ('google.bigtable.admin.cluster.v1.BigtableClusterService', 'ListZones'): google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.ListZonesResponse.SerializeToString,
-    ('google.bigtable.admin.cluster.v1.BigtableClusterService', 'UndeleteCluster'): google.longrunning.operations_pb2.Operation.SerializeToString,
+    ('google.bigtable.admin.cluster.v1.BigtableClusterService', 'UndeleteCluster'): gcloud_bigtable._generated.operations_pb2.Operation.SerializeToString,
     ('google.bigtable.admin.cluster.v1.BigtableClusterService', 'UpdateCluster'): google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2.Cluster.SerializeToString,
   }
   method_implementations = {
@@ -331,11 +331,11 @@ def beta_create_BigtableClusterService_stub(channel, host=None, metadata_transfo
   }
   response_deserializers = {
     ('google.bigtable.admin.cluster.v1.BigtableClusterService', 'CreateCluster'): google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2.Cluster.FromString,
-    ('google.bigtable.admin.cluster.v1.BigtableClusterService', 'DeleteCluster'): google.protobuf.empty_pb2.Empty.FromString,
+    ('google.bigtable.admin.cluster.v1.BigtableClusterService', 'DeleteCluster'): gcloud_bigtable._generated.empty_pb2.Empty.FromString,
     ('google.bigtable.admin.cluster.v1.BigtableClusterService', 'GetCluster'): google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2.Cluster.FromString,
     ('google.bigtable.admin.cluster.v1.BigtableClusterService', 'ListClusters'): google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.ListClustersResponse.FromString,
     ('google.bigtable.admin.cluster.v1.BigtableClusterService', 'ListZones'): google.bigtable.admin.cluster.v1.bigtable_cluster_service_messages_pb2.ListZonesResponse.FromString,
-    ('google.bigtable.admin.cluster.v1.BigtableClusterService', 'UndeleteCluster'): google.longrunning.operations_pb2.Operation.FromString,
+    ('google.bigtable.admin.cluster.v1.BigtableClusterService', 'UndeleteCluster'): gcloud_bigtable._generated.operations_pb2.Operation.FromString,
     ('google.bigtable.admin.cluster.v1.BigtableClusterService', 'UpdateCluster'): google.bigtable.admin.cluster.v1.bigtable_cluster_data_pb2.Cluster.FromString,
   }
   cardinalities = {

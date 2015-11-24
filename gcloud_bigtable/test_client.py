@@ -611,7 +611,7 @@ class TestClient(unittest2.TestCase):
         client = self._makeOne(project=PROJECT, credentials=credentials)
         expected_result = object()
         mock_make_stub = _MockCalled(expected_result)
-        with _Monkey(MUT, make_stub=mock_make_stub):
+        with _Monkey(MUT, make_beta_stub=mock_make_stub):
             result = client._make_operations_stub()
 
         self.assertTrue(result is expected_result)
@@ -677,7 +677,8 @@ class TestClient(unittest2.TestCase):
                                credentials=credentials, admin=admin)
         stub = _FakeStub()
         mock_make_stub = _MockCalled(stub)
-        with _Monkey(MUT, make_stub=mock_make_stub):
+        with _Monkey(MUT, make_stub=mock_make_stub,
+                     make_beta_stub=mock_make_stub):
             client.start()
 
         self.assertTrue(client._data_stub_internal is stub)

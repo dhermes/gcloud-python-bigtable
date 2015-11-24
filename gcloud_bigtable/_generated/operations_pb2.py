@@ -491,16 +491,16 @@ def beta_create_Operations_server(servicer, pool=None, pool_size=None, default_t
   import gcloud_bigtable._generated.operations_pb2
   import gcloud_bigtable._generated.empty_pb2
   request_deserializers = {
-    ('google.longrunning.Operations', 'CancelOperation'): google.longrunning.operations_pb2.CancelOperationRequest.FromString,
-    ('google.longrunning.Operations', 'DeleteOperation'): google.longrunning.operations_pb2.DeleteOperationRequest.FromString,
-    ('google.longrunning.Operations', 'GetOperation'): google.longrunning.operations_pb2.GetOperationRequest.FromString,
-    ('google.longrunning.Operations', 'ListOperations'): google.longrunning.operations_pb2.ListOperationsRequest.FromString,
+    ('google.longrunning.Operations', 'CancelOperation'): gcloud_bigtable._generated.operations_pb2.CancelOperationRequest.FromString,
+    ('google.longrunning.Operations', 'DeleteOperation'): gcloud_bigtable._generated.operations_pb2.DeleteOperationRequest.FromString,
+    ('google.longrunning.Operations', 'GetOperation'): gcloud_bigtable._generated.operations_pb2.GetOperationRequest.FromString,
+    ('google.longrunning.Operations', 'ListOperations'): gcloud_bigtable._generated.operations_pb2.ListOperationsRequest.FromString,
   }
   response_serializers = {
-    ('google.longrunning.Operations', 'CancelOperation'): google.protobuf.empty_pb2.Empty.SerializeToString,
-    ('google.longrunning.Operations', 'DeleteOperation'): google.protobuf.empty_pb2.Empty.SerializeToString,
-    ('google.longrunning.Operations', 'GetOperation'): google.longrunning.operations_pb2.Operation.SerializeToString,
-    ('google.longrunning.Operations', 'ListOperations'): google.longrunning.operations_pb2.ListOperationsResponse.SerializeToString,
+    ('google.longrunning.Operations', 'CancelOperation'): gcloud_bigtable._generated.empty_pb2.Empty.SerializeToString,
+    ('google.longrunning.Operations', 'DeleteOperation'): gcloud_bigtable._generated.empty_pb2.Empty.SerializeToString,
+    ('google.longrunning.Operations', 'GetOperation'): gcloud_bigtable._generated.operations_pb2.Operation.SerializeToString,
+    ('google.longrunning.Operations', 'ListOperations'): gcloud_bigtable._generated.operations_pb2.ListOperationsResponse.SerializeToString,
   }
   method_implementations = {
     ('google.longrunning.Operations', 'CancelOperation'): face_utilities.unary_unary_inline(servicer.CancelOperation),
@@ -521,16 +521,16 @@ def beta_create_Operations_stub(channel, host=None, metadata_transformer=None, p
   import gcloud_bigtable._generated.operations_pb2
   import gcloud_bigtable._generated.empty_pb2
   request_serializers = {
-    ('google.longrunning.Operations', 'CancelOperation'): google.longrunning.operations_pb2.CancelOperationRequest.SerializeToString,
-    ('google.longrunning.Operations', 'DeleteOperation'): google.longrunning.operations_pb2.DeleteOperationRequest.SerializeToString,
-    ('google.longrunning.Operations', 'GetOperation'): google.longrunning.operations_pb2.GetOperationRequest.SerializeToString,
-    ('google.longrunning.Operations', 'ListOperations'): google.longrunning.operations_pb2.ListOperationsRequest.SerializeToString,
+    ('google.longrunning.Operations', 'CancelOperation'): gcloud_bigtable._generated.operations_pb2.CancelOperationRequest.SerializeToString,
+    ('google.longrunning.Operations', 'DeleteOperation'): gcloud_bigtable._generated.operations_pb2.DeleteOperationRequest.SerializeToString,
+    ('google.longrunning.Operations', 'GetOperation'): gcloud_bigtable._generated.operations_pb2.GetOperationRequest.SerializeToString,
+    ('google.longrunning.Operations', 'ListOperations'): gcloud_bigtable._generated.operations_pb2.ListOperationsRequest.SerializeToString,
   }
   response_deserializers = {
-    ('google.longrunning.Operations', 'CancelOperation'): google.protobuf.empty_pb2.Empty.FromString,
-    ('google.longrunning.Operations', 'DeleteOperation'): google.protobuf.empty_pb2.Empty.FromString,
-    ('google.longrunning.Operations', 'GetOperation'): google.longrunning.operations_pb2.Operation.FromString,
-    ('google.longrunning.Operations', 'ListOperations'): google.longrunning.operations_pb2.ListOperationsResponse.FromString,
+    ('google.longrunning.Operations', 'CancelOperation'): gcloud_bigtable._generated.empty_pb2.Empty.FromString,
+    ('google.longrunning.Operations', 'DeleteOperation'): gcloud_bigtable._generated.empty_pb2.Empty.FromString,
+    ('google.longrunning.Operations', 'GetOperation'): gcloud_bigtable._generated.operations_pb2.Operation.FromString,
+    ('google.longrunning.Operations', 'ListOperations'): gcloud_bigtable._generated.operations_pb2.ListOperationsResponse.FromString,
   }
   cardinalities = {
     'CancelOperation': cardinality.Cardinality.UNARY_UNARY,

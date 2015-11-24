@@ -444,6 +444,55 @@ class Test_make_stub(unittest2.TestCase):
         self.assertEqual(client._called, [])
 
 
+class Test_make_beta_stub(unittest2.TestCase):
+
+    def _callFUT(self, credentials, stub_factory, host, port):
+        from gcloud_bigtable._helpers import make_beta_stub
+        return make_beta_stub(credentials, stub_factory, host, port)
+
+    def test_it(self):
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _MockWithAttachedMethods
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable import _helpers as MUT
+
+        mock_result = object()
+        custom_factory = _MockCalled(mock_result)
+        transformed = object()
+        transformer = _MockCalled(transformed)
+
+        client_creds = object()
+        channel = object()
+        implementations_mod = _MockWithAttachedMethods(client_creds, channel)
+
+        host = 'HOST'
+        port = 1025
+        certs = 'FOOBAR'
+        client = _MockWithAttachedMethods()
+        with _Monkey(MUT, get_certs=lambda: certs,
+                     implementations=implementations_mod,
+                     MetadataTransformer=transformer):
+            result = self._callFUT(client, custom_factory, host, port)
+
+        self.assertTrue(result is mock_result)
+        custom_factory.check_called(
+            self,
+            [(channel,)],
+            [{
+                'host': host,
+                'metadata_transformer': transformed,
+            }],
+        )
+        transformer.check_called(self, [(client,)])
+        self.assertEqual(client._called, [])
+        # Check what was called on the module.
+        self.assertEqual(implementations_mod._called, [
+            ('ssl_client_credentials', (certs,),
+             {'private_key': None, 'certificate_chain': None}),
+            ('secure_channel', (host, port, client_creds), {}),
+        ])
+
+
 class Test__parse_family_pb(unittest2.TestCase):
 
     def _callFUT(self, family_pb):

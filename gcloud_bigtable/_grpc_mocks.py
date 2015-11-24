@@ -29,6 +29,9 @@ class AsyncResult(object):
 class MethodMock(object):
     """Mock for :class:`grpc.framework.alpha._reexport._UnaryUnarySyncAsync`.
 
+    Can also be used for beta equivalent:
+    :class:`grpc.framework.crust.implementations._UnaryUnaryMultiCallable`
+
     May need to be callable and needs to (in our use) have an
     ``async`` method.
     """

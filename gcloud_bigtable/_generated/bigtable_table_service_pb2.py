@@ -316,11 +316,11 @@ def beta_create_BigtableTableService_server(servicer, pool=None, pool_size=None,
   response_serializers = {
     ('google.bigtable.admin.table.v1.BigtableTableService', 'CreateColumnFamily'): google.bigtable.admin.table.v1.bigtable_table_data_pb2.ColumnFamily.SerializeToString,
     ('google.bigtable.admin.table.v1.BigtableTableService', 'CreateTable'): google.bigtable.admin.table.v1.bigtable_table_data_pb2.Table.SerializeToString,
-    ('google.bigtable.admin.table.v1.BigtableTableService', 'DeleteColumnFamily'): google.protobuf.empty_pb2.Empty.SerializeToString,
-    ('google.bigtable.admin.table.v1.BigtableTableService', 'DeleteTable'): google.protobuf.empty_pb2.Empty.SerializeToString,
+    ('google.bigtable.admin.table.v1.BigtableTableService', 'DeleteColumnFamily'): gcloud_bigtable._generated.empty_pb2.Empty.SerializeToString,
+    ('google.bigtable.admin.table.v1.BigtableTableService', 'DeleteTable'): gcloud_bigtable._generated.empty_pb2.Empty.SerializeToString,
     ('google.bigtable.admin.table.v1.BigtableTableService', 'GetTable'): google.bigtable.admin.table.v1.bigtable_table_data_pb2.Table.SerializeToString,
     ('google.bigtable.admin.table.v1.BigtableTableService', 'ListTables'): google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2.ListTablesResponse.SerializeToString,
-    ('google.bigtable.admin.table.v1.BigtableTableService', 'RenameTable'): google.protobuf.empty_pb2.Empty.SerializeToString,
+    ('google.bigtable.admin.table.v1.BigtableTableService', 'RenameTable'): gcloud_bigtable._generated.empty_pb2.Empty.SerializeToString,
     ('google.bigtable.admin.table.v1.BigtableTableService', 'UpdateColumnFamily'): google.bigtable.admin.table.v1.bigtable_table_data_pb2.ColumnFamily.SerializeToString,
   }
   method_implementations = {
@@ -366,11 +366,11 @@ def beta_create_BigtableTableService_stub(channel, host=None, metadata_transform
   response_deserializers = {
     ('google.bigtable.admin.table.v1.BigtableTableService', 'CreateColumnFamily'): google.bigtable.admin.table.v1.bigtable_table_data_pb2.ColumnFamily.FromString,
     ('google.bigtable.admin.table.v1.BigtableTableService', 'CreateTable'): google.bigtable.admin.table.v1.bigtable_table_data_pb2.Table.FromString,
-    ('google.bigtable.admin.table.v1.BigtableTableService', 'DeleteColumnFamily'): google.protobuf.empty_pb2.Empty.FromString,
-    ('google.bigtable.admin.table.v1.BigtableTableService', 'DeleteTable'): google.protobuf.empty_pb2.Empty.FromString,
+    ('google.bigtable.admin.table.v1.BigtableTableService', 'DeleteColumnFamily'): gcloud_bigtable._generated.empty_pb2.Empty.FromString,
+    ('google.bigtable.admin.table.v1.BigtableTableService', 'DeleteTable'): gcloud_bigtable._generated.empty_pb2.Empty.FromString,
     ('google.bigtable.admin.table.v1.BigtableTableService', 'GetTable'): google.bigtable.admin.table.v1.bigtable_table_data_pb2.Table.FromString,
     ('google.bigtable.admin.table.v1.BigtableTableService', 'ListTables'): google.bigtable.admin.table.v1.bigtable_table_service_messages_pb2.ListTablesResponse.FromString,
-    ('google.bigtable.admin.table.v1.BigtableTableService', 'RenameTable'): google.protobuf.empty_pb2.Empty.FromString,
+    ('google.bigtable.admin.table.v1.BigtableTableService', 'RenameTable'): gcloud_bigtable._generated.empty_pb2.Empty.FromString,
     ('google.bigtable.admin.table.v1.BigtableTableService', 'UpdateColumnFamily'): google.bigtable.admin.table.v1.bigtable_table_data_pb2.ColumnFamily.FromString,
   }
   cardinalities = {

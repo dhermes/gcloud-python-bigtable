@@ -23,6 +23,8 @@ import datetime
 import pytz
 import six
 
+from grpc.beta import implementations
+
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
@@ -272,7 +274,7 @@ def get_certs():
 
 
 def make_stub(client, stub_factory, host, port):
-    """Makes a stub for the an API.
+    """Makes a stub for an RPC service.
 
     :type client: :class:`.client.Client`
     :param client: The client that owns the cluster. Provides authorization and
@@ -297,6 +299,39 @@ def make_stub(client, stub_factory, host, port):
                         metadata_transformer=custom_metadata_transformer,
                         secure=True,
                         root_certificates=get_certs())
+
+
+def make_beta_stub(client, stub_factory, host, port):
+    """Makes a (beta) stub for an RPC service.
+
+    Uses the beta implementation of gRPC.
+
+    :type client: :class:`.client.Client`
+    :param client: The client that owns the cluster. Provides authorization and
+                   user agent.
+
+    :type stub_factory: callable
+    :param stub_factory: A factory which will create a gRPC stub for
+                         a given service.
+
+    :type host: str
+    :param host: The host for the service.
+
+    :type port: int
+    :param port: The port for the service.
+
+    :rtype: :class:`grpc.beta._stub._AutoIntermediary`
+    :returns: The stub object used to make gRPC requests to the
+              Data API.
+    """
+    root_certificates = get_certs()
+    client_credentials = implementations.ssl_client_credentials(
+        root_certificates, private_key=None, certificate_chain=None)
+    channel = implementations.secure_channel(
+        host, port, client_credentials)
+    custom_metadata_transformer = MetadataTransformer(client)
+    return stub_factory(channel, host=host,
+                        metadata_transformer=custom_metadata_transformer)
 
 
 def _parse_family_pb(family_pb):
