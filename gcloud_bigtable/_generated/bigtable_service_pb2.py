@@ -215,18 +215,18 @@ def beta_create_BigtableService_server(servicer, pool=None, pool_size=None, defa
   import gcloud_bigtable._generated.bigtable_service_messages_pb2
   import gcloud_bigtable._generated.bigtable_data_pb2
   request_deserializers = {
-    ('google.bigtable.v1.BigtableService', 'CheckAndMutateRow'): google.bigtable.v1.bigtable_service_messages_pb2.CheckAndMutateRowRequest.FromString,
-    ('google.bigtable.v1.BigtableService', 'MutateRow'): google.bigtable.v1.bigtable_service_messages_pb2.MutateRowRequest.FromString,
-    ('google.bigtable.v1.BigtableService', 'ReadModifyWriteRow'): google.bigtable.v1.bigtable_service_messages_pb2.ReadModifyWriteRowRequest.FromString,
-    ('google.bigtable.v1.BigtableService', 'ReadRows'): google.bigtable.v1.bigtable_service_messages_pb2.ReadRowsRequest.FromString,
-    ('google.bigtable.v1.BigtableService', 'SampleRowKeys'): google.bigtable.v1.bigtable_service_messages_pb2.SampleRowKeysRequest.FromString,
+    ('google.bigtable.v1.BigtableService', 'CheckAndMutateRow'): gcloud_bigtable._generated.bigtable_service_messages_pb2.CheckAndMutateRowRequest.FromString,
+    ('google.bigtable.v1.BigtableService', 'MutateRow'): gcloud_bigtable._generated.bigtable_service_messages_pb2.MutateRowRequest.FromString,
+    ('google.bigtable.v1.BigtableService', 'ReadModifyWriteRow'): gcloud_bigtable._generated.bigtable_service_messages_pb2.ReadModifyWriteRowRequest.FromString,
+    ('google.bigtable.v1.BigtableService', 'ReadRows'): gcloud_bigtable._generated.bigtable_service_messages_pb2.ReadRowsRequest.FromString,
+    ('google.bigtable.v1.BigtableService', 'SampleRowKeys'): gcloud_bigtable._generated.bigtable_service_messages_pb2.SampleRowKeysRequest.FromString,
   }
   response_serializers = {
-    ('google.bigtable.v1.BigtableService', 'CheckAndMutateRow'): google.bigtable.v1.bigtable_service_messages_pb2.CheckAndMutateRowResponse.SerializeToString,
+    ('google.bigtable.v1.BigtableService', 'CheckAndMutateRow'): gcloud_bigtable._generated.bigtable_service_messages_pb2.CheckAndMutateRowResponse.SerializeToString,
     ('google.bigtable.v1.BigtableService', 'MutateRow'): gcloud_bigtable._generated.empty_pb2.Empty.SerializeToString,
-    ('google.bigtable.v1.BigtableService', 'ReadModifyWriteRow'): google.bigtable.v1.bigtable_data_pb2.Row.SerializeToString,
-    ('google.bigtable.v1.BigtableService', 'ReadRows'): google.bigtable.v1.bigtable_service_messages_pb2.ReadRowsResponse.SerializeToString,
-    ('google.bigtable.v1.BigtableService', 'SampleRowKeys'): google.bigtable.v1.bigtable_service_messages_pb2.SampleRowKeysResponse.SerializeToString,
+    ('google.bigtable.v1.BigtableService', 'ReadModifyWriteRow'): gcloud_bigtable._generated.bigtable_data_pb2.Row.SerializeToString,
+    ('google.bigtable.v1.BigtableService', 'ReadRows'): gcloud_bigtable._generated.bigtable_service_messages_pb2.ReadRowsResponse.SerializeToString,
+    ('google.bigtable.v1.BigtableService', 'SampleRowKeys'): gcloud_bigtable._generated.bigtable_service_messages_pb2.SampleRowKeysResponse.SerializeToString,
   }
   method_implementations = {
     ('google.bigtable.v1.BigtableService', 'CheckAndMutateRow'): face_utilities.unary_unary_inline(servicer.CheckAndMutateRow),
@@ -250,18 +250,18 @@ def beta_create_BigtableService_stub(channel, host=None, metadata_transformer=No
   import gcloud_bigtable._generated.bigtable_service_messages_pb2
   import gcloud_bigtable._generated.bigtable_data_pb2
   request_serializers = {
-    ('google.bigtable.v1.BigtableService', 'CheckAndMutateRow'): google.bigtable.v1.bigtable_service_messages_pb2.CheckAndMutateRowRequest.SerializeToString,
-    ('google.bigtable.v1.BigtableService', 'MutateRow'): google.bigtable.v1.bigtable_service_messages_pb2.MutateRowRequest.SerializeToString,
-    ('google.bigtable.v1.BigtableService', 'ReadModifyWriteRow'): google.bigtable.v1.bigtable_service_messages_pb2.ReadModifyWriteRowRequest.SerializeToString,
-    ('google.bigtable.v1.BigtableService', 'ReadRows'): google.bigtable.v1.bigtable_service_messages_pb2.ReadRowsRequest.SerializeToString,
-    ('google.bigtable.v1.BigtableService', 'SampleRowKeys'): google.bigtable.v1.bigtable_service_messages_pb2.SampleRowKeysRequest.SerializeToString,
+    ('google.bigtable.v1.BigtableService', 'CheckAndMutateRow'): gcloud_bigtable._generated.bigtable_service_messages_pb2.CheckAndMutateRowRequest.SerializeToString,
+    ('google.bigtable.v1.BigtableService', 'MutateRow'): gcloud_bigtable._generated.bigtable_service_messages_pb2.MutateRowRequest.SerializeToString,
+    ('google.bigtable.v1.BigtableService', 'ReadModifyWriteRow'): gcloud_bigtable._generated.bigtable_service_messages_pb2.ReadModifyWriteRowRequest.SerializeToString,
+    ('google.bigtable.v1.BigtableService', 'ReadRows'): gcloud_bigtable._generated.bigtable_service_messages_pb2.ReadRowsRequest.SerializeToString,
+    ('google.bigtable.v1.BigtableService', 'SampleRowKeys'): gcloud_bigtable._generated.bigtable_service_messages_pb2.SampleRowKeysRequest.SerializeToString,
   }
   response_deserializers = {
-    ('google.bigtable.v1.BigtableService', 'CheckAndMutateRow'): google.bigtable.v1.bigtable_service_messages_pb2.CheckAndMutateRowResponse.FromString,
+    ('google.bigtable.v1.BigtableService', 'CheckAndMutateRow'): gcloud_bigtable._generated.bigtable_service_messages_pb2.CheckAndMutateRowResponse.FromString,
     ('google.bigtable.v1.BigtableService', 'MutateRow'): gcloud_bigtable._generated.empty_pb2.Empty.FromString,
-    ('google.bigtable.v1.BigtableService', 'ReadModifyWriteRow'): google.bigtable.v1.bigtable_data_pb2.Row.FromString,
-    ('google.bigtable.v1.BigtableService', 'ReadRows'): google.bigtable.v1.bigtable_service_messages_pb2.ReadRowsResponse.FromString,
-    ('google.bigtable.v1.BigtableService', 'SampleRowKeys'): google.bigtable.v1.bigtable_service_messages_pb2.SampleRowKeysResponse.FromString,
+    ('google.bigtable.v1.BigtableService', 'ReadModifyWriteRow'): gcloud_bigtable._generated.bigtable_data_pb2.Row.FromString,
+    ('google.bigtable.v1.BigtableService', 'ReadRows'): gcloud_bigtable._generated.bigtable_service_messages_pb2.ReadRowsResponse.FromString,
+    ('google.bigtable.v1.BigtableService', 'SampleRowKeys'): gcloud_bigtable._generated.bigtable_service_messages_pb2.SampleRowKeysResponse.FromString,
   }
   cardinalities = {
     'CheckAndMutateRow': cardinality.Cardinality.UNARY_UNARY,
