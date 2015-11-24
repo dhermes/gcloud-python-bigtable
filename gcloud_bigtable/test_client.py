@@ -639,7 +639,7 @@ class TestClient(unittest2.TestCase):
         client = self._makeOne(project=PROJECT, credentials=credentials)
         expected_result = object()
         mock_make_stub = _MockCalled(expected_result)
-        with _Monkey(MUT, make_stub=mock_make_stub):
+        with _Monkey(MUT, make_beta_stub=mock_make_stub):
             result = client._make_table_stub()
 
         self.assertTrue(result is expected_result)

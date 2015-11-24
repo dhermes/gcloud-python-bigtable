@@ -53,8 +53,8 @@ from gcloud_bigtable._helpers import make_beta_stub
 from gcloud_bigtable.cluster import Cluster
 
 
-TABLE_STUB_FACTORY = (bigtable_table_service_pb2.
-                      early_adopter_create_BigtableTableService_stub)
+TABLE_STUB_FACTORY = (
+    bigtable_table_service_pb2.beta_create_BigtableTableService_stub)
 TABLE_ADMIN_HOST = 'bigtabletableadmin.googleapis.com'
 """Table Admin API request host."""
 TABLE_ADMIN_PORT = 443
@@ -456,7 +456,7 @@ class Client(object):
     def _make_cluster_stub(self):
         """Creates gRPC stub to make requests to the Cluster Admin API.
 
-        :rtype: :class:`grpc.early_adopter.implementations._Stub`
+        :rtype: :class:`grpc.beta._stub._AutoIntermediary`
         :returns: A gRPC stub object.
         """
         return make_beta_stub(self, CLUSTER_STUB_FACTORY,
@@ -477,11 +477,11 @@ class Client(object):
     def _make_table_stub(self):
         """Creates gRPC stub to make requests to the Table Admin API.
 
-        :rtype: :class:`grpc.early_adopter.implementations._Stub`
+        :rtype: :class:`grpc.beta._stub._AutoIntermediary`
         :returns: A gRPC stub object.
         """
-        return make_stub(self, TABLE_STUB_FACTORY,
-                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
+        return make_beta_stub(self, TABLE_STUB_FACTORY,
+                              TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
 
     def is_started(self):
         """Check if the client has been started.
