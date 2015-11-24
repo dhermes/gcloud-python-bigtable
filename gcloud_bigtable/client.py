@@ -48,7 +48,7 @@ from gcloud_bigtable._generated import bigtable_cluster_service_pb2
 from gcloud_bigtable._generated import bigtable_service_pb2
 from gcloud_bigtable._generated import bigtable_table_service_pb2
 from gcloud_bigtable._generated import operations_pb2
-from gcloud_bigtable._helpers import make_beta_stub
+from gcloud_bigtable._helpers import make_stub
 from gcloud_bigtable.cluster import Cluster
 
 
@@ -448,8 +448,8 @@ class Client(object):
         :rtype: :class:`grpc.early_adopter.implementations._Stub`
         :returns: A gRPC stub object.
         """
-        return make_beta_stub(self, DATA_STUB_FACTORY,
-                              DATA_API_HOST, DATA_API_PORT)
+        return make_stub(self, DATA_STUB_FACTORY,
+                         DATA_API_HOST, DATA_API_PORT)
 
     def _make_cluster_stub(self):
         """Creates gRPC stub to make requests to the Cluster Admin API.
@@ -457,8 +457,8 @@ class Client(object):
         :rtype: :class:`grpc.beta._stub._AutoIntermediary`
         :returns: A gRPC stub object.
         """
-        return make_beta_stub(self, CLUSTER_STUB_FACTORY,
-                              CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
+        return make_stub(self, CLUSTER_STUB_FACTORY,
+                         CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
 
     def _make_operations_stub(self):
         """Creates gRPC stub to make requests to the Operations API.
@@ -469,8 +469,8 @@ class Client(object):
         :rtype: :class:`grpc.beta._stub._AutoIntermediary`
         :returns: A gRPC stub object.
         """
-        return make_beta_stub(self, OPERATIONS_STUB_FACTORY,
-                              CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
+        return make_stub(self, OPERATIONS_STUB_FACTORY,
+                         CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
 
     def _make_table_stub(self):
         """Creates gRPC stub to make requests to the Table Admin API.
@@ -478,8 +478,8 @@ class Client(object):
         :rtype: :class:`grpc.beta._stub._AutoIntermediary`
         :returns: A gRPC stub object.
         """
-        return make_beta_stub(self, TABLE_STUB_FACTORY,
-                              TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
+        return make_stub(self, TABLE_STUB_FACTORY,
+                         TABLE_ADMIN_HOST, TABLE_ADMIN_PORT)
 
     def is_started(self):
         """Check if the client has been started.
