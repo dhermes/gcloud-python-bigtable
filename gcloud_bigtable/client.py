@@ -60,8 +60,8 @@ TABLE_ADMIN_HOST = 'bigtabletableadmin.googleapis.com'
 TABLE_ADMIN_PORT = 443
 """Table Admin API request port."""
 
-CLUSTER_STUB_FACTORY = (bigtable_cluster_service_pb2.
-                        early_adopter_create_BigtableClusterService_stub)
+CLUSTER_STUB_FACTORY = (
+    bigtable_cluster_service_pb2.beta_create_BigtableClusterService_stub)
 CLUSTER_ADMIN_HOST = 'bigtableclusteradmin.googleapis.com'
 """Cluster Admin API request host."""
 CLUSTER_ADMIN_PORT = 443
@@ -459,8 +459,8 @@ class Client(object):
         :rtype: :class:`grpc.early_adopter.implementations._Stub`
         :returns: A gRPC stub object.
         """
-        return make_stub(self, CLUSTER_STUB_FACTORY,
-                         CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
+        return make_beta_stub(self, CLUSTER_STUB_FACTORY,
+                              CLUSTER_ADMIN_HOST, CLUSTER_ADMIN_PORT)
 
     def _make_operations_stub(self):
         """Creates gRPC stub to make requests to the Operations API.
@@ -568,10 +568,9 @@ class Client(object):
         """
         request_pb = messages_pb2.ListZonesRequest(name=self.project_name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self._cluster_stub.ListZones.async(request_pb,
-                                                      timeout_seconds)
         # We expect a `.messages_pb2.ListZonesResponse`
-        list_zones_response = response.result()
+        list_zones_response = self._cluster_stub.ListZones(request_pb,
+                                                           timeout_seconds)
 
         result = []
         for zone in list_zones_response.zones:
@@ -595,10 +594,9 @@ class Client(object):
         """
         request_pb = messages_pb2.ListClustersRequest(name=self.project_name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self._cluster_stub.ListClusters.async(request_pb,
-                                                         timeout_seconds)
         # We expect a `.messages_pb2.ListClustersResponse`
-        list_clusters_response = response.result()
+        list_clusters_response = self._cluster_stub.ListClusters(
+            request_pb, timeout_seconds)
 
         failed_zones = [zone.display_name
                         for zone in list_clusters_response.failed_zones]
