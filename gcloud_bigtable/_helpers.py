@@ -276,35 +276,7 @@ def get_certs():
 def make_stub(client, stub_factory, host, port):
     """Makes a stub for an RPC service.
 
-    :type client: :class:`.client.Client`
-    :param client: The client that owns the cluster. Provides authorization and
-                   user agent.
-
-    :type stub_factory: callable
-    :param stub_factory: A factory which will create a gRPC stub for
-                         a given service.
-
-    :type host: str
-    :param host: The host for the service.
-
-    :type port: int
-    :param port: The port for the service.
-
-    :rtype: :class:`grpc.early_adopter.implementations._Stub`
-    :returns: The stub object used to make gRPC requests to the
-              Data API.
-    """
-    custom_metadata_transformer = MetadataTransformer(client)
-    return stub_factory(host, port,
-                        metadata_transformer=custom_metadata_transformer,
-                        secure=True,
-                        root_certificates=get_certs())
-
-
-def make_beta_stub(client, stub_factory, host, port):
-    """Makes a (beta) stub for an RPC service.
-
-    Uses the beta implementation of gRPC.
+    Uses / depends on the beta implementation of gRPC.
 
     :type client: :class:`.client.Client`
     :param client: The client that owns the cluster. Provides authorization and
