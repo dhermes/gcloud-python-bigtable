@@ -416,10 +416,8 @@ class Row(object):
             mutations=mutations_list,
         )
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client._data_stub.MutateRow.async(request_pb,
-                                                          timeout_seconds)
         # We expect a `._generated.empty_pb2.Empty`.
-        response.result()
+        self.client._data_stub.MutateRow(request_pb, timeout_seconds)
 
     def _commit_check_and_mutate(self, timeout_seconds=None):
         """Makes a ``CheckAndMutateRow`` API request.
@@ -458,11 +456,10 @@ class Row(object):
             false_mutations=false_mutations,
         )
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client._data_stub.CheckAndMutateRow.async(
-            request_pb, timeout_seconds)
         # We expect a `.messages_pb2.CheckAndMutateRowResponse`
-        check_and_mutate_row_response = response.result()
-        return check_and_mutate_row_response.predicate_matched
+        resp = self.client._data_stub.CheckAndMutateRow(
+            request_pb, timeout_seconds)
+        return resp.predicate_matched
 
     def clear_mutations(self):
         """Removes all currently accumulated mutations on the current row."""
@@ -566,10 +563,9 @@ class Row(object):
             rules=self._rule_pb_list,
         )
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client._data_stub.ReadModifyWriteRow.async(
-            request_pb, timeout_seconds)
         # We expect a `.data_pb2.Row`
-        row_response = response.result()
+        row_response = self.client._data_stub.ReadModifyWriteRow(
+            request_pb, timeout_seconds)
 
         # Reset modifications after commit-ing request.
         self.clear_modification_rules()

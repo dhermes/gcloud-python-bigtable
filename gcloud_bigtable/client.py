@@ -48,7 +48,6 @@ from gcloud_bigtable._generated import bigtable_cluster_service_pb2
 from gcloud_bigtable._generated import bigtable_service_pb2
 from gcloud_bigtable._generated import bigtable_table_service_pb2
 from gcloud_bigtable._generated import operations_pb2
-from gcloud_bigtable._helpers import make_stub
 from gcloud_bigtable._helpers import make_beta_stub
 from gcloud_bigtable.cluster import Cluster
 
@@ -67,8 +66,7 @@ CLUSTER_ADMIN_HOST = 'bigtableclusteradmin.googleapis.com'
 CLUSTER_ADMIN_PORT = 443
 """Cluster Admin API request port."""
 
-DATA_STUB_FACTORY = (bigtable_service_pb2.
-                     early_adopter_create_BigtableService_stub)
+DATA_STUB_FACTORY = bigtable_service_pb2.beta_create_BigtableService_stub
 DATA_API_HOST = 'bigtable.googleapis.com'
 """Data API request host."""
 DATA_API_PORT = 443
@@ -450,8 +448,8 @@ class Client(object):
         :rtype: :class:`grpc.early_adopter.implementations._Stub`
         :returns: A gRPC stub object.
         """
-        return make_stub(self, DATA_STUB_FACTORY,
-                         DATA_API_HOST, DATA_API_PORT)
+        return make_beta_stub(self, DATA_STUB_FACTORY,
+                              DATA_API_HOST, DATA_API_PORT)
 
     def _make_cluster_stub(self):
         """Creates gRPC stub to make requests to the Cluster Admin API.
