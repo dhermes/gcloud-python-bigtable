@@ -417,10 +417,9 @@ class Cluster(object):
         """
         request_pb = table_messages_pb2.ListTablesRequest(name=self.name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client._table_stub.ListTables.async(request_pb,
-                                                            timeout_seconds)
         # We expect a `table_messages_pb2.ListTablesResponse`
-        table_list_pb = response.result()
+        table_list_pb = self.client._table_stub.ListTables(request_pb,
+                                                           timeout_seconds)
 
         result = []
         for table_pb in table_list_pb.tables:

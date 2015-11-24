@@ -189,10 +189,8 @@ class Table(object):
             table_id=self.table_id,
         )
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client._table_stub.CreateTable.async(request_pb,
-                                                             timeout_seconds)
         # We expect a `._generated.bigtable_table_data_pb2.Table`
-        response.result()
+        self.client._table_stub.CreateTable(request_pb, timeout_seconds)
 
     def rename(self, new_table_id, timeout_seconds=None):
         """Rename this table.
@@ -223,10 +221,8 @@ class Table(object):
             new_id=new_table_id,
         )
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client._table_stub.RenameTable.async(request_pb,
-                                                             timeout_seconds)
         # We expect a `._generated.empty_pb2.Empty`
-        response.result()
+        self.client._table_stub.RenameTable(request_pb, timeout_seconds)
 
         self.table_id = new_table_id
 
@@ -239,10 +235,8 @@ class Table(object):
         """
         request_pb = messages_pb2.DeleteTableRequest(name=self.name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client._table_stub.DeleteTable.async(request_pb,
-                                                             timeout_seconds)
         # We expect a `._generated.empty_pb2.Empty`
-        response.result()
+        self.client._table_stub.DeleteTable(request_pb, timeout_seconds)
 
     def list_column_families(self, timeout_seconds=None):
         """Check if this table exists.
@@ -260,10 +254,9 @@ class Table(object):
         """
         request_pb = messages_pb2.GetTableRequest(name=self.name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        response = self.client._table_stub.GetTable.async(request_pb,
-                                                          timeout_seconds)
         # We expect a `._generated.bigtable_table_data_pb2.Table`
-        table_pb = response.result()
+        table_pb = self.client._table_stub.GetTable(request_pb,
+                                                    timeout_seconds)
 
         result = {}
         for column_family_id, value_pb in table_pb.column_families.items():
