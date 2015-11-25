@@ -16,13 +16,10 @@
 
 
 class MethodMock(object):
-    """Mock for :class:`grpc.framework.alpha._reexport._UnaryUnarySyncAsync`.
+    """Mock for API method attached to a gRPC stub.
 
-    Can also be used for beta equivalent:
+    In the beta implementation, these are of type.
     :class:`grpc.framework.crust.implementations._UnaryUnaryMultiCallable`
-
-    May need to be callable and needs to (in our use) have an
-    ``async`` method.
     """
 
     def __init__(self, name, factory):
