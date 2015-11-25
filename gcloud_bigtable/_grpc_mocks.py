@@ -29,8 +29,8 @@ class MethodMock(object):
     def __call__(self, *args, **kwargs):
         """Sync method meant to mock a gRPC stub request."""
         self._factory.method_calls.append((self._name, args, kwargs))
-        curr_result = self._factory.results[0]
-        self._factory.results = self._factory.results[1:]
+        curr_result, self._factory.results = (self._factory.results[0],
+                                              self._factory.results[1:])
         return curr_result
 
 
