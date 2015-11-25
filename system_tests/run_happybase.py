@@ -50,6 +50,7 @@ class Config(object):
 
     connection = None
     table = None
+    delete_cluster = False
 
 
 def set_hbase_connection():
@@ -58,19 +59,29 @@ def set_hbase_connection():
 
 
 def set_cloud_bigtable_connection():
+    from grpc.framework.interfaces.face.face import NetworkError
     from gcloud_bigtable import client as client_mod
     from gcloud_bigtable.happybase import Connection
 
-    # NOTE: This assumes that the "gcloud-python" cluster in the
-    #       "us-central1-c" zone already exists for this project.
-    #       We are avoided checking "client.reload()" since the
-    #       alpha version of grcpio does not correctly handle
-    #       request timeouts.
     client_mod.PROJECT_ENV_VAR = 'GCLOUD_TESTS_PROJECT_ID'
     client = client_mod.Client(admin=True)
     zone = 'us-central1-c'
     cluster_id = 'gcloud-python'
     cluster = client.cluster(zone, cluster_id)
+    client.start()
+    try:
+        cluster.reload()
+    except NetworkError:
+        cluster.create()
+        count = 0
+        while not cluster.operation_finished():
+            count += 1
+            if count > 5:
+                raise NetworkError('Create cluster timed out')
+            time.sleep(0.5)
+        # If our test run created a new cluster, then we tell the
+        # config to clean it up when done.
+        Config.delete_cluster = True
 
     Config.connection = Connection(cluster=cluster)
 
@@ -102,6 +113,8 @@ def tearDownModule():
     connection = get_connection()
     if not USING_HBASE:
         connection.delete_table(TABLE_NAME)
+        if Config.delete_cluster:
+            connection._cluster.delete()
     connection.close()
 
 
@@ -740,9 +753,9 @@ class TestTable_put(BaseTableTest):
         else:
             families = table.families()
 
-        cell_tll = TTL_FOR_TEST
+        cell_ttl = TTL_FOR_TEST
         chosen_fam = COL_FAM2
-        self.assertEqual(families[chosen_fam]['time_to_live'], cell_tll)
+        self.assertEqual(families[chosen_fam]['time_to_live'], cell_ttl)
         chosen_col = COL3
         self.assertTrue(chosen_col.startswith(chosen_fam + ':'))
 
@@ -756,9 +769,9 @@ class TestTable_put(BaseTableTest):
         self.assertEqual(all_values_before, [value1])
 
         # Make sure we don't sleep for a problematic length.
-        self.assertTrue(cell_tll < 10)
+        self.assertTrue(cell_ttl < 10)
         # Wait for time-to-live eviction to occur.
-        time.sleep(cell_tll + 0.5)
+        time.sleep(cell_ttl + 0.5)
         all_values_after = table.cells(ROW_KEY1, chosen_col)
         self.assertEqual(all_values_after, [])
 
