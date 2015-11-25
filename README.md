@@ -16,54 +16,31 @@ to support via HTTP/1.1.
 
 ## Installing gRPC
 
-**NOTE**: These are out-of-date (as of November 18, 2015).
-
-Make sure you have downloaded [`homebrew`][6] on OS X or
-[`linuxbrew`][7] on Linux. (On Linux, also be sure to
-add `brew` to `${PATH}` as instructed.)
-
-First, install the gRPC core (C/C++) library
+Before you can install the Python library (`grpcio`) you'll need the
+gRPC core library on your system. To install this on Debian Linux:
 
 ```bash
-curl -fsSL https://goo.gl/getgrpc | bash
+$ apt-get install libgrpc-dev
 ```
 
-Since this uses `brew` to install, this cannot be run as
-root (via `sudo`).
-
-Next, install the [Python][11] `grpcio` [library][12] via:
+or on Mac OS X:
 
 ```bash
-BREW_PREFIX=$(brew --prefix)
-[sudo] CFLAGS=-I${BREW_PREFIX}/include LDFLAGS=-L${BREW_PREFIX}/lib \
-pip install --upgrade grpcio
+$ brew tap grpc/grpc
+$ brew install grpc
 ```
 
-You may wish to run this as root (via `sudo`) so it can be included with
-your machine's Python libraries. If not, you'll need to use a Python
-[virtual environment][13] so that non-privileged (i.e. non-`sudo`) installs
-are allowed.
+Once you've installed the system library, install the Python
+library via:
+
+```bash
+$ pip install --upgrade grpcio
+```
 
 Finally, you can install this library via
 
 ```bash
-[sudo] pip install -e git+https://github.com/dhermes/gcloud-python-bigtable#egg=gcloud-bigtable
-```
-
-Again, you may wish to install as root or in a virtual environment.
-
-## Running `gcloud_bigtable` code
-
-Since the gRPC core is installed via `brew`, the system libraries
-are not in a place that Python can readily find them.
-
-In order to run code that uses `gcloud_bigtable` with these
-libraries, you'll need to set the `LD_LIBRARY_PATH` environment
-variable:
-
-```bash
-BREW_PREFIX=$(brew --prefix)
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${BREW_PREFIX}/lib
+pip install -e git+https://github.com/dhermes/gcloud-python-bigtable#egg=gcloud-bigtable
 ```
 
 ## Authorization
@@ -167,5 +144,4 @@ See [`CONTRIBUTING.md`][3] for instructions on development.
 [10]: https://github.com/grpc/grpc/issues/2611
 [11]: https://github.com/grpc/grpc/tree/master/src/python
 [12]: https://pypi.python.org/pypi/grpcio
-[13]: http://docs.python-guide.org/en/latest/dev/virtualenvs/
 [14]: https://console.developers.google.com/

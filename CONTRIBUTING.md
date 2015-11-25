@@ -43,23 +43,18 @@ $ # [sudo] ldconfig
 
 ## Testing
 
-Unfortunately, `tox` will fail by default due to the absence of
-`grpcio` from `setup.py`. In order to successfully set up a `tox`
-test environment (e.g `ENV=py27`), run
+`tox` should work without modification, assuming you've installed
+on Linux via
 
 ```bash
-tox -e ${ENV}
+$ apt-get install libgrpc-dev
 ```
 
-and watch the install fail (missing dependencies), then with the partially
-set up environment, execute:
+or on Mac OS X via
 
 ```bash
-BREW_PREFIX=$(brew --prefix)
-VERSION=0.10.0a0
-CFLAGS=-I${BREW_PREFIX}/include LDFLAGS=-L${BREW_PREFIX}/lib \
-  .tox/${ENV}/bin/pip install grpcio==${VERSION}
-unset BREW_PREFIX
+$ brew tap grpc/grpc
+$ brew install grpc
 ```
 
 ## False Starts
