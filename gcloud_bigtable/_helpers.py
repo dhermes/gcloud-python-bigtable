@@ -293,8 +293,7 @@ def make_stub(client, stub_factory, host, port):
     :param port: The port for the service.
 
     :rtype: :class:`grpc.beta._stub._AutoIntermediary`
-    :returns: The stub object used to make gRPC requests to the
-              Data API.
+    :returns: The stub object used to make gRPC requests to a given API.
     """
     root_certificates = get_certs()
     client_credentials = implementations.ssl_client_credentials(
