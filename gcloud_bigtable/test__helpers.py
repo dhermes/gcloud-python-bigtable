@@ -440,7 +440,6 @@ class Test_make_stub(unittest2.TestCase):
             self,
             [(channel,)],
             [{
-                'host': host,
                 'metadata_transformer': transformed,
             }],
         )

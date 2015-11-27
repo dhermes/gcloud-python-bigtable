@@ -301,7 +301,7 @@ def make_stub(client, stub_factory, host, port):
     channel = implementations.secure_channel(
         host, port, client_credentials)
     custom_metadata_transformer = MetadataTransformer(client)
-    return stub_factory(channel, host=host,
+    return stub_factory(channel,
                         metadata_transformer=custom_metadata_transformer)
 
 
