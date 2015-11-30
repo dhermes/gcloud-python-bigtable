@@ -368,6 +368,7 @@ class TestClient(unittest2.TestCase):
         signed_creds_kw = {
             'private_key': private_key,
             'service_account_name': client_email,
+            'scope': None,
         }
         signed_creds.check_called(self, [()], [signed_creds_kw])
         # Load private key (via _get_contents) from the key path.

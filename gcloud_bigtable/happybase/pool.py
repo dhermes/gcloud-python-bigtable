@@ -16,8 +16,9 @@
 
 
 import contextlib
-import six
 import threading
+
+import six
 
 from gcloud_bigtable.happybase.connection import Connection
 from gcloud_bigtable.happybase.connection import _get_cluster

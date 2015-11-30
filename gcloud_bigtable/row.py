@@ -15,8 +15,9 @@
 """User friendly container for Google Cloud Bigtable Row."""
 
 
-import six
 import struct
+
+import six
 
 from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (

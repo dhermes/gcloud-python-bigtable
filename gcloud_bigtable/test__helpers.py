@@ -94,48 +94,6 @@ class Test__pb_timestamp_to_datetime(unittest2.TestCase):
         self.assertEqual(self._callFUT(timestamp), dt_stamp)
 
 
-class Test__require_pb_property(unittest2.TestCase):
-
-    def _callFUT(self, message_pb, property_name, value):
-        from gcloud_bigtable._helpers import _require_pb_property
-        return _require_pb_property(message_pb, property_name, value)
-
-    def test_it(self):
-        from gcloud_bigtable._generated import (
-            bigtable_cluster_data_pb2 as data_pb2)
-        serve_nodes = 119
-        cluster_pb = data_pb2.Cluster(serve_nodes=serve_nodes)
-        result = self._callFUT(cluster_pb, 'serve_nodes', serve_nodes)
-        self.assertEqual(result, serve_nodes)
-
-    def test_with_null_value_passed_in(self):
-        from gcloud_bigtable._generated import (
-            bigtable_cluster_data_pb2 as data_pb2)
-        serve_nodes = None
-        actual_serve_nodes = 119
-        cluster_pb = data_pb2.Cluster(serve_nodes=actual_serve_nodes)
-        result = self._callFUT(cluster_pb, 'serve_nodes', serve_nodes)
-        self.assertEqual(result, actual_serve_nodes)
-
-    def test_with_value_unset_on_pb(self):
-        from gcloud_bigtable._generated import (
-            bigtable_cluster_data_pb2 as data_pb2)
-        serve_nodes = 119
-        cluster_pb = data_pb2.Cluster()
-        with self.assertRaises(ValueError):
-            self._callFUT(cluster_pb, 'serve_nodes', serve_nodes)
-
-    def test_with_values_disagreeing(self):
-        from gcloud_bigtable._generated import (
-            bigtable_cluster_data_pb2 as data_pb2)
-        serve_nodes = 119
-        other_serve_nodes = 1000
-        self.assertNotEqual(serve_nodes, other_serve_nodes)
-        cluster_pb = data_pb2.Cluster(serve_nodes=other_serve_nodes)
-        with self.assertRaises(ValueError):
-            self._callFUT(cluster_pb, 'serve_nodes', serve_nodes)
-
-
 class Test__parse_pb_any_to_native(unittest2.TestCase):
 
     def _callFUT(self, any_val, expected_type=None):

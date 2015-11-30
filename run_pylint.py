@@ -50,6 +50,7 @@ TEST_DISABLED_MESSAGES = [
     'too-many-locals',
     'too-many-public-methods',
     'unbalanced-tuple-unpacking',
+    'abstract-method',
 ]
 TEST_RC_ADDITIONS = {
     'MESSAGES CONTROL': {

@@ -17,8 +17,9 @@ from __future__ import print_function
 import datetime
 import operator
 import os
-import pytz
 import time
+
+import pytz
 import unittest2
 
 from oauth2client.client import GoogleCredentials
@@ -165,13 +166,13 @@ class TestClusterAdminAPI(unittest2.TestCase):
 class TestTableAdminAPI(unittest2.TestCase):
 
     @classmethod
-    def setUpClass(self):
-        self._table = CLUSTER.table(TABLE_ID)
-        self._table.create()
+    def setUpClass(cls):
+        cls._table = CLUSTER.table(TABLE_ID)
+        cls._table.create()
 
     @classmethod
-    def tearDownClass(self):
-        self._table.delete()
+    def tearDownClass(cls):
+        cls._table.delete()
 
     def setUp(self):
         self.tables_to_delete = []
@@ -245,16 +246,16 @@ class TestTableAdminAPI(unittest2.TestCase):
 class TestDataAPI(unittest2.TestCase):
 
     @classmethod
-    def setUpClass(self):
-        self._table = table = CLUSTER.table(TABLE_ID)
+    def setUpClass(cls):
+        cls._table = table = CLUSTER.table(TABLE_ID)
         table.create()
         table.column_family(COLUMN_FAMILY_ID1).create()
         table.column_family(COLUMN_FAMILY_ID2).create()
 
     @classmethod
-    def tearDownClass(self):
+    def tearDownClass(cls):
         # Will also delete any data contained in the table.
-        self._table.delete()
+        cls._table.delete()
 
     def setUp(self):
         self.rows_to_delete = []

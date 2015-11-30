@@ -29,8 +29,9 @@ In the hierarchy of API concepts
 
 import copy
 import os
-import six
 import socket
+
+import six
 
 from oauth2client.client import GoogleCredentials
 from oauth2client.client import SignedJwtAssertionCredentials
@@ -330,7 +331,8 @@ class Client(object):
         """
         credentials = SignedJwtAssertionCredentials(
             service_account_name=client_email,
-            private_key=_get_contents(private_key_path))
+            private_key=_get_contents(private_key_path),
+            scope=None)
         return cls(credentials=credentials, project=project,
                    read_only=read_only, admin=admin)
 

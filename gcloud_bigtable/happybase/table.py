@@ -15,8 +15,9 @@
 """Google Cloud Bigtable HappyBase table module."""
 
 
-import six
 import struct
+
+import six
 
 from gcloud_bigtable._helpers import _microseconds_to_timestamp
 from gcloud_bigtable._helpers import _timestamp_to_microseconds

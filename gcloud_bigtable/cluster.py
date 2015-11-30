@@ -25,7 +25,6 @@ from gcloud_bigtable._generated import (
 from gcloud_bigtable._generated import operations_pb2
 from gcloud_bigtable._helpers import _parse_pb_any_to_native
 from gcloud_bigtable._helpers import _pb_timestamp_to_datetime
-from gcloud_bigtable._helpers import _require_pb_property
 from gcloud_bigtable.table import Table
 
 
@@ -35,6 +34,30 @@ _CLUSTER_NAME_RE = re.compile(r'^projects/(?P<project>[^/]+)/'
 _OPERATION_NAME_RE = re.compile(r'^operations/projects/([^/]+)/zones/([^/]+)/'
                                 r'clusters/([a-z][-a-z0-9]*)/operations/'
                                 r'(?P<operation_id>\d+)$')
+
+
+def _get_pb_property_value(message_pb, property_name):
+    """Return a message field value.
+
+    :type message_pb: :class:`google.protobuf.message.Message`
+    :param message_pb: The message to check for ``property_name``.
+
+    :type property_name: str
+    :param property_name: The property value to check against.
+
+    :rtype: object
+    :returns: The value of ``property_name`` set on ``message_pb``.
+    :raises: :class:`ValueError <exceptions.ValueError>` if the result returned
+             from the ``message_pb`` does not contain the ``property_name``
+             value.
+    """
+    # Make sure `property_name` is set on the response.
+    # NOTE: As of proto3, HasField() only works for message fields, not for
+    #       singular (non-message) fields.
+    all_fields = set([field.name for field in message_pb._fields])
+    if property_name not in all_fields:
+        raise ValueError('Message does not contain %s.' % (property_name,))
+    return getattr(message_pb, property_name)
 
 
 def _prepare_create_request(cluster):
@@ -136,10 +159,8 @@ class Cluster(object):
         self._operation_begin = None
 
     def _update_from_pb(self, cluster_pb):
-        self.display_name = _require_pb_property(
-            cluster_pb, 'display_name', None)
-        self.serve_nodes = _require_pb_property(
-            cluster_pb, 'serve_nodes', None)
+        self.display_name = _get_pb_property_value(cluster_pb, 'display_name')
+        self.serve_nodes = _get_pb_property_value(cluster_pb, 'serve_nodes')
 
     @classmethod
     def from_pb(cls, cluster_pb, client):

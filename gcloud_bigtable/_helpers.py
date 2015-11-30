@@ -95,41 +95,6 @@ def _pb_timestamp_to_datetime(timestamp):
     )
 
 
-def _require_pb_property(message_pb, property_name, value):
-    """Check that a property agrees with the value on the message.
-
-    :type message_pb: :class:`google.protobuf.message.Message`
-    :param message_pb: The message to check for ``property_name``.
-
-    :type property_name: str
-    :param property_name: The property value to check against.
-
-    :type value: object or :data:`NoneType <types.NoneType>`
-    :param value: The value to check against the cluster. If :data:`None`,
-                  will not be checked.
-
-    :rtype: object
-    :returns: The value of ``property_name`` set on ``message_pb``.
-    :raises: :class:`ValueError <exceptions.ValueError>` if the result returned
-             from the ``message_pb`` does not contain the ``property_name``
-             value or if the value returned disagrees with the ``value``
-             passed with the request (if that value is not null).
-    """
-    # Make sure `property_name` is set on the response.
-    # NOTE: HasField() doesn't work in protobuf>=3.0.0a3
-    all_fields = set([field.name for field in message_pb._fields])
-    if property_name not in all_fields:
-        raise ValueError('Message does not contain %s.' % (property_name,))
-    property_val = getattr(message_pb, property_name)
-    if value is None:
-        value = property_val
-    elif value != property_val:
-        raise ValueError('Message returned %s value disagreeing '
-                         'with value passed in.' % (property_name,))
-
-    return value
-
-
 def _parse_pb_any_to_native(any_val, expected_type=None):
     """Convert a serialized "google.protobuf.Any" value to actual type.
 
