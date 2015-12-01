@@ -158,6 +158,17 @@ class Cluster(object):
         self._operation_id = None
         self._operation_begin = None
 
+    def table(self, table_id):
+        """Factory to create a table associated with this cluster.
+
+        :type table_id: str
+        :param table_id: The ID of the table.
+
+        :rtype: :class:`Table <gcloud_bigtable.table.Table>`
+        :returns: The table owned by this cluster.
+        """
+        return Table(table_id, self)
+
     def _update_from_pb(self, cluster_pb):
         self.display_name = _get_pb_property_value(cluster_pb, 'display_name')
         self.serve_nodes = _get_pb_property_value(cluster_pb, 'serve_nodes')
@@ -250,25 +261,15 @@ class Cluster(object):
         return (self.client.project_name + '/zones/' + self.zone +
                 '/clusters/' + self.cluster_id)
 
-    def table(self, table_id):
-        """Factory to create a table associated with this cluster.
-
-        :type table_id: str
-        :param table_id: The ID of the table.
-
-        :rtype: :class:`Table <gcloud_bigtable.table.Table>`
-        :returns: The table owned by this cluster.
-        """
-        return Table(table_id, self)
-
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
         # NOTE: This does not compare the configuration values, such as
-        #       the serve_nodes or display_name. This is intentional, since
-        #       the same cluster can be in different states if not
-        #       synchronized. This suggests we should use `project`
-        #       instead of `client` for the third comparison.
+        #       the serve_nodes or display_name. Instead, it only compares
+        #       identifying values zone, cluster ID and client. This is
+        #       intentional, since the same cluster can be in different states
+        #       if not synchronized. Clusters with similar zone/cluster
+        #       settings but different clients can't be used in the same way.
         return (other.zone == self.zone and
                 other.cluster_id == self.cluster_id and
                 other.client == self.client)

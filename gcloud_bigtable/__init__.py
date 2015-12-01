@@ -24,3 +24,5 @@ except ImportError as exc:
                           'Python locate the libraries.')
     else:
         raise
+
+from gcloud_bigtable.client import Client
