@@ -55,7 +55,8 @@ class Test__prepare_create_request(unittest2.TestCase):
         from gcloud_bigtable._generated import (
             bigtable_cluster_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable.cluster import Cluster
-        display_name = 'DISPLAY_NAME'
+
+        display_name = u'DISPLAY_NAME'
         serve_nodes = 8
 
         cluster = Cluster(ZONE, CLUSTER_ID, _Client(PROJECT),

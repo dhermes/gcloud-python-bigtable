@@ -52,9 +52,9 @@ EPOCH = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=pytz.utc)
 _PLAT_SYS = platform.system()
 SSL_CERT_FILE = None
 if _PLAT_SYS == 'Linux':
-    SSL_CERT_FILE = '/usr/local/etc/openssl/cert.pem'
-elif _PLAT_SYS == 'Darwin':  # pragma: NO COVER
     SSL_CERT_FILE = '/etc/ssl/certs/ca-certificates.crt'
+elif _PLAT_SYS == 'Darwin':  # pragma: NO COVER
+    SSL_CERT_FILE = '/usr/local/etc/openssl/cert.pem'
 
 
 class MetadataTransformer(object):
