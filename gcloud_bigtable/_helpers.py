@@ -87,7 +87,7 @@ class AuthInfo(object):
 def _pb_timestamp_to_datetime(timestamp):
     """Convert a Timestamp protobuf to a datetime object.
 
-    :type timestamp: :class:`._generated.timestamp_pb.Timestamp`
+    :type timestamp: :class:`._generated.timestamp_pb2.Timestamp`
     :param timestamp: A Google returned timestamp protobuf.
 
     :rtype: :class:`datetime.datetime`
