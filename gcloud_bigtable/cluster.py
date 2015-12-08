@@ -108,6 +108,38 @@ def _process_operation(operation_pb):
     return operation_id, operation_begin
 
 
+class Operation(object):
+    """Representation of a Google API Long-Running Operation.
+
+    In particular, the
+
+    :type op_type: str
+    :param op_type: The type of operation being performed. Expect
+                    ``create``, ``update`` or ``undelete``.
+
+    :type op_id: int
+    :param op_id: The ID of the operation.
+
+    :type begin: :class:`datetime.datetime`
+    :param begin: The time when the operation was started.
+    """
+
+    def __init__(self, op_type, op_id, begin):
+        self.op_type = op_type
+        self.op_id = op_id
+        self.begin = begin
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return (other.op_type == self.op_type and
+                other.op_id == self.op_id and
+                other.begin == self.begin)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+
 class Cluster(object):
     """Representation of a Google Cloud Bigtable Cluster.
 
@@ -348,6 +380,10 @@ class Cluster(object):
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on
                                 cluster.
+
+        :rtype: :class:`Operation`
+        :returns: The long-running operation corresponding to the
+                  create operation.
         """
         request_pb = _prepare_create_request(self)
         timeout_seconds = timeout_seconds or self.timeout_seconds
@@ -355,9 +391,8 @@ class Cluster(object):
         cluster_pb = self.client._cluster_stub.CreateCluster(
             request_pb, timeout_seconds)
 
-        self._operation_type = 'create'
-        self._operation_id, self._operation_begin = _process_operation(
-            cluster_pb.current_operation)
+        op_id, op_begin = _process_operation(cluster_pb.current_operation)
+        return Operation('create', op_id, op_begin)
 
     def update(self, timeout_seconds=None):
         """Update this cluster.

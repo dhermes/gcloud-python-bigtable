@@ -118,6 +118,56 @@ class Test__process_operation(unittest2.TestCase):
             self._callFUT(cluster)
 
 
+class TestOperation(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.cluster import Operation
+        return Operation
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_constructor(self):
+        import datetime
+        op_type = 'fake-op'
+        op_id = 8915
+        begin = datetime.datetime(2015, 10, 22, 1, 1)
+        operation = self._makeOne(op_type, op_id, begin)
+
+        self.assertEqual(operation.op_type, op_type)
+        self.assertEqual(operation.op_id, op_id)
+        self.assertEqual(operation.begin, begin)
+
+    def test___eq__(self):
+        import datetime
+        op_type = 'fake-op'
+        op_id = 8915
+        begin = datetime.datetime(2015, 10, 22, 1, 1)
+        operation1 = self._makeOne(op_type, op_id, begin)
+        operation2 = self._makeOne(op_type, op_id, begin)
+        self.assertEqual(operation1, operation2)
+
+    def test___eq__type_differ(self):
+        operation1 = self._makeOne('foo', 123, None)
+        operation2 = object()
+        self.assertNotEqual(operation1, operation2)
+
+    def test___ne__same_value(self):
+        import datetime
+        op_type = 'fake-op'
+        op_id = 8915
+        begin = datetime.datetime(2015, 10, 22, 1, 1)
+        operation1 = self._makeOne(op_type, op_id, begin)
+        operation2 = self._makeOne(op_type, op_id, begin)
+        comparison_val = (operation1 != operation2)
+        self.assertFalse(comparison_val)
+
+    def test___ne__(self):
+        operation1 = self._makeOne('foo', 123, None)
+        operation2 = self._makeOne('bar', 456, None)
+        self.assertNotEqual(operation1, operation2)
+
+
 class TestCluster(unittest2.TestCase):
 
     def _getTargetClass(self):
@@ -420,13 +470,13 @@ class TestCluster(unittest2.TestCase):
         client._cluster_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
-        expected_result = None
+        op_id = 5678
+        op_begin = object()
+        expected_result = MUT.Operation('create', op_id, op_begin)
 
         # Perform the method and check the result.
         timeout_seconds = 578
         mock_prepare_create_request = _MockCalled(request_pb)
-        op_id = 5678
-        op_begin = object()
         mock_process_operation = _MockCalled((op_id, op_begin))
         with _Monkey(MUT, _prepare_create_request=mock_prepare_create_request,
                      _process_operation=mock_process_operation):
@@ -438,9 +488,6 @@ class TestCluster(unittest2.TestCase):
             (request_pb, timeout_seconds),
             {},
         )])
-        self.assertEqual(cluster._operation_type, 'create')
-        self.assertEqual(cluster._operation_id, op_id)
-        self.assertTrue(cluster._operation_begin is op_begin)
         mock_prepare_create_request.check_called(self, [(cluster,)])
         mock_process_operation.check_called(self, [(current_op,)])
 
