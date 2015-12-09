@@ -111,7 +111,8 @@ def _process_operation(operation_pb):
 class Operation(object):
     """Representation of a Google API Long-Running Operation.
 
-    In particular, the
+    In particular, these will be the result of operations on
+    clusters using the Cloud Bigtable API.
 
     :type op_type: str
     :param op_type: The type of operation being performed. Expect
@@ -122,22 +123,59 @@ class Operation(object):
 
     :type begin: :class:`datetime.datetime`
     :param begin: The time when the operation was started.
+
+    :type cluster: :class:`Cluster`
+    :param cluster: The cluster that created the operation.
     """
 
-    def __init__(self, op_type, op_id, begin):
+    def __init__(self, op_type, op_id, begin, cluster=None):
         self.op_type = op_type
         self.op_id = op_id
         self.begin = begin
+        self._cluster = cluster
+        self._complete = False
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
         return (other.op_type == self.op_type and
                 other.op_id == self.op_id and
-                other.begin == self.begin)
+                other.begin == self.begin and
+                other._cluster == self._cluster and
+                other._complete == self._complete)
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def finished(self, timeout_seconds=None):
+        """Check if the operation has finished.
+
+        :type timeout_seconds: int
+        :param timeout_seconds: Number of seconds for request time-out.
+                                If not passed, defaults to value set on
+                                cluster.
+
+        :rtype: bool
+        :returns: A boolean indicating if the current operation has completed.
+        :raises: :class:`ValueError <exceptions.ValueError>` if the operation
+                 has already completed.
+        """
+        if self._complete:
+            raise ValueError('The operation has completed.')
+
+        operation_name = ('operations/' + self._cluster.name +
+                          '/operations/%d' % (self.op_id,))
+        request_pb = operations_pb2.GetOperationRequest(name=operation_name)
+        timeout_seconds = timeout_seconds or self._cluster.timeout_seconds
+        # We expact a `._generated.operations_pb2.Operation`.
+        operation_pb = self._cluster._client._operations_stub.GetOperation(
+            request_pb, timeout_seconds)
+
+        if operation_pb.done:
+            self._complete = True
+            return True
+        else:
+            return False
 
 
 class Cluster(object):
@@ -147,8 +185,6 @@ class Cluster(object):
 
     * :meth:`reload` itself
     * :meth:`create` itself
-    * Check if an :meth:`operation_finished` (each of :meth:`create`,
-      :meth:`update` and :meth:`undelete` return with long-running operations)
     * :meth:`update` itself
     * :meth:`delete` itself
     * :meth:`undelete` itself
@@ -186,9 +222,6 @@ class Cluster(object):
         self.display_name = display_name or cluster_id
         self.serve_nodes = serve_nodes
         self._client = client
-        self._operation_type = None
-        self._operation_id = None
-        self._operation_begin = None
 
     def table(self, table_id):
         """Factory to create a table associated with this cluster.
@@ -244,9 +277,9 @@ class Cluster(object):
         :returns: A copy of the current cluster.
         """
         new_client = self.client.copy()
-        return Cluster(self.zone, self.cluster_id, new_client,
-                       display_name=self.display_name,
-                       serve_nodes=self.serve_nodes)
+        return self.__class__(self.zone, self.cluster_id, new_client,
+                              display_name=self.display_name,
+                              serve_nodes=self.serve_nodes)
 
     @property
     def client(self):
@@ -327,38 +360,6 @@ class Cluster(object):
         #       cluster ID on the response match the request.
         self._update_from_pb(cluster_pb)
 
-    def operation_finished(self, timeout_seconds=None):
-        """Check if the current operation has finished.
-
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on
-                                cluster.
-
-        :rtype: bool
-        :returns: A boolean indicating if the current operation has completed.
-        :raises: :class:`ValueError <exceptions.ValueError>` if there is no
-                 current operation set.
-        """
-        if self._operation_id is None:
-            raise ValueError('There is no current operation.')
-
-        operation_name = ('operations/' + self.name +
-                          '/operations/%d' % (self._operation_id,))
-        request_pb = operations_pb2.GetOperationRequest(name=operation_name)
-        timeout_seconds = timeout_seconds or self.timeout_seconds
-        # We expact a `._generated.operations_pb2.Operation`.
-        operation_pb = self.client._operations_stub.GetOperation(
-            request_pb, timeout_seconds)
-
-        if operation_pb.done:
-            self._operation_type = None
-            self._operation_id = None
-            self._operation_begin = None
-            return True
-        else:
-            return False
-
     def create(self, timeout_seconds=None):
         """Create this cluster.
 
@@ -413,6 +414,10 @@ class Cluster(object):
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on
                                 cluster.
+
+        :rtype: :class:`Operation`
+        :returns: The long-running operation corresponding to the
+                  update operation.
         """
         request_pb = data_pb2.Cluster(
             name=self.name,
@@ -424,9 +429,8 @@ class Cluster(object):
         cluster_pb = self.client._cluster_stub.UpdateCluster(
             request_pb, timeout_seconds)
 
-        self._operation_type = 'update'
-        self._operation_id, self._operation_begin = _process_operation(
-            cluster_pb.current_operation)
+        op_id, op_begin = _process_operation(cluster_pb.current_operation)
+        return Operation('update', op_id, op_begin)
 
     def delete(self, timeout_seconds=None):
         """Delete this cluster.
@@ -466,10 +470,32 @@ class Cluster(object):
     def undelete(self, timeout_seconds=None):
         """Undelete this cluster.
 
+        Cancels the scheduled deletion of an cluster and begins preparing it to
+        resume serving. The returned operation will also be embedded as the
+        cluster's ``current_operation``.
+
+        Immediately upon completion of this request:
+
+        * The cluster's ``delete_time`` field will be unset, protecting it from
+          automatic deletion.
+
+        Until completion of the returned operation:
+
+        * The operation cannot be cancelled.
+
+        Upon completion of the returned operation:
+
+        * Billing for the cluster's resources will resume.
+        * All tables within the cluster will be available.
+
         :type timeout_seconds: int
         :param timeout_seconds: Number of seconds for request time-out.
                                 If not passed, defaults to value set on
                                 cluster.
+
+        :rtype: :class:`Operation`
+        :returns: The long-running operation corresponding to the
+                  undelete operation.
         """
         request_pb = messages_pb2.UndeleteClusterRequest(name=self.name)
         timeout_seconds = timeout_seconds or self.timeout_seconds
@@ -477,9 +503,8 @@ class Cluster(object):
         operation_pb2 = self.client._cluster_stub.UndeleteCluster(
             request_pb, timeout_seconds)
 
-        self._operation_type = 'undelete'
-        self._operation_id, self._operation_begin = _process_operation(
-            operation_pb2)
+        op_id, op_begin = _process_operation(operation_pb2)
+        return Operation('undelete', op_id, op_begin)
 
     def list_tables(self, timeout_seconds=None):
         """List the tables in this cluster.
@@ -502,11 +527,11 @@ class Cluster(object):
 
         result = []
         for table_pb in table_list_pb.tables:
-            before, table_id = table_pb.name.split(
-                self.name + '/tables/', 1)
-            if before != '':
+            table_prefix = self.name + '/tables/'
+            if not table_pb.name.startswith(table_prefix):
                 raise ValueError('Table name %s not of expected format' % (
                     table_pb.name,))
+            table_id = table_pb.name[len(table_prefix):]
             result.append(self.table(table_id))
 
         return result

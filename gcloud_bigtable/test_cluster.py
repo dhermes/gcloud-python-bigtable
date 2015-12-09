@@ -127,24 +127,34 @@ class TestOperation(unittest2.TestCase):
     def _makeOne(self, *args, **kwargs):
         return self._getTargetClass()(*args, **kwargs)
 
-    def test_constructor(self):
+    def _constructor_test_helper(self, cluster=None):
         import datetime
         op_type = 'fake-op'
         op_id = 8915
         begin = datetime.datetime(2015, 10, 22, 1, 1)
-        operation = self._makeOne(op_type, op_id, begin)
+        operation = self._makeOne(op_type, op_id, begin, cluster=cluster)
 
         self.assertEqual(operation.op_type, op_type)
         self.assertEqual(operation.op_id, op_id)
         self.assertEqual(operation.begin, begin)
+        self.assertEqual(operation._cluster, cluster)
+        self.assertFalse(operation._complete)
+
+    def test_constructor_defaults(self):
+        self._constructor_test_helper()
+
+    def test_constructor_explicit_cluster(self):
+        cluster = object()
+        self._constructor_test_helper(cluster=cluster)
 
     def test___eq__(self):
         import datetime
         op_type = 'fake-op'
         op_id = 8915
         begin = datetime.datetime(2015, 10, 22, 1, 1)
-        operation1 = self._makeOne(op_type, op_id, begin)
-        operation2 = self._makeOne(op_type, op_id, begin)
+        cluster = object()
+        operation1 = self._makeOne(op_type, op_id, begin, cluster=cluster)
+        operation2 = self._makeOne(op_type, op_id, begin, cluster=cluster)
         self.assertEqual(operation1, operation2)
 
     def test___eq__type_differ(self):
@@ -157,8 +167,9 @@ class TestOperation(unittest2.TestCase):
         op_type = 'fake-op'
         op_id = 8915
         begin = datetime.datetime(2015, 10, 22, 1, 1)
-        operation1 = self._makeOne(op_type, op_id, begin)
-        operation2 = self._makeOne(op_type, op_id, begin)
+        cluster = object()
+        operation1 = self._makeOne(op_type, op_id, begin, cluster=cluster)
+        operation2 = self._makeOne(op_type, op_id, begin, cluster=cluster)
         comparison_val = (operation1 != operation2)
         self.assertFalse(comparison_val)
 
@@ -166,6 +177,66 @@ class TestOperation(unittest2.TestCase):
         operation1 = self._makeOne('foo', 123, None)
         operation2 = self._makeOne('bar', 456, None)
         self.assertNotEqual(operation1, operation2)
+
+    def test_finished_without_operation(self):
+        operation = self._makeOne(None, None, None)
+        operation._complete = True
+        with self.assertRaises(ValueError):
+            operation.finished()
+
+    def _finished_helper(self, done):
+        import datetime
+        from gcloud_bigtable._generated import operations_pb2
+        from gcloud_bigtable._grpc_mocks import StubMock
+        from gcloud_bigtable.cluster import Cluster
+
+        project = 'PROJECT'
+        zone = 'zone'
+        cluster_id = 'cluster-id'
+        op_type = 'fake-op'
+        op_id = 789
+        begin = datetime.datetime(2015, 10, 22, 1, 1)
+        timeout_seconds = 1
+
+        client = _Client(project)
+        cluster = Cluster(zone, cluster_id, client)
+        operation = self._makeOne(op_type, op_id, begin, cluster=cluster)
+
+        # Create request_pb
+        op_name = ('operations/projects/' + project + '/zones/' +
+                   zone + '/clusters/' + cluster_id +
+                   '/operations/%d' % (op_id,))
+        request_pb = operations_pb2.GetOperationRequest(name=op_name)
+
+        # Create response_pb
+        response_pb = operations_pb2.Operation(done=done)
+
+        # Patch the stub used by the API method.
+        client._operations_stub = stub = StubMock(response_pb)
+
+        # Create expected_result.
+        expected_result = done
+
+        # Perform the method and check the result.
+        result = operation.finished(timeout_seconds=timeout_seconds)
+
+        self.assertEqual(result, expected_result)
+        self.assertEqual(stub.method_calls, [(
+            'GetOperation',
+            (request_pb, timeout_seconds),
+            {},
+        )])
+
+        if done:
+            self.assertTrue(operation._complete)
+        else:
+            self.assertFalse(operation._complete)
+
+    def test_finished(self):
+        self._finished_helper(done=True)
+
+    def test_finished_not_done(self):
+        self._finished_helper(done=False)
 
 
 class TestCluster(unittest2.TestCase):
@@ -388,64 +459,6 @@ class TestCluster(unittest2.TestCase):
             {},
         )])
 
-    def test_operation_finished_without_operation(self):
-        cluster = self._makeOne(ZONE, CLUSTER_ID, None)
-        self.assertEqual(cluster._operation_type, None)
-        with self.assertRaises(ValueError):
-            cluster.operation_finished()
-
-    def _operation_finished_helper(self, done):
-        from gcloud_bigtable._generated import operations_pb2
-        from gcloud_bigtable._grpc_mocks import StubMock
-
-        client = _Client(PROJECT)
-        cluster = self._makeOne(ZONE, CLUSTER_ID, client)
-
-        # Patch up the cluster's operation attributes.
-        cluster._operation_id = op_id = 789
-        cluster._operation_begin = op_begin = object()
-        cluster._operation_type = op_type = object()
-
-        # Create request_pb
-        op_name = ('operations/projects/' + PROJECT + '/zones/' +
-                   ZONE + '/clusters/' + CLUSTER_ID +
-                   '/operations/%d' % (op_id,))
-        request_pb = operations_pb2.GetOperationRequest(name=op_name)
-
-        # Create response_pb
-        response_pb = operations_pb2.Operation(done=done)
-
-        # Patch the stub used by the API method.
-        client._operations_stub = stub = StubMock(response_pb)
-
-        # Create expected_result.
-        expected_result = done
-
-        # Perform the method and check the result.
-        timeout_seconds = 1
-        result = cluster.operation_finished(timeout_seconds=timeout_seconds)
-        self.assertEqual(result, expected_result)
-        self.assertEqual(stub.method_calls, [(
-            'GetOperation',
-            (request_pb, timeout_seconds),
-            {},
-        )])
-
-        if done:
-            self.assertEqual(cluster._operation_type, None)
-            self.assertEqual(cluster._operation_id, None)
-            self.assertEqual(cluster._operation_begin, None)
-        else:
-            self.assertEqual(cluster._operation_type, op_type)
-            self.assertEqual(cluster._operation_id, op_id)
-            self.assertEqual(cluster._operation_begin, op_begin)
-
-    def test_operation_finished(self):
-        self._operation_finished_helper(done=True)
-
-    def test_operation_finished_not_done(self):
-        self._operation_finished_helper(done=False)
-
     def test_create(self):
         from gcloud_bigtable._generated import (
             bigtable_cluster_data_pb2 as data_pb2)
@@ -524,12 +537,12 @@ class TestCluster(unittest2.TestCase):
         client._cluster_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
-        expected_result = None
+        op_id = 5678
+        op_begin = object()
+        expected_result = MUT.Operation('update', op_id, op_begin)
 
         # We must create the cluster object with the client passed in.
         timeout_seconds = 9
-        op_id = 5678
-        op_begin = object()
         mock_process_operation = _MockCalled((op_id, op_begin))
         with _Monkey(MUT,
                      _process_operation=mock_process_operation):
@@ -541,9 +554,6 @@ class TestCluster(unittest2.TestCase):
             (request_pb, timeout_seconds),
             {},
         )])
-        self.assertEqual(cluster._operation_type, 'update')
-        self.assertEqual(cluster._operation_id, op_id)
-        self.assertTrue(cluster._operation_begin is op_begin)
         mock_process_operation.check_called(self, [(current_op,)])
 
     def test_delete(self):
@@ -603,12 +613,12 @@ class TestCluster(unittest2.TestCase):
         client._cluster_stub = stub = StubMock(response_pb)
 
         # Create expected_result.
-        expected_result = None
+        op_id = 5678
+        op_begin = object()
+        expected_result = MUT.Operation('undelete', op_id, op_begin)
 
         # Perform the method and check the result.
         timeout_seconds = 78
-        op_id = 5678
-        op_begin = object()
         mock_process_operation = _MockCalled((op_id, op_begin))
         with _Monkey(MUT,
                      _process_operation=mock_process_operation):
@@ -620,9 +630,6 @@ class TestCluster(unittest2.TestCase):
             (request_pb, timeout_seconds),
             {},
         )])
-        self.assertEqual(cluster._operation_type, 'undelete')
-        self.assertEqual(cluster._operation_id, op_id)
-        self.assertTrue(cluster._operation_begin is op_begin)
         mock_process_operation.check_called(self, [(response_pb,)])
 
     def _list_tables_helper(self, table_id, table_name=None):
