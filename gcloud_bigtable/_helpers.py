@@ -29,7 +29,6 @@ from grpc.beta import implementations
 
 from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
-from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
 from gcloud_bigtable._generated import duration_pb2
 
 
@@ -38,7 +37,6 @@ _ADMIN_TYPE_URL_BASE = _TYPE_URL_BASE + 'admin.cluster.v1.'
 _CLUSTER_TYPE_URL = _ADMIN_TYPE_URL_BASE + 'Cluster'
 _CLUSTER_CREATE_METADATA = _ADMIN_TYPE_URL_BASE + 'CreateClusterMetadata'
 _TYPE_URL_MAP = {
-    _CLUSTER_TYPE_URL: data_pb2.Cluster,
     _CLUSTER_CREATE_METADATA: messages_pb2.CreateClusterMetadata,
     _ADMIN_TYPE_URL_BASE + 'UndeleteClusterMetadata': (
         messages_pb2.UndeleteClusterMetadata),
