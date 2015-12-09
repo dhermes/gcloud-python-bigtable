@@ -167,8 +167,8 @@ class Table(object):
             A create request returns a
             :class:`._generated.bigtable_table_data_pb2.Table` but we don't use
             this response. The proto definition allows for the inclusion of a
-            ``current_operation`` in the response, but in example usage so far,
-            it seems the Bigtable API does not return any operation.
+            ``current_operation`` in the response, but it does not appear that
+            the Cloud Bigtable API returns any operation.
 
         :type initial_split_keys: list
         :param initial_split_keys: (Optional) List of row keys that will be

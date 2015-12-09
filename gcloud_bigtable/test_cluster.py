@@ -485,7 +485,8 @@ class TestCluster(unittest2.TestCase):
         # Create expected_result.
         op_id = 5678
         op_begin = object()
-        expected_result = MUT.Operation('create', op_id, op_begin)
+        expected_result = MUT.Operation('create', op_id, op_begin,
+                                        cluster=cluster)
 
         # Perform the method and check the result.
         timeout_seconds = 578
@@ -539,7 +540,8 @@ class TestCluster(unittest2.TestCase):
         # Create expected_result.
         op_id = 5678
         op_begin = object()
-        expected_result = MUT.Operation('update', op_id, op_begin)
+        expected_result = MUT.Operation('update', op_id, op_begin,
+                                        cluster=cluster)
 
         # We must create the cluster object with the client passed in.
         timeout_seconds = 9
@@ -615,7 +617,8 @@ class TestCluster(unittest2.TestCase):
         # Create expected_result.
         op_id = 5678
         op_begin = object()
-        expected_result = MUT.Operation('undelete', op_id, op_begin)
+        expected_result = MUT.Operation('undelete', op_id, op_begin,
+                                        cluster=cluster)
 
         # Perform the method and check the result.
         timeout_seconds = 78
