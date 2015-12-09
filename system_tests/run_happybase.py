@@ -74,9 +74,9 @@ def set_cloud_bigtable_connection():
     try:
         cluster.reload()
     except NetworkError:
-        cluster.create()
+        operation = cluster.create()
         count = 0
-        while not cluster.operation_finished():
+        while not operation.finished():
             count += 1
             if count > 5:
                 raise NetworkError('Create cluster timed out')

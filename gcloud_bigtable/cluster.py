@@ -393,7 +393,7 @@ class Cluster(object):
             request_pb, timeout_seconds)
 
         op_id, op_begin = _process_operation(cluster_pb.current_operation)
-        return Operation('create', op_id, op_begin)
+        return Operation('create', op_id, op_begin, cluster=self)
 
     def update(self, timeout_seconds=None):
         """Update this cluster.
@@ -430,7 +430,7 @@ class Cluster(object):
             request_pb, timeout_seconds)
 
         op_id, op_begin = _process_operation(cluster_pb.current_operation)
-        return Operation('update', op_id, op_begin)
+        return Operation('update', op_id, op_begin, cluster=self)
 
     def delete(self, timeout_seconds=None):
         """Delete this cluster.
@@ -504,7 +504,7 @@ class Cluster(object):
             request_pb, timeout_seconds)
 
         op_id, op_begin = _process_operation(operation_pb2)
-        return Operation('undelete', op_id, op_begin)
+        return Operation('undelete', op_id, op_begin, cluster=self)
 
     def list_tables(self, timeout_seconds=None):
         """List the tables in this cluster.

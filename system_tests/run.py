@@ -120,13 +120,13 @@ class TestClusterAdminAPI(unittest2.TestCase):
     def test_create_cluster(self):
         cluster_id = '%s-a' % (CLUSTER_ID,)
         cluster = CLIENT.cluster(CENTRAL_1C_ZONE, cluster_id)
-        cluster.create()
+        operation = cluster.create()
         # Make sure this cluster gets deleted after the test case.
         self.clusters_to_delete.append(cluster)
 
         # We want to make sure the operation completes.
         time.sleep(2)
-        self.assertTrue(cluster.operation_finished())
+        self.assertTrue(operation.finished())
 
         # Create a new cluster instance and make sure it is the same.
         cluster_alt = CLIENT.cluster(CENTRAL_1C_ZONE, cluster_id)
@@ -139,11 +139,11 @@ class TestClusterAdminAPI(unittest2.TestCase):
     def test_update(self):
         curr_display_name = CLUSTER.display_name
         CLUSTER.display_name = 'Foo Bar Baz'
-        CLUSTER.update()
+        operation = CLUSTER.update()
 
         # We want to make sure the operation completes.
         time.sleep(2)
-        self.assertTrue(CLUSTER.operation_finished())
+        self.assertTrue(operation.finished())
 
         # Create a new cluster instance and make sure it is the same.
         cluster_alt = CLIENT.cluster(CENTRAL_1C_ZONE, CLUSTER_ID)
@@ -156,11 +156,11 @@ class TestClusterAdminAPI(unittest2.TestCase):
         # Make sure to put the cluster back the way it was for the
         # other test cases.
         CLUSTER.display_name = curr_display_name
-        CLUSTER.update()
+        operation = CLUSTER.update()
 
         # We want to make sure the operation completes.
         time.sleep(2)
-        self.assertTrue(CLUSTER.operation_finished())
+        self.assertTrue(operation.finished())
 
 
 class TestTableAdminAPI(unittest2.TestCase):
