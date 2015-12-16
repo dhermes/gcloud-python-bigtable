@@ -198,7 +198,7 @@ class ColumnFamily(object):
         :rtype: :class:`.client.Client`
         :returns: The client that owns this column family.
         """
-        return self.table.client
+        return self.table._cluster._client
 
     @property
     def timeout_seconds(self):
@@ -207,7 +207,7 @@ class ColumnFamily(object):
         :rtype: int
         :returns: The timeout seconds default.
         """
-        return self.table.timeout_seconds
+        return self.table._cluster._client.timeout_seconds
 
     @property
     def name(self):

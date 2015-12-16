@@ -113,7 +113,7 @@ class Row(object):
         :rtype: :class:`.client.Client`
         :returns: The client that owns this row.
         """
-        return self.table.client
+        return self.table._cluster._client
 
     @property
     def timeout_seconds(self):
@@ -122,7 +122,7 @@ class Row(object):
         :rtype: int
         :returns: The timeout seconds default.
         """
-        return self.table.timeout_seconds
+        return self.table._cluster._client.timeout_seconds
 
     def _get_mutations(self, state=None):
         """Gets the list of mutations for a given state.

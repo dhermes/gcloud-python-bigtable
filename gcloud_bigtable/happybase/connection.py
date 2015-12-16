@@ -245,7 +245,7 @@ class Connection(object):
         :class:`.Client` bound to the :class:`.Cluster` owned by
         this connection.
         """
-        self._cluster.client.start()
+        self._cluster._client.start()
 
     def close(self):
         """Close the underlying transport to Cloud Bigtable.
@@ -254,7 +254,7 @@ class Connection(object):
         :class:`.Client` bound to the :class:`.Cluster` owned by
         this connection.
         """
-        self._cluster.client.stop()
+        self._cluster._client.stop()
 
     def __del__(self):
         try:
