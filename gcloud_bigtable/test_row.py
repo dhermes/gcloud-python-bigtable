@@ -94,7 +94,8 @@ class TestRow(unittest2.TestCase):
 
     def test_timeout_seconds_getter(self):
         timeout_seconds = 889
-        table = _Table(None, timeout_seconds=timeout_seconds)
+        client = _Client(timeout_seconds=timeout_seconds)
+        table = _Table(None, client=client)
         row = self._makeOne(ROW_KEY, table)
         self.assertEqual(row.timeout_seconds, timeout_seconds)
 
@@ -1526,10 +1527,19 @@ class _Client(object):
 
     data_stub = None
 
+    def __init__(self, timeout_seconds=None):
+        self.timeout_seconds = timeout_seconds
+
+
+class _Cluster(object):
+
+    def __init__(self, client=None):
+        self._client = client
+
 
 class _Table(object):
 
     def __init__(self, name, client=None, timeout_seconds=None):
         self.name = name
-        self.client = client
+        self._cluster = _Cluster(client)
         self.timeout_seconds = timeout_seconds

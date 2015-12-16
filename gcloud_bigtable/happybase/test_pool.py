@@ -227,7 +227,7 @@ class _Cluster(object):
     def __init__(self, copies=()):
         self.copies = list(copies)
         # Included to support Connection.__del__
-        self.client = _Client()
+        self._client = _Client()
 
     def copy(self):
         if self.copies:

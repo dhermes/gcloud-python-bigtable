@@ -302,7 +302,8 @@ class TestColumnFamily(unittest2.TestCase):
 
     def test_timeout_seconds_getter(self):
         timeout_seconds = 889
-        table = _Table(None, timeout_seconds=timeout_seconds)
+        client = _Client(timeout_seconds=timeout_seconds)
+        table = _Table(None, client=client)
         column_family = self._makeOne(COLUMN_FAMILY_ID, table)
         self.assertEqual(column_family.timeout_seconds, timeout_seconds)
 
@@ -573,10 +574,19 @@ class _Client(object):
     operations_stub = None
     table_stub = None
 
+    def __init__(self, timeout_seconds=None):
+        self.timeout_seconds = timeout_seconds
+
+
+class _Cluster(object):
+
+    def __init__(self, client=None):
+        self._client = client
+
 
 class _Table(object):
 
     def __init__(self, name, client=None, timeout_seconds=None):
         self.name = name
-        self.client = client
+        self._cluster = _Cluster(client)
         self.timeout_seconds = timeout_seconds

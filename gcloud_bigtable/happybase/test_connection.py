@@ -154,10 +154,10 @@ class TestConnection(unittest2.TestCase):
 
     def test_constructor_defaults(self):
         cluster = _Cluster()  # Avoid implicit environ check.
-        self.assertEqual(cluster.client.start_calls, 0)
+        self.assertEqual(cluster._client.start_calls, 0)
         connection = self._makeOne(cluster=cluster)
-        self.assertEqual(cluster.client.start_calls, 1)
-        self.assertEqual(cluster.client.stop_calls, 0)
+        self.assertEqual(cluster._client.start_calls, 1)
+        self.assertEqual(cluster._client.stop_calls, 0)
 
         self.assertEqual(connection._cluster, cluster)
         self.assertEqual(connection.table_prefix, None)
@@ -243,25 +243,25 @@ class TestConnection(unittest2.TestCase):
     def test_open(self):
         cluster = _Cluster()  # Avoid implicit environ check.
         connection = self._makeOne(autoconnect=False, cluster=cluster)
-        self.assertEqual(cluster.client.start_calls, 0)
+        self.assertEqual(cluster._client.start_calls, 0)
         connection.open()
-        self.assertEqual(cluster.client.start_calls, 1)
-        self.assertEqual(cluster.client.stop_calls, 0)
+        self.assertEqual(cluster._client.start_calls, 1)
+        self.assertEqual(cluster._client.stop_calls, 0)
 
     def test_close(self):
         cluster = _Cluster()  # Avoid implicit environ check.
         connection = self._makeOne(autoconnect=False, cluster=cluster)
-        self.assertEqual(cluster.client.stop_calls, 0)
+        self.assertEqual(cluster._client.stop_calls, 0)
         connection.close()
-        self.assertEqual(cluster.client.stop_calls, 1)
-        self.assertEqual(cluster.client.start_calls, 0)
+        self.assertEqual(cluster._client.stop_calls, 1)
+        self.assertEqual(cluster._client.start_calls, 0)
 
     def test___del__good_initialization(self):
         cluster = _Cluster()  # Avoid implicit environ check.
         connection = self._makeOne(autoconnect=False, cluster=cluster)
-        self.assertEqual(cluster.client.stop_calls, 0)
+        self.assertEqual(cluster._client.stop_calls, 0)
         connection.__del__()
-        self.assertEqual(cluster.client.stop_calls, 1)
+        self.assertEqual(cluster._client.stop_calls, 1)
 
     def test___del__bad_initialization(self):
         cluster = _Cluster()  # Avoid implicit environ check.
@@ -269,9 +269,9 @@ class TestConnection(unittest2.TestCase):
         # Fake that initialization failed.
         del connection._initialized
 
-        self.assertEqual(cluster.client.stop_calls, 0)
+        self.assertEqual(cluster._client.stop_calls, 0)
         connection.__del__()
-        self.assertEqual(cluster.client.stop_calls, 0)
+        self.assertEqual(cluster._client.stop_calls, 0)
 
     def test__table_name_with_prefix_set(self):
         table_prefix = 'table-prefix'
@@ -529,7 +529,7 @@ class _Cluster(object):
     def __init__(self, copies=(), list_tables_result=()):
         self.copies = list(copies)
         # Included to support Connection.__del__
-        self.client = _Client()
+        self._client = _Client()
         self.list_tables_result = list_tables_result
 
     def copy(self):
