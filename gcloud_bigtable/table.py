@@ -62,33 +62,6 @@ class Table(object):
         self._cluster = cluster
 
     @property
-    def cluster(self):
-        """Getter for table's cluster.
-
-        :rtype: :class:`.cluster.Cluster`
-        :returns: The cluster stored on the table.
-        """
-        return self._cluster
-
-    @property
-    def client(self):
-        """Getter for table's client.
-
-        :rtype: :class:`.client.Client`
-        :returns: The client that owns this table.
-        """
-        return self.cluster.client
-
-    @property
-    def timeout_seconds(self):
-        """Getter for table's default timeout seconds.
-
-        :rtype: int
-        :returns: The timeout seconds default stored on the table's client.
-        """
-        return self._cluster.timeout_seconds
-
-    @property
     def name(self):
         """Table name used in requests.
 
@@ -104,7 +77,7 @@ class Table(object):
         :rtype: str
         :returns: The table name.
         """
-        return self.cluster.name + '/tables/' + self.table_id
+        return self._cluster.name + '/tables/' + self.table_id
 
     def column_family(self, column_family_id, gc_rule=None):
         """Factory to create a column family associated with this table.
@@ -146,12 +119,12 @@ class Table(object):
         if not isinstance(other, self.__class__):
             return False
         return (other.table_id == self.table_id and
-                other.cluster == self.cluster)
+                other._cluster == self._cluster)
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def create(self, initial_split_keys=None, timeout_seconds=None):
+    def create(self, initial_split_keys=None):
         """Creates this table.
 
         .. note::
@@ -178,21 +151,17 @@ class Table(object):
                                    ``"s1"`` and ``"s2"``, three tablets will be
                                    created, spanning the key ranges:
                                    ``[, s1)``, ``[s1, s2)``, ``[s2, )``.
-
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on table.
         """
         request_pb = messages_pb2.CreateTableRequest(
             initial_split_keys=initial_split_keys or [],
-            name=self.cluster.name,
+            name=self._cluster.name,
             table_id=self.table_id,
         )
-        timeout_seconds = timeout_seconds or self.timeout_seconds
+        client = self._cluster._client
         # We expect a `._generated.bigtable_table_data_pb2.Table`
-        self.client._table_stub.CreateTable(request_pb, timeout_seconds)
+        client._table_stub.CreateTable(request_pb, client.timeout_seconds)
 
-    def rename(self, new_table_id, timeout_seconds=None):
+    def rename(self, new_table_id):
         """Rename this table.
 
         .. note::
@@ -202,7 +171,7 @@ class Table(object):
 
         .. note::
 
-            The Bigtable Table Admin API currently returns
+            The Bigtable Table Admin API currently (``v1``) returns
 
                 ``BigtableTableService.RenameTable is not yet implemented``
 
@@ -211,39 +180,26 @@ class Table(object):
 
         :type new_table_id: str
         :param new_table_id: The new name table ID.
-
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on table.
         """
         request_pb = messages_pb2.RenameTableRequest(
             name=self.name,
             new_id=new_table_id,
         )
-        timeout_seconds = timeout_seconds or self.timeout_seconds
+        client = self._cluster._client
         # We expect a `._generated.empty_pb2.Empty`
-        self.client._table_stub.RenameTable(request_pb, timeout_seconds)
+        client._table_stub.RenameTable(request_pb, client.timeout_seconds)
 
         self.table_id = new_table_id
 
-    def delete(self, timeout_seconds=None):
-        """Delete this table.
-
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on table.
-        """
+    def delete(self):
+        """Delete this table."""
         request_pb = messages_pb2.DeleteTableRequest(name=self.name)
-        timeout_seconds = timeout_seconds or self.timeout_seconds
+        client = self._cluster._client
         # We expect a `._generated.empty_pb2.Empty`
-        self.client._table_stub.DeleteTable(request_pb, timeout_seconds)
+        client._table_stub.DeleteTable(request_pb, client.timeout_seconds)
 
-    def list_column_families(self, timeout_seconds=None):
+    def list_column_families(self):
         """Check if this table exists.
-
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on table.
 
         :rtype: dictionary with string as keys and
                 :class:`.column_family.ColumnFamily` as values
@@ -253,10 +209,10 @@ class Table(object):
                  name from the column family ID.
         """
         request_pb = messages_pb2.GetTableRequest(name=self.name)
-        timeout_seconds = timeout_seconds or self.timeout_seconds
+        client = self._cluster._client
         # We expect a `._generated.bigtable_table_data_pb2.Table`
-        table_pb = self.client._table_stub.GetTable(request_pb,
-                                                    timeout_seconds)
+        table_pb = client._table_stub.GetTable(request_pb,
+                                               client.timeout_seconds)
 
         result = {}
         for column_family_id, value_pb in table_pb.column_families.items():
@@ -270,7 +226,7 @@ class Table(object):
             result[column_family_id] = column_family
         return result
 
-    def read_row(self, row_key, filter_=None, timeout_seconds=None):
+    def read_row(self, row_key, filter_=None):
         """Read a single row from this table.
 
         :type row_key: bytes
@@ -282,10 +238,6 @@ class Table(object):
         :param filter_: (Optional) The filter to apply to the contents of the
                         row. If unset, returns the entire row.
 
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on table.
-
         :rtype: :class:`.PartialRowData`, :data:`NoneType <types.NoneType>`
         :returns: The contents of the row if any chunks were returned in
                   the response, otherwise :data:`None`.
@@ -294,9 +246,9 @@ class Table(object):
         """
         request_pb = _create_row_request(self.name, row_key=row_key,
                                          filter_=filter_)
-        timeout_seconds = timeout_seconds or self.timeout_seconds
-        response_iterator = self.client._data_stub.ReadRows(request_pb,
-                                                            timeout_seconds)
+        client = self._cluster._client
+        response_iterator = client._data_stub.ReadRows(request_pb,
+                                                       client.timeout_seconds)
         # We expect an iterator of `data_messages_pb2.ReadRowsResponse`
         result = PartialRowData(row_key)
         for read_rows_response in response_iterator:
@@ -311,8 +263,7 @@ class Table(object):
         return result
 
     def read_rows(self, start_key=None, end_key=None,
-                  allow_row_interleaving=None, limit=None, filter_=None,
-                  timeout_seconds=None):
+                  allow_row_interleaving=None, limit=None, filter_=None):
         """Read rows from this table.
 
         :type start_key: bytes
@@ -353,10 +304,6 @@ class Table(object):
                       more than N rows. However, only N ``commit_row`` chunks
                       will be sent.
 
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on table.
-
         :rtype: :class:`.PartialRowsData`
         :returns: A :class:`.PartialRowsData` convenience wrapper for consuming
                   the streamed results.
@@ -364,13 +311,13 @@ class Table(object):
         request_pb = _create_row_request(
             self.name, start_key=start_key, end_key=end_key, filter_=filter_,
             allow_row_interleaving=allow_row_interleaving, limit=limit)
-        timeout_seconds = timeout_seconds or self.timeout_seconds
-        response_iterator = self.client._data_stub.ReadRows(request_pb,
-                                                            timeout_seconds)
+        client = self._cluster._client
+        response_iterator = client._data_stub.ReadRows(request_pb,
+                                                       client.timeout_seconds)
         # We expect an iterator of `data_messages_pb2.ReadRowsResponse`
         return PartialRowsData(response_iterator)
 
-    def sample_row_keys(self, timeout_seconds=None):
+    def sample_row_keys(self):
         """Read a sample of row keys in the table.
 
         The returned row keys will delimit contiguous sections of the table of
@@ -396,10 +343,6 @@ class Table(object):
         samples would require space roughly equal to the difference in their
         ``offset_bytes`` fields.
 
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on table.
-
         :rtype: :class:`grpc.framework.alpha._reexport._CancellableIterator`
         :returns: A cancel-able iterator. Can be consumed by calling ``next()``
                   or by casting to a :class:`list` and can be cancelled by
@@ -407,9 +350,9 @@ class Table(object):
         """
         request_pb = data_messages_pb2.SampleRowKeysRequest(
             table_name=self.name)
-        timeout_seconds = timeout_seconds or self.timeout_seconds
-        response_iterator = self.client._data_stub.SampleRowKeys(
-            request_pb, timeout_seconds)
+        client = self._cluster._client
+        response_iterator = client._data_stub.SampleRowKeys(
+            request_pb, client.timeout_seconds)
         return response_iterator
 
 

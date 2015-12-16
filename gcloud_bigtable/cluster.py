@@ -34,6 +34,7 @@ _CLUSTER_NAME_RE = re.compile(r'^projects/(?P<project>[^/]+)/'
 _OPERATION_NAME_RE = re.compile(r'^operations/projects/([^/]+)/zones/([^/]+)/'
                                 r'clusters/([a-z][-a-z0-9]*)/operations/'
                                 r'(?P<operation_id>\d+)$')
+_DEFAULT_SERVE_NODES = 3
 
 
 def _get_pb_property_value(message_pb, property_name):
@@ -69,7 +70,7 @@ def _prepare_create_request(cluster):
     :rtype: :class:`.messages_pb2.CreateClusterRequest`
     :returns: The CreateCluster request object containing the cluster info.
     """
-    zone_full_name = ('projects/' + cluster.project +
+    zone_full_name = ('projects/' + cluster._client.project +
                       '/zones/' + cluster.zone)
     return messages_pb2.CreateClusterRequest(
         name=zone_full_name,
@@ -97,8 +98,9 @@ def _process_operation(operation_pb):
     """
     match = _OPERATION_NAME_RE.match(operation_pb.name)
     if match is None:
-        raise ValueError('Cluster create operation name was not in the '
-                         'expected format.', operation_pb.name)
+        raise ValueError('Operation name was not in the expected '
+                         'format after a cluster modification.',
+                         operation_pb.name)
     operation_id = int(match.group('operation_id'))
 
     request_metadata = _parse_pb_any_to_native(operation_pb.metadata)
@@ -147,13 +149,8 @@ class Operation(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def finished(self, timeout_seconds=None):
+    def finished(self):
         """Check if the operation has finished.
-
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on
-                                cluster.
 
         :rtype: bool
         :returns: A boolean indicating if the current operation has completed.
@@ -166,10 +163,9 @@ class Operation(object):
         operation_name = ('operations/' + self._cluster.name +
                           '/operations/%d' % (self.op_id,))
         request_pb = operations_pb2.GetOperationRequest(name=operation_name)
-        timeout_seconds = timeout_seconds or self._cluster.timeout_seconds
-        # We expact a `._generated.operations_pb2.Operation`.
+        # We expect a `._generated.operations_pb2.Operation`.
         operation_pb = self._cluster._client._operations_stub.GetOperation(
-            request_pb, timeout_seconds)
+            request_pb, self._cluster._client.timeout_seconds)
 
         if operation_pb.done:
             self._complete = True
@@ -212,11 +208,11 @@ class Cluster(object):
 
     :type serve_nodes: int
     :param serve_nodes: (Optional) The number of nodes in the cluster.
-                        Defaults to 3.
+                        Defaults to 3 (``_DEFAULT_SERVE_NODES``).
     """
 
     def __init__(self, zone, cluster_id, client,
-                 display_name=None, serve_nodes=3):
+                 display_name=None, serve_nodes=_DEFAULT_SERVE_NODES):
         self.zone = zone
         self.cluster_id = cluster_id
         self.display_name = display_name or cluster_id
@@ -276,37 +272,10 @@ class Cluster(object):
         :rtype: :class:`.Cluster`
         :returns: A copy of the current cluster.
         """
-        new_client = self.client.copy()
+        new_client = self._client.copy()
         return self.__class__(self.zone, self.cluster_id, new_client,
                               display_name=self.display_name,
                               serve_nodes=self.serve_nodes)
-
-    @property
-    def client(self):
-        """Getter for cluster's client.
-
-        :rtype: :class:`.client.Client`
-        :returns: The client stored on the cluster.
-        """
-        return self._client
-
-    @property
-    def project(self):
-        """Getter for cluster's project ID.
-
-        :rtype: str
-        :returns: The project ID for the cluster (is stored on the client).
-        """
-        return self._client.project
-
-    @property
-    def timeout_seconds(self):
-        """Getter for cluster's default timeout seconds.
-
-        :rtype: int
-        :returns: The timeout seconds default stored on the cluster's client.
-        """
-        return self._client.timeout_seconds
 
     @property
     def name(self):
@@ -323,7 +292,7 @@ class Cluster(object):
         :rtype: str
         :returns: The cluster name.
         """
-        return (self.client.project_name + '/zones/' + self.zone +
+        return (self._client.project_name + '/zones/' + self.zone +
                 '/clusters/' + self.cluster_id)
 
     def __eq__(self, other):
@@ -337,30 +306,23 @@ class Cluster(object):
         #       settings but different clients can't be used in the same way.
         return (other.zone == self.zone and
                 other.cluster_id == self.cluster_id and
-                other.client == self.client)
+                other._client == self._client)
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def reload(self, timeout_seconds=None):
-        """Reload the metadata for this cluster.
-
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on
-                                cluster.
-        """
+    def reload(self):
+        """Reload the metadata for this cluster."""
         request_pb = messages_pb2.GetClusterRequest(name=self.name)
-        timeout_seconds = timeout_seconds or self.timeout_seconds
         # We expect a `._generated.bigtable_cluster_data_pb2.Cluster`.
-        cluster_pb = self.client._cluster_stub.GetCluster(request_pb,
-                                                          timeout_seconds)
+        cluster_pb = self._client._cluster_stub.GetCluster(
+            request_pb, self._client.timeout_seconds)
 
         # NOTE: _update_from_pb does not check that the project, zone and
         #       cluster ID on the response match the request.
         self._update_from_pb(cluster_pb)
 
-    def create(self, timeout_seconds=None):
+    def create(self):
         """Create this cluster.
 
         .. note::
@@ -377,25 +339,19 @@ class Cluster(object):
 
             before calling :meth:`create`.
 
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on
-                                cluster.
-
         :rtype: :class:`Operation`
         :returns: The long-running operation corresponding to the
                   create operation.
         """
         request_pb = _prepare_create_request(self)
-        timeout_seconds = timeout_seconds or self.timeout_seconds
         # We expect an `operations_pb2.Operation`.
-        cluster_pb = self.client._cluster_stub.CreateCluster(
-            request_pb, timeout_seconds)
+        cluster_pb = self._client._cluster_stub.CreateCluster(
+            request_pb, self._client.timeout_seconds)
 
         op_id, op_begin = _process_operation(cluster_pb.current_operation)
         return Operation('create', op_id, op_begin, cluster=self)
 
-    def update(self, timeout_seconds=None):
+    def update(self):
         """Update this cluster.
 
         .. note::
@@ -410,11 +366,6 @@ class Cluster(object):
 
             before calling :meth:`update`.
 
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on
-                                cluster.
-
         :rtype: :class:`Operation`
         :returns: The long-running operation corresponding to the
                   update operation.
@@ -424,15 +375,14 @@ class Cluster(object):
             display_name=self.display_name,
             serve_nodes=self.serve_nodes,
         )
-        timeout_seconds = timeout_seconds or self.timeout_seconds
         # We expect a `._generated.bigtable_cluster_data_pb2.Cluster`.
-        cluster_pb = self.client._cluster_stub.UpdateCluster(
-            request_pb, timeout_seconds)
+        cluster_pb = self._client._cluster_stub.UpdateCluster(
+            request_pb, self._client.timeout_seconds)
 
         op_id, op_begin = _process_operation(cluster_pb.current_operation)
         return Operation('update', op_id, op_begin, cluster=self)
 
-    def delete(self, timeout_seconds=None):
+    def delete(self):
         """Delete this cluster.
 
         Marks a cluster and all of its tables for permanent deletion in 7 days.
@@ -456,18 +406,13 @@ class Cluster(object):
         * The cluster and **all of its tables** will immediately and
           irrevocably disappear from the API, and their data will be
           permanently deleted.
-
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on
-                                cluster.
         """
         request_pb = messages_pb2.DeleteClusterRequest(name=self.name)
-        timeout_seconds = timeout_seconds or self.timeout_seconds
         # We expect a `._generated.empty_pb2.Empty`
-        self.client._cluster_stub.DeleteCluster(request_pb, timeout_seconds)
+        self._client._cluster_stub.DeleteCluster(
+            request_pb, self._client.timeout_seconds)
 
-    def undelete(self, timeout_seconds=None):
+    def undelete(self):
         """Undelete this cluster.
 
         Cancels the scheduled deletion of an cluster and begins preparing it to
@@ -488,31 +433,20 @@ class Cluster(object):
         * Billing for the cluster's resources will resume.
         * All tables within the cluster will be available.
 
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on
-                                cluster.
-
         :rtype: :class:`Operation`
         :returns: The long-running operation corresponding to the
                   undelete operation.
         """
         request_pb = messages_pb2.UndeleteClusterRequest(name=self.name)
-        timeout_seconds = timeout_seconds or self.timeout_seconds
         # We expect a `._generated.operations_pb2.Operation`
-        operation_pb2 = self.client._cluster_stub.UndeleteCluster(
-            request_pb, timeout_seconds)
+        operation_pb2 = self._client._cluster_stub.UndeleteCluster(
+            request_pb, self._client.timeout_seconds)
 
         op_id, op_begin = _process_operation(operation_pb2)
         return Operation('undelete', op_id, op_begin, cluster=self)
 
-    def list_tables(self, timeout_seconds=None):
+    def list_tables(self):
         """List the tables in this cluster.
-
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on
-                                cluster.
 
         :rtype: list of :class:`Table <gcloud_bigtable.table.Table>`
         :returns: The list of tables owned by the cluster.
@@ -520,10 +454,9 @@ class Cluster(object):
                  returned tables has a name that is not of the expected format.
         """
         request_pb = table_messages_pb2.ListTablesRequest(name=self.name)
-        timeout_seconds = timeout_seconds or self.timeout_seconds
         # We expect a `table_messages_pb2.ListTablesResponse`
-        table_list_pb = self.client._table_stub.ListTables(request_pb,
-                                                           timeout_seconds)
+        table_list_pb = self._client._table_stub.ListTables(
+            request_pb, self._client.timeout_seconds)
 
         result = []
         for table_pb in table_list_pb.tables:

@@ -774,7 +774,7 @@ class TestClient(unittest2.TestCase):
         cluster_id = 'cluster-id'
         cluster = client.cluster(zone, cluster_id)
         self.assertTrue(isinstance(cluster, Cluster))
-        self.assertTrue(cluster.client is client)
+        self.assertTrue(cluster._client is client)
         self.assertEqual(cluster.zone, zone)
         self.assertEqual(cluster.cluster_id, cluster_id)
 

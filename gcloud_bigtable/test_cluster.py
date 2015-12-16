@@ -198,7 +198,7 @@ class TestOperation(unittest2.TestCase):
         begin = datetime.datetime(2015, 10, 22, 1, 1)
         timeout_seconds = 1
 
-        client = _Client(project)
+        client = _Client(project, timeout_seconds=timeout_seconds)
         cluster = Cluster(zone, cluster_id, client)
         operation = self._makeOne(op_type, op_id, begin, cluster=cluster)
 
@@ -218,7 +218,7 @@ class TestOperation(unittest2.TestCase):
         expected_result = done
 
         # Perform the method and check the result.
-        result = operation.finished(timeout_seconds=timeout_seconds)
+        result = operation.finished()
 
         self.assertEqual(result, expected_result)
         self.assertEqual(stub.method_calls, [(
@@ -289,33 +289,6 @@ class TestCluster(unittest2.TestCase):
         self.assertFalse(cluster is new_cluster)
         self.assertEqual(cluster, new_cluster)
 
-    def test_client_getter(self):
-        client = object()
-        cluster = self._makeOne(ZONE, CLUSTER_ID, client)
-        self.assertTrue(cluster.client is client)
-
-    def test_project_getter(self):
-        from gcloud_bigtable._testing import _MockWithAttachedMethods
-        from gcloud_bigtable.client import Client
-
-        scoped_creds = object()
-        credentials = _MockWithAttachedMethods(scoped_creds)
-        client = Client(project=PROJECT, credentials=credentials)
-        cluster = self._makeOne(ZONE, CLUSTER_ID, client)
-        self.assertEqual(cluster.project, PROJECT)
-
-    def test_timeout_seconds_getter(self):
-        from gcloud_bigtable._testing import _MockWithAttachedMethods
-        from gcloud_bigtable.client import Client
-
-        scoped_creds = object()
-        credentials = _MockWithAttachedMethods(scoped_creds)
-        timeout_seconds = 77
-        client = Client(project=PROJECT, credentials=credentials,
-                        timeout_seconds=timeout_seconds)
-        cluster = self._makeOne(ZONE, CLUSTER_ID, client)
-        self.assertEqual(cluster.timeout_seconds, timeout_seconds)
-
     def test_name_property(self):
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable.client import Client
@@ -359,7 +332,7 @@ class TestCluster(unittest2.TestCase):
         klass = self._getTargetClass()
         cluster = klass.from_pb(cluster_pb, client)
         self.assertTrue(isinstance(cluster, klass))
-        self.assertEqual(cluster.client, client)
+        self.assertEqual(cluster._client, client)
         self.assertEqual(cluster.zone, ZONE)
         self.assertEqual(cluster.cluster_id, CLUSTER_ID)
 
@@ -429,7 +402,8 @@ class TestCluster(unittest2.TestCase):
             bigtable_cluster_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable._grpc_mocks import StubMock
 
-        client = _Client(PROJECT)
+        timeout_seconds = 123
+        client = _Client(PROJECT, timeout_seconds=timeout_seconds)
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
 
         # Create request_pb
@@ -450,8 +424,7 @@ class TestCluster(unittest2.TestCase):
         expected_result = None  # reload() has no return value.
 
         # Perform the method and check the result.
-        timeout_seconds = 123
-        result = cluster.reload(timeout_seconds=timeout_seconds)
+        result = cluster.reload()
         self.assertEqual(result, expected_result)
         self.assertEqual(stub.method_calls, [(
             'GetCluster',
@@ -468,7 +441,8 @@ class TestCluster(unittest2.TestCase):
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster as MUT
 
-        client = _Client(PROJECT)
+        timeout_seconds = 578
+        client = _Client(PROJECT, timeout_seconds=timeout_seconds)
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
 
         # Create request_pb. Just a mock since we monkey patch
@@ -489,12 +463,11 @@ class TestCluster(unittest2.TestCase):
                                         cluster=cluster)
 
         # Perform the method and check the result.
-        timeout_seconds = 578
         mock_prepare_create_request = _MockCalled(request_pb)
         mock_process_operation = _MockCalled((op_id, op_begin))
         with _Monkey(MUT, _prepare_create_request=mock_prepare_create_request,
                      _process_operation=mock_process_operation):
-            result = cluster.create(timeout_seconds=timeout_seconds)
+            result = cluster.create()
 
         self.assertEqual(result, expected_result)
         self.assertEqual(stub.method_calls, [(
@@ -514,7 +487,8 @@ class TestCluster(unittest2.TestCase):
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster as MUT
 
-        client = _Client(PROJECT)
+        timeout_seconds = 9
+        client = _Client(PROJECT, timeout_seconds=timeout_seconds)
         serve_nodes = 81
         display_name = 'display_name'
         cluster = self._makeOne(ZONE, CLUSTER_ID, client,
@@ -544,11 +518,10 @@ class TestCluster(unittest2.TestCase):
                                         cluster=cluster)
 
         # We must create the cluster object with the client passed in.
-        timeout_seconds = 9
         mock_process_operation = _MockCalled((op_id, op_begin))
         with _Monkey(MUT,
                      _process_operation=mock_process_operation):
-            result = cluster.update(timeout_seconds=timeout_seconds)
+            result = cluster.update()
 
         self.assertEqual(result, expected_result)
         self.assertEqual(stub.method_calls, [(
@@ -564,7 +537,8 @@ class TestCluster(unittest2.TestCase):
         from gcloud_bigtable._generated import empty_pb2
         from gcloud_bigtable._grpc_mocks import StubMock
 
-        client = _Client(PROJECT)
+        timeout_seconds = 57
+        client = _Client(PROJECT, timeout_seconds=timeout_seconds)
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
 
         # Create request_pb
@@ -582,8 +556,7 @@ class TestCluster(unittest2.TestCase):
         expected_result = None  # delete() has no return value.
 
         # Perform the method and check the result.
-        timeout_seconds = 57
-        result = cluster.delete(timeout_seconds=timeout_seconds)
+        result = cluster.delete()
         self.assertEqual(result, expected_result)
         self.assertEqual(stub.method_calls, [(
             'DeleteCluster',
@@ -600,7 +573,8 @@ class TestCluster(unittest2.TestCase):
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import cluster as MUT
 
-        client = _Client(PROJECT)
+        timeout_seconds = 78
+        client = _Client(PROJECT, timeout_seconds=timeout_seconds)
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
 
         # Create request_pb
@@ -621,11 +595,10 @@ class TestCluster(unittest2.TestCase):
                                         cluster=cluster)
 
         # Perform the method and check the result.
-        timeout_seconds = 78
         mock_process_operation = _MockCalled((op_id, op_begin))
         with _Monkey(MUT,
                      _process_operation=mock_process_operation):
-            result = cluster.undelete(timeout_seconds=timeout_seconds)
+            result = cluster.undelete()
 
         self.assertEqual(result, expected_result)
         self.assertEqual(stub.method_calls, [(
@@ -642,7 +615,8 @@ class TestCluster(unittest2.TestCase):
             bigtable_table_service_messages_pb2 as table_messages_pb2)
         from gcloud_bigtable._grpc_mocks import StubMock
 
-        client = _Client(PROJECT)
+        timeout_seconds = 45
+        client = _Client(PROJECT, timeout_seconds=timeout_seconds)
         cluster = self._makeOne(ZONE, CLUSTER_ID, client)
 
         # Create request_
@@ -666,8 +640,7 @@ class TestCluster(unittest2.TestCase):
         expected_result = [expected_table]
 
         # Perform the method and check the result.
-        timeout_seconds = 45
-        result = cluster.list_tables(timeout_seconds=timeout_seconds)
+        result = cluster.list_tables()
         self.assertEqual(result, expected_result)
         self.assertEqual(stub.method_calls, [(
             'ListTables',
@@ -698,9 +671,10 @@ class _Client(object):
     operations_stub = None
     table_stub = None
 
-    def __init__(self, project):
+    def __init__(self, project, timeout_seconds=None):
         self.project = project
         self.project_name = 'projects/' + project
+        self.timeout_seconds = timeout_seconds
 
     def copy(self):
         import copy as copy_module

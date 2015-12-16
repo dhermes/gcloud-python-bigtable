@@ -37,23 +37,6 @@ class TestTable(unittest2.TestCase):
         self.assertEqual(table.table_id, TABLE_ID)
         self.assertTrue(table._cluster is cluster)
 
-    def test_cluster_getter(self):
-        cluster = object()
-        table = self._makeOne(TABLE_ID, cluster)
-        self.assertTrue(table.cluster is cluster)
-
-    def test_client_getter(self):
-        client = object()
-        cluster = _Cluster(None, client=client)
-        table = self._makeOne(TABLE_ID, cluster)
-        self.assertTrue(table.client is client)
-
-    def test_timeout_seconds_getter(self):
-        timeout_seconds = 1001
-        cluster = _Cluster(None, timeout_seconds=timeout_seconds)
-        table = self._makeOne(TABLE_ID, cluster)
-        self.assertEqual(table.timeout_seconds, timeout_seconds)
-
     def test_name_property(self):
         cluster_name = 'cluster_name'
         cluster = _Cluster(cluster_name)
@@ -117,7 +100,8 @@ class TestTable(unittest2.TestCase):
             bigtable_table_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable._grpc_mocks import StubMock
 
-        client = _Client()
+        timeout_seconds = 150
+        client = _Client(timeout_seconds=timeout_seconds)
         cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
                         '/clusters/' + CLUSTER_ID)
         cluster = _Cluster(cluster_name, client=client)
@@ -140,9 +124,7 @@ class TestTable(unittest2.TestCase):
         expected_result = None  # create() has no return value.
 
         # Perform the method and check the result.
-        timeout_seconds = 150
-        result = table.create(initial_split_keys=initial_split_keys,
-                              timeout_seconds=timeout_seconds)
+        result = table.create(initial_split_keys=initial_split_keys)
         self.assertEqual(result, expected_result)
         self.assertEqual(stub.method_calls, [(
             'CreateTable',
@@ -167,7 +149,8 @@ class TestTable(unittest2.TestCase):
         new_table_id = 'new_table_id'
         self.assertNotEqual(new_table_id, TABLE_ID)
 
-        client = _Client()
+        timeout_seconds = 97
+        client = _Client(timeout_seconds=timeout_seconds)
         cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
                         '/clusters/' + CLUSTER_ID)
         cluster = _Cluster(cluster_name, client=client)
@@ -190,8 +173,7 @@ class TestTable(unittest2.TestCase):
         expected_result = None  # rename() has no return value.
 
         # Perform the method and check the result.
-        timeout_seconds = 97
-        result = table.rename(new_table_id, timeout_seconds=timeout_seconds)
+        result = table.rename(new_table_id)
         self.assertEqual(result, expected_result)
         self.assertEqual(stub.method_calls, [(
             'RenameTable',
@@ -205,7 +187,8 @@ class TestTable(unittest2.TestCase):
         from gcloud_bigtable._generated import empty_pb2
         from gcloud_bigtable._grpc_mocks import StubMock
 
-        client = _Client()
+        timeout_seconds = 871
+        client = _Client(timeout_seconds=timeout_seconds)
         cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
                         '/clusters/' + CLUSTER_ID)
         cluster = _Cluster(cluster_name, client=client)
@@ -225,8 +208,7 @@ class TestTable(unittest2.TestCase):
         expected_result = None  # delete() has no return value.
 
         # Perform the method and check the result.
-        timeout_seconds = 871
-        result = table.delete(timeout_seconds=timeout_seconds)
+        result = table.delete()
         self.assertEqual(result, expected_result)
         self.assertEqual(stub.method_calls, [(
             'DeleteTable',
@@ -242,7 +224,8 @@ class TestTable(unittest2.TestCase):
         from gcloud_bigtable._grpc_mocks import StubMock
         from gcloud_bigtable.column_family import ColumnFamily
 
-        client = _Client()
+        timeout_seconds = 502
+        client = _Client(timeout_seconds=timeout_seconds)
         cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
                         '/clusters/' + CLUSTER_ID)
         cluster = _Cluster(cluster_name, client=client)
@@ -271,8 +254,7 @@ class TestTable(unittest2.TestCase):
         }
 
         # Perform the method and check the result.
-        timeout_seconds = 502
-        result = table.list_column_families(timeout_seconds=timeout_seconds)
+        result = table.list_column_families()
         self.assertEqual(result, expected_result)
         self.assertEqual(stub.method_calls, [(
             'GetTable',
@@ -298,7 +280,8 @@ class TestTable(unittest2.TestCase):
         from gcloud_bigtable.row_data import PartialRowData
         from gcloud_bigtable import table as MUT
 
-        client = _Client()
+        timeout_seconds = 596
+        client = _Client(timeout_seconds=timeout_seconds)
         cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
                         '/clusters/' + CLUSTER_ID)
         cluster = _Cluster(cluster_name, client=client)
@@ -327,10 +310,8 @@ class TestTable(unittest2.TestCase):
 
         # Perform the method and check the result.
         filter_obj = object()
-        timeout_seconds = 596
         with _Monkey(MUT, _create_row_request=mock_create_row_request):
-            result = table.read_row(row_key, filter_=filter_obj,
-                                    timeout_seconds=timeout_seconds)
+            result = table.read_row(row_key, filter_=filter_obj)
 
         self.assertEqual(result, expected_result)
         self.assertEqual(stub.method_calls, [(
@@ -371,7 +352,8 @@ class TestTable(unittest2.TestCase):
         from gcloud_bigtable.row_data import PartialRowsData
         from gcloud_bigtable import table as MUT
 
-        client = _Client()
+        timeout_seconds = 1111
+        client = _Client(timeout_seconds=timeout_seconds)
         cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
                         '/clusters/' + CLUSTER_ID)
         cluster = _Cluster(cluster_name, client=client)
@@ -396,12 +378,10 @@ class TestTable(unittest2.TestCase):
         filter_obj = object()
         allow_row_interleaving = True
         limit = 22
-        timeout_seconds = 1111
         with _Monkey(MUT, _create_row_request=mock_create_row_request):
             result = table.read_rows(
                 start_key=start_key, end_key=end_key, filter_=filter_obj,
-                allow_row_interleaving=allow_row_interleaving, limit=limit,
-                timeout_seconds=timeout_seconds)
+                allow_row_interleaving=allow_row_interleaving, limit=limit)
 
         self.assertEqual(result, expected_result)
         self.assertEqual(stub.method_calls, [(
@@ -424,7 +404,8 @@ class TestTable(unittest2.TestCase):
             bigtable_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable._grpc_mocks import StubMock
 
-        client = _Client()
+        timeout_seconds = 1333
+        client = _Client(timeout_seconds=timeout_seconds)
         cluster_name = ('projects/' + PROJECT_ID + '/zones/' + ZONE +
                         '/clusters/' + CLUSTER_ID)
         cluster = _Cluster(cluster_name, client=client)
@@ -444,8 +425,7 @@ class TestTable(unittest2.TestCase):
         expected_result = response_iterator
 
         # Perform the method and check the result.
-        timeout_seconds = 1333
-        result = table.sample_row_keys(timeout_seconds=timeout_seconds)
+        result = table.sample_row_keys()
         self.assertEqual(result, expected_result)
         self.assertEqual(stub.method_calls, [(
             'SampleRowKeys',
@@ -583,10 +563,12 @@ class _Client(object):
     operations_stub = None
     table_stub = None
 
+    def __init__(self, timeout_seconds=None):
+        self.timeout_seconds = timeout_seconds
+
 
 class _Cluster(object):
 
-    def __init__(self, name, client=None, timeout_seconds=None):
+    def __init__(self, name, client=None):
         self.name = name
-        self.client = client
-        self.timeout_seconds = timeout_seconds
+        self._client = client
