@@ -264,12 +264,8 @@ class ColumnFamily(object):
 
         .. note::
 
-            The Bigtable Table Admin API currently returns
-
-             ``BigtableTableService.UpdateColumnFamily is not yet implemented``
-
-            when this method is used. It's unclear when this method will
-            actually be supported by the API.
+            Only the GC rule can be updated. By changing the column family ID,
+            you will simply be referring to a different column family.
 
         :type timeout_seconds: int
         :param timeout_seconds: Number of seconds for request time-out.

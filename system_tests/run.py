@@ -203,6 +203,26 @@ class TestTableAdminAPI(unittest2.TestCase):
         sorted_tables = sorted(tables, key=name_attr)
         self.assertEqual(sorted_tables, expected_tables)
 
+    def test_rename_table(self):
+        from grpc.beta.interfaces import StatusCode
+        from grpc.framework.interfaces.face.face import LocalError
+
+        temp_table_id = 'foo-bar-baz-table'
+        temp_table = CLUSTER.table(temp_table_id)
+        temp_table.create()
+        self.tables_to_delete.append(temp_table)
+
+        exc_caught = None
+        try:
+            temp_table.rename(temp_table_id + '-alt')
+        except LocalError as exc:
+            exc_caught = exc  # Python 3 syntax issue.
+        self.assertNotEqual(exc_caught, None)
+        self.assertEqual(exc_caught.code, StatusCode.UNIMPLEMENTED)
+        self.assertEqual(
+            exc_caught.details,
+            'BigtableTableService.RenameTable is not yet implemented')
+
     def test_create_column_family(self):
         temp_table_id = 'foo-bar-baz-table'
         temp_table = CLUSTER.table(temp_table_id)
@@ -223,6 +243,29 @@ class TestTableAdminAPI(unittest2.TestCase):
         self.assertEqual(retrieved_col_fam.column_family_id,
                          column_family.column_family_id)
         self.assertEqual(retrieved_col_fam.gc_rule, gc_rule)
+
+    def test_update_column_family(self):
+        temp_table_id = 'foo-bar-baz-table'
+        temp_table = CLUSTER.table(temp_table_id)
+        temp_table.create()
+        self.tables_to_delete.append(temp_table)
+
+        gc_rule = GarbageCollectionRule(max_num_versions=1)
+        column_family = temp_table.column_family(COLUMN_FAMILY_ID1,
+                                                 gc_rule=gc_rule)
+        column_family.create()
+
+        # Check that our created table is as expected.
+        col_fams = temp_table.list_column_families()
+        self.assertEqual(col_fams, {COLUMN_FAMILY_ID1: column_family})
+
+        # Update the column family's GC rule and then try to update.
+        column_family.gc_rule = None
+        column_family.update()
+
+        # Check that the update has propagated.
+        col_fams = temp_table.list_column_families()
+        self.assertEqual(col_fams[COLUMN_FAMILY_ID1].gc_rule, None)
 
     def test_delete_column_family(self):
         temp_table_id = 'foo-bar-baz-table'
