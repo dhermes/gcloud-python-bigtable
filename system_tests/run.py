@@ -27,7 +27,7 @@ from oauth2client.client import GoogleCredentials
 from gcloud_bigtable._non_upstream_helpers import _microseconds_to_timestamp
 from gcloud_bigtable._non_upstream_helpers import _timestamp_to_microseconds
 from gcloud_bigtable.client import Client
-from gcloud_bigtable.column_family import GarbageCollectionRule
+from gcloud_bigtable.column_family import MaxVersionsGCRule
 from gcloud_bigtable.row import RowFilter
 from gcloud_bigtable.row import RowFilterChain
 from gcloud_bigtable.row import RowFilterUnion
@@ -231,7 +231,7 @@ class TestTableAdminAPI(unittest2.TestCase):
         self.tables_to_delete.append(temp_table)
 
         self.assertEqual(temp_table.list_column_families(), {})
-        gc_rule = GarbageCollectionRule(max_num_versions=1)
+        gc_rule = MaxVersionsGCRule(1)
         column_family = temp_table.column_family(COLUMN_FAMILY_ID1,
                                                  gc_rule=gc_rule)
         column_family.create()
@@ -240,7 +240,7 @@ class TestTableAdminAPI(unittest2.TestCase):
 
         self.assertEqual(len(col_fams), 1)
         retrieved_col_fam = col_fams[COLUMN_FAMILY_ID1]
-        self.assertTrue(retrieved_col_fam.table is column_family.table)
+        self.assertTrue(retrieved_col_fam._table is column_family._table)
         self.assertEqual(retrieved_col_fam.column_family_id,
                          column_family.column_family_id)
         self.assertEqual(retrieved_col_fam.gc_rule, gc_rule)
@@ -251,7 +251,7 @@ class TestTableAdminAPI(unittest2.TestCase):
         temp_table.create()
         self.tables_to_delete.append(temp_table)
 
-        gc_rule = GarbageCollectionRule(max_num_versions=1)
+        gc_rule = MaxVersionsGCRule(1)
         column_family = temp_table.column_family(COLUMN_FAMILY_ID1,
                                                  gc_rule=gc_rule)
         column_family.create()

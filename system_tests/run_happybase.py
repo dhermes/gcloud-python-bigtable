@@ -61,11 +61,12 @@ def set_hbase_connection():
 def set_cloud_bigtable_connection():
     # pylint: disable=no-name-in-module
     from grpc.framework.interfaces.face.face import NetworkError
+    from gcloud_bigtable import _non_upstream_helpers
     from gcloud_bigtable import client as client_mod
     from gcloud_bigtable.happybase import Connection
     # pylint: enable=no-name-in-module
 
-    client_mod.PROJECT_ENV_VAR = 'GCLOUD_TESTS_PROJECT_ID'
+    _non_upstream_helpers.PROJECT_ENV_VAR = 'GCLOUD_TESTS_PROJECT_ID'
     client = client_mod.Client(admin=True)
     zone = 'us-central1-c'
     cluster_id = 'gcloud-python'
