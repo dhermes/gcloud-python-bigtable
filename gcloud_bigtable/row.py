@@ -22,7 +22,7 @@ import six
 from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_service_messages_pb2 as messages_pb2)
-from gcloud_bigtable._helpers import _parse_family_pb
+from gcloud_bigtable._non_upstream_helpers import _microseconds_to_timestamp
 from gcloud_bigtable._non_upstream_helpers import _timestamp_to_microseconds
 from gcloud_bigtable._non_upstream_helpers import _to_bytes
 
@@ -1205,3 +1205,41 @@ def _parse_rmw_row_response(row_response):
         column_family_id, curr_family = _parse_family_pb(column_family)
         result[column_family_id] = curr_family
     return result
+
+
+def _parse_family_pb(family_pb):
+    """Parses a Family protobuf into a dictionary.
+
+    :type family_pb: :class:`._generated.bigtable_data_pb2.Family`
+    :param family_pb: A protobuf
+
+    :rtype: tuple
+    :returns: A string and dictionary. The string is the name of the
+              column family and the dictionary has column names (within the
+              family) as keys and cell lists as values. Each cell is
+              represented with a two-tuple with the value (in bytes) and the
+              timestamp for the cell. For example:
+
+              .. code:: python
+
+                  {
+                      b'col-name1': [
+                          (b'cell-val', datetime.datetime(...)),
+                          (b'cell-val-newer', datetime.datetime(...)),
+                      ],
+                      b'col-name2': [
+                          (b'altcol-cell-val', datetime.datetime(...)),
+                      ],
+                  }
+    """
+    result = {}
+    for column in family_pb.columns:
+        result[column.qualifier] = cells = []
+        for cell in column.cells:
+            val_pair = (
+                cell.value,
+                _microseconds_to_timestamp(cell.timestamp_micros),
+            )
+            cells.append(val_pair)
+
+    return family_pb.name, result
