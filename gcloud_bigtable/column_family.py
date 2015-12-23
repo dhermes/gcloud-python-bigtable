@@ -21,6 +21,7 @@ from gcloud_bigtable._generated import bigtable_table_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._generated import duration_pb2
+from gcloud_bigtable._non_upstream_helpers import _total_seconds
 
 
 def _timedelta_to_duration_pb(timedelta_val):
@@ -34,10 +35,10 @@ def _timedelta_to_duration_pb(timedelta_val):
     :type timedelta_val: :class:`datetime.timedelta`
     :param timedelta_val: A timedelta object.
 
-    :rtype: :class:`duration_pb2.Duration`
+    :rtype: :class:`.duration_pb2.Duration`
     :returns: A duration object equivalent to the time delta.
     """
-    seconds_decimal = timedelta_val.total_seconds()
+    seconds_decimal = _total_seconds(timedelta_val)
     # Truncate the parts other than the integer.
     seconds = int(seconds_decimal)
     if seconds_decimal < 0:
@@ -57,7 +58,7 @@ def _duration_pb_to_timedelta(duration_pb):
         The Python timedelta has a granularity of microseconds while
         the protobuf duration type has a duration of nanoseconds.
 
-    :type duration_pb: :class:`duration_pb2.Duration`
+    :type duration_pb: :class:`.duration_pb2.Duration`
     :param duration_pb: A protobuf duration object.
 
     :rtype: :class:`datetime.timedelta`
@@ -70,94 +71,89 @@ def _duration_pb_to_timedelta(duration_pb):
 
 
 class GarbageCollectionRule(object):
-    """Table garbage collection rule.
+    """Garbage collection rule for column families within a table.
 
-    Cells in the table fitting the rule will be deleted during
-    garbage collection.
-
-    These values can be combined via :class:`GarbageCollectionRuleUnion` and
-    :class:`GarbageCollectionRuleIntersection`.
+    Cells in the column family (within a table) fitting the rule will be
+    deleted during garbage collection.
 
     .. note::
 
-        At most one of ``max_num_versions`` and ``max_age`` can be specified
-        at once.
+        This class is a do-nothing base class for all GC rules.
 
     .. note::
 
         A string ``gc_expression`` can also be used with API requests, but
         that value would be superceded by a ``gc_rule``. As a result, we
-        don't support that feature and instead support via this native
-        object.
-
-    :type max_num_versions: int
-    :param max_num_versions: The maximum number of versions
-
-    :type max_age: :class:`datetime.timedelta`
-    :param max_age: The maximum age allowed for a cell in the table.
-
-    :raises: :class:`TypeError <exceptions.TypeError>` if both
-             ``max_num_versions`` and ``max_age`` are set.
+        don't support that feature and instead support via native classes.
     """
-
-    def __init__(self, max_num_versions=None, max_age=None):
-        self.max_num_versions = max_num_versions
-        self.max_age = max_age
-        self._check_single_value()
-
-    def _check_single_value(self):
-        """Checks that at most one value is set on the instance.
-
-        :raises: :class:`TypeError <exceptions.TypeError>` if not exactly one
-                 value set on the instance.
-        """
-        if self.max_num_versions is not None and self.max_age is not None:
-            raise TypeError('At most one of max_num_versions and '
-                            'max_age can be set')
-
-    def __eq__(self, other):
-        if not isinstance(other, self.__class__):
-            return False
-        return (other.max_num_versions == self.max_num_versions and
-                other.max_age == self.max_age)
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
+
+class MaxVersionsGCRule(GarbageCollectionRule):
+    """Garbage collection limiting the number of versions of a cell.
+
+    :type max_num_versions: int
+    :param max_num_versions: The maximum number of versions
+    """
+
+    def __init__(self, max_num_versions):
+        self.max_num_versions = max_num_versions
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return other.max_num_versions == self.max_num_versions
+
     def to_pb(self):
-        """Converts the :class:`GarbageCollectionRule` to a protobuf.
+        """Converts the garbage collection rule to a protobuf.
 
         :rtype: :class:`.data_pb2.GcRule`
         :returns: The converted current object.
         """
-        self._check_single_value()
-        gc_rule_kwargs = {}
-        if self.max_num_versions is not None:
-            gc_rule_kwargs['max_num_versions'] = self.max_num_versions
-        if self.max_age is not None:
-            gc_rule_kwargs['max_age'] = _timedelta_to_duration_pb(self.max_age)
-        return data_pb2.GcRule(**gc_rule_kwargs)
+        return data_pb2.GcRule(max_num_versions=self.max_num_versions)
 
 
-class GarbageCollectionRuleUnion(object):
+class MaxAgeGCRule(GarbageCollectionRule):
+    """Garbage collection limiting the age of a cell.
+
+    :type max_age: :class:`datetime.timedelta`
+    :param max_age: The maximum age allowed for a cell in the table.
+    """
+
+    def __init__(self, max_age):
+        self.max_age = max_age
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return other.max_age == self.max_age
+
+    def to_pb(self):
+        """Converts the garbage collection rule to a protobuf.
+
+        :rtype: :class:`.data_pb2.GcRule`
+        :returns: The converted current object.
+        """
+        max_age = _timedelta_to_duration_pb(self.max_age)
+        return data_pb2.GcRule(max_age=max_age)
+
+
+class GCRuleUnion(GarbageCollectionRule):
     """Union of garbage collection rules.
 
     :type rules: list
-    :param rules: List of :class:`GarbageCollectionRule`,
-                  :class:`GarbageCollectionRuleUnion` and/or
-                  :class:`GarbageCollectionRuleIntersection`
+    :param rules: List of :class:`GarbageCollectionRule`.
     """
 
-    def __init__(self, rules=None):
+    def __init__(self, rules):
         self.rules = rules
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
         return other.rules == self.rules
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
 
     def to_pb(self):
         """Converts the union into a single gc rule as a protobuf.
@@ -170,25 +166,20 @@ class GarbageCollectionRuleUnion(object):
         return data_pb2.GcRule(union=union)
 
 
-class GarbageCollectionRuleIntersection(object):
+class GCRuleIntersection(GarbageCollectionRule):
     """Intersection of garbage collection rules.
 
     :type rules: list
-    :param rules: List of :class:`GarbageCollectionRule`,
-                  :class:`GarbageCollectionRuleUnion` and/or
-                  :class:`GarbageCollectionRuleIntersection`
+    :param rules: List of :class:`GarbageCollectionRule`.
     """
 
-    def __init__(self, rules=None):
+    def __init__(self, rules):
         self.rules = rules
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
         return other.rules == self.rules
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
 
     def to_pb(self):
         """Converts the intersection into a single gc rule as a protobuf.
@@ -217,9 +208,7 @@ class ColumnFamily(object):
     :type table: :class:`Table <gcloud_bigtable.table.Table>`
     :param table: The table that owns the column family.
 
-    :type gc_rule: :class:`GarbageCollectionRule`,
-                   :class:`GarbageCollectionRuleUnion` or
-                   :class:`GarbageCollectionRuleIntersection`
+    :type gc_rule: :class:`GarbageCollectionRule`
     :param gc_rule: (Optional) The garbage collection settings for this
                     column family.
     """
@@ -228,33 +217,6 @@ class ColumnFamily(object):
         self.column_family_id = column_family_id
         self._table = table
         self.gc_rule = gc_rule
-
-    @property
-    def table(self):
-        """Getter for column family's table.
-
-        :rtype: :class:`Table <gcloud_bigtable.table.Table>`
-        :returns: The table stored on the column family.
-        """
-        return self._table
-
-    @property
-    def client(self):
-        """Getter for column family's client.
-
-        :rtype: :class:`.client.Client`
-        :returns: The client that owns this column family.
-        """
-        return self.table._cluster._client
-
-    @property
-    def timeout_seconds(self):
-        """Getter for column family's default timeout seconds.
-
-        :rtype: int
-        :returns: The timeout seconds default.
-        """
-        return self.table._cluster._client.timeout_seconds
 
     @property
     def name(self):
@@ -272,111 +234,88 @@ class ColumnFamily(object):
         :rtype: str
         :returns: The column family name.
         """
-        return self.table.name + '/columnFamilies/' + self.column_family_id
+        return self._table.name + '/columnFamilies/' + self.column_family_id
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
         return (other.column_family_id == self.column_family_id and
-                other.gc_rule == self.gc_rule and
-                other.table == self.table)
+                other._table == self._table and
+                other.gc_rule == self.gc_rule)
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def create(self, timeout_seconds=None):
-        """Create this column family.
-
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on
-                                column family.
-        """
+    def create(self):
+        """Create this column family."""
         if self.gc_rule is None:
             column_family = data_pb2.ColumnFamily()
         else:
             column_family = data_pb2.ColumnFamily(gc_rule=self.gc_rule.to_pb())
         request_pb = messages_pb2.CreateColumnFamilyRequest(
-            name=self.table.name,
+            name=self._table.name,
             column_family_id=self.column_family_id,
             column_family=column_family,
         )
-        timeout_seconds = timeout_seconds or self.timeout_seconds
+        client = self._table._cluster._client
         # We expect a `.data_pb2.ColumnFamily`
-        self.client._table_stub.CreateColumnFamily(request_pb,
-                                                   timeout_seconds)
+        client._table_stub.CreateColumnFamily(request_pb,
+                                              client.timeout_seconds)
 
-    def update(self, timeout_seconds=None):
+    def update(self):
         """Update this column family.
 
         .. note::
 
             Only the GC rule can be updated. By changing the column family ID,
             you will simply be referring to a different column family.
-
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on
-                                column family.
         """
         request_kwargs = {'name': self.name}
         if self.gc_rule is not None:
             request_kwargs['gc_rule'] = self.gc_rule.to_pb()
         request_pb = data_pb2.ColumnFamily(**request_kwargs)
-        timeout_seconds = timeout_seconds or self.timeout_seconds
+        client = self._table._cluster._client
         # We expect a `.data_pb2.ColumnFamily`
-        self.client._table_stub.UpdateColumnFamily(request_pb,
-                                                   timeout_seconds)
+        client._table_stub.UpdateColumnFamily(request_pb,
+                                              client.timeout_seconds)
 
-    def delete(self, timeout_seconds=None):
-        """Delete this column family.
-
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on
-                                column family.
-        """
+    def delete(self):
+        """Delete this column family."""
         request_pb = messages_pb2.DeleteColumnFamilyRequest(name=self.name)
-        timeout_seconds = timeout_seconds or self.timeout_seconds
+        client = self._table._cluster._client
         # We expect a `._generated.empty_pb2.Empty`
-        self.client._table_stub.DeleteColumnFamily(request_pb,
-                                                   timeout_seconds)
+        client._table_stub.DeleteColumnFamily(request_pb,
+                                              client.timeout_seconds)
 
 
 def _gc_rule_from_pb(gc_rule_pb):
-    """Convert a protobuf GC rule to a Python version.
+    """Convert a protobuf GC rule to a native object.
 
     :type gc_rule_pb: :class:`.data_pb2.GcRule`
     :param gc_rule_pb: The GC rule to convert.
 
-    :rtype: :class:`GarbageCollectionRule`,
-            :class:`GarbageCollectionRuleUnion`,
-            :class:`GarbageCollectionRuleIntersection` or
-            :data:`NoneType <types.NoneType>`
+    :rtype: :class:`GarbageCollectionRule` or :data:`NoneType <types.NoneType>`
     :returns: An instance of one of the native rules defined
               in :module:`column_family` or :data:`None` if no values were
               set on the protobuf passed in.
-    :raises: :class:`ValueError <exceptions.ValueError>` if more than one
-             property has been set on the GC rule.
+    :raises: :class:`ValueError <exceptions.ValueError>` if the rule name
+             is unexpected.
     """
-    all_fields = [field.name for field in gc_rule_pb._fields]
-    if len(all_fields) == 0:
+    rule_name = gc_rule_pb.WhichOneof('rule')
+    if rule_name is None:
         return None
-    elif len(all_fields) > 1:
-        raise ValueError('At most one field can be set on a GC rule.')
 
-    field_name = all_fields[0]
-    if field_name == 'max_num_versions':
-        return GarbageCollectionRule(
-            max_num_versions=gc_rule_pb.max_num_versions)
-    elif field_name == 'max_age':
+    if rule_name == 'max_num_versions':
+        return MaxVersionsGCRule(gc_rule_pb.max_num_versions)
+    elif rule_name == 'max_age':
         max_age = _duration_pb_to_timedelta(gc_rule_pb.max_age)
-        return GarbageCollectionRule(max_age=max_age)
-    elif field_name == 'union':
-        all_rules = gc_rule_pb.union.rules
-        return GarbageCollectionRuleUnion(
-            rules=[_gc_rule_from_pb(rule) for rule in all_rules])
-    elif field_name == 'intersection':
-        all_rules = gc_rule_pb.intersection.rules
-        return GarbageCollectionRuleIntersection(
-            rules=[_gc_rule_from_pb(rule) for rule in all_rules])
+        return MaxAgeGCRule(max_age)
+    elif rule_name == 'union':
+        return GCRuleUnion([_gc_rule_from_pb(rule)
+                            for rule in gc_rule_pb.union.rules])
+    elif rule_name == 'intersection':
+        rules = [_gc_rule_from_pb(rule)
+                 for rule in gc_rule_pb.intersection.rules]
+        return GCRuleIntersection(rules)
+    else:
+        raise ValueError('Unexpected rule name', rule_name)

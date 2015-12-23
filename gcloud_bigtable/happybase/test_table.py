@@ -50,21 +50,21 @@ class Test__gc_rule_to_dict(unittest2.TestCase):
         self.assertEqual(result, {})
 
     def test_with_max_versions(self):
-        from gcloud_bigtable.column_family import GarbageCollectionRule
+        from gcloud_bigtable.column_family import MaxVersionsGCRule
 
         max_versions = 2
-        gc_rule = GarbageCollectionRule(max_num_versions=max_versions)
+        gc_rule = MaxVersionsGCRule(max_versions)
         result = self._callFUT(gc_rule)
         expected_result = {'max_versions': max_versions}
         self.assertEqual(result, expected_result)
 
     def test_with_max_age(self):
         import datetime
-        from gcloud_bigtable.column_family import GarbageCollectionRule
+        from gcloud_bigtable.column_family import MaxAgeGCRule
 
         time_to_live = 101
         max_age = datetime.timedelta(seconds=time_to_live)
-        gc_rule = GarbageCollectionRule(max_age=max_age)
+        gc_rule = MaxAgeGCRule(max_age)
         result = self._callFUT(gc_rule)
         expected_result = {'time_to_live': time_to_live}
         self.assertEqual(result, expected_result)
@@ -75,43 +75,41 @@ class Test__gc_rule_to_dict(unittest2.TestCase):
         self.assertTrue(result is gc_rule)
 
     def test_with_gc_rule_union(self):
-        from gcloud_bigtable.column_family import GarbageCollectionRuleUnion
+        from gcloud_bigtable.column_family import GCRuleUnion
 
-        gc_rule = GarbageCollectionRuleUnion()
+        gc_rule = GCRuleUnion(rules=[])
         result = self._callFUT(gc_rule)
         self.assertTrue(result is gc_rule)
 
     def test_with_intersection_other_than_two(self):
-        from gcloud_bigtable.column_family import (
-            GarbageCollectionRuleIntersection)
+        from gcloud_bigtable.column_family import GCRuleIntersection
 
-        gc_rule = GarbageCollectionRuleIntersection(rules=[])
+        gc_rule = GCRuleIntersection(rules=[])
         result = self._callFUT(gc_rule)
         self.assertTrue(result is gc_rule)
 
     def test_with_intersection_two_max_num_versions(self):
-        from gcloud_bigtable.column_family import GarbageCollectionRule
-        from gcloud_bigtable.column_family import (
-            GarbageCollectionRuleIntersection)
+        from gcloud_bigtable.column_family import GCRuleIntersection
+        from gcloud_bigtable.column_family import MaxVersionsGCRule
 
-        rule1 = GarbageCollectionRule(max_num_versions=1)
-        rule2 = GarbageCollectionRule(max_num_versions=2)
-        gc_rule = GarbageCollectionRuleIntersection(rules=[rule1, rule2])
+        rule1 = MaxVersionsGCRule(1)
+        rule2 = MaxVersionsGCRule(2)
+        gc_rule = GCRuleIntersection(rules=[rule1, rule2])
         result = self._callFUT(gc_rule)
         self.assertTrue(result is gc_rule)
 
     def test_with_intersection_two_rules(self):
         import datetime
-        from gcloud_bigtable.column_family import GarbageCollectionRule
-        from gcloud_bigtable.column_family import (
-            GarbageCollectionRuleIntersection)
+        from gcloud_bigtable.column_family import GCRuleIntersection
+        from gcloud_bigtable.column_family import MaxAgeGCRule
+        from gcloud_bigtable.column_family import MaxVersionsGCRule
 
         time_to_live = 101
         max_age = datetime.timedelta(seconds=time_to_live)
-        rule1 = GarbageCollectionRule(max_age=max_age)
+        rule1 = MaxAgeGCRule(max_age)
         max_versions = 2
-        rule2 = GarbageCollectionRule(max_num_versions=max_versions)
-        gc_rule = GarbageCollectionRuleIntersection(rules=[rule1, rule2])
+        rule2 = MaxVersionsGCRule(max_versions)
+        gc_rule = GCRuleIntersection(rules=[rule1, rule2])
         result = self._callFUT(gc_rule)
         expected_result = {
             'max_versions': max_versions,
@@ -120,12 +118,11 @@ class Test__gc_rule_to_dict(unittest2.TestCase):
         self.assertEqual(result, expected_result)
 
     def test_with_intersection_two_nested_rules(self):
-        from gcloud_bigtable.column_family import (
-            GarbageCollectionRuleIntersection)
+        from gcloud_bigtable.column_family import GCRuleIntersection
 
-        rule1 = GarbageCollectionRuleIntersection(rules=[])
-        rule2 = GarbageCollectionRuleIntersection(rules=[])
-        gc_rule = GarbageCollectionRuleIntersection(rules=[rule1, rule2])
+        rule1 = GCRuleIntersection(rules=[])
+        rule2 = GCRuleIntersection(rules=[])
+        gc_rule = GCRuleIntersection(rules=[rule1, rule2])
         result = self._callFUT(gc_rule)
         self.assertTrue(result is gc_rule)
 

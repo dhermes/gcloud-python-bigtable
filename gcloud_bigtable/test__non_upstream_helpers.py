@@ -385,3 +385,32 @@ class Test__to_bytes(unittest2.TestCase):
     def test_with_nonstring_type(self):
         value = object()
         self.assertRaises(TypeError, self._callFUT, value)
+
+
+class Test__total_seconds_backport(unittest2.TestCase):
+
+    def _callFUT(self, *args, **kwargs):
+        from gcloud_bigtable._non_upstream_helpers import (
+            _total_seconds_backport)
+        return _total_seconds_backport(*args, **kwargs)
+
+    def test_it(self):
+        import datetime
+        offset = datetime.timedelta(seconds=3,
+                                    microseconds=140000)
+        result = self._callFUT(offset)
+        self.assertEqual(result, 3.14)
+
+
+class Test__total_seconds(unittest2.TestCase):
+
+    def _callFUT(self, *args, **kwargs):
+        from gcloud_bigtable._non_upstream_helpers import _total_seconds
+        return _total_seconds(*args, **kwargs)
+
+    def test_it(self):
+        import datetime
+        offset = datetime.timedelta(seconds=1,
+                                    microseconds=414000)
+        result = self._callFUT(offset)
+        self.assertEqual(result, 1.414)

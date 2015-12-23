@@ -92,32 +92,32 @@ class Test__parse_family_option(unittest2.TestCase):
             self._callFUT(option)
 
     def test_dictionary_versions_key(self):
-        from gcloud_bigtable.column_family import GarbageCollectionRule
+        from gcloud_bigtable.column_family import MaxVersionsGCRule
 
         versions = 42
         option = {'max_versions': versions}
         result = self._callFUT(option)
 
-        gc_rule = GarbageCollectionRule(max_num_versions=versions)
+        gc_rule = MaxVersionsGCRule(versions)
         self.assertEqual(result, gc_rule)
 
     def test_dictionary_ttl_key(self):
         import datetime
-        from gcloud_bigtable.column_family import GarbageCollectionRule
+        from gcloud_bigtable.column_family import MaxAgeGCRule
 
         time_to_live = 24 * 60 * 60
         max_age = datetime.timedelta(days=1)
         option = {'time_to_live': time_to_live}
         result = self._callFUT(option)
 
-        gc_rule = GarbageCollectionRule(max_age=max_age)
+        gc_rule = MaxAgeGCRule(max_age)
         self.assertEqual(result, gc_rule)
 
     def test_dictionary_both_keys(self):
         import datetime
-        from gcloud_bigtable.column_family import GarbageCollectionRule
-        from gcloud_bigtable.column_family import (
-            GarbageCollectionRuleIntersection)
+        from gcloud_bigtable.column_family import GCRuleIntersection
+        from gcloud_bigtable.column_family import MaxAgeGCRule
+        from gcloud_bigtable.column_family import MaxVersionsGCRule
 
         versions = 42
         time_to_live = 24 * 60 * 60
@@ -130,10 +130,9 @@ class Test__parse_family_option(unittest2.TestCase):
         max_age = datetime.timedelta(days=1)
         # NOTE: This relies on the order of the rules in the method we are
         #       calling matching this order here.
-        gc_rule1 = GarbageCollectionRule(max_age=max_age)
-        gc_rule2 = GarbageCollectionRule(max_num_versions=versions)
-        gc_rule = GarbageCollectionRuleIntersection(
-            rules=[gc_rule1, gc_rule2])
+        gc_rule1 = MaxAgeGCRule(max_age)
+        gc_rule2 = MaxVersionsGCRule(versions)
+        gc_rule = GCRuleIntersection(rules=[gc_rule1, gc_rule2])
         self.assertEqual(result, gc_rule)
 
     def test_non_dictionary(self):

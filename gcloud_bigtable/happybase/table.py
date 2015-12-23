@@ -22,8 +22,9 @@ import six
 from gcloud_bigtable._non_upstream_helpers import _microseconds_to_timestamp
 from gcloud_bigtable._non_upstream_helpers import _timestamp_to_microseconds
 from gcloud_bigtable._non_upstream_helpers import _to_bytes
-from gcloud_bigtable.column_family import GarbageCollectionRule
-from gcloud_bigtable.column_family import GarbageCollectionRuleIntersection
+from gcloud_bigtable.column_family import GCRuleIntersection
+from gcloud_bigtable.column_family import MaxAgeGCRule
+from gcloud_bigtable.column_family import MaxVersionsGCRule
 from gcloud_bigtable.happybase.batch import Batch
 from gcloud_bigtable.happybase.batch import _WAL_SENTINEL
 from gcloud_bigtable.happybase.batch import _get_column_pairs
@@ -38,6 +39,7 @@ _UNPACK_I64 = struct.Struct('>q').unpack
 _DEFAULT_BATCH_SIZE = object()
 _DEFAULT_SCAN_BATCHING = object()
 _DEFAULT_SORTED_COLUMNS = object()
+_SIMPLE_GC_RULES = (MaxAgeGCRule, MaxVersionsGCRule)
 
 
 def make_row(cell_map, include_timestamp):
@@ -98,40 +100,33 @@ def _gc_rule_to_dict(gc_rule):
 
     Only does this if the garbage collection rule is:
 
-    * Simple :class:`.GarbageCollectionRule` with ``max_age``
-    * Simple :class:`.GarbageCollectionRule` with ``max_num_versions``
-    * Composite :class:`.GarbageCollectionRuleIntersection` with
-      two rules each for ``max_age`` and ``max_num_versions``
+    * :class:`.MaxAgeGCRule`
+    * :class:`.MaxVersionsGCRule`
+    * Composite :class:`.GCRuleIntersection` with two rules, one each
+      of type :class:`.MaxAgeGCRule` and :class:`.MaxVersionsGCRule`
 
     Otherwise, just returns the input without change.
 
     :type gc_rule: :data:`NoneType <types.NoneType>`,
-                   :class:`.GarbageCollectionRule`,
-                   :class:`.GarbageCollectionRuleIntersection`, or
-                   :class:`.GarbageCollectionRuleUnion`
-    :param gc_rule: A garbae collection rule to convert to a dictionary
+                   :class:`.GarbageCollectionRule`
+    :param gc_rule: A garbage collection rule to convert to a dictionary
                     (if possible).
 
-    :rtype: dict,
-            :class:`.GarbageCollectionRuleIntersection`, or
-            :class:`.GarbageCollectionRuleUnion`
+    :rtype: dict or :class:`.GarbageCollectionRule`
     :returns: The converted garbage collection rule.
     """
     result = gc_rule
     if gc_rule is None:
         result = {}
-    elif isinstance(gc_rule, GarbageCollectionRule):
-        result = {}
-        # We assume that the GC rule has a single value.
-        if gc_rule.max_num_versions is not None:
-            result['max_versions'] = gc_rule.max_num_versions
-        if gc_rule.max_age is not None:
-            result['time_to_live'] = gc_rule.max_age.total_seconds()
-    elif isinstance(gc_rule, GarbageCollectionRuleIntersection):
+    elif isinstance(gc_rule, MaxAgeGCRule):
+        result = {'time_to_live': gc_rule.max_age.total_seconds()}
+    elif isinstance(gc_rule, MaxVersionsGCRule):
+        result = {'max_versions': gc_rule.max_num_versions}
+    elif isinstance(gc_rule, GCRuleIntersection):
         if len(gc_rule.rules) == 2:
             rule1, rule2 = gc_rule.rules
-            if (isinstance(rule1, GarbageCollectionRule) and
-                    isinstance(rule2, GarbageCollectionRule)):
+            if (isinstance(rule1, _SIMPLE_GC_RULES) and
+                    isinstance(rule2, _SIMPLE_GC_RULES)):
                 rule1 = _gc_rule_to_dict(rule1)
                 rule2 = _gc_rule_to_dict(rule2)
                 key1, = rule1.keys()

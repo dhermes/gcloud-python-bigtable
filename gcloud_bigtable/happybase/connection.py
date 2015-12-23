@@ -19,8 +19,9 @@ import datetime
 import six
 
 from gcloud_bigtable.client import Client
-from gcloud_bigtable.column_family import GarbageCollectionRule
-from gcloud_bigtable.column_family import GarbageCollectionRuleIntersection
+from gcloud_bigtable.column_family import GCRuleIntersection
+from gcloud_bigtable.column_family import MaxAgeGCRule
+from gcloud_bigtable.column_family import MaxVersionsGCRule
 from gcloud_bigtable.happybase.table import Table
 from gcloud_bigtable.table import Table as _LowLevelTable
 
@@ -86,15 +87,11 @@ def _parse_family_option(option):
 
     :type option: :class:`dict`,
                   :data:`NoneType <types.NoneType>`,
-                  :class:`.GarbageCollectionRule`,
-                  :class:`.GarbageCollectionRuleUnion`,
-                  :class:`.GarbageCollectionRuleIntersection`
+                  :class:`.GarbageCollectionRule`
     :param option: A column family option passes as a dictionary value in
                    :meth:`Connection.create_table`.
 
-    :rtype: :class:`.GarbageCollectionRule`,
-            :class:`.GarbageCollectionRuleUnion`,
-            :class:`.GarbageCollectionRuleIntersection`
+    :rtype: :class:`.GarbageCollectionRule`
     :returns: A garbage collection rule parsed from the input.
     :raises: :class:`ValueError <exceptions.ValueError>` if ``option`` is a
              dictionary but keys other than ``max_versions`` and
@@ -118,14 +115,13 @@ def _parse_family_option(option):
             result = None
         elif len(result) == 1:
             if max_num_versions is None:
-                result = GarbageCollectionRule(max_age=max_age)
+                result = MaxAgeGCRule(max_age)
             else:
-                result = GarbageCollectionRule(
-                    max_num_versions=max_num_versions)
+                result = MaxVersionsGCRule(max_num_versions)
         else:  # By our check above we know this means len(result) == 2.
-            rule1 = GarbageCollectionRule(max_age=max_age)
-            rule2 = GarbageCollectionRule(max_num_versions=max_num_versions)
-            result = GarbageCollectionRuleIntersection(rules=[rule1, rule2])
+            rule1 = MaxAgeGCRule(max_age)
+            rule2 = MaxVersionsGCRule(max_num_versions)
+            result = GCRuleIntersection(rules=[rule1, rule2])
 
     return result
 
@@ -364,8 +360,6 @@ class Connection(object):
 
                          * :class:`dict`
                          * :class:`.GarbageCollectionRule`
-                         * :class:`.GarbageCollectionRuleUnion`
-                         * :class:`.GarbageCollectionRuleIntersection`
 
         :raises: :class:`TypeError <exceptions.TypeError>` if ``families`` is
                  not a dictionary,
