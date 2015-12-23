@@ -15,11 +15,58 @@
 """User friendly container for Google Cloud Bigtable Column Family."""
 
 
+import datetime
+
 from gcloud_bigtable._generated import bigtable_table_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as messages_pb2)
-from gcloud_bigtable._helpers import _duration_pb_to_timedelta
-from gcloud_bigtable._helpers import _timedelta_to_duration_pb
+from gcloud_bigtable._generated import duration_pb2
+
+
+def _timedelta_to_duration_pb(timedelta_val):
+    """Convert a Python timedelta object to a duration protobuf.
+
+    .. note::
+
+        The Python timedelta has a granularity of microseconds while
+        the protobuf duration type has a duration of nanoseconds.
+
+    :type timedelta_val: :class:`datetime.timedelta`
+    :param timedelta_val: A timedelta object.
+
+    :rtype: :class:`duration_pb2.Duration`
+    :returns: A duration object equivalent to the time delta.
+    """
+    seconds_decimal = timedelta_val.total_seconds()
+    # Truncate the parts other than the integer.
+    seconds = int(seconds_decimal)
+    if seconds_decimal < 0:
+        signed_micros = timedelta_val.microseconds - 10**6
+    else:
+        signed_micros = timedelta_val.microseconds
+    # Convert nanoseconds to microseconds.
+    nanos = 1000 * signed_micros
+    return duration_pb2.Duration(seconds=seconds, nanos=nanos)
+
+
+def _duration_pb_to_timedelta(duration_pb):
+    """Convert a duration protobuf to a Python timedelta object.
+
+    .. note::
+
+        The Python timedelta has a granularity of microseconds while
+        the protobuf duration type has a duration of nanoseconds.
+
+    :type duration_pb: :class:`duration_pb2.Duration`
+    :param duration_pb: A protobuf duration object.
+
+    :rtype: :class:`datetime.timedelta`
+    :returns: The converted timedelta object.
+    """
+    return datetime.timedelta(
+        seconds=duration_pb.seconds,
+        microseconds=(duration_pb.nanos / 1000.0),
+    )
 
 
 class GarbageCollectionRule(object):

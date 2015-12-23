@@ -24,8 +24,8 @@ import unittest2
 
 from oauth2client.client import GoogleCredentials
 
-from gcloud_bigtable._helpers import _microseconds_to_timestamp
-from gcloud_bigtable._helpers import _timestamp_to_microseconds
+from gcloud_bigtable._non_upstream_helpers import _microseconds_to_timestamp
+from gcloud_bigtable._non_upstream_helpers import _timestamp_to_microseconds
 from gcloud_bigtable.client import Client
 from gcloud_bigtable.column_family import GarbageCollectionRule
 from gcloud_bigtable.row import RowFilter
@@ -204,8 +204,8 @@ class TestTableAdminAPI(unittest2.TestCase):
         self.assertEqual(sorted_tables, expected_tables)
 
     def test_rename_table(self):
-        from grpc.beta.interfaces import StatusCode
-        from grpc.framework.interfaces.face.face import LocalError
+        from grpc.beta import interfaces
+        from grpc.framework.interfaces.face import face
 
         temp_table_id = 'foo-bar-baz-table'
         temp_table = CLUSTER.table(temp_table_id)
@@ -215,10 +215,11 @@ class TestTableAdminAPI(unittest2.TestCase):
         exc_caught = None
         try:
             temp_table.rename(temp_table_id + '-alt')
-        except LocalError as exc:
+        except face.LocalError as exc:
             exc_caught = exc  # Python 3 syntax issue.
         self.assertNotEqual(exc_caught, None)
-        self.assertEqual(exc_caught.code, StatusCode.UNIMPLEMENTED)
+        self.assertEqual(exc_caught.code,
+                         interfaces.StatusCode.UNIMPLEMENTED)
         self.assertEqual(
             exc_caught.details,
             'BigtableTableService.RenameTable is not yet implemented')

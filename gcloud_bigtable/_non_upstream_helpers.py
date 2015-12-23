@@ -18,9 +18,11 @@ They are only needed here, but not needed for merging this upstream.
 """
 
 
+import datetime
 import os
 import socket
 
+import pytz
 import six
 
 from oauth2client.client import GoogleCredentials
@@ -35,6 +37,8 @@ except ImportError:
 
 PROJECT_ENV_VAR = 'GCLOUD_PROJECT'
 """Environment variable used to provide an implicit project ID."""
+
+EPOCH = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=pytz.utc)
 
 
 def _project_from_environment():
@@ -213,3 +217,77 @@ class _FactoryMixin(object):
             scope=None)
         kwargs['credentials'] = credentials
         return cls(*args, **kwargs)
+
+
+def _timestamp_to_microseconds(timestamp, granularity=1000):
+    """Converts a native datetime object to microseconds.
+
+    .. note::
+
+        If ``timestamp`` does not have the same timezone as ``EPOCH``
+        (which is UTC), then subtracting the epoch from the timestamp
+        will raise a :class:`TypeError <exceptions.TypeError>`.
+
+    :type timestamp: :class:`datetime.datetime`
+    :param timestamp: A timestamp to be converted to microseconds.
+
+    :type granularity: int
+    :param granularity: The resolution (relative to microseconds) that the
+                        timestamp should be truncated to. Defaults to 1000
+                        and no other value is likely needed since the only
+                        value of the enum
+                        :class:`.data_pb2.Table.TimestampGranularity` is
+                        :data:`.data_pb2.Table.MILLIS`.
+
+    :rtype: int
+    :returns: The ``timestamp`` as microseconds (with the appropriate
+              granularity).
+    """
+    timestamp_seconds = (timestamp - EPOCH).total_seconds()
+    timestamp_micros = int(10**6 * timestamp_seconds)
+    # Truncate to granularity.
+    timestamp_micros -= (timestamp_micros % granularity)
+    return timestamp_micros
+
+
+def _microseconds_to_timestamp(microseconds):
+    """Converts microseconds to a native datetime object.
+
+    :type microseconds: int
+    :param microseconds: The ``timestamp`` as microseconds.
+
+    :rtype: :class:`datetime.datetime`
+    :returns: A timestamp to be converted from microseconds.
+    """
+    return EPOCH + datetime.timedelta(microseconds=microseconds)
+
+
+def _to_bytes(value, encoding='ascii'):
+    """Converts a string value to bytes, if necessary.
+
+    Unfortunately, ``six.b`` is insufficient for this task since in
+    Python2 it does not modify ``unicode`` objects.
+
+    :type value: str / bytes or unicode
+    :param value: The string/bytes value to be converted.
+
+    :type encoding: str
+    :param encoding: The encoding to use to convert unicode to bytes. Defaults
+                     to "ascii", which will not allow any characters from
+                     ordinals larger than 127. Other useful values are
+                     "latin-1", which which will only allows byte ordinals
+                     (up to 255) and "utf-8", which will encode any unicode
+                     that needs to be.
+
+    :rtype: str / bytes
+    :returns: The original value converted to bytes (if unicode) or as passed
+              in if it started out as bytes.
+    :raises: :class:`TypeError <exceptions.TypeError>` if the value
+             could not be converted to bytes.
+    """
+    result = (value.encode(encoding)
+              if isinstance(value, six.text_type) else value)
+    if isinstance(result, six.binary_type):
+        return result
+    else:
+        raise TypeError('%r could not be converted to bytes' % (value,))

@@ -82,7 +82,8 @@ class TestBatch(unittest2.TestCase):
         self.assertEqual(batch._transaction, False)
 
     def test_constructor_explicit(self):
-        from gcloud_bigtable._helpers import _microseconds_to_timestamp
+        from gcloud_bigtable._non_upstream_helpers import (
+            _microseconds_to_timestamp)
         from gcloud_bigtable.row import TimestampRange
 
         table = object()

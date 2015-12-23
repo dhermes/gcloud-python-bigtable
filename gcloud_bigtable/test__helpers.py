@@ -73,195 +73,6 @@ class TestMetadataTransformer(unittest2.TestCase):
         self.assertEqual(scoped_creds._called, [('get_access_token', (), {})])
 
 
-class Test__timedelta_to_duration_pb(unittest2.TestCase):
-
-    def _callFUT(self, timedelta_val):
-        from gcloud_bigtable._helpers import _timedelta_to_duration_pb
-        return _timedelta_to_duration_pb(timedelta_val)
-
-    def test_it(self):
-        import datetime
-        from gcloud_bigtable._generated import duration_pb2
-
-        seconds = microseconds = 1
-        timedelta_val = datetime.timedelta(seconds=seconds,
-                                           microseconds=microseconds)
-        result = self._callFUT(timedelta_val)
-        self.assertTrue(isinstance(result, duration_pb2.Duration))
-        self.assertEqual(result.seconds, seconds)
-        self.assertEqual(result.nanos, 1000 * microseconds)
-
-    def test_with_negative_microseconds(self):
-        import datetime
-        from gcloud_bigtable._generated import duration_pb2
-
-        seconds = 1
-        microseconds = -5
-        timedelta_val = datetime.timedelta(seconds=seconds,
-                                           microseconds=microseconds)
-        result = self._callFUT(timedelta_val)
-        self.assertTrue(isinstance(result, duration_pb2.Duration))
-        self.assertEqual(result.seconds, seconds - 1)
-        self.assertEqual(result.nanos, 10**9 + 1000 * microseconds)
-
-    def test_with_negative_seconds(self):
-        import datetime
-        from gcloud_bigtable._generated import duration_pb2
-
-        seconds = -1
-        microseconds = 5
-        timedelta_val = datetime.timedelta(seconds=seconds,
-                                           microseconds=microseconds)
-        result = self._callFUT(timedelta_val)
-        self.assertTrue(isinstance(result, duration_pb2.Duration))
-        self.assertEqual(result.seconds, seconds + 1)
-        self.assertEqual(result.nanos, -(10**9 - 1000 * microseconds))
-
-
-class Test__duration_pb_to_timedelta(unittest2.TestCase):
-
-    def _callFUT(self, duration_pb):
-        from gcloud_bigtable._helpers import _duration_pb_to_timedelta
-        return _duration_pb_to_timedelta(duration_pb)
-
-    def test_it(self):
-        import datetime
-        from gcloud_bigtable._generated import duration_pb2
-
-        seconds = microseconds = 1
-        duration_pb = duration_pb2.Duration(seconds=seconds,
-                                            nanos=1000 * microseconds)
-        timedelta_val = datetime.timedelta(seconds=seconds,
-                                           microseconds=microseconds)
-        result = self._callFUT(duration_pb)
-        self.assertTrue(isinstance(result, datetime.timedelta))
-        self.assertEqual(result, timedelta_val)
-
-
-class Test__timestamp_to_microseconds(unittest2.TestCase):
-
-    def _callFUT(self, timestamp, granularity=1000):
-        from gcloud_bigtable._helpers import _timestamp_to_microseconds
-        return _timestamp_to_microseconds(timestamp, granularity=granularity)
-
-    def test_default_granularity(self):
-        import datetime
-        from gcloud_bigtable import _helpers as MUT
-
-        microseconds = 898294371
-        millis_granularity = microseconds - (microseconds % 1000)
-        timestamp = MUT.EPOCH + datetime.timedelta(microseconds=microseconds)
-        self.assertEqual(millis_granularity, self._callFUT(timestamp))
-
-    def test_no_granularity(self):
-        import datetime
-        from gcloud_bigtable import _helpers as MUT
-
-        microseconds = 11122205067
-        timestamp = MUT.EPOCH + datetime.timedelta(microseconds=microseconds)
-        self.assertEqual(microseconds, self._callFUT(timestamp, granularity=1))
-
-    def test_non_utc_timestamp(self):
-        import datetime
-
-        epoch_no_tz = datetime.datetime.utcfromtimestamp(0)
-        with self.assertRaises(TypeError):
-            self._callFUT(epoch_no_tz)
-
-    def test_non_datetime_timestamp(self):
-        timestamp = object()  # Not a datetime object.
-        with self.assertRaises(TypeError):
-            self._callFUT(timestamp)
-
-
-class Test__microseconds_to_timestamp(unittest2.TestCase):
-
-    def _callFUT(self, microseconds):
-        from gcloud_bigtable._helpers import _microseconds_to_timestamp
-        return _microseconds_to_timestamp(microseconds)
-
-    def test_it(self):
-        import datetime
-        from gcloud_bigtable import _helpers as MUT
-
-        microseconds = 123456
-        timestamp = MUT.EPOCH + datetime.timedelta(microseconds=microseconds)
-        self.assertEqual(timestamp, self._callFUT(microseconds))
-
-
-class Test__set_certs(unittest2.TestCase):
-
-    def _callFUT(self):
-        from gcloud_bigtable._helpers import _set_certs
-        return _set_certs()
-
-    def test_it(self):
-        import tempfile
-        from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable import _helpers as MUT
-
-        self.assertTrue(MUT.AuthInfo.ROOT_CERTIFICATES is None)
-
-        filename = tempfile.mktemp()
-        contents = b'FOOBARBAZ'
-        with open(filename, 'wb') as file_obj:
-            file_obj.write(contents)
-        with _Monkey(MUT, SSL_CERT_FILE=filename):
-            self._callFUT()
-
-        self.assertEqual(MUT.AuthInfo.ROOT_CERTIFICATES, contents)
-        # Reset to `None` value checked above.
-        MUT.AuthInfo.ROOT_CERTIFICATES = None
-
-
-class Test_set_certs(unittest2.TestCase):
-
-    def _callFUT(self):
-        from gcloud_bigtable._helpers import set_certs
-        return set_certs()
-
-    def test_call_private(self):
-        from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable import _helpers as MUT
-
-        call_count = [0]
-
-        def mock_set_certs():
-            call_count[0] += 1
-
-        class _AuthInfo(object):
-            ROOT_CERTIFICATES = None
-
-        with _Monkey(MUT, AuthInfo=_AuthInfo,
-                     _set_certs=mock_set_certs):
-            self._callFUT()
-
-        self.assertEqual(call_count, [1])
-
-    def test_do_nothing(self):
-        from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable import _helpers as MUT
-
-        call_count = [0]
-
-        def mock_set_certs():
-            call_count[0] += 1
-
-        # Make sure the fake method gets called by **someone** to make
-        # tox -e cover happy.
-        mock_set_certs()
-        self.assertEqual(call_count, [1])
-
-        class _AuthInfo(object):
-            ROOT_CERTIFICATES = object()
-
-        with _Monkey(MUT, AuthInfo=_AuthInfo,
-                     _set_certs=mock_set_certs):
-            self._callFUT()
-
-        self.assertEqual(call_count, [1])
-
-
 class Test_get_certs(unittest2.TestCase):
 
     def _callFUT(self):
@@ -269,24 +80,20 @@ class Test_get_certs(unittest2.TestCase):
         return get_certs()
 
     def test_it(self):
+        import tempfile
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import _helpers as MUT
 
-        call_kwargs = []
-        return_val = object()
+        # Just write to a mock file.
+        filename = tempfile.mktemp()
+        contents = b'FOOBARBAZ'
+        with open(filename, 'wb') as file_obj:
+            file_obj.write(contents)
 
-        def mock_set_certs(**kwargs):
-            call_kwargs.append(kwargs)
-
-        class _AuthInfo(object):
-            ROOT_CERTIFICATES = return_val
-
-        with _Monkey(MUT, AuthInfo=_AuthInfo,
-                     set_certs=mock_set_certs):
+        with _Monkey(MUT, SSL_CERT_FILE=filename):
             result = self._callFUT()
 
-        self.assertEqual(call_kwargs, [{'reset': False}])
-        self.assertTrue(result is return_val)
+        self.assertEqual(result, contents)
 
 
 class Test_make_stub(unittest2.TestCase):
@@ -345,7 +152,8 @@ class Test__parse_family_pb(unittest2.TestCase):
 
     def test_it(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-        from gcloud_bigtable._helpers import _microseconds_to_timestamp
+        from gcloud_bigtable._non_upstream_helpers import (
+            _microseconds_to_timestamp)
 
         COL_FAM1 = u'col-fam-id'
         COL_NAME1 = b'col-name1'
@@ -394,30 +202,3 @@ class Test__parse_family_pb(unittest2.TestCase):
             ],
         )
         self.assertEqual(expected_output, self._callFUT(sample_input))
-
-
-class Test__to_bytes(unittest2.TestCase):
-
-    def _callFUT(self, *args, **kwargs):
-        from gcloud_bigtable._helpers import _to_bytes
-        return _to_bytes(*args, **kwargs)
-
-    def test_with_bytes(self):
-        value = b'bytes-val'
-        self.assertEqual(self._callFUT(value), value)
-
-    def test_with_unicode(self):
-        value = u'string-val'
-        encoded_value = b'string-val'
-        self.assertEqual(self._callFUT(value), encoded_value)
-
-    def test_unicode_non_ascii(self):
-        value = u'\u2013'  # Long hyphen
-        encoded_value = b'\xe2\x80\x93'
-        self.assertRaises(UnicodeEncodeError, self._callFUT, value)
-        self.assertEqual(self._callFUT(value, encoding='utf-8'),
-                         encoded_value)
-
-    def test_with_nonstring_type(self):
-        value = object()
-        self.assertRaises(TypeError, self._callFUT, value)

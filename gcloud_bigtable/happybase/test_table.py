@@ -147,7 +147,8 @@ class Test__convert_to_time_range(unittest2.TestCase):
             self._callFUT(timestamp=timestamp)
 
     def test_success(self):
-        from gcloud_bigtable._helpers import _microseconds_to_timestamp
+        from gcloud_bigtable._non_upstream_helpers import (
+            _microseconds_to_timestamp)
         from gcloud_bigtable.row import TimestampRange
 
         timestamp = 1441928298571
@@ -176,7 +177,8 @@ class Test__cells_to_pairs(unittest2.TestCase):
         self.assertEqual(result, [value1, value2])
 
     def test_with_timestamp(self):
-        from gcloud_bigtable._helpers import _microseconds_to_timestamp
+        from gcloud_bigtable._non_upstream_helpers import (
+            _microseconds_to_timestamp)
         from gcloud_bigtable.row_data import Cell
 
         value1 = 'foo'
@@ -268,7 +270,8 @@ class Test__filter_chain_helper(unittest2.TestCase):
                          versions)
 
     def test_with_timestamp(self):
-        from gcloud_bigtable._helpers import _microseconds_to_timestamp
+        from gcloud_bigtable._non_upstream_helpers import (
+            _microseconds_to_timestamp)
         from gcloud_bigtable.row import RowFilter
         from gcloud_bigtable.row import TimestampRange
 

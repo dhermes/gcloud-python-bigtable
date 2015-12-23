@@ -18,8 +18,8 @@
 import copy
 import six
 
-from gcloud_bigtable._helpers import _microseconds_to_timestamp
-from gcloud_bigtable._helpers import _to_bytes
+from gcloud_bigtable._non_upstream_helpers import _microseconds_to_timestamp
+from gcloud_bigtable._non_upstream_helpers import _to_bytes
 
 
 class Cell(object):

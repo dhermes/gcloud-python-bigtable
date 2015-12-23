@@ -24,7 +24,7 @@ from gcloud_bigtable._generated import (
 from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as table_messages_pb2)
 from gcloud_bigtable._generated import operations_pb2
-from gcloud_bigtable._helpers import EPOCH as _EPOCH
+from gcloud_bigtable._non_upstream_helpers import EPOCH as _EPOCH
 from gcloud_bigtable.table import Table
 
 

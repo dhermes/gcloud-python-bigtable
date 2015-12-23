@@ -28,7 +28,7 @@ class TestCell(unittest2.TestCase):
     def _from_pb_test_helper(self, labels=None):
         import datetime
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-        from gcloud_bigtable._helpers import EPOCH
+        from gcloud_bigtable._non_upstream_helpers import EPOCH
 
         timestamp_micros = 18738724000  # Make sure millis granularity
         timestamp = EPOCH + datetime.timedelta(microseconds=timestamp_micros)

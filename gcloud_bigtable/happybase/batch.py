@@ -18,7 +18,7 @@
 import datetime
 import six
 
-from gcloud_bigtable._helpers import _microseconds_to_timestamp
+from gcloud_bigtable._non_upstream_helpers import _microseconds_to_timestamp
 from gcloud_bigtable.row import TimestampRange
 
 

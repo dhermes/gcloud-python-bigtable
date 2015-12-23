@@ -210,7 +210,7 @@ class TestRow(unittest2.TestCase):
 
     def test_set_cell_with_non_null_timestamp(self):
         import datetime
-        from gcloud_bigtable. _helpers import EPOCH
+        from gcloud_bigtable._non_upstream_helpers import EPOCH
 
         microseconds = 898294371
         millis_granularity = microseconds - (microseconds % 1000)
@@ -318,7 +318,7 @@ class TestRow(unittest2.TestCase):
 
     def test_delete_cells_with_time_range(self):
         import datetime
-        from gcloud_bigtable. _helpers import EPOCH
+        from gcloud_bigtable._non_upstream_helpers import EPOCH
         from gcloud_bigtable.row import TimestampRange
 
         microseconds = 30871000  # Makes sure already milliseconds granularity
@@ -614,7 +614,8 @@ class Test__parse_rmw_row_response(unittest2.TestCase):
 
     def test_it(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-        from gcloud_bigtable._helpers import _microseconds_to_timestamp
+        from gcloud_bigtable._non_upstream_helpers import (
+            _microseconds_to_timestamp)
 
         COL_FAM1 = u'col-fam-id'
         COL_FAM2 = u'col-fam-id2'
@@ -1002,7 +1003,7 @@ class TestTimestampRange(unittest2.TestCase):
     def _to_pb_helper(self, start_micros=None, end_micros=None):
         import datetime
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-        from gcloud_bigtable. _helpers import EPOCH
+        from gcloud_bigtable._non_upstream_helpers import EPOCH
 
         pb_kwargs = {}
 

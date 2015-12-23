@@ -305,3 +305,83 @@ class Test__FactoryMixin(unittest2.TestCase):
         signed_creds.check_called(self, [()], [signed_creds_kw])
         # Load private key (via _get_contents) from the key path.
         mock_get_contents.check_called(self, [(private_key_path,)])
+
+
+class Test__timestamp_to_microseconds(unittest2.TestCase):
+
+    def _callFUT(self, timestamp, granularity=1000):
+        from gcloud_bigtable._non_upstream_helpers import (
+            _timestamp_to_microseconds)
+        return _timestamp_to_microseconds(timestamp, granularity=granularity)
+
+    def test_default_granularity(self):
+        import datetime
+        from gcloud_bigtable import _non_upstream_helpers as MUT
+
+        microseconds = 898294371
+        millis_granularity = microseconds - (microseconds % 1000)
+        timestamp = MUT.EPOCH + datetime.timedelta(microseconds=microseconds)
+        self.assertEqual(millis_granularity, self._callFUT(timestamp))
+
+    def test_no_granularity(self):
+        import datetime
+        from gcloud_bigtable import _non_upstream_helpers as MUT
+
+        microseconds = 11122205067
+        timestamp = MUT.EPOCH + datetime.timedelta(microseconds=microseconds)
+        self.assertEqual(microseconds, self._callFUT(timestamp, granularity=1))
+
+    def test_non_utc_timestamp(self):
+        import datetime
+
+        epoch_no_tz = datetime.datetime.utcfromtimestamp(0)
+        with self.assertRaises(TypeError):
+            self._callFUT(epoch_no_tz)
+
+    def test_non_datetime_timestamp(self):
+        timestamp = object()  # Not a datetime object.
+        with self.assertRaises(TypeError):
+            self._callFUT(timestamp)
+
+
+class Test__microseconds_to_timestamp(unittest2.TestCase):
+
+    def _callFUT(self, microseconds):
+        from gcloud_bigtable._non_upstream_helpers import (
+            _microseconds_to_timestamp)
+        return _microseconds_to_timestamp(microseconds)
+
+    def test_it(self):
+        import datetime
+        from gcloud_bigtable import _non_upstream_helpers as MUT
+
+        microseconds = 123456
+        timestamp = MUT.EPOCH + datetime.timedelta(microseconds=microseconds)
+        self.assertEqual(timestamp, self._callFUT(microseconds))
+
+
+class Test__to_bytes(unittest2.TestCase):
+
+    def _callFUT(self, *args, **kwargs):
+        from gcloud_bigtable._non_upstream_helpers import _to_bytes
+        return _to_bytes(*args, **kwargs)
+
+    def test_with_bytes(self):
+        value = b'bytes-val'
+        self.assertEqual(self._callFUT(value), value)
+
+    def test_with_unicode(self):
+        value = u'string-val'
+        encoded_value = b'string-val'
+        self.assertEqual(self._callFUT(value), encoded_value)
+
+    def test_unicode_non_ascii(self):
+        value = u'\u2013'  # Long hyphen
+        encoded_value = b'\xe2\x80\x93'
+        self.assertRaises(UnicodeEncodeError, self._callFUT, value)
+        self.assertEqual(self._callFUT(value, encoding='utf-8'),
+                         encoded_value)
+
+    def test_with_nonstring_type(self):
+        value = object()
+        self.assertRaises(TypeError, self._callFUT, value)

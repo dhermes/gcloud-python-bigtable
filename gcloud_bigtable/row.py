@@ -23,8 +23,8 @@ from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._helpers import _parse_family_pb
-from gcloud_bigtable._helpers import _timestamp_to_microseconds
-from gcloud_bigtable._helpers import _to_bytes
+from gcloud_bigtable._non_upstream_helpers import _timestamp_to_microseconds
+from gcloud_bigtable._non_upstream_helpers import _to_bytes
 
 
 _MAX_MUTATIONS = 100000

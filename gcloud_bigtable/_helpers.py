@@ -19,18 +19,13 @@ protobuf objects.
 """
 
 
-import datetime
 import platform
-
-import pytz
-import six
 
 from grpc.beta import implementations
 
-from gcloud_bigtable._generated import duration_pb2
+from gcloud_bigtable._non_upstream_helpers import _microseconds_to_timestamp
 
 
-EPOCH = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=pytz.utc)
 # See https://gist.github.com/dhermes/bbc5b7be1932bfffae77
 # for appropriate values on other systems.
 _PLAT_SYS = platform.system()
@@ -62,131 +57,23 @@ class MetadataTransformer(object):
         ]
 
 
-class AuthInfo(object):
-    """Local namespace for caching auth information."""
-
-    ROOT_CERTIFICATES = None
-
-
-def _timedelta_to_duration_pb(timedelta_val):
-    """Convert a Python timedelta object to a duration protobuf.
-
-    .. note::
-
-        The Python timedelta has a granularity of microseconds while
-        the protobuf duration type has a duration of nanoseconds.
-
-    :type timedelta_val: :class:`datetime.timedelta`
-    :param timedelta_val: A timedelta object.
-
-    :rtype: :class:`duration_pb2.Duration`
-    :returns: A duration object equivalent to the time delta.
-    """
-    seconds_decimal = timedelta_val.total_seconds()
-    # Truncate the parts other than the integer.
-    seconds = int(seconds_decimal)
-    if seconds_decimal < 0:
-        signed_micros = timedelta_val.microseconds - 10**6
-    else:
-        signed_micros = timedelta_val.microseconds
-    # Convert nanoseconds to microseconds.
-    nanos = 1000 * signed_micros
-    return duration_pb2.Duration(seconds=seconds, nanos=nanos)
-
-
-def _duration_pb_to_timedelta(duration_pb):
-    """Convert a duration protobuf to a Python timedelta object.
-
-    .. note::
-
-        The Python timedelta has a granularity of microseconds while
-        the protobuf duration type has a duration of nanoseconds.
-
-    :type duration_pb: :class:`duration_pb2.Duration`
-    :param duration_pb: A protobuf duration object.
-
-    :rtype: :class:`datetime.timedelta`
-    :returns: The converted timedelta object.
-    """
-    return datetime.timedelta(
-        seconds=duration_pb.seconds,
-        microseconds=(duration_pb.nanos / 1000.0),
-    )
-
-
-def _timestamp_to_microseconds(timestamp, granularity=1000):
-    """Converts a native datetime object to microseconds.
-
-    .. note::
-
-        If ``timestamp`` does not have the same timezone as ``EPOCH``
-        (which is UTC), then subtracting the epoch from the timestamp
-        will raise a :class:`TypeError <exceptions.TypeError>`.
-
-    :type timestamp: :class:`datetime.datetime`
-    :param timestamp: A timestamp to be converted to microseconds.
-
-    :type granularity: int
-    :param granularity: The resolution (relative to microseconds) that the
-                        timestamp should be truncated to. Defaults to 1000
-                        and no other value is likely needed since the only
-                        value of the enum
-                        :class:`.data_pb2.Table.TimestampGranularity` is
-                        :data:`.data_pb2.Table.MILLIS`.
-
-    :rtype: int
-    :returns: The ``timestamp`` as microseconds (with the appropriate
-              granularity).
-    """
-    timestamp_seconds = (timestamp - EPOCH).total_seconds()
-    timestamp_micros = int(10**6 * timestamp_seconds)
-    # Truncate to granularity.
-    timestamp_micros -= (timestamp_micros % granularity)
-    return timestamp_micros
-
-
-def _microseconds_to_timestamp(microseconds):
-    """Converts microseconds to a native datetime object.
-
-    :type microseconds: int
-    :param microseconds: The ``timestamp`` as microseconds.
-
-    :rtype: :class:`datetime.datetime`
-    :returns: A timestamp to be converted from microseconds.
-    """
-    return EPOCH + datetime.timedelta(microseconds=microseconds)
-
-
-def _set_certs():
-    """Sets the cached root certificates locally."""
-    with open(SSL_CERT_FILE, mode='rb') as file_obj:
-        AuthInfo.ROOT_CERTIFICATES = file_obj.read()
-
-
-def set_certs(reset=False):
-    """Sets the cached root certificates locally.
-
-    If not manually told to reset or if the value is already set,
-    does nothing.
-
-    :type reset: bool
-    :param reset: Boolean indicating if the cached certs should be reset.
-    """
-    if AuthInfo.ROOT_CERTIFICATES is None or reset:
-        _set_certs()
-
-
 def get_certs():
-    """Gets the cached root certificates.
+    """Gets the root certificates.
 
-    Calls set_certs() first in case the value has not been set, but
-    this will do nothing if the value is already set.
+    .. note::
+
+        This is only called by :func:`make_stub`. For most applications,
+        a few gRPC stubs (four total, one for each service) will be created
+        when a :class:`.Client` is created. This function will not likely
+        be used again while that application is running.
+
+        However, it may be worthwhile to cache the output of this function.
 
     :rtype: str
-    :returns: The root certificates set on ``AuthInfo``.
+    :returns: The root certificates for the current machine.
     """
-    set_certs(reset=False)
-    return AuthInfo.ROOT_CERTIFICATES
+    with open(SSL_CERT_FILE, mode='rb') as file_obj:
+        return file_obj.read()
 
 
 def make_stub(client, stub_factory, host, port):
@@ -257,34 +144,3 @@ def _parse_family_pb(family_pb):
             cells.append(val_pair)
 
     return family_pb.name, result
-
-
-def _to_bytes(value, encoding='ascii'):
-    """Converts a string value to bytes, if necessary.
-
-    Unfortunately, ``six.b`` is insufficient for this task since in
-    Python2 it does not modify ``unicode`` objects.
-
-    :type value: str / bytes or unicode
-    :param value: The string/bytes value to be converted.
-
-    :type encoding: str
-    :param encoding: The encoding to use to convert unicode to bytes. Defaults
-                     to "ascii", which will not allow any characters from
-                     ordinals larger than 127. Other useful values are
-                     "latin-1", which which will only allows byte ordinals
-                     (up to 255) and "utf-8", which will encode any unicode
-                     that needs to be.
-
-    :rtype: str / bytes
-    :returns: The original value converted to bytes (if unicode) or as passed
-              in if it started out as bytes.
-    :raises: :class:`TypeError <exceptions.TypeError>` if the value
-             could not be converted to bytes.
-    """
-    result = (value.encode(encoding)
-              if isinstance(value, six.text_type) else value)
-    if isinstance(result, six.binary_type):
-        return result
-    else:
-        raise TypeError('%r could not be converted to bytes' % (value,))
