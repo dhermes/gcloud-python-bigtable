@@ -15,6 +15,7 @@
 """User friendly container for Google Cloud Bigtable Cluster."""
 
 
+import datetime
 import re
 
 from gcloud_bigtable._generated import bigtable_cluster_data_pb2 as data_pb2
@@ -23,8 +24,7 @@ from gcloud_bigtable._generated import (
 from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as table_messages_pb2)
 from gcloud_bigtable._generated import operations_pb2
-from gcloud_bigtable._helpers import _parse_pb_any_to_native
-from gcloud_bigtable._helpers import _pb_timestamp_to_datetime
+from gcloud_bigtable._helpers import EPOCH as _EPOCH
 from gcloud_bigtable.table import Table
 
 
@@ -35,6 +35,16 @@ _OPERATION_NAME_RE = re.compile(r'^operations/projects/([^/]+)/zones/([^/]+)/'
                                 r'clusters/([a-z][-a-z0-9]*)/operations/'
                                 r'(?P<operation_id>\d+)$')
 _DEFAULT_SERVE_NODES = 3
+_TYPE_URL_BASE = 'type.googleapis.com/google.bigtable.'
+_ADMIN_TYPE_URL_BASE = _TYPE_URL_BASE + 'admin.cluster.v1.'
+_CLUSTER_CREATE_METADATA = _ADMIN_TYPE_URL_BASE + 'CreateClusterMetadata'
+_UPDATE_CREATE_METADATA = _ADMIN_TYPE_URL_BASE + 'UpdateClusterMetadata'
+_UNDELETE_CREATE_METADATA = _ADMIN_TYPE_URL_BASE + 'UndeleteClusterMetadata'
+_TYPE_URL_MAP = {
+    _CLUSTER_CREATE_METADATA: messages_pb2.CreateClusterMetadata,
+    _UPDATE_CREATE_METADATA: messages_pb2.UpdateClusterMetadata,
+    _UNDELETE_CREATE_METADATA: messages_pb2.UndeleteClusterMetadata,
+}
 
 
 def _get_pb_property_value(message_pb, property_name):
@@ -80,6 +90,46 @@ def _prepare_create_request(cluster):
             serve_nodes=cluster.serve_nodes,
         ),
     )
+
+
+def _pb_timestamp_to_datetime(timestamp):
+    """Convert a Timestamp protobuf to a datetime object.
+
+    :type timestamp: :class:`._generated.timestamp_pb2.Timestamp`
+    :param timestamp: A Google returned timestamp protobuf.
+
+    :rtype: :class:`datetime.datetime`
+    :returns: A UTC datetime object converted from a protobuf timestamp.
+    """
+    return (
+        _EPOCH +
+        datetime.timedelta(
+            seconds=timestamp.seconds,
+            microseconds=(timestamp.nanos / 1000.0),
+        )
+    )
+
+
+def _parse_pb_any_to_native(any_val, expected_type=None):
+    """Convert a serialized "google.protobuf.Any" value to actual type.
+
+    :type any_val: :class:`gcloud.bigtable._generated.any_pb2.Any`
+    :param any_val: A serialized protobuf value container.
+
+    :type expected_type: str
+    :param expected_type: (Optional) The type URL we expect ``any_val``
+                          to have.
+
+    :rtype: object
+    :returns: The de-serialized object.
+    :raises: :class:`ValueError <exceptions.ValueError>` if the
+             ``expected_type`` does not match the ``type_url`` on the input.
+    """
+    if expected_type is not None and expected_type != any_val.type_url:
+        raise ValueError('Expected type: %s, Received: %s' % (
+            expected_type, any_val.type_url))
+    container_class = _TYPE_URL_MAP[any_val.type_url]
+    return container_class.FromString(any_val.value)
 
 
 def _process_operation(operation_pb):

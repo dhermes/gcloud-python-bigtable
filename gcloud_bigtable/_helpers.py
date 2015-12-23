@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Utility methods for gcloud_bigtable.
+"""Utility methods for gcloud Bigtable.
 
 Primarily includes helpers for dealing with low-level
 protobuf objects.
@@ -27,22 +27,8 @@ import six
 
 from grpc.beta import implementations
 
-from gcloud_bigtable._generated import (
-    bigtable_cluster_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._generated import duration_pb2
 
-
-_TYPE_URL_BASE = 'type.googleapis.com/google.bigtable.'
-_ADMIN_TYPE_URL_BASE = _TYPE_URL_BASE + 'admin.cluster.v1.'
-_CLUSTER_TYPE_URL = _ADMIN_TYPE_URL_BASE + 'Cluster'
-_CLUSTER_CREATE_METADATA = _ADMIN_TYPE_URL_BASE + 'CreateClusterMetadata'
-_TYPE_URL_MAP = {
-    _CLUSTER_CREATE_METADATA: messages_pb2.CreateClusterMetadata,
-    _ADMIN_TYPE_URL_BASE + 'UndeleteClusterMetadata': (
-        messages_pb2.UndeleteClusterMetadata),
-    _ADMIN_TYPE_URL_BASE + 'UpdateClusterMetadata': (
-        messages_pb2.UpdateClusterMetadata),
-}
 
 EPOCH = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=pytz.utc)
 # See https://gist.github.com/dhermes/bbc5b7be1932bfffae77
@@ -80,46 +66,6 @@ class AuthInfo(object):
     """Local namespace for caching auth information."""
 
     ROOT_CERTIFICATES = None
-
-
-def _pb_timestamp_to_datetime(timestamp):
-    """Convert a Timestamp protobuf to a datetime object.
-
-    :type timestamp: :class:`._generated.timestamp_pb2.Timestamp`
-    :param timestamp: A Google returned timestamp protobuf.
-
-    :rtype: :class:`datetime.datetime`
-    :returns: A UTC datetime object converted from a protobuf timestamp.
-    """
-    return (
-        EPOCH +
-        datetime.timedelta(
-            seconds=timestamp.seconds,
-            microseconds=(timestamp.nanos / 1000.0),
-        )
-    )
-
-
-def _parse_pb_any_to_native(any_val, expected_type=None):
-    """Convert a serialized "google.protobuf.Any" value to actual type.
-
-    :type any_val: :class:`gcloud_bigtable._generated.any_pb2.Any`
-    :param any_val: A serialized protobuf value container.
-
-    :type expected_type: str
-    :param expected_type: (Optional) The type URL we expect ``any_val``
-                          to have.
-
-    :rtype: object
-    :returns: The de-serialized object.
-    :raises: :class:`ValueError <exceptions.ValueError>` if the
-             ``expected_type`` does not match the ``type_url`` on the input.
-    """
-    if expected_type is not None and expected_type != any_val.type_url:
-        raise ValueError('Expected type: %s, Received: %s' % (
-            expected_type, any_val.type_url))
-    container_class = _TYPE_URL_MAP[any_val.type_url]
-    return container_class.FromString(any_val.value)
 
 
 def _timedelta_to_duration_pb(timedelta_val):
