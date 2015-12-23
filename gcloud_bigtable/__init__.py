@@ -14,15 +14,18 @@
 
 """Google Cloud Bigtable API package."""
 
+
+from __future__ import print_function
+import sys
+
 try:
     from grpc._adapter import _c
-except ImportError as exc:
+except ImportError as exc:  # pragma: NO COVER
     if 'libgrpc.so' in str(exc):
-        raise ImportError('gRPC libraries could not be located. Please see '
-                          'instructions to locate these files. You\'ll want '
-                          'to set your LD_LIBRARY_PATH variable to help '
-                          'Python locate the libraries.')
-    else:
-        raise
+        print('gRPC libraries could not be located. Please see '
+              'instructions to locate these files. You\'ll want '
+              'to set your LD_LIBRARY_PATH variable to help '
+              'Python locate the libraries.', file=sys.stderr)
+    raise
 
 from gcloud_bigtable.client import Client
