@@ -86,9 +86,7 @@ class Table(object):
         :param column_family_id: The ID of the column family. Must be of the
                                  form ``[_a-zA-Z0-9][-_.a-zA-Z0-9]*``.
 
-        :type gc_rule: :class:`.column_family.GarbageCollectionRule`,
-                       :class:`.column_family.GarbageCollectionRuleUnion` or
-                       :class:`.column_family.GarbageCollectionRuleIntersection`
+        :type gc_rule: :class:`.column_family.GarbageCollectionRule`
         :param gc_rule: (Optional) The garbage collection settings for this
                         column family.
 
@@ -103,10 +101,7 @@ class Table(object):
         :type row_key: bytes
         :param row_key: The key for the row being created.
 
-        :type filter_: :class:`.RowFilter`,
-                       :class:`.RowFilterChain`,
-                       :class:`.RowFilterUnion`, or
-                       :class:`.ConditionalRowFilter`
+        :type filter_: :class:`.RowFilter`
         :param filter_: (Optional) Filter to be used for conditional mutations.
                         See :class:`.Row` for more details.
 
@@ -199,7 +194,7 @@ class Table(object):
         client._table_stub.DeleteTable(request_pb, client.timeout_seconds)
 
     def list_column_families(self):
-        """Check if this table exists.
+        """List the column families owned by this table.
 
         :rtype: dictionary with string as keys and
                 :class:`.column_family.ColumnFamily` as values
