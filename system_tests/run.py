@@ -28,7 +28,8 @@ from gcloud_bigtable._non_upstream_helpers import _microseconds_to_timestamp
 from gcloud_bigtable._non_upstream_helpers import _timestamp_to_microseconds
 from gcloud_bigtable.client import Client
 from gcloud_bigtable.column_family import MaxVersionsGCRule
-from gcloud_bigtable.row import RowFilter
+from gcloud_bigtable.row import ApplyLabelFilter
+from gcloud_bigtable.row import ColumnQualifierRegexFilter
 from gcloud_bigtable.row import RowFilterChain
 from gcloud_bigtable.row import RowFilterUnion
 from gcloud_bigtable.row_data import Cell
@@ -418,14 +419,14 @@ class TestDataAPI(unittest2.TestCase):
 
         # Combine a label with column 1.
         label1 = u'label-red'
-        label1_filter = RowFilter(apply_label_transformer=label1)
-        col1_filter = RowFilter(column_qualifier_regex_filter=COL_NAME1)
+        label1_filter = ApplyLabelFilter(label1)
+        col1_filter = ColumnQualifierRegexFilter(COL_NAME1)
         chain1 = RowFilterChain(filters=[col1_filter, label1_filter])
 
         # Combine a label with column 2.
         label2 = u'label-blue'
-        label2_filter = RowFilter(apply_label_transformer=label2)
-        col2_filter = RowFilter(column_qualifier_regex_filter=COL_NAME2)
+        label2_filter = ApplyLabelFilter(label2)
+        col2_filter = ColumnQualifierRegexFilter(COL_NAME2)
         chain2 = RowFilterChain(filters=[col2_filter, label2_filter])
 
         # Bring our two labeled columns together.
