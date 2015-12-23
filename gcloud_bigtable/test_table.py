@@ -517,10 +517,10 @@ class Test__create_row_request(unittest2.TestCase):
     def test_with_filter(self):
         from gcloud_bigtable._generated import (
             bigtable_service_messages_pb2 as messages_pb2)
-        from gcloud_bigtable.row import RowFilter
+        from gcloud_bigtable.row import RowSampleFilter
 
         table_name = 'table_name'
-        row_filter = RowFilter(row_sample_filter=0.33)
+        row_filter = RowSampleFilter(0.33)
         result = self._callFUT(table_name, filter_=row_filter)
         expected_result = messages_pb2.ReadRowsRequest(
             table_name=table_name,

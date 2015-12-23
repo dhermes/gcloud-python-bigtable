@@ -448,11 +448,11 @@ class TestRow(unittest2.TestCase):
         from gcloud_bigtable._generated import (
             bigtable_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable._grpc_mocks import StubMock
-        from gcloud_bigtable.row import RowFilter
+        from gcloud_bigtable.row import RowSampleFilter
 
         client = _Client()
         table = _Table(TABLE_NAME, client=client)
-        row_filter = RowFilter(row_sample_filter=0.33)
+        row_filter = RowSampleFilter(0.33)
         row = self._makeOne(ROW_KEY, table, filter_=row_filter)
 
         # Create request_pb
@@ -693,273 +693,354 @@ class Test__parse_rmw_row_response(unittest2.TestCase):
         self.assertEqual(expected_output, self._callFUT(sample_input))
 
 
-class TestRowFilter(unittest2.TestCase):
-
-    _PROPERTIES = (
-        'sink',
-        'pass_all_filter',
-        'block_all_filter',
-        'row_key_regex_filter',
-        'row_sample_filter',
-        'family_name_regex_filter',
-        'column_qualifier_regex_filter',
-        'column_range_filter',
-        'timestamp_range_filter',
-        'value_regex_filter',
-        'value_range_filter',
-        'cells_per_row_offset_filter',
-        'cells_per_row_limit_filter',
-        'cells_per_column_limit_filter',
-        'strip_value_transformer',
-        'apply_label_transformer',
-    )
+class Test_BoolFilter(unittest2.TestCase):
 
     def _getTargetClass(self):
-        from gcloud_bigtable.row import RowFilter
-        return RowFilter
+        from gcloud_bigtable.row import _BoolFilter
+        return _BoolFilter
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_constructor(self):
+        flag = object()
+        row_filter = self._makeOne(flag)
+        self.assertTrue(row_filter.flag is flag)
+
+    def test___eq__type_differ(self):
+        flag = object()
+        row_filter1 = self._makeOne(flag)
+        row_filter2 = object()
+        self.assertNotEqual(row_filter1, row_filter2)
+
+    def test___eq__same_value(self):
+        flag = object()
+        row_filter1 = self._makeOne(flag)
+        row_filter2 = self._makeOne(flag)
+        self.assertEqual(row_filter1, row_filter2)
+
+    def test___ne__same_value(self):
+        flag = object()
+        row_filter1 = self._makeOne(flag)
+        row_filter2 = self._makeOne(flag)
+        comparison_val = (row_filter1 != row_filter2)
+        self.assertFalse(comparison_val)
+
+
+class TestSinkFilter(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import SinkFilter
+        return SinkFilter
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_to_pb(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        flag = True
+        row_filter = self._makeOne(flag)
+        pb_val = row_filter.to_pb()
+        expected_pb = data_pb2.RowFilter(sink=flag)
+        self.assertEqual(pb_val, expected_pb)
+
+
+class TestPassAllFilter(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import PassAllFilter
+        return PassAllFilter
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_to_pb(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        flag = True
+        row_filter = self._makeOne(flag)
+        pb_val = row_filter.to_pb()
+        expected_pb = data_pb2.RowFilter(pass_all_filter=flag)
+        self.assertEqual(pb_val, expected_pb)
+
+
+class TestBlockAllFilter(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import BlockAllFilter
+        return BlockAllFilter
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_to_pb(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        flag = True
+        row_filter = self._makeOne(flag)
+        pb_val = row_filter.to_pb()
+        expected_pb = data_pb2.RowFilter(block_all_filter=flag)
+        self.assertEqual(pb_val, expected_pb)
+
+
+class Test_RegexFilter(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import _RegexFilter
+        return _RegexFilter
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_constructor(self):
+        regex = object()
+        row_filter = self._makeOne(regex)
+        self.assertTrue(row_filter.regex is regex)
+
+    def test___eq__type_differ(self):
+        regex = object()
+        row_filter1 = self._makeOne(regex)
+        row_filter2 = object()
+        self.assertNotEqual(row_filter1, row_filter2)
+
+    def test___eq__same_value(self):
+        regex = object()
+        row_filter1 = self._makeOne(regex)
+        row_filter2 = self._makeOne(regex)
+        self.assertEqual(row_filter1, row_filter2)
+
+    def test___ne__same_value(self):
+        regex = object()
+        row_filter1 = self._makeOne(regex)
+        row_filter2 = self._makeOne(regex)
+        comparison_val = (row_filter1 != row_filter2)
+        self.assertFalse(comparison_val)
+
+
+class TestRowKeyRegexFilter(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import RowKeyRegexFilter
+        return RowKeyRegexFilter
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_to_pb(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        regex = b'row-key-regex'
+        row_filter = self._makeOne(regex)
+        pb_val = row_filter.to_pb()
+        expected_pb = data_pb2.RowFilter(row_key_regex_filter=regex)
+        self.assertEqual(pb_val, expected_pb)
+
+
+class TestRowSampleFilter(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import RowSampleFilter
+        return RowSampleFilter
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_constructor(self):
+        sample = object()
+        row_filter = self._makeOne(sample)
+        self.assertTrue(row_filter.sample is sample)
+
+    def test___eq__type_differ(self):
+        sample = object()
+        row_filter1 = self._makeOne(sample)
+        row_filter2 = object()
+        self.assertNotEqual(row_filter1, row_filter2)
+
+    def test___eq__same_value(self):
+        sample = object()
+        row_filter1 = self._makeOne(sample)
+        row_filter2 = self._makeOne(sample)
+        self.assertEqual(row_filter1, row_filter2)
+
+    def test_to_pb(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        sample = 0.25
+        row_filter = self._makeOne(sample)
+        pb_val = row_filter.to_pb()
+        expected_pb = data_pb2.RowFilter(row_sample_filter=sample)
+        self.assertEqual(pb_val, expected_pb)
+
+
+class TestFamilyNameRegexFilter(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import FamilyNameRegexFilter
+        return FamilyNameRegexFilter
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_to_pb(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        regex = u'family-regex'
+        row_filter = self._makeOne(regex)
+        pb_val = row_filter.to_pb()
+        expected_pb = data_pb2.RowFilter(family_name_regex_filter=regex)
+        self.assertEqual(pb_val, expected_pb)
+
+
+class TestColumnQualifierRegexFilter(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import ColumnQualifierRegexFilter
+        return ColumnQualifierRegexFilter
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_to_pb(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        regex = b'column-regex'
+        row_filter = self._makeOne(regex)
+        pb_val = row_filter.to_pb()
+        expected_pb = data_pb2.RowFilter(column_qualifier_regex_filter=regex)
+        self.assertEqual(pb_val, expected_pb)
+
+
+class TestColumnRangeFilter(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import ColumnRangeFilter
+        return ColumnRangeFilter
 
     def _makeOne(self, *args, **kwargs):
         return self._getTargetClass()(*args, **kwargs)
 
     def test_constructor_defaults(self):
-        # Fails unless exactly one property is passed.
-        with self.assertRaises(TypeError):
-            self._makeOne()
+        column_family_id = object()
+        row_filter = self._makeOne(column_family_id)
+        self.assertTrue(row_filter.column_family_id is column_family_id)
+        self.assertEqual(row_filter.start_column, None)
+        self.assertEqual(row_filter.end_column, None)
+        self.assertTrue(row_filter.inclusive_start)
+        self.assertTrue(row_filter.inclusive_end)
 
-    def test_constructor_too_many_values(self):
-        # Fails unless exactly one property is passed.
-        with self.assertRaises(TypeError):
-            self._makeOne(row_key_regex_filter=b'value',
-                          cells_per_column_limit_filter=10)
+    def test_constructor_explicit(self):
+        column_family_id = object()
+        start_column = object()
+        end_column = object()
+        inclusive_start = object()
+        inclusive_end = object()
+        row_filter = self._makeOne(column_family_id, start_column=start_column,
+                                   end_column=end_column,
+                                   inclusive_start=inclusive_start,
+                                   inclusive_end=inclusive_end)
+        self.assertTrue(row_filter.column_family_id is column_family_id)
+        self.assertTrue(row_filter.start_column is start_column)
+        self.assertTrue(row_filter.end_column is end_column)
+        self.assertTrue(row_filter.inclusive_start is inclusive_start)
+        self.assertTrue(row_filter.inclusive_end is inclusive_end)
 
-    def _row_filter_values_check(self, row_filter, value_name, value):
-        for prop_name in self._PROPERTIES:
-            prop_value = getattr(row_filter, prop_name)
-            if prop_name == value_name:
-                self.assertEqual(prop_value, value)
-            else:
-                self.assertTrue(prop_value is None)
+    def test_constructor_bad_start(self):
+        column_family_id = object()
+        self.assertRaises(ValueError, self._makeOne,
+                          column_family_id, inclusive_start=True)
 
-    def test_constructor_sink(self):
-        value = True
-        row_filter = self._makeOne(sink=value)
-        self._row_filter_values_check(row_filter, 'sink', value)
-
-    def test_constructor_pass_all_filter(self):
-        value = True
-        row_filter = self._makeOne(pass_all_filter=value)
-        self._row_filter_values_check(row_filter, 'pass_all_filter', value)
-
-    def test_constructor_block_all_filter(self):
-        value = True
-        row_filter = self._makeOne(block_all_filter=value)
-        self._row_filter_values_check(row_filter, 'block_all_filter', value)
-
-    def test_constructor_row_key_regex_filter(self):
-        value = b'row-key-regex'
-        row_filter = self._makeOne(row_key_regex_filter=value)
-        self._row_filter_values_check(
-            row_filter, 'row_key_regex_filter', value)
-
-    def test_constructor_row_sample_filter(self):
-        value = 0.25
-        row_filter = self._makeOne(row_sample_filter=value)
-        self._row_filter_values_check(row_filter, 'row_sample_filter', value)
-
-    def test_constructor_family_name_regex_filter(self):
-        value = u'family-regex'
-        row_filter = self._makeOne(family_name_regex_filter=value)
-        self._row_filter_values_check(
-            row_filter, 'family_name_regex_filter', value)
-
-    def test_constructor_column_qualifier_regex_filter(self):
-        value = b'column-regex'
-        row_filter = self._makeOne(column_qualifier_regex_filter=value)
-        self._row_filter_values_check(
-            row_filter, 'column_qualifier_regex_filter', value)
-
-    def test_constructor_column_range_filter(self):
-        from gcloud_bigtable.row import ColumnRange
-        value = ColumnRange(COLUMN_FAMILY_ID)
-        row_filter = self._makeOne(column_range_filter=value)
-        self._row_filter_values_check(row_filter, 'column_range_filter',
-                                      value)
-
-    def test_constructor_timestamp_range_filter(self):
-        from gcloud_bigtable.row import TimestampRange
-        value = TimestampRange()
-        row_filter = self._makeOne(timestamp_range_filter=value)
-        self._row_filter_values_check(row_filter, 'timestamp_range_filter',
-                                      value)
-
-    def test_constructor_value_regex_filter(self):
-        value = b'value-regex'
-        row_filter = self._makeOne(value_regex_filter=value)
-        self._row_filter_values_check(row_filter, 'value_regex_filter', value)
-
-    def test_constructor_value_range_filter(self):
-        from gcloud_bigtable.row import CellValueRange
-        value = CellValueRange()
-        row_filter = self._makeOne(value_range_filter=value)
-        self._row_filter_values_check(row_filter, 'value_range_filter',
-                                      value)
-
-    def test_constructor_cells_per_row_offset_filter(self):
-        value = 76
-        row_filter = self._makeOne(cells_per_row_offset_filter=value)
-        self._row_filter_values_check(
-            row_filter, 'cells_per_row_offset_filter', value)
-
-    def test_constructor_cells_per_row_limit_filter(self):
-        value = 189
-        row_filter = self._makeOne(cells_per_row_limit_filter=value)
-        self._row_filter_values_check(
-            row_filter, 'cells_per_row_limit_filter', value)
-
-    def test_constructor_cells_per_column_limit_filter(self):
-        value = 10
-        row_filter = self._makeOne(cells_per_column_limit_filter=value)
-        self._row_filter_values_check(
-            row_filter, 'cells_per_column_limit_filter', value)
-
-    def test_constructor_strip_value_transformer(self):
-        value = True
-        row_filter = self._makeOne(strip_value_transformer=value)
-        self._row_filter_values_check(row_filter, 'strip_value_transformer',
-                                      value)
-
-    def test_constructor_apply_label_transformer(self):
-        value = u'label'
-        row_filter = self._makeOne(apply_label_transformer=value)
-        self._row_filter_values_check(row_filter, 'apply_label_transformer',
-                                      value)
+    def test_constructor_bad_end(self):
+        column_family_id = object()
+        self.assertRaises(ValueError, self._makeOne,
+                          column_family_id, inclusive_end=True)
 
     def test___eq__(self):
-        # Fool the constructor by passing exactly 1 value.
-        row_filter1 = self._makeOne(strip_value_transformer=True)
-        row_filter2 = self._makeOne(strip_value_transformer=True)
-        # Set every value so we can compare them all.
-        for prop_name in self._PROPERTIES:
-            fake_val = object()
-            setattr(row_filter1, prop_name, fake_val)
-            setattr(row_filter2, prop_name, fake_val)
+        column_family_id = object()
+        start_column = object()
+        end_column = object()
+        inclusive_start = object()
+        inclusive_end = object()
+        row_filter1 = self._makeOne(column_family_id,
+                                    start_column=start_column,
+                                    end_column=end_column,
+                                    inclusive_start=inclusive_start,
+                                    inclusive_end=inclusive_end)
+        row_filter2 = self._makeOne(column_family_id,
+                                    start_column=start_column,
+                                    end_column=end_column,
+                                    inclusive_start=inclusive_start,
+                                    inclusive_end=inclusive_end)
         self.assertEqual(row_filter1, row_filter2)
 
     def test___eq__type_differ(self):
-        # Fool the constructor by passing exactly 1 value.
-        row_filter1 = self._makeOne(strip_value_transformer=True)
+        column_family_id = object()
+        row_filter1 = self._makeOne(column_family_id)
         row_filter2 = object()
         self.assertNotEqual(row_filter1, row_filter2)
 
-    def test___ne__same_value(self):
-        # Fool the constructor by passing exactly 1 value.
-        row_filter1 = self._makeOne(strip_value_transformer=True)
-        row_filter2 = self._makeOne(strip_value_transformer=True)
-        comparison_val = (row_filter1 != row_filter2)
-        self.assertFalse(comparison_val)
-
-    def test_to_pb_empty(self):
-        # Fool the constructor by passing exactly 1 value.
-        row_filter = self._makeOne(strip_value_transformer=True)
-        # Make it artificially empty after the fact.
-        row_filter.strip_value_transformer = None
-
-        with self.assertRaises(TypeError):
-            row_filter.to_pb()
-
-    def _to_pb_test_helper(self, **kwargs):
+    def test_to_pb(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
 
-        row_filter = self._makeOne(**kwargs)
+        column_family_id = u'column-family-id'
+        row_filter = self._makeOne(column_family_id)
+        col_range_pb = data_pb2.ColumnRange(family_name=column_family_id)
+        expected_pb = data_pb2.RowFilter(column_range_filter=col_range_pb)
+        self.assertEqual(row_filter.to_pb(), expected_pb)
 
-        pb_val = row_filter.to_pb()
-        expected_pb = data_pb2.RowFilter(**kwargs)
-        self.assertEqual(pb_val, expected_pb)
-
-    def test_to_pb_with_sink(self):
-        value = True
-        self._to_pb_test_helper(sink=value)
-
-    def test_to_pb_with_pass_all_filter(self):
-        value = True
-        self._to_pb_test_helper(pass_all_filter=value)
-
-    def test_to_pb_with_block_all_filter(self):
-        value = True
-        self._to_pb_test_helper(block_all_filter=value)
-
-    def test_to_pb_with_row_key_regex_filter(self):
-        value = b'row-key-regex'
-        self._to_pb_test_helper(row_key_regex_filter=value)
-
-    def test_to_pb_with_row_sample_filter(self):
-        value = 0.25
-        self._to_pb_test_helper(row_sample_filter=value)
-
-    def test_to_pb_with_family_name_regex_filter(self):
-        value = u'family-regex'
-        self._to_pb_test_helper(family_name_regex_filter=value)
-
-    def test_to_pb_with_column_qualifier_regex_filter(self):
-        value = b'column-regex'
-        self._to_pb_test_helper(column_qualifier_regex_filter=value)
-
-    def test_to_pb_with_column_range_filter(self):
+    def test_to_pb_inclusive_start(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-        from gcloud_bigtable.row import ColumnRange
 
-        value = ColumnRange(COLUMN_FAMILY_ID)
-        row_filter = self._makeOne(column_range_filter=value)
+        column_family_id = u'column-family-id'
+        column = b'column'
+        row_filter = self._makeOne(column_family_id, start_column=column)
+        col_range_pb = data_pb2.ColumnRange(
+            family_name=column_family_id,
+            start_qualifier_inclusive=column,
+        )
+        expected_pb = data_pb2.RowFilter(column_range_filter=col_range_pb)
+        self.assertEqual(row_filter.to_pb(), expected_pb)
 
-        pb_val = row_filter.to_pb()
-        expected_pb = data_pb2.RowFilter(column_range_filter=value.to_pb())
-        self.assertEqual(pb_val, expected_pb)
-
-    def test_to_pb_with_timestamp_range_filter(self):
+    def test_to_pb_exclusive_start(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-        from gcloud_bigtable.row import TimestampRange
 
-        value = TimestampRange()
-        row_filter = self._makeOne(timestamp_range_filter=value)
+        column_family_id = u'column-family-id'
+        column = b'column'
+        row_filter = self._makeOne(column_family_id, start_column=column,
+                                   inclusive_start=False)
+        col_range_pb = data_pb2.ColumnRange(
+            family_name=column_family_id,
+            start_qualifier_exclusive=column,
+        )
+        expected_pb = data_pb2.RowFilter(column_range_filter=col_range_pb)
+        self.assertEqual(row_filter.to_pb(), expected_pb)
 
-        pb_val = row_filter.to_pb()
-        expected_pb = data_pb2.RowFilter(timestamp_range_filter=value.to_pb())
-        self.assertEqual(pb_val, expected_pb)
-
-    def test_to_pb_with_value_regex_filter(self):
-        value = b'value-regex'
-        self._to_pb_test_helper(value_regex_filter=value)
-
-    def test_to_pb_with_value_range_filter(self):
+    def test_to_pb_inclusive_end(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-        from gcloud_bigtable.row import CellValueRange
 
-        value = CellValueRange()
-        row_filter = self._makeOne(value_range_filter=value)
+        column_family_id = u'column-family-id'
+        column = b'column'
+        row_filter = self._makeOne(column_family_id, end_column=column)
+        col_range_pb = data_pb2.ColumnRange(
+            family_name=column_family_id,
+            end_qualifier_inclusive=column,
+        )
+        expected_pb = data_pb2.RowFilter(column_range_filter=col_range_pb)
+        self.assertEqual(row_filter.to_pb(), expected_pb)
 
-        pb_val = row_filter.to_pb()
-        expected_pb = data_pb2.RowFilter(value_range_filter=value.to_pb())
-        self.assertEqual(pb_val, expected_pb)
+    def test_to_pb_exclusive_end(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
 
-    def test_to_pb_with_cells_per_row_offset_filter(self):
-        value = 76
-        self._to_pb_test_helper(cells_per_row_offset_filter=value)
-
-    def test_to_pb_with_cells_per_row_limit_filter(self):
-        value = 189
-        self._to_pb_test_helper(cells_per_row_limit_filter=value)
-
-    def test_to_pb_with_cells_per_column_limit_filter(self):
-        value = 10
-        self._to_pb_test_helper(cells_per_column_limit_filter=value)
-
-    def test_to_pb_with_strip_value_transformer(self):
-        value = True
-        self._to_pb_test_helper(strip_value_transformer=value)
-
-    def test_to_pb_with_apply_label_transformer(self):
-        value = u'label'
-        self._to_pb_test_helper(apply_label_transformer=value)
+        column_family_id = u'column-family-id'
+        column = b'column'
+        row_filter = self._makeOne(column_family_id, end_column=column,
+                                   inclusive_end=False)
+        col_range_pb = data_pb2.ColumnRange(
+            family_name=column_family_id,
+            end_qualifier_exclusive=column,
+        )
+        expected_pb = data_pb2.RowFilter(column_range_filter=col_range_pb)
+        self.assertEqual(row_filter.to_pb(), expected_pb)
 
 
 class TestTimestampRange(unittest2.TestCase):
@@ -1027,238 +1108,339 @@ class TestTimestampRange(unittest2.TestCase):
         self._to_pb_helper(start_micros=start_micros,
                            end_micros=end_micros)
 
-    def test_to_pb_just_start(self):
+    def test_to_pb_start_only(self):
         # Makes sure already milliseconds granularity
         start_micros = 30871000
         self._to_pb_helper(start_micros=start_micros)
 
-    def test_to_pb_just_end(self):
+    def test_to_pb_end_only(self):
         # Makes sure already milliseconds granularity
         end_micros = 12939371000
         self._to_pb_helper(end_micros=end_micros)
 
 
-class TestColumnRange(unittest2.TestCase):
+class TestTimestampRangeFilter(unittest2.TestCase):
 
     def _getTargetClass(self):
-        from gcloud_bigtable.row import ColumnRange
-        return ColumnRange
-
-    def _makeOne(self, *args, **kwargs):
-        return self._getTargetClass()(*args, **kwargs)
-
-    def test_constructor_defaults(self):
-        column_family_id = object()
-        col_range = self._makeOne(column_family_id)
-        self.assertTrue(col_range.column_family_id is column_family_id)
-        self.assertEqual(col_range.start_column, None)
-        self.assertEqual(col_range.end_column, None)
-        self.assertTrue(col_range.inclusive_start)
-        self.assertTrue(col_range.inclusive_end)
-
-    def test_constructor_explicit(self):
-        column_family_id = object()
-        start_column = object()
-        end_column = object()
-        inclusive_start = object()
-        inclusive_end = object()
-        col_range = self._makeOne(column_family_id, start_column=start_column,
-                                  end_column=end_column,
-                                  inclusive_start=inclusive_start,
-                                  inclusive_end=inclusive_end)
-        self.assertTrue(col_range.column_family_id is column_family_id)
-        self.assertTrue(col_range.start_column is start_column)
-        self.assertTrue(col_range.end_column is end_column)
-        self.assertTrue(col_range.inclusive_start is inclusive_start)
-        self.assertTrue(col_range.inclusive_end is inclusive_end)
-
-    def test___eq__(self):
-        column_family_id = object()
-        start_column = object()
-        end_column = object()
-        inclusive_start = object()
-        inclusive_end = object()
-        col_range1 = self._makeOne(column_family_id, start_column=start_column,
-                                   end_column=end_column,
-                                   inclusive_start=inclusive_start,
-                                   inclusive_end=inclusive_end)
-        col_range2 = self._makeOne(column_family_id, start_column=start_column,
-                                   end_column=end_column,
-                                   inclusive_start=inclusive_start,
-                                   inclusive_end=inclusive_end)
-        self.assertEqual(col_range1, col_range2)
-
-    def test___eq__type_differ(self):
-        column_family_id = object()
-        col_range1 = self._makeOne(column_family_id)
-        col_range2 = object()
-        self.assertNotEqual(col_range1, col_range2)
-
-    def test___ne__same_value(self):
-        column_family_id = object()
-        col_range1 = self._makeOne(column_family_id)
-        col_range2 = self._makeOne(column_family_id)
-        comparison_val = (col_range1 != col_range2)
-        self.assertFalse(comparison_val)
-
-    def test_to_pb(self):
-        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-
-        col_range = self._makeOne(COLUMN_FAMILY_ID)
-        expected_pb = data_pb2.ColumnRange(family_name=COLUMN_FAMILY_ID)
-        self.assertEqual(col_range.to_pb(), expected_pb)
-
-    def test_to_pb_inclusive_start(self):
-        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-
-        col_range = self._makeOne(COLUMN_FAMILY_ID, start_column=COLUMN)
-        expected_pb = data_pb2.ColumnRange(
-            family_name=COLUMN_FAMILY_ID,
-            start_qualifier_inclusive=COLUMN,
-        )
-        self.assertEqual(col_range.to_pb(), expected_pb)
-
-    def test_to_pb_exclusive_start(self):
-        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-
-        col_range = self._makeOne(COLUMN_FAMILY_ID, start_column=COLUMN,
-                                  inclusive_start=False)
-        expected_pb = data_pb2.ColumnRange(
-            family_name=COLUMN_FAMILY_ID,
-            start_qualifier_exclusive=COLUMN,
-        )
-        self.assertEqual(col_range.to_pb(), expected_pb)
-
-    def test_to_pb_inclusive_end(self):
-        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-
-        col_range = self._makeOne(COLUMN_FAMILY_ID, end_column=COLUMN)
-        expected_pb = data_pb2.ColumnRange(
-            family_name=COLUMN_FAMILY_ID,
-            end_qualifier_inclusive=COLUMN,
-        )
-        self.assertEqual(col_range.to_pb(), expected_pb)
-
-    def test_to_pb_exclusive_end(self):
-        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-
-        col_range = self._makeOne(COLUMN_FAMILY_ID, end_column=COLUMN,
-                                  inclusive_end=False)
-        expected_pb = data_pb2.ColumnRange(
-            family_name=COLUMN_FAMILY_ID,
-            end_qualifier_exclusive=COLUMN,
-        )
-        self.assertEqual(col_range.to_pb(), expected_pb)
-
-
-class TestCellValueRange(unittest2.TestCase):
-
-    def _getTargetClass(self):
-        from gcloud_bigtable.row import CellValueRange
-        return CellValueRange
-
-    def _makeOne(self, *args, **kwargs):
-        return self._getTargetClass()(*args, **kwargs)
-
-    def test_constructor_defaults(self):
-        val_range = self._makeOne()
-        self.assertEqual(val_range.start_value, None)
-        self.assertEqual(val_range.end_value, None)
-        self.assertTrue(val_range.inclusive_start)
-        self.assertTrue(val_range.inclusive_end)
-
-    def test_constructor_explicit(self):
-        start_value = object()
-        end_value = object()
-        inclusive_start = object()
-        inclusive_end = object()
-        val_range = self._makeOne(start_value=start_value, end_value=end_value,
-                                  inclusive_start=inclusive_start,
-                                  inclusive_end=inclusive_end)
-        self.assertTrue(val_range.start_value is start_value)
-        self.assertTrue(val_range.end_value is end_value)
-        self.assertTrue(val_range.inclusive_start is inclusive_start)
-        self.assertTrue(val_range.inclusive_end is inclusive_end)
-
-    def test___eq__(self):
-        start_value = object()
-        end_value = object()
-        inclusive_start = object()
-        inclusive_end = object()
-        val_range1 = self._makeOne(start_value=start_value,
-                                   end_value=end_value,
-                                   inclusive_start=inclusive_start,
-                                   inclusive_end=inclusive_end)
-        val_range2 = self._makeOne(start_value=start_value,
-                                   end_value=end_value,
-                                   inclusive_start=inclusive_start,
-                                   inclusive_end=inclusive_end)
-        self.assertEqual(val_range1, val_range2)
-
-    def test___eq__type_differ(self):
-        val_range1 = self._makeOne()
-        val_range2 = object()
-        self.assertNotEqual(val_range1, val_range2)
-
-    def test___ne__same_value(self):
-        val_range1 = self._makeOne()
-        val_range2 = self._makeOne()
-        comparison_val = (val_range1 != val_range2)
-        self.assertFalse(comparison_val)
-
-    def test_to_pb(self):
-        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-
-        val_range = self._makeOne()
-        expected_pb = data_pb2.ValueRange()
-        self.assertEqual(val_range.to_pb(), expected_pb)
-
-    def test_to_pb_inclusive_start(self):
-        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-
-        value = b'some-value'
-        val_range = self._makeOne(start_value=value)
-        expected_pb = data_pb2.ValueRange(start_value_inclusive=value)
-        self.assertEqual(val_range.to_pb(), expected_pb)
-
-    def test_to_pb_exclusive_start(self):
-        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-
-        value = b'some-value'
-        val_range = self._makeOne(start_value=value, inclusive_start=False)
-        expected_pb = data_pb2.ValueRange(start_value_exclusive=value)
-        self.assertEqual(val_range.to_pb(), expected_pb)
-
-    def test_to_pb_inclusive_end(self):
-        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-
-        value = b'some-value'
-        val_range = self._makeOne(end_value=value)
-        expected_pb = data_pb2.ValueRange(end_value_inclusive=value)
-        self.assertEqual(val_range.to_pb(), expected_pb)
-
-    def test_to_pb_exclusive_end(self):
-        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-
-        value = b'some-value'
-        val_range = self._makeOne(end_value=value, inclusive_end=False)
-        expected_pb = data_pb2.ValueRange(end_value_exclusive=value)
-        self.assertEqual(val_range.to_pb(), expected_pb)
-
-
-class TestRowFilterChain(unittest2.TestCase):
-
-    def _getTargetClass(self):
-        from gcloud_bigtable.row import RowFilterChain
-        return RowFilterChain
+        from gcloud_bigtable.row import TimestampRangeFilter
+        return TimestampRangeFilter
 
     def _makeOne(self, *args, **kwargs):
         return self._getTargetClass()(*args, **kwargs)
 
     def test_constructor(self):
+        range_ = object()
+        row_filter = self._makeOne(range_)
+        self.assertTrue(row_filter.range_ is range_)
+
+    def test___eq__type_differ(self):
+        range_ = object()
+        row_filter1 = self._makeOne(range_)
+        row_filter2 = object()
+        self.assertNotEqual(row_filter1, row_filter2)
+
+    def test___eq__same_value(self):
+        range_ = object()
+        row_filter1 = self._makeOne(range_)
+        row_filter2 = self._makeOne(range_)
+        self.assertEqual(row_filter1, row_filter2)
+
+    def test_to_pb(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+        from gcloud_bigtable.row import TimestampRange
+
+        range_ = TimestampRange()
+        row_filter = self._makeOne(range_)
+        pb_val = row_filter.to_pb()
+        expected_pb = data_pb2.RowFilter(
+            timestamp_range_filter=data_pb2.TimestampRange())
+        self.assertEqual(pb_val, expected_pb)
+
+
+class TestValueRegexFilter(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import ValueRegexFilter
+        return ValueRegexFilter
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_to_pb(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        regex = b'value-regex'
+        row_filter = self._makeOne(regex)
+        pb_val = row_filter.to_pb()
+        expected_pb = data_pb2.RowFilter(value_regex_filter=regex)
+        self.assertEqual(pb_val, expected_pb)
+
+
+class TestValueRangeFilter(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import ValueRangeFilter
+        return ValueRangeFilter
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_constructor_defaults(self):
+        row_filter = self._makeOne()
+        self.assertEqual(row_filter.start_value, None)
+        self.assertEqual(row_filter.end_value, None)
+        self.assertTrue(row_filter.inclusive_start)
+        self.assertTrue(row_filter.inclusive_end)
+
+    def test_constructor_explicit(self):
+        start_value = object()
+        end_value = object()
+        inclusive_start = object()
+        inclusive_end = object()
+        row_filter = self._makeOne(start_value=start_value,
+                                   end_value=end_value,
+                                   inclusive_start=inclusive_start,
+                                   inclusive_end=inclusive_end)
+        self.assertTrue(row_filter.start_value is start_value)
+        self.assertTrue(row_filter.end_value is end_value)
+        self.assertTrue(row_filter.inclusive_start is inclusive_start)
+        self.assertTrue(row_filter.inclusive_end is inclusive_end)
+
+    def test_constructor_bad_start(self):
+        self.assertRaises(ValueError, self._makeOne, inclusive_start=True)
+
+    def test_constructor_bad_end(self):
+        self.assertRaises(ValueError, self._makeOne, inclusive_end=True)
+
+    def test___eq__(self):
+        start_value = object()
+        end_value = object()
+        inclusive_start = object()
+        inclusive_end = object()
+        row_filter1 = self._makeOne(start_value=start_value,
+                                    end_value=end_value,
+                                    inclusive_start=inclusive_start,
+                                    inclusive_end=inclusive_end)
+        row_filter2 = self._makeOne(start_value=start_value,
+                                    end_value=end_value,
+                                    inclusive_start=inclusive_start,
+                                    inclusive_end=inclusive_end)
+        self.assertEqual(row_filter1, row_filter2)
+
+    def test___eq__type_differ(self):
+        row_filter1 = self._makeOne()
+        row_filter2 = object()
+        self.assertNotEqual(row_filter1, row_filter2)
+
+    def test_to_pb(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        row_filter = self._makeOne()
+        expected_pb = data_pb2.RowFilter(
+            value_range_filter=data_pb2.ValueRange())
+        self.assertEqual(row_filter.to_pb(), expected_pb)
+
+    def test_to_pb_inclusive_start(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        value = b'some-value'
+        row_filter = self._makeOne(start_value=value)
+        val_range_pb = data_pb2.ValueRange(start_value_inclusive=value)
+        expected_pb = data_pb2.RowFilter(value_range_filter=val_range_pb)
+        self.assertEqual(row_filter.to_pb(), expected_pb)
+
+    def test_to_pb_exclusive_start(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        value = b'some-value'
+        row_filter = self._makeOne(start_value=value, inclusive_start=False)
+        val_range_pb = data_pb2.ValueRange(start_value_exclusive=value)
+        expected_pb = data_pb2.RowFilter(value_range_filter=val_range_pb)
+        self.assertEqual(row_filter.to_pb(), expected_pb)
+
+    def test_to_pb_inclusive_end(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        value = b'some-value'
+        row_filter = self._makeOne(end_value=value)
+        val_range_pb = data_pb2.ValueRange(end_value_inclusive=value)
+        expected_pb = data_pb2.RowFilter(value_range_filter=val_range_pb)
+        self.assertEqual(row_filter.to_pb(), expected_pb)
+
+    def test_to_pb_exclusive_end(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        value = b'some-value'
+        row_filter = self._makeOne(end_value=value, inclusive_end=False)
+        val_range_pb = data_pb2.ValueRange(end_value_exclusive=value)
+        expected_pb = data_pb2.RowFilter(value_range_filter=val_range_pb)
+        self.assertEqual(row_filter.to_pb(), expected_pb)
+
+
+class Test_CellCountFilter(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import _CellCountFilter
+        return _CellCountFilter
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_constructor(self):
+        num_cells = object()
+        row_filter = self._makeOne(num_cells)
+        self.assertTrue(row_filter.num_cells is num_cells)
+
+    def test___eq__type_differ(self):
+        num_cells = object()
+        row_filter1 = self._makeOne(num_cells)
+        row_filter2 = object()
+        self.assertNotEqual(row_filter1, row_filter2)
+
+    def test___eq__same_value(self):
+        num_cells = object()
+        row_filter1 = self._makeOne(num_cells)
+        row_filter2 = self._makeOne(num_cells)
+        self.assertEqual(row_filter1, row_filter2)
+
+    def test___ne__same_value(self):
+        num_cells = object()
+        row_filter1 = self._makeOne(num_cells)
+        row_filter2 = self._makeOne(num_cells)
+        comparison_val = (row_filter1 != row_filter2)
+        self.assertFalse(comparison_val)
+
+
+class TestCellsRowOffsetFilter(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import CellsRowOffsetFilter
+        return CellsRowOffsetFilter
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_to_pb(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        num_cells = 76
+        row_filter = self._makeOne(num_cells)
+        pb_val = row_filter.to_pb()
+        expected_pb = data_pb2.RowFilter(cells_per_row_offset_filter=num_cells)
+        self.assertEqual(pb_val, expected_pb)
+
+
+class TestCellsRowLimitFilter(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import CellsRowLimitFilter
+        return CellsRowLimitFilter
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_to_pb(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        num_cells = 189
+        row_filter = self._makeOne(num_cells)
+        pb_val = row_filter.to_pb()
+        expected_pb = data_pb2.RowFilter(cells_per_row_limit_filter=num_cells)
+        self.assertEqual(pb_val, expected_pb)
+
+
+class TestCellsColumnLimitFilter(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import CellsColumnLimitFilter
+        return CellsColumnLimitFilter
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_to_pb(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        num_cells = 10
+        row_filter = self._makeOne(num_cells)
+        pb_val = row_filter.to_pb()
+        expected_pb = data_pb2.RowFilter(
+            cells_per_column_limit_filter=num_cells)
+        self.assertEqual(pb_val, expected_pb)
+
+
+class TestStripValueTransformerFilter(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import StripValueTransformerFilter
+        return StripValueTransformerFilter
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_to_pb(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        flag = True
+        row_filter = self._makeOne(flag)
+        pb_val = row_filter.to_pb()
+        expected_pb = data_pb2.RowFilter(strip_value_transformer=flag)
+        self.assertEqual(pb_val, expected_pb)
+
+
+class TestApplyLabelFilter(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import ApplyLabelFilter
+        return ApplyLabelFilter
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_constructor(self):
+        label = object()
+        row_filter = self._makeOne(label)
+        self.assertTrue(row_filter.label is label)
+
+    def test___eq__type_differ(self):
+        label = object()
+        row_filter1 = self._makeOne(label)
+        row_filter2 = object()
+        self.assertNotEqual(row_filter1, row_filter2)
+
+    def test___eq__same_value(self):
+        label = object()
+        row_filter1 = self._makeOne(label)
+        row_filter2 = self._makeOne(label)
+        self.assertEqual(row_filter1, row_filter2)
+
+    def test_to_pb(self):
+        from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
+
+        label = u'label'
+        row_filter = self._makeOne(label)
+        pb_val = row_filter.to_pb()
+        expected_pb = data_pb2.RowFilter(apply_label_transformer=label)
+        self.assertEqual(pb_val, expected_pb)
+
+
+class Test_FilterCombination(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import _FilterCombination
+        return _FilterCombination
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def test_constructor_defaults(self):
+        row_filter = self._makeOne()
+        self.assertEqual(row_filter.filters, [])
+
+    def test_constructor_explicit(self):
         filters = object()
-        filter_chain = self._makeOne(filters=filters)
-        self.assertTrue(filter_chain.filters is filters)
+        row_filter = self._makeOne(filters=filters)
+        self.assertTrue(row_filter.filters is filters)
 
     def test___eq__(self):
         filters = object()
@@ -1272,21 +1454,25 @@ class TestRowFilterChain(unittest2.TestCase):
         row_filter2 = object()
         self.assertNotEqual(row_filter1, row_filter2)
 
-    def test___ne__same_value(self):
-        filters = object()
-        row_filter1 = self._makeOne(filters=filters)
-        row_filter2 = self._makeOne(filters=filters)
-        comparison_val = (row_filter1 != row_filter2)
-        self.assertFalse(comparison_val)
+
+class TestRowFilterChain(unittest2.TestCase):
+
+    def _getTargetClass(self):
+        from gcloud_bigtable.row import RowFilterChain
+        return RowFilterChain
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
 
     def test_to_pb(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-        from gcloud_bigtable.row import RowFilter
+        from gcloud_bigtable.row import RowSampleFilter
+        from gcloud_bigtable.row import StripValueTransformerFilter
 
-        row_filter1 = RowFilter(strip_value_transformer=True)
+        row_filter1 = StripValueTransformerFilter(True)
         row_filter1_pb = row_filter1.to_pb()
 
-        row_filter2 = RowFilter(row_sample_filter=0.25)
+        row_filter2 = RowSampleFilter(0.25)
         row_filter2_pb = row_filter2.to_pb()
 
         row_filter3 = self._makeOne(filters=[row_filter1, row_filter2])
@@ -1301,15 +1487,17 @@ class TestRowFilterChain(unittest2.TestCase):
 
     def test_to_pb_nested(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-        from gcloud_bigtable.row import RowFilter
+        from gcloud_bigtable.row import CellsRowLimitFilter
+        from gcloud_bigtable.row import RowSampleFilter
+        from gcloud_bigtable.row import StripValueTransformerFilter
 
-        row_filter1 = RowFilter(strip_value_transformer=True)
-        row_filter2 = RowFilter(row_sample_filter=0.25)
+        row_filter1 = StripValueTransformerFilter(True)
+        row_filter2 = RowSampleFilter(0.25)
 
         row_filter3 = self._makeOne(filters=[row_filter1, row_filter2])
         row_filter3_pb = row_filter3.to_pb()
 
-        row_filter4 = RowFilter(cells_per_row_limit_filter=11)
+        row_filter4 = CellsRowLimitFilter(11)
         row_filter4_pb = row_filter4.to_pb()
 
         row_filter5 = self._makeOne(filters=[row_filter3, row_filter4])
@@ -1332,38 +1520,15 @@ class TestRowFilterUnion(unittest2.TestCase):
     def _makeOne(self, *args, **kwargs):
         return self._getTargetClass()(*args, **kwargs)
 
-    def test_constructor(self):
-        filters = object()
-        filter_union = self._makeOne(filters=filters)
-        self.assertTrue(filter_union.filters is filters)
-
-    def test___eq__(self):
-        filters = object()
-        row_filter1 = self._makeOne(filters=filters)
-        row_filter2 = self._makeOne(filters=filters)
-        self.assertEqual(row_filter1, row_filter2)
-
-    def test___eq__type_differ(self):
-        filters = object()
-        row_filter1 = self._makeOne(filters=filters)
-        row_filter2 = object()
-        self.assertNotEqual(row_filter1, row_filter2)
-
-    def test___ne__same_value(self):
-        filters = object()
-        row_filter1 = self._makeOne(filters=filters)
-        row_filter2 = self._makeOne(filters=filters)
-        comparison_val = (row_filter1 != row_filter2)
-        self.assertFalse(comparison_val)
-
     def test_to_pb(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-        from gcloud_bigtable.row import RowFilter
+        from gcloud_bigtable.row import RowSampleFilter
+        from gcloud_bigtable.row import StripValueTransformerFilter
 
-        row_filter1 = RowFilter(strip_value_transformer=True)
+        row_filter1 = StripValueTransformerFilter(True)
         row_filter1_pb = row_filter1.to_pb()
 
-        row_filter2 = RowFilter(row_sample_filter=0.25)
+        row_filter2 = RowSampleFilter(0.25)
         row_filter2_pb = row_filter2.to_pb()
 
         row_filter3 = self._makeOne(filters=[row_filter1, row_filter2])
@@ -1378,15 +1543,17 @@ class TestRowFilterUnion(unittest2.TestCase):
 
     def test_to_pb_nested(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-        from gcloud_bigtable.row import RowFilter
+        from gcloud_bigtable.row import CellsRowLimitFilter
+        from gcloud_bigtable.row import RowSampleFilter
+        from gcloud_bigtable.row import StripValueTransformerFilter
 
-        row_filter1 = RowFilter(strip_value_transformer=True)
-        row_filter2 = RowFilter(row_sample_filter=0.25)
+        row_filter1 = StripValueTransformerFilter(True)
+        row_filter2 = RowSampleFilter(0.25)
 
         row_filter3 = self._makeOne(filters=[row_filter1, row_filter2])
         row_filter3_pb = row_filter3.to_pb()
 
-        row_filter4 = RowFilter(cells_per_row_limit_filter=11)
+        row_filter4 = CellsRowLimitFilter(11)
         row_filter4_pb = row_filter4.to_pb()
 
         row_filter5 = self._makeOne(filters=[row_filter3, row_filter4])
@@ -1442,30 +1609,19 @@ class TestConditionalRowFilter(unittest2.TestCase):
         cond_filter2 = object()
         self.assertNotEqual(cond_filter1, cond_filter2)
 
-    def test___ne__same_value(self):
-        base_filter = object()
-        true_filter = object()
-        false_filter = object()
-        cond_filter1 = self._makeOne(base_filter,
-                                     true_filter=true_filter,
-                                     false_filter=false_filter)
-        cond_filter2 = self._makeOne(base_filter,
-                                     true_filter=true_filter,
-                                     false_filter=false_filter)
-        comparison_val = (cond_filter1 != cond_filter2)
-        self.assertFalse(comparison_val)
-
     def test_to_pb(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-        from gcloud_bigtable.row import RowFilter
+        from gcloud_bigtable.row import CellsRowOffsetFilter
+        from gcloud_bigtable.row import RowSampleFilter
+        from gcloud_bigtable.row import StripValueTransformerFilter
 
-        row_filter1 = RowFilter(strip_value_transformer=True)
+        row_filter1 = StripValueTransformerFilter(True)
         row_filter1_pb = row_filter1.to_pb()
 
-        row_filter2 = RowFilter(row_sample_filter=0.25)
+        row_filter2 = RowSampleFilter(0.25)
         row_filter2_pb = row_filter2.to_pb()
 
-        row_filter3 = RowFilter(cells_per_row_limit_filter=11)
+        row_filter3 = CellsRowOffsetFilter(11)
         row_filter3_pb = row_filter3.to_pb()
 
         row_filter4 = self._makeOne(row_filter1, true_filter=row_filter2,
@@ -1483,12 +1639,13 @@ class TestConditionalRowFilter(unittest2.TestCase):
 
     def test_to_pb_true_only(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-        from gcloud_bigtable.row import RowFilter
+        from gcloud_bigtable.row import RowSampleFilter
+        from gcloud_bigtable.row import StripValueTransformerFilter
 
-        row_filter1 = RowFilter(strip_value_transformer=True)
+        row_filter1 = StripValueTransformerFilter(True)
         row_filter1_pb = row_filter1.to_pb()
 
-        row_filter2 = RowFilter(row_sample_filter=0.25)
+        row_filter2 = RowSampleFilter(0.25)
         row_filter2_pb = row_filter2.to_pb()
 
         row_filter3 = self._makeOne(row_filter1, true_filter=row_filter2)
@@ -1504,12 +1661,13 @@ class TestConditionalRowFilter(unittest2.TestCase):
 
     def test_to_pb_false_only(self):
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
-        from gcloud_bigtable.row import RowFilter
+        from gcloud_bigtable.row import RowSampleFilter
+        from gcloud_bigtable.row import StripValueTransformerFilter
 
-        row_filter1 = RowFilter(strip_value_transformer=True)
+        row_filter1 = StripValueTransformerFilter(True)
         row_filter1_pb = row_filter1.to_pb()
 
-        row_filter2 = RowFilter(row_sample_filter=0.25)
+        row_filter2 = RowSampleFilter(0.25)
         row_filter2_pb = row_filter2.to_pb()
 
         row_filter3 = self._makeOne(row_filter1, false_filter=row_filter2)

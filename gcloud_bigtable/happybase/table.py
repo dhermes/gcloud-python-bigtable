@@ -28,10 +28,14 @@ from gcloud_bigtable.column_family import MaxVersionsGCRule
 from gcloud_bigtable.happybase.batch import Batch
 from gcloud_bigtable.happybase.batch import _WAL_SENTINEL
 from gcloud_bigtable.happybase.batch import _get_column_pairs
-from gcloud_bigtable.row import RowFilter
+from gcloud_bigtable.row import CellsColumnLimitFilter
+from gcloud_bigtable.row import ColumnQualifierRegexFilter
+from gcloud_bigtable.row import FamilyNameRegexFilter
 from gcloud_bigtable.row import RowFilterChain
 from gcloud_bigtable.row import RowFilterUnion
+from gcloud_bigtable.row import RowKeyRegexFilter
 from gcloud_bigtable.row import TimestampRange
+from gcloud_bigtable.row import TimestampRangeFilter
 from gcloud_bigtable.table import Table as _LowLevelTable
 
 
@@ -204,7 +208,7 @@ def _filter_chain_helper(column=None, versions=None, timestamp=None,
     :type filters: list
     :param filters: (Optional) List of existing filters to be extended.
 
-    :rtype: :class:`.RowFilterChain`, :class:`.RowFilter`
+    :rtype: :class:`.RowFilter`
     :returns: The chained filter created, or just a single filter if only
               one was needed.
     :raises: :class:`ValueError <exceptions.ValueError>` if there are no
@@ -215,14 +219,14 @@ def _filter_chain_helper(column=None, versions=None, timestamp=None,
 
     if column is not None:
         column_family_id, column_qualifier = column.split(':')
-        fam_filter = RowFilter(family_name_regex_filter=column_family_id)
-        qual_filter = RowFilter(column_qualifier_regex_filter=column_qualifier)
+        fam_filter = FamilyNameRegexFilter(column_family_id)
+        qual_filter = ColumnQualifierRegexFilter(column_qualifier)
         filters.extend([fam_filter, qual_filter])
     if versions is not None:
-        filters.append(RowFilter(cells_per_column_limit_filter=versions))
+        filters.append(CellsColumnLimitFilter(versions))
     time_range = _convert_to_time_range(timestamp=timestamp)
     if time_range is not None:
-        filters.append(RowFilter(timestamp_range_filter=time_range))
+        filters.append(TimestampRangeFilter(time_range))
 
     num_filters = len(filters)
     if num_filters == 0:
@@ -243,22 +247,20 @@ def _columns_filter_helper(columns):
                       * an entire column family: ``fam`` or ``fam:``
                       * an single column: ``fam:col``
 
-    :rtype: :class:`.RowFilterUnion`, :class:`.RowFilter`
+    :rtype: :class:`.RowFilter`
     :returns: The union filter created containing all of the matched columns.
     :raises: :class:`ValueError <exceptions.ValueError>` if there are no
              filters to union.
     """
     filters = []
     for column_family_id, column_qualifier in _get_column_pairs(columns):
+        fam_filter = FamilyNameRegexFilter(column_family_id)
         if column_qualifier is not None:
-            fam_filter = RowFilter(family_name_regex_filter=column_family_id)
-            qual_filter = RowFilter(
-                column_qualifier_regex_filter=column_qualifier)
+            qual_filter = ColumnQualifierRegexFilter(column_qualifier)
             combined_filter = RowFilterChain(
                 filters=[fam_filter, qual_filter])
             filters.append(combined_filter)
         else:
-            fam_filter = RowFilter(family_name_regex_filter=column_family_id)
             filters.append(fam_filter)
 
     num_filters = len(filters)
@@ -276,14 +278,14 @@ def _row_keys_filter_helper(row_keys):
     :type row_keys: list
     :param row_keys: Iterable containing row keys (as strings).
 
-    :rtype: :class:`.RowFilterUnion`, :class:`.RowFilter`
+    :rtype: :class:`.RowFilter`
     :returns: The union filter created containing all of the row keys.
     :raises: :class:`ValueError <exceptions.ValueError>` if there are no
              filters to union.
     """
     filters = []
     for row_key in row_keys:
-        filters.append(RowFilter(row_key_regex_filter=row_key))
+        filters.append(RowKeyRegexFilter(row_key))
 
     num_filters = len(filters)
     if num_filters == 0:
@@ -618,8 +620,7 @@ class Table(object):
                           * an entire column family: ``fam`` or ``fam:``
                           * an single column: ``fam:col``
 
-        :type filter: :class:`RowFilter`, :class:`RowFilterChain`,
-                      :class:`RowFilterUnion` or :class:`ConditionalRowFilter`
+        :type filter: :class:`.RowFilter`
         :param filter: (Optional) An additional filter (beyond column and
                        row range filters supported here). HappyBase / HBase
                        users will have used this as an HBase filter string. See
