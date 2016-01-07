@@ -88,9 +88,9 @@ class TestMaxAgeGCRule(unittest2.TestCase):
 
     def test_to_pb(self):
         import datetime
+        from google.protobuf import duration_pb2
         from gcloud_bigtable._generated import (
             bigtable_table_data_pb2 as data_pb2)
-        from gcloud_bigtable._generated import duration_pb2
 
         max_age = datetime.timedelta(seconds=1)
         duration = duration_pb2.Duration(seconds=1)
@@ -134,9 +134,9 @@ class TestGCRuleUnion(unittest2.TestCase):
 
     def test_to_pb(self):
         import datetime
+        from google.protobuf import duration_pb2
         from gcloud_bigtable._generated import (
             bigtable_table_data_pb2 as data_pb2)
-        from gcloud_bigtable._generated import duration_pb2
         from gcloud_bigtable.column_family import MaxAgeGCRule
         from gcloud_bigtable.column_family import MaxVersionsGCRule
 
@@ -157,9 +157,9 @@ class TestGCRuleUnion(unittest2.TestCase):
 
     def test_to_pb_nested(self):
         import datetime
+        from google.protobuf import duration_pb2
         from gcloud_bigtable._generated import (
             bigtable_table_data_pb2 as data_pb2)
-        from gcloud_bigtable._generated import duration_pb2
         from gcloud_bigtable.column_family import MaxAgeGCRule
         from gcloud_bigtable.column_family import MaxVersionsGCRule
 
@@ -222,9 +222,9 @@ class TestGCRuleIntersection(unittest2.TestCase):
 
     def test_to_pb(self):
         import datetime
+        from google.protobuf import duration_pb2
         from gcloud_bigtable._generated import (
             bigtable_table_data_pb2 as data_pb2)
-        from gcloud_bigtable._generated import duration_pb2
         from gcloud_bigtable.column_family import MaxAgeGCRule
         from gcloud_bigtable.column_family import MaxVersionsGCRule
 
@@ -246,9 +246,9 @@ class TestGCRuleIntersection(unittest2.TestCase):
 
     def test_to_pb_nested(self):
         import datetime
+        from google.protobuf import duration_pb2
         from gcloud_bigtable._generated import (
             bigtable_table_data_pb2 as data_pb2)
-        from gcloud_bigtable._generated import duration_pb2
         from gcloud_bigtable.column_family import MaxAgeGCRule
         from gcloud_bigtable.column_family import MaxVersionsGCRule
 
@@ -427,9 +427,9 @@ class TestColumnFamily(unittest2.TestCase):
         self._update_test_helper(gc_rule=gc_rule)
 
     def test_delete(self):
+        from google.protobuf import empty_pb2
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as messages_pb2)
-        from gcloud_bigtable._generated import empty_pb2
         from gcloud_bigtable._grpc_mocks import StubMock
 
         timeout_seconds = 7
@@ -546,7 +546,7 @@ class Test__timedelta_to_duration_pb(unittest2.TestCase):
 
     def test_it(self):
         import datetime
-        from gcloud_bigtable._generated import duration_pb2
+        from google.protobuf import duration_pb2
 
         seconds = microseconds = 1
         timedelta_val = datetime.timedelta(seconds=seconds,
@@ -558,7 +558,7 @@ class Test__timedelta_to_duration_pb(unittest2.TestCase):
 
     def test_with_negative_microseconds(self):
         import datetime
-        from gcloud_bigtable._generated import duration_pb2
+        from google.protobuf import duration_pb2
 
         seconds = 1
         microseconds = -5
@@ -571,7 +571,7 @@ class Test__timedelta_to_duration_pb(unittest2.TestCase):
 
     def test_with_negative_seconds(self):
         import datetime
-        from gcloud_bigtable._generated import duration_pb2
+        from google.protobuf import duration_pb2
 
         seconds = -1
         microseconds = 5
@@ -591,7 +591,7 @@ class Test__duration_pb_to_timedelta(unittest2.TestCase):
 
     def test_it(self):
         import datetime
-        from gcloud_bigtable._generated import duration_pb2
+        from google.protobuf import duration_pb2
 
         seconds = microseconds = 1
         duration_pb = duration_pb2.Duration(seconds=seconds,

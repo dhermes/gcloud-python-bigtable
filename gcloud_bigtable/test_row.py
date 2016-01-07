@@ -365,10 +365,10 @@ class TestRow(unittest2.TestCase):
         self.assertEqual(row._pb_mutations, [expected_pb1, expected_pb2])
 
     def test_commit(self):
+        from google.protobuf import empty_pb2
         from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
         from gcloud_bigtable._generated import (
             bigtable_service_messages_pb2 as messages_pb2)
-        from gcloud_bigtable._generated import empty_pb2
         from gcloud_bigtable._grpc_mocks import StubMock
 
         client = _Client()

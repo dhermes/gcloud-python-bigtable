@@ -141,9 +141,9 @@ class TestTable(unittest2.TestCase):
         self._create_test_helper(initial_split_keys)
 
     def test_rename(self):
+        from google.protobuf import empty_pb2
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as messages_pb2)
-        from gcloud_bigtable._generated import empty_pb2
         from gcloud_bigtable._grpc_mocks import StubMock
 
         new_table_id = 'new_table_id'
@@ -182,9 +182,9 @@ class TestTable(unittest2.TestCase):
         )])
 
     def test_delete(self):
+        from google.protobuf import empty_pb2
         from gcloud_bigtable._generated import (
             bigtable_table_service_messages_pb2 as messages_pb2)
-        from gcloud_bigtable._generated import empty_pb2
         from gcloud_bigtable._grpc_mocks import StubMock
 
         timeout_seconds = 871

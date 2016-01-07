@@ -17,10 +17,11 @@
 
 import datetime
 
+from google.protobuf import duration_pb2
+
 from gcloud_bigtable._generated import bigtable_table_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as messages_pb2)
-from gcloud_bigtable._generated import duration_pb2
 from gcloud_bigtable._non_upstream_helpers import _total_seconds
 
 

@@ -418,7 +418,7 @@ class Row(object):
             mutations=mutations_list,
         )
         timeout_seconds = timeout_seconds or self.timeout_seconds
-        # We expect a `._generated.empty_pb2.Empty`.
+        # We expect a `google.protobuf.empty_pb2.Empty`
         self.client._data_stub.MutateRow(request_pb, timeout_seconds)
 
     def _commit_check_and_mutate(self, timeout_seconds=None):
