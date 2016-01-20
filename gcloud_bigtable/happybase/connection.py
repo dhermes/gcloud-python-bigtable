@@ -26,8 +26,8 @@ from gcloud_bigtable.happybase.table import Table
 from gcloud_bigtable.table import Table as _LowLevelTable
 
 
-# Constants reproduced here for compatibility, though values are
-# all null.
+# Constants reproduced here for HappyBase compatibility, though values
+# are all null.
 COMPAT_MODES = None
 THRIFT_TRANSPORTS = None
 THRIFT_PROTOCOLS = None
@@ -149,14 +149,15 @@ class Connection(object):
     :param timeout: (Optional) The socket timeout in milliseconds.
 
     :type autoconnect: bool
-    :param autoconnect: Whether the connection should be :meth:`open`-ed
-                        during construction.
+    :param autoconnect: (Optional) Whether the connection should be
+                        :meth:`open`-ed during construction.
 
     :type table_prefix: str
     :param table_prefix: (Optional) Prefix used to construct table names.
 
     :type table_prefix_separator: str
-    :param table_prefix_separator: Separator used with ``table_prefix``.
+    :param table_prefix_separator: (Optional) Separator used with
+                                   ``table_prefix``. Defaults to ``_``.
 
     :type compat: :data:`NoneType <types.NoneType>`
     :param compat: Unused parameter. Provided for compatibility with

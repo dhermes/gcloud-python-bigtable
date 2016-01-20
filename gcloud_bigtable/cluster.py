@@ -15,7 +15,6 @@
 """User friendly container for Google Cloud Bigtable Cluster."""
 
 
-import datetime
 import re
 
 from google.longrunning import operations_pb2
@@ -25,7 +24,7 @@ from gcloud_bigtable._generated import (
     bigtable_cluster_service_messages_pb2 as messages_pb2)
 from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as table_messages_pb2)
-from gcloud_bigtable._non_upstream_helpers import EPOCH as _EPOCH
+from gcloud_bigtable._non_upstream_helpers import _pb_timestamp_to_datetime
 from gcloud_bigtable.table import Table
 
 
@@ -90,24 +89,6 @@ def _prepare_create_request(cluster):
             display_name=cluster.display_name,
             serve_nodes=cluster.serve_nodes,
         ),
-    )
-
-
-def _pb_timestamp_to_datetime(timestamp):
-    """Convert a Timestamp protobuf to a datetime object.
-
-    :type timestamp: :class:`google.protobuf.timestamp_pb2.Timestamp`
-    :param timestamp: A Google returned timestamp protobuf.
-
-    :rtype: :class:`datetime.datetime`
-    :returns: A UTC datetime object converted from a protobuf timestamp.
-    """
-    return (
-        _EPOCH +
-        datetime.timedelta(
-            seconds=timestamp.seconds,
-            microseconds=(timestamp.nanos / 1000.0),
-        )
     )
 
 
@@ -214,7 +195,7 @@ class Operation(object):
         operation_name = ('operations/' + self._cluster.name +
                           '/operations/%d' % (self.op_id,))
         request_pb = operations_pb2.GetOperationRequest(name=operation_name)
-        # We expect a :class:`google.longrunning.operations_pb2.Operation`
+        # We expect a `google.longrunning.operations_pb2.Operation`.
         operation_pb = self._cluster._client._operations_stub.GetOperation(
             request_pb, self._cluster._client.timeout_seconds)
 
@@ -395,7 +376,7 @@ class Cluster(object):
                   create operation.
         """
         request_pb = _prepare_create_request(self)
-        # We expect an :class:`google.longrunning.operations_pb2.Operation`
+        # We expect a `google.longrunning.operations_pb2.Operation`.
         cluster_pb = self._client._cluster_stub.CreateCluster(
             request_pb, self._client.timeout_seconds)
 
@@ -489,7 +470,7 @@ class Cluster(object):
                   undelete operation.
         """
         request_pb = messages_pb2.UndeleteClusterRequest(name=self.name)
-        # We expect a :class:`google.longrunning.operations_pb2.Operation`
+        # We expect a `google.longrunning.operations_pb2.Operation`.
         operation_pb2 = self._client._cluster_stub.UndeleteCluster(
             request_pb, self._client.timeout_seconds)
 

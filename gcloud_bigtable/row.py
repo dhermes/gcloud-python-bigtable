@@ -142,12 +142,12 @@ class Row(object):
         :raises: :class:`ValueError <exceptions.ValueError>`
         """
         if state is None:
-            if self.filter is not None:
+            if self._filter is not None:
                 raise ValueError('A filter is set on the current row, but no '
                                  'state given for the mutation')
             return self._pb_mutations
         else:
-            if self.filter is None:
+            if self._filter is None:
                 raise ValueError('No filter was set on the current row, but a '
                                  'state was given for the mutation')
             if state:

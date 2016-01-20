@@ -322,3 +322,21 @@ def _total_seconds(offset):
         return _total_seconds_backport(offset)
     else:
         return offset.total_seconds()
+
+
+def _pb_timestamp_to_datetime(timestamp):
+    """Convert a Timestamp protobuf to a datetime object.
+
+    :type timestamp: :class:`google.protobuf.timestamp_pb2.Timestamp`
+    :param timestamp: A Google returned timestamp protobuf.
+
+    :rtype: :class:`datetime.datetime`
+    :returns: A UTC datetime object converted from a protobuf timestamp.
+    """
+    return (
+        EPOCH +
+        datetime.timedelta(
+            seconds=timestamp.seconds,
+            microseconds=(timestamp.nanos / 1000.0),
+        )
+    )

@@ -36,7 +36,7 @@ def _timedelta_to_duration_pb(timedelta_val):
     :type timedelta_val: :class:`datetime.timedelta`
     :param timedelta_val: A timedelta object.
 
-    :rtype: :class:`.duration_pb2.Duration`
+    :rtype: :class:`google.protobuf.duration_pb2.Duration`
     :returns: A duration object equivalent to the time delta.
     """
     seconds_decimal = _total_seconds(timedelta_val)
@@ -59,7 +59,7 @@ def _duration_pb_to_timedelta(duration_pb):
         The Python timedelta has a granularity of microseconds while
         the protobuf duration type has a duration of nanoseconds.
 
-    :type duration_pb: :class:`.duration_pb2.Duration`
+    :type duration_pb: :class:`google.protobuf.duration_pb2.Duration`
     :param duration_pb: A protobuf duration object.
 
     :rtype: :class:`datetime.timedelta`
@@ -259,7 +259,9 @@ class ColumnFamily(object):
             column_family=column_family,
         )
         client = self._table._cluster._client
-        # We expect a `.data_pb2.ColumnFamily`
+        # We expect a `.data_pb2.ColumnFamily`. We ignore it since the only
+        # data it contains are the GC rule and the column family ID already
+        # stored on this instance.
         client._table_stub.CreateColumnFamily(request_pb,
                                               client.timeout_seconds)
 
@@ -276,7 +278,9 @@ class ColumnFamily(object):
             request_kwargs['gc_rule'] = self.gc_rule.to_pb()
         request_pb = data_pb2.ColumnFamily(**request_kwargs)
         client = self._table._cluster._client
-        # We expect a `.data_pb2.ColumnFamily`
+        # We expect a `.data_pb2.ColumnFamily`. We ignore it since the only
+        # data it contains are the GC rule and the column family ID already
+        # stored on this instance.
         client._table_stub.UpdateColumnFamily(request_pb,
                                               client.timeout_seconds)
 
@@ -284,7 +288,7 @@ class ColumnFamily(object):
         """Delete this column family."""
         request_pb = messages_pb2.DeleteColumnFamilyRequest(name=self.name)
         client = self._table._cluster._client
-        # We expect a `._generated.empty_pb2.Empty`
+        # We expect a `google.protobuf.empty_pb2.Empty`
         client._table_stub.DeleteColumnFamily(request_pb,
                                               client.timeout_seconds)
 
