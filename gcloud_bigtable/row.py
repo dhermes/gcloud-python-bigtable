@@ -349,20 +349,16 @@ class Row(object):
             # processed without error.
             mutations_list.extend(to_append)
 
-    def _commit_mutate(self, timeout_seconds=None):
+    def _commit_mutate(self):
         """Makes a ``MutateRow`` API request.
 
         Assumes no filter is set on the :class:`Row` and is meant to be called
         by :meth:`commit`.
 
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on row.
-
         :raises: :class:`ValueError <exceptions.ValueError>` if the number of
                  mutations exceeds the ``_MAX_MUTATIONS``.
         """
-        mutations_list = self._get_mutations(None)
+        mutations_list = self._get_mutations()
         num_mutations = len(mutations_list)
         if num_mutations == 0:
             return
@@ -374,20 +370,15 @@ class Row(object):
             row_key=self._row_key,
             mutations=mutations_list,
         )
-        timeout_seconds = timeout_seconds or self.timeout_seconds
         # We expect a `google.protobuf.empty_pb2.Empty`
         client = self._table._cluster._client
-        client._data_stub.MutateRow(request_pb, timeout_seconds)
+        client._data_stub.MutateRow(request_pb, client.timeout_seconds)
 
-    def _commit_check_and_mutate(self, timeout_seconds=None):
+    def _commit_check_and_mutate(self):
         """Makes a ``CheckAndMutateRow`` API request.
 
         Assumes a filter is set on the :class:`Row` and is meant to be called
         by :meth:`commit`.
-
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on row.
 
         :rtype: bool
         :returns: Flag indicating if the filter was matched (which also
@@ -395,8 +386,8 @@ class Row(object):
         :raises: :class:`ValueError <exceptions.ValueError>` if the number of
                  mutations exceeds the ``_MAX_MUTATIONS``.
         """
-        true_mutations = self._get_mutations(True)
-        false_mutations = self._get_mutations(False)
+        true_mutations = self._get_mutations(state=True)
+        false_mutations = self._get_mutations(state=False)
         num_true_mutations = len(true_mutations)
         num_false_mutations = len(false_mutations)
         if num_true_mutations == 0 and num_false_mutations == 0:
@@ -415,11 +406,10 @@ class Row(object):
             true_mutations=true_mutations,
             false_mutations=false_mutations,
         )
-        timeout_seconds = timeout_seconds or self.timeout_seconds
         # We expect a `.messages_pb2.CheckAndMutateRowResponse`
         client = self._table._cluster._client
         resp = client._data_stub.CheckAndMutateRow(
-            request_pb, timeout_seconds)
+            request_pb, client.timeout_seconds)
         return resp.predicate_matched
 
     def clear_mutations(self):
@@ -430,7 +420,7 @@ class Row(object):
             self._true_pb_mutations[:] = []
             self._false_pb_mutations[:] = []
 
-    def commit(self, timeout_seconds=None):
+    def commit(self):
         """Makes a ``MutateRow`` or ``CheckAndMutateRow`` API request.
 
         If no mutations have been created in the row, no request is made.
@@ -447,10 +437,6 @@ class Row(object):
         any cells in the :class:`Row` or not. (Each method which adds a
         mutation has a ``state`` parameter for this purpose.)
 
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on row.
-
         :rtype: :class:`bool` or :data:`NoneType <types.NoneType>`
         :returns: :data:`None` if there is no filter, otherwise a flag
                   indicating if the filter was matched (which also
@@ -459,10 +445,9 @@ class Row(object):
                  mutations exceeds the ``_MAX_MUTATIONS``.
         """
         if self._filter is None:
-            result = self._commit_mutate(timeout_seconds=timeout_seconds)
+            result = self._commit_mutate()
         else:
-            result = self._commit_check_and_mutate(
-                timeout_seconds=timeout_seconds)
+            result = self._commit_check_and_mutate()
 
         # Reset mutations after commit-ing request.
         self.clear_mutations()
@@ -473,7 +458,7 @@ class Row(object):
         """Removes all currently accumulated modifications on current row."""
         self._rule_pb_list[:] = []
 
-    def commit_modifications(self, timeout_seconds=None):
+    def commit_modifications(self):
         """Makes a ``ReadModifyWriteRow`` API request.
 
         This commits modifications made by :meth:`append_cell_value` and
@@ -485,10 +470,6 @@ class Row(object):
         incrementing. The new cell created uses either the current server time
         or the highest timestamp of a cell in that column (if it exceeds the
         server time).
-
-        :type timeout_seconds: int
-        :param timeout_seconds: Number of seconds for request time-out.
-                                If not passed, defaults to value set on row.
 
         :rtype: dict
         :returns: The new contents of all modified cells. Returned as a
@@ -523,11 +504,10 @@ class Row(object):
             row_key=self._row_key,
             rules=self._rule_pb_list,
         )
-        timeout_seconds = timeout_seconds or self.timeout_seconds
         # We expect a `.data_pb2.Row`
         client = self._table._cluster._client
         row_response = client._data_stub.ReadModifyWriteRow(
-            request_pb, timeout_seconds)
+            request_pb, client.timeout_seconds)
 
         # Reset modifications after commit-ing request.
         self.clear_modification_rules()

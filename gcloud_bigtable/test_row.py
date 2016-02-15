@@ -344,7 +344,8 @@ class TestRow(unittest2.TestCase):
             bigtable_service_messages_pb2 as messages_pb2)
         from gcloud_bigtable._grpc_mocks import StubMock
 
-        client = _Client()
+        timeout_seconds = 711
+        client = _Client(timeout_seconds=timeout_seconds)
         table = _Table(TABLE_NAME, client=client)
         row = self._makeOne(ROW_KEY, table)
 
@@ -374,9 +375,8 @@ class TestRow(unittest2.TestCase):
         expected_result = None  # commit() has no return value when no filter.
 
         # Perform the method and check the result.
-        timeout_seconds = 711
         row.set_cell(COLUMN_FAMILY_ID, COLUMN, value)
-        result = row.commit(timeout_seconds=timeout_seconds)
+        result = row.commit()
         self.assertEqual(result, expected_result)
         self.assertEqual(stub.method_calls, [(
             'MutateRow',
@@ -423,7 +423,8 @@ class TestRow(unittest2.TestCase):
         from gcloud_bigtable._grpc_mocks import StubMock
         from gcloud_bigtable.row import RowSampleFilter
 
-        client = _Client()
+        timeout_seconds = 262
+        client = _Client(timeout_seconds=timeout_seconds)
         table = _Table(TABLE_NAME, client=client)
         row_filter = RowSampleFilter(0.33)
         row = self._makeOne(ROW_KEY, table, filter_=row_filter)
@@ -458,9 +459,8 @@ class TestRow(unittest2.TestCase):
         expected_result = predicate_matched
 
         # Perform the method and check the result.
-        timeout_seconds = 262
         row.set_cell(COLUMN_FAMILY_ID, COLUMN, value, state=True)
-        result = row.commit(timeout_seconds=timeout_seconds)
+        result = row.commit()
         self.assertEqual(result, expected_result)
         self.assertEqual(stub.method_calls, [(
             'CheckAndMutateRow',
@@ -512,7 +512,8 @@ class TestRow(unittest2.TestCase):
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import row as MUT
 
-        client = _Client()
+        timeout_seconds = 87
+        client = _Client(timeout_seconds=timeout_seconds)
         table = _Table(TABLE_NAME, client=client)
         row = self._makeOne(ROW_KEY, table)
 
@@ -542,11 +543,9 @@ class TestRow(unittest2.TestCase):
         mock_parse_rmw_row_response = _MockCalled(expected_result)
 
         # Perform the method and check the result.
-        timeout_seconds = 87
-
         with _Monkey(MUT, _parse_rmw_row_response=mock_parse_rmw_row_response):
             row.append_cell_value(COLUMN_FAMILY_ID, COLUMN, value)
-            result = row.commit_modifications(timeout_seconds=timeout_seconds)
+            result = row.commit_modifications()
 
         self.assertEqual(result, expected_result)
         self.assertEqual(stub.method_calls, [(
