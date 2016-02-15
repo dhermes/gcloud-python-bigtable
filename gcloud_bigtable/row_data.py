@@ -21,6 +21,11 @@ import six
 from gcloud_bigtable._non_upstream_helpers import _microseconds_to_timestamp
 from gcloud_bigtable._non_upstream_helpers import _to_bytes
 
+# pylint: disable=invalid-name
+# Alias for easy upstream diffs.
+_datetime_from_microseconds = _microseconds_to_timestamp
+# pylint: enable=invalid-name
+
 
 class Cell(object):
     """Representation of a Google Cloud Bigtable Cell.
@@ -50,7 +55,7 @@ class Cell(object):
         :rtype: :class:`Cell`
         :returns: The cell corresponding to the protobuf.
         """
-        timestamp = _microseconds_to_timestamp(cell_pb.timestamp_micros)
+        timestamp = _datetime_from_microseconds(cell_pb.timestamp_micros)
         if cell_pb.labels:
             return cls(cell_pb.value, timestamp, labels=cell_pb.labels)
         else:

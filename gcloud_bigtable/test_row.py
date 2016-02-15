@@ -1730,7 +1730,6 @@ class _Cluster(object):
 
 class _Table(object):
 
-    def __init__(self, name, client=None, timeout_seconds=None):
+    def __init__(self, name, client=None):
         self.name = name
         self._cluster = _Cluster(client)
-        self.timeout_seconds = timeout_seconds

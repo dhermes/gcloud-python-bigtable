@@ -30,6 +30,7 @@ from gcloud_bigtable._non_upstream_helpers import _to_bytes
 # pylint: disable=invalid-name
 # Alias for easy upstream diffs.
 _microseconds_from_datetime = _timestamp_to_microseconds
+_datetime_from_microseconds = _microseconds_to_timestamp
 # pylint: enable=invalid-name
 _MAX_MUTATIONS = 100000
 _PACK_I64 = struct.Struct('>q').pack
@@ -415,10 +416,10 @@ class Row(object):
     def clear_mutations(self):
         """Removes all currently accumulated mutations on the current row."""
         if self._filter is None:
-            self._pb_mutations[:] = []
+            del self._pb_mutations[:]
         else:
-            self._true_pb_mutations[:] = []
-            self._false_pb_mutations[:] = []
+            del self._true_pb_mutations[:]
+            del self._false_pb_mutations[:]
 
     def commit(self):
         """Makes a ``MutateRow`` or ``CheckAndMutateRow`` API request.
@@ -456,7 +457,7 @@ class Row(object):
 
     def clear_modification_rules(self):
         """Removes all currently accumulated modifications on current row."""
-        self._rule_pb_list[:] = []
+        del self._rule_pb_list[:]
 
     def commit_modifications(self):
         """Makes a ``ReadModifyWriteRow`` API request.
@@ -1331,7 +1332,7 @@ def _parse_family_pb(family_pb):
         for cell in column.cells:
             val_pair = (
                 cell.value,
-                _microseconds_to_timestamp(cell.timestamp_micros),
+                _datetime_from_microseconds(cell.timestamp_micros),
             )
             cells.append(val_pair)
 

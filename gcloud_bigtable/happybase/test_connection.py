@@ -165,6 +165,8 @@ class TestConnection(unittest2.TestCase):
     def test_constructor_no_autoconnect(self):
         cluster = _Cluster()  # Avoid implicit environ check.
         connection = self._makeOne(autoconnect=False, cluster=cluster)
+        self.assertEqual(cluster._client.start_calls, 0)
+        self.assertEqual(cluster._client.stop_calls, 0)
         self.assertEqual(connection.table_prefix, None)
         self.assertEqual(connection.table_prefix_separator, '_')
 
@@ -186,13 +188,14 @@ class TestConnection(unittest2.TestCase):
         mock_get_cluster.check_called(self, [()], [{'timeout': timeout}])
 
     def test_constructor_explicit(self):
+        autoconnect = False
         table_prefix = 'table-prefix'
         table_prefix_separator = 'sep'
         cluster_copy = _Cluster()
         cluster = _Cluster(copies=[cluster_copy])
 
         connection = self._makeOne(
-            autoconnect=False,
+            autoconnect=autoconnect,
             table_prefix=table_prefix,
             table_prefix_separator=table_prefix_separator,
             cluster=cluster)
@@ -228,6 +231,11 @@ class TestConnection(unittest2.TestCase):
         self.assertIn('transport', warning_msg)
         self.assertIn('protocol', warning_msg)
 
+    def test_constructor_with_timeout_and_cluster(self):
+        cluster = _Cluster()
+        with self.assertRaises(ValueError):
+            self._makeOne(cluster=cluster, timeout=object())
+
     def test_constructor_non_string_prefix(self):
         table_prefix = object()
 
@@ -241,10 +249,6 @@ class TestConnection(unittest2.TestCase):
         with self.assertRaises(TypeError):
             self._makeOne(autoconnect=False,
                           table_prefix_separator=table_prefix_separator)
-
-    def test_constructor_with_timeout_and_cluster(self):
-        with self.assertRaises(ValueError):
-            self._makeOne(cluster=object(), timeout=object())
 
     def test_open(self):
         cluster = _Cluster()  # Avoid implicit environ check.
