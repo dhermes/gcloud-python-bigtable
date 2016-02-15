@@ -72,33 +72,6 @@ class TestRow(unittest2.TestCase):
         with self.assertRaises(TypeError):
             self._constructor_helper(row_key)
 
-    def test_table_getter(self):
-        table = object()
-        row = self._makeOne(ROW_KEY, table)
-        self.assertTrue(row.table is table)
-
-    def test_row_key_getter(self):
-        row = self._makeOne(ROW_KEY, object())
-        self.assertEqual(row.row_key, ROW_KEY)
-
-    def test_filter_getter(self):
-        filter_ = object()
-        row = self._makeOne(ROW_KEY, object(), filter_=filter_)
-        self.assertTrue(row.filter is filter_)
-
-    def test_client_getter(self):
-        client = object()
-        table = _Table(None, client=client)
-        row = self._makeOne(ROW_KEY, table)
-        self.assertTrue(row.client is client)
-
-    def test_timeout_seconds_getter(self):
-        timeout_seconds = 889
-        client = _Client(timeout_seconds=timeout_seconds)
-        table = _Table(None, client=client)
-        row = self._makeOne(ROW_KEY, table)
-        self.assertEqual(row.timeout_seconds, timeout_seconds)
-
     def _get_mutations_helper(self, filter_=None, state=None):
         row = self._makeOne(ROW_KEY, None, filter_=filter_)
         # Mock the mutations with unique objects so we can compare.

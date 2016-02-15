@@ -340,27 +340,3 @@ def _pb_timestamp_to_datetime(timestamp):
             microseconds=(timestamp.nanos / 1000.0),
         )
     )
-
-
-def _get_pb_property_value(message_pb, property_name):
-    """Return a message field value.
-
-    :type message_pb: :class:`google.protobuf.message.Message`
-    :param message_pb: The message to check for ``property_name``.
-
-    :type property_name: str
-    :param property_name: The property value to check against.
-
-    :rtype: object
-    :returns: The value of ``property_name`` set on ``message_pb``.
-    :raises: :class:`ValueError <exceptions.ValueError>` if the result returned
-             from the ``message_pb`` does not contain the ``property_name``
-             value.
-    """
-    # Make sure `property_name` is set on the response.
-    # NOTE: As of proto3, HasField() only works for message fields, not for
-    #       singular (non-message) fields.
-    all_fields = set([field.name for field in message_pb._fields])
-    if property_name not in all_fields:
-        raise ValueError('Message does not contain %s.' % (property_name,))
-    return getattr(message_pb, property_name)

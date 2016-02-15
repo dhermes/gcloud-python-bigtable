@@ -15,6 +15,8 @@
 """Google Cloud Bigtable HappyBase connection module."""
 
 
+import warnings
+
 import datetime
 import six
 
@@ -37,6 +39,9 @@ DEFAULT_TRANSPORT = None
 DEFAULT_COMPAT = None
 DEFAULT_PROTOCOL = None
 
+_LEGACY_ARGS = frozenset(('host', 'port', 'compat', 'transport', 'protocol'))
+_WARN = warnings.warn
+
 
 def _get_cluster(timeout=None):
     """Gets cluster for the default project.
@@ -54,15 +59,18 @@ def _get_cluster(timeout=None):
     :rtype: :class:`gcloud_bigtable.cluster.Cluster`
     :returns: The unique cluster owned by the project inferred from
               the environment.
-    :raises: :class:`ValueError <exceptions.ValueError>` if any of the unused
+    :raises: :class:`ValueError <exceptions.ValueError>` if there is a failed
+             zone or any number of clusters other than one.
     """
     client_kwargs = {'admin': True}
     if timeout is not None:
         client_kwargs['timeout_seconds'] = timeout / 1000.0
     client = Client(**client_kwargs)
-    client.start()
-    clusters, failed_zones = client.list_clusters()
-    client.stop()
+    try:
+        client.start()
+        clusters, failed_zones = client.list_clusters()
+    finally:
+        client.stop()
 
     if len(failed_zones) != 0:
         raise ValueError('Determining cluster via ListClusters encountered '
@@ -137,13 +145,10 @@ class Connection(object):
         :class:`Credentials <oauth2client.client.Credentials>` stored on the
         client.
 
-    :type host: :data:`NoneType <types.NoneType>`
-    :param host: Unused parameter. Provided for compatibility with HappyBase,
-                 but irrelevant for Cloud Bigtable since it has a fixed host.
-
-    :type port: :data:`NoneType <types.NoneType>`
-    :param port: Unused parameter. Provided for compatibility with HappyBase,
-                 but irrelevant for Cloud Bigtable since it has a fixed host.
+    The arguments ``host``, ``port``, ``compat``, ``transport`` and
+    ``protocol`` are allowed (as keyword arguments) for compatibility with
+    HappyBase. However, they will not be used in anyway, and will cause a
+    warning if passed.
 
     :type timeout: int
     :param timeout: (Optional) The socket timeout in milliseconds.
@@ -159,56 +164,28 @@ class Connection(object):
     :param table_prefix_separator: (Optional) Separator used with
                                    ``table_prefix``. Defaults to ``_``.
 
-    :type compat: :data:`NoneType <types.NoneType>`
-    :param compat: Unused parameter. Provided for compatibility with
-                   HappyBase, but irrelevant for Cloud Bigtable since there
-                   is only one version.
-
-    :type transport: :data:`NoneType <types.NoneType>`
-    :param transport: Unused parameter. Provided for compatibility with
-                      HappyBase, but irrelevant for Cloud Bigtable since the
-                      transport is fixed.
-
-    :type protocol: :data:`NoneType <types.NoneType>`
-    :param protocol: Unused parameter. Provided for compatibility with
-                     HappyBase, but irrelevant for Cloud Bigtable since the
-                     protocol is fixed.
-
     :type cluster: :class:`gcloud_bigtable.cluster.Cluster`
     :param cluster: (Optional) A Cloud Bigtable cluster. The instance also
                     owns a client for making gRPC requests to the Cloud
                     Bigtable API. If not passed in, defaults to creating client
-                    with ``admin=True`` and using the ``timeout`` for the
-                    ``timeout_seconds``. The credentials for the client
+                    with ``admin=True`` and using the ``timeout`` here for the
+                    ``timeout_seconds`` argument to the :class:`.Client``
+                    constructor. The credentials for the client
                     will be the implicit ones loaded from the environment.
                     Then that client is used to retrieve all the clusters
                     owned by the client's project.
 
+    :type kwargs: dict
+    :param kwargs: Remaining keyword arguments. Provided for HappyBase
+                   compatibility.
+
     :raises: :class:`ValueError <exceptions.ValueError>` if any of the unused
              parameters are specified with a value other than the defaults.
-             :class:`TypeError <exceptions.TypeError>` if ``table_prefix`` or
-             ``table_prefix_separator`` are provided but not strings.
     """
 
-    def __init__(self, host=DEFAULT_HOST, port=DEFAULT_PORT, timeout=None,
-                 autoconnect=True, table_prefix=None,
-                 table_prefix_separator='_', compat=DEFAULT_COMPAT,
-                 transport=DEFAULT_TRANSPORT, protocol=DEFAULT_PROTOCOL,
-                 cluster=None):
-        if host is not DEFAULT_HOST:
-            raise ValueError('Host cannot be set for gcloud HappyBase module')
-        if port is not DEFAULT_PORT:
-            raise ValueError('Port cannot be set for gcloud HappyBase module')
-        if compat is not DEFAULT_COMPAT:
-            raise ValueError('Compat cannot be set for gcloud '
-                             'HappyBase module')
-        if transport is not DEFAULT_TRANSPORT:
-            raise ValueError('Transport cannot be set for gcloud '
-                             'HappyBase module')
-        if protocol is not DEFAULT_PROTOCOL:
-            raise ValueError('Protocol cannot be set for gcloud '
-                             'HappyBase module')
-
+    def __init__(self, timeout=None, autoconnect=True, table_prefix=None,
+                 table_prefix_separator='_', cluster=None, **kwargs):
+        self._handle_legacy_args(kwargs)
         if table_prefix is not None:
             if not isinstance(table_prefix, six.string_types):
                 raise TypeError('table_prefix must be a string', 'received',
@@ -234,6 +211,29 @@ class Connection(object):
             self.open()
 
         self._initialized = True
+
+    @staticmethod
+    def _handle_legacy_args(arguments_dict):
+        """Check legacy HappyBase arguments and warn if set.
+
+        :type arguments_dict: dict
+        :param arguments_dict: Unused keyword arguments.
+
+        :raises: :class:`TypeError <exceptions.TypeError>` if a keyword other
+                 than ``host``, ``port``, ``compat``, ``transport`` or
+                 ``protocol`` is used.
+        """
+        common_args = _LEGACY_ARGS.intersection(six.iterkeys(arguments_dict))
+        if common_args:
+            all_args = ', '.join(common_args)
+            message = ('The HappyBase legacy arguments %s were used. These '
+                       'arguments are unused by gcloud.' % (all_args,))
+            _WARN(message)
+        for arg_name in common_args:
+            arguments_dict.pop(arg_name)
+        if arguments_dict:
+            unexpected_names = arguments_dict.keys()
+            raise TypeError('Received unexpected arguments', unexpected_names)
 
     def open(self):
         """Open the underlying transport to Cloud Bigtable.

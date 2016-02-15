@@ -201,6 +201,33 @@ class TestConnection(unittest2.TestCase):
                          table_prefix_separator)
         self.assertEqual(connection._cluster, cluster_copy)
 
+    def test_constructor_with_unknown_argument(self):
+        cluster = _Cluster()
+        with self.assertRaises(TypeError):
+            self._makeOne(cluster=cluster, unknown='foo')
+
+    def test_constructor_with_legacy_args(self):
+        from gcloud_bigtable._testing import _MockCalled
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable.happybase import connection as MUT
+
+        mock_warn = _MockCalled()
+        cluster = _Cluster()
+        with _Monkey(MUT, _WARN=mock_warn):
+            self._makeOne(cluster=cluster, host=object(),
+                          port=object(), compat=object(),
+                          transport=object(), protocol=object())
+
+        self.assertEqual(mock_warn.called_kwargs, [{}])
+        self.assertEqual(len(mock_warn.called_args), 1)
+        self.assertEqual(len(mock_warn.called_args[0]), 1)
+        warning_msg = mock_warn.called_args[0][0]
+        self.assertIn('host', warning_msg)
+        self.assertIn('port', warning_msg)
+        self.assertIn('compat', warning_msg)
+        self.assertIn('transport', warning_msg)
+        self.assertIn('protocol', warning_msg)
+
     def test_constructor_non_string_prefix(self):
         table_prefix = object()
 
@@ -214,26 +241,6 @@ class TestConnection(unittest2.TestCase):
         with self.assertRaises(TypeError):
             self._makeOne(autoconnect=False,
                           table_prefix_separator=table_prefix_separator)
-
-    def test_constructor_with_host(self):
-        with self.assertRaises(ValueError):
-            self._makeOne(host=object())
-
-    def test_constructor_with_port(self):
-        with self.assertRaises(ValueError):
-            self._makeOne(port=object())
-
-    def test_constructor_with_compat(self):
-        with self.assertRaises(ValueError):
-            self._makeOne(compat=object())
-
-    def test_constructor_with_transport(self):
-        with self.assertRaises(ValueError):
-            self._makeOne(transport=object())
-
-    def test_constructor_with_protocol(self):
-        with self.assertRaises(ValueError):
-            self._makeOne(protocol=object())
 
     def test_constructor_with_timeout_and_cluster(self):
         with self.assertRaises(ValueError):

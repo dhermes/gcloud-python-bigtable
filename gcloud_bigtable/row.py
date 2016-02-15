@@ -80,51 +80,6 @@ class Row(object):
             self._true_pb_mutations = []
             self._false_pb_mutations = []
 
-    @property
-    def table(self):
-        """Getter for row's table.
-
-        :rtype: :class:`Table <gcloud_bigtable.table.Table>`
-        :returns: The table stored on the row.
-        """
-        return self._table
-
-    @property
-    def row_key(self):
-        """Getter for row's key.
-
-        :rtype: bytes
-        :returns: The key for the row.
-        """
-        return self._row_key
-
-    @property
-    def filter(self):
-        """Getter for row's filter.
-
-        :rtype: :class:`RowFilter` or :data:`NoneType <types.NoneType>`
-        :returns: The filter for the row.
-        """
-        return self._filter
-
-    @property
-    def client(self):
-        """Getter for row's client.
-
-        :rtype: :class:`.client.Client`
-        :returns: The client that owns this row.
-        """
-        return self.table._cluster._client
-
-    @property
-    def timeout_seconds(self):
-        """Getter for row's default timeout seconds.
-
-        :rtype: int
-        :returns: The timeout seconds default.
-        """
-        return self.table._cluster._client.timeout_seconds
-
     def _get_mutations(self, state=None):
         """Gets the list of mutations for a given state.
 
@@ -201,7 +156,9 @@ class Row(object):
             # Use -1 for current Bigtable server time.
             timestamp_micros = -1
         else:
-            timestamp_micros = _timestamp_to_microseconds(timestamp)
+            timestamp_micros = _microseconds_from_datetime(timestamp)
+            # Truncate to millisecond granularity.
+            timestamp_micros -= (timestamp_micros % 1000)
 
         mutation_val = data_pb2.Mutation.SetCell(
             family_name=column_family_id,
@@ -413,13 +370,14 @@ class Row(object):
             raise ValueError('%d total mutations exceed the maximum allowable '
                              '%d.' % (num_mutations, _MAX_MUTATIONS))
         request_pb = messages_pb2.MutateRowRequest(
-            table_name=self.table.name,
-            row_key=self.row_key,
+            table_name=self._table.name,
+            row_key=self._row_key,
             mutations=mutations_list,
         )
         timeout_seconds = timeout_seconds or self.timeout_seconds
         # We expect a `google.protobuf.empty_pb2.Empty`
-        self.client._data_stub.MutateRow(request_pb, timeout_seconds)
+        client = self._table._cluster._client
+        client._data_stub.MutateRow(request_pb, timeout_seconds)
 
     def _commit_check_and_mutate(self, timeout_seconds=None):
         """Makes a ``CheckAndMutateRow`` API request.
@@ -451,21 +409,22 @@ class Row(object):
                     _MAX_MUTATIONS, num_true_mutations, num_false_mutations))
 
         request_pb = messages_pb2.CheckAndMutateRowRequest(
-            table_name=self.table.name,
-            row_key=self.row_key,
-            predicate_filter=self.filter.to_pb(),
+            table_name=self._table.name,
+            row_key=self._row_key,
+            predicate_filter=self._filter.to_pb(),
             true_mutations=true_mutations,
             false_mutations=false_mutations,
         )
         timeout_seconds = timeout_seconds or self.timeout_seconds
         # We expect a `.messages_pb2.CheckAndMutateRowResponse`
-        resp = self.client._data_stub.CheckAndMutateRow(
+        client = self._table._cluster._client
+        resp = client._data_stub.CheckAndMutateRow(
             request_pb, timeout_seconds)
         return resp.predicate_matched
 
     def clear_mutations(self):
         """Removes all currently accumulated mutations on the current row."""
-        if self.filter is None:
+        if self._filter is None:
             self._pb_mutations[:] = []
         else:
             self._true_pb_mutations[:] = []
@@ -499,7 +458,7 @@ class Row(object):
         :raises: :class:`ValueError <exceptions.ValueError>` if the number of
                  mutations exceeds the ``_MAX_MUTATIONS``.
         """
-        if self.filter is None:
+        if self._filter is None:
             result = self._commit_mutate(timeout_seconds=timeout_seconds)
         else:
             result = self._commit_check_and_mutate(
@@ -560,19 +519,20 @@ class Row(object):
         if len(self._rule_pb_list) == 0:
             return {}
         request_pb = messages_pb2.ReadModifyWriteRowRequest(
-            table_name=self.table.name,
-            row_key=self.row_key,
+            table_name=self._table.name,
+            row_key=self._row_key,
             rules=self._rule_pb_list,
         )
         timeout_seconds = timeout_seconds or self.timeout_seconds
         # We expect a `.data_pb2.Row`
-        row_response = self.client._data_stub.ReadModifyWriteRow(
+        client = self._table._cluster._client
+        row_response = client._data_stub.ReadModifyWriteRow(
             request_pb, timeout_seconds)
 
         # Reset modifications after commit-ing request.
         self.clear_modification_rules()
 
-        # NOTE: We expect row_response.key == self.row_key but don't check.
+        # NOTE: We expect row_response.key == self._row_key but don't check.
         return _parse_rmw_row_response(row_response)
 
 
