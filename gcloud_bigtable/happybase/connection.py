@@ -436,12 +436,10 @@ def _parse_family_option(option):
     """
     result = option
     if isinstance(result, dict):
-        # pylint: disable=unneeded-not
         if not set(result.keys()) <= set(['max_versions', 'time_to_live']):
             raise ValueError('Cloud Bigtable only supports max_versions and '
                              'time_to_live column family settings',
                              'Received', result.keys())
-        # pylint: enable=unneeded-not
 
         max_num_versions = result.get('max_versions')
         max_age = None

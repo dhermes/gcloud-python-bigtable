@@ -27,8 +27,8 @@ import pytz
 import six
 
 from oauth2client.client import GoogleCredentials
-from oauth2client.client import SignedJwtAssertionCredentials
 from oauth2client.client import _get_application_default_credential_from_file
+from oauth2client.service_account import ServiceAccountCredentials
 
 try:
     from google.appengine.api import app_identity
@@ -212,10 +212,8 @@ class _FactoryMixin(object):
         :rtype: :class:`_FactoryMixin`
         :returns: The client created with the retrieved P12 credentials.
         """
-        credentials = SignedJwtAssertionCredentials(
-            service_account_name=client_email,
-            private_key=_get_contents(private_key_path),
-            scope=None)
+        credentials = ServiceAccountCredentials.from_p12_keyfile(
+            client_email, private_key_path)
         kwargs['credentials'] = credentials
         return cls(*args, **kwargs)
 

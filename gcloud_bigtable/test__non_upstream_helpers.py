@@ -273,7 +273,6 @@ class Test__FactoryMixin(unittest2.TestCase):
         get_adc.check_called(self, [(json_credentials_path,)])
 
     def test_from_service_account_p12(self):
-        from gcloud_bigtable._testing import _MockCalled
         from gcloud_bigtable._testing import _MockWithAttachedMethods
         from gcloud_bigtable._testing import _Monkey
         from gcloud_bigtable import _non_upstream_helpers as MUT
@@ -281,30 +280,20 @@ class Test__FactoryMixin(unittest2.TestCase):
         klass = self._getTargetClass()
         scoped_creds = object()
         credentials = _MockWithAttachedMethods(scoped_creds)
-        signed_creds = _MockCalled(credentials)
+        signed_creds = _MockServiceAccountCredentials(credentials)
 
-        private_key = 'PRIVATE_KEY'
-        mock_get_contents = _MockCalled(private_key)
         client_email = 'CLIENT_EMAIL'
         private_key_path = 'PRIVATE_KEY_PATH'
 
-        with _Monkey(MUT, SignedJwtAssertionCredentials=signed_creds,
-                     _get_contents=mock_get_contents):
+        with _Monkey(MUT, ServiceAccountCredentials=signed_creds):
             client = klass.from_service_account_p12(
                 client_email, private_key_path, project=PROJECT)
 
+        self.assertEqual(signed_creds.p12_called,
+                         [(client_email, private_key_path)])
         self.assertEqual(client.project, PROJECT)
         self.assertTrue(client._credentials is credentials)
         self.assertEqual(credentials._called, [])
-        # SignedJwtAssertionCredentials() called with only kwargs
-        signed_creds_kw = {
-            'private_key': private_key,
-            'service_account_name': client_email,
-            'scope': None,
-        }
-        signed_creds.check_called(self, [()], [signed_creds_kw])
-        # Load private key (via _get_contents) from the key path.
-        mock_get_contents.check_called(self, [(private_key_path,)])
 
 
 class Test__timestamp_to_microseconds(unittest2.TestCase):
@@ -414,3 +403,14 @@ class Test__total_seconds(unittest2.TestCase):
                                     microseconds=414000)
         result = self._callFUT(offset)
         self.assertEqual(result, 1.414)
+
+
+class _MockServiceAccountCredentials(object):
+
+    def __init__(self, result):
+        self.result = result
+        self.p12_called = []
+
+    def from_p12_keyfile(self, client_email, path):
+        self.p12_called.append((client_email, path))
+        return self.result
