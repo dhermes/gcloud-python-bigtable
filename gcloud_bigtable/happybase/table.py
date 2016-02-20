@@ -94,52 +94,6 @@ def make_ordered_row(sorted_columns, include_timestamp):
                               'helper can not be implemented.', 'Called with',
                               sorted_columns, include_timestamp)
 
-
-def _gc_rule_to_dict(gc_rule):
-    """Converts garbage collection rule to dictionary if possible.
-
-    This is in place to support dictionary values was was done
-    in HappyBase, which has somewhat different garbage collection rule
-    settings for column families.
-
-    Only does this if the garbage collection rule is:
-
-    * :class:`.MaxAgeGCRule`
-    * :class:`.MaxVersionsGCRule`
-    * Composite :class:`.GCRuleIntersection` with two rules, one each
-      of type :class:`.MaxAgeGCRule` and :class:`.MaxVersionsGCRule`
-
-    Otherwise, just returns the input without change.
-
-    :type gc_rule: :data:`NoneType <types.NoneType>`,
-                   :class:`.GarbageCollectionRule`
-    :param gc_rule: A garbage collection rule to convert to a dictionary
-                    (if possible).
-
-    :rtype: dict or :class:`.GarbageCollectionRule`
-    :returns: The converted garbage collection rule.
-    """
-    result = gc_rule
-    if gc_rule is None:
-        result = {}
-    elif isinstance(gc_rule, MaxAgeGCRule):
-        result = {'time_to_live': gc_rule.max_age.total_seconds()}
-    elif isinstance(gc_rule, MaxVersionsGCRule):
-        result = {'max_versions': gc_rule.max_num_versions}
-    elif isinstance(gc_rule, GCRuleIntersection):
-        if len(gc_rule.rules) == 2:
-            rule1, rule2 = gc_rule.rules
-            if (isinstance(rule1, _SIMPLE_GC_RULES) and
-                    isinstance(rule2, _SIMPLE_GC_RULES)):
-                rule1 = _gc_rule_to_dict(rule1)
-                rule2 = _gc_rule_to_dict(rule2)
-                key1, = rule1.keys()
-                key2, = rule2.keys()
-                if key1 != key2:
-                    result = {key1: rule1[key1], key2: rule2[key2]}
-    return result
-
-
 def _convert_to_time_range(timestamp=None):
     """Create a timestamp range from an HBase / HappyBase timestamp.
 
@@ -914,3 +868,48 @@ class Table(object):
         :returns: Counter value after decrementing.
         """
         return self.counter_inc(row, column, -value)
+
+
+def _gc_rule_to_dict(gc_rule):
+    """Converts garbage collection rule to dictionary if possible.
+
+    This is in place to support dictionary values as was done
+    in HappyBase, which has somewhat different garbage collection rule
+    settings for column families.
+
+    Only does this if the garbage collection rule is:
+
+    * :class:`.MaxAgeGCRule`
+    * :class:`.MaxVersionsGCRule`
+    * Composite :class:`.GCRuleIntersection` with two rules, one each
+      of type :class:`.MaxAgeGCRule` and :class:`.MaxVersionsGCRule`
+
+    Otherwise, just returns the input without change.
+
+    :type gc_rule: :data:`NoneType <types.NoneType>`,
+                   :class:`.GarbageCollectionRule`
+    :param gc_rule: A garbage collection rule to convert to a dictionary
+                    (if possible).
+
+    :rtype: dict or :class:`.GarbageCollectionRule`
+    :returns: The converted garbage collection rule.
+    """
+    result = gc_rule
+    if gc_rule is None:
+        result = {}
+    elif isinstance(gc_rule, MaxAgeGCRule):
+        result = {'time_to_live': gc_rule.max_age.total_seconds()}
+    elif isinstance(gc_rule, MaxVersionsGCRule):
+        result = {'max_versions': gc_rule.max_num_versions}
+    elif isinstance(gc_rule, GCRuleIntersection):
+        if len(gc_rule.rules) == 2:
+            rule1, rule2 = gc_rule.rules
+            if (isinstance(rule1, _SIMPLE_GC_RULES) and
+                    isinstance(rule2, _SIMPLE_GC_RULES)):
+                rule1 = _gc_rule_to_dict(rule1)
+                rule2 = _gc_rule_to_dict(rule2)
+                key1, = rule1.keys()
+                key2, = rule2.keys()
+                if key1 != key2:
+                    result = {key1: rule1[key1], key2: rule2[key2]}
+    return result
