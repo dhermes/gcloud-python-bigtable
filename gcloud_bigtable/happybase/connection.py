@@ -84,56 +84,6 @@ def _get_cluster(timeout=None):
     return clusters[0]
 
 
-def _parse_family_option(option):
-    """Parses a column family option into a garbage collection rule.
-
-    .. note::
-
-        If ``option`` is not a dictionary, the type is not checked.
-        If ``option`` is :data:`None`, there is nothing to do, since this
-        is the correct output.
-
-    :type option: :class:`dict`,
-                  :data:`NoneType <types.NoneType>`,
-                  :class:`.GarbageCollectionRule`
-    :param option: A column family option passes as a dictionary value in
-                   :meth:`Connection.create_table`.
-
-    :rtype: :class:`.GarbageCollectionRule`
-    :returns: A garbage collection rule parsed from the input.
-    :raises: :class:`ValueError <exceptions.ValueError>` if ``option`` is a
-             dictionary but keys other than ``max_versions`` and
-             ``time_to_live`` are used.
-    """
-    result = option
-    if isinstance(result, dict):
-        # pylint: disable=unneeded-not
-        if not set(result.keys()) <= set(['max_versions', 'time_to_live']):
-            raise ValueError('Cloud Bigtable only supports max_versions and '
-                             'time_to_live column family settings',
-                             'Received', result.keys())
-        # pylint: enable=unneeded-not
-
-        max_num_versions = result.get('max_versions')
-        max_age = None
-        if 'time_to_live' in result:
-            max_age = datetime.timedelta(seconds=result['time_to_live'])
-
-        if len(result) == 0:
-            result = None
-        elif len(result) == 1:
-            if max_num_versions is None:
-                result = MaxAgeGCRule(max_age)
-            else:
-                result = MaxVersionsGCRule(max_num_versions)
-        else:  # By our check above we know this means len(result) == 2.
-            rule1 = MaxAgeGCRule(max_age)
-            rule2 = MaxVersionsGCRule(max_num_versions)
-            result = GCRuleIntersection(rules=[rule1, rule2])
-
-    return result
-
-
 class Connection(object):
     """Connection to Cloud Bigtable backend.
 
@@ -182,6 +132,8 @@ class Connection(object):
     :raises: :class:`ValueError <exceptions.ValueError>` if any of the unused
              parameters are specified with a value other than the defaults.
     """
+
+    _cluster = None
 
     def __init__(self, timeout=None, autoconnect=True, table_prefix=None,
                  table_prefix_separator='_', cluster=None, **kwargs):
@@ -254,12 +206,7 @@ class Connection(object):
         self._cluster._client.stop()
 
     def __del__(self):
-        try:
-            self._initialized
-        except AttributeError:
-            # Failure from constructor
-            return
-        else:
+        if self._cluster is not None:
             self.close()
 
     def _table_name(self, name):
@@ -377,6 +324,8 @@ class Connection(object):
         # Parse all keys before making any API requests.
         gc_rule_dict = {}
         for column_family_name, option in families.items():
+            if isinstance(column_family_name, six.binary_type):
+                column_family_name = column_family_name.decode('utf-8')
             if column_family_name.endswith(':'):
                 column_family_name = column_family_name[:-1]
             gc_rule_dict[column_family_name] = _parse_family_option(option)
@@ -462,3 +411,53 @@ class Connection(object):
         """
         raise NotImplementedError('The Cloud Bigtable API does not support '
                                   'compacting a table.')
+
+
+def _parse_family_option(option):
+    """Parses a column family option into a garbage collection rule.
+
+    .. note::
+
+        If ``option`` is not a dictionary, the type is not checked.
+        If ``option`` is :data:`None`, there is nothing to do, since this
+        is the correct output.
+
+    :type option: :class:`dict`,
+                  :data:`NoneType <types.NoneType>`,
+                  :class:`.GarbageCollectionRule`
+    :param option: A column family option passes as a dictionary value in
+                   :meth:`Connection.create_table`.
+
+    :rtype: :class:`.GarbageCollectionRule`
+    :returns: A garbage collection rule parsed from the input.
+    :raises: :class:`ValueError <exceptions.ValueError>` if ``option`` is a
+             dictionary but keys other than ``max_versions`` and
+             ``time_to_live`` are used.
+    """
+    result = option
+    if isinstance(result, dict):
+        # pylint: disable=unneeded-not
+        if not set(result.keys()) <= set(['max_versions', 'time_to_live']):
+            raise ValueError('Cloud Bigtable only supports max_versions and '
+                             'time_to_live column family settings',
+                             'Received', result.keys())
+        # pylint: enable=unneeded-not
+
+        max_num_versions = result.get('max_versions')
+        max_age = None
+        if 'time_to_live' in result:
+            max_age = datetime.timedelta(seconds=result['time_to_live'])
+
+        if len(result) == 0:
+            result = None
+        elif len(result) == 1:
+            if max_num_versions is None:
+                result = MaxAgeGCRule(max_age)
+            else:
+                result = MaxVersionsGCRule(max_num_versions)
+        else:  # By our check above we know this means len(result) == 2.
+            rule1 = MaxAgeGCRule(max_age)
+            rule2 = MaxVersionsGCRule(max_num_versions)
+            result = GCRuleIntersection(rules=[rule1, rule2])
+
+    return result

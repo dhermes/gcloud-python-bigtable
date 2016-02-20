@@ -277,7 +277,7 @@ class TestConnection(unittest2.TestCase):
         cluster = _Cluster()  # Avoid implicit environ check.
         connection = self._makeOne(autoconnect=False, cluster=cluster)
         # Fake that initialization failed.
-        del connection._initialized
+        del connection._cluster
 
         self.assertEqual(cluster._client.stop_calls, 0)
         connection.__del__()
@@ -396,12 +396,15 @@ class TestConnection(unittest2.TestCase):
         name = 'table-name'
         col_fam1 = 'cf1'
         col_fam_option1 = object()
-        col_fam2 = 'cf2'
+        col_fam2 = u'cf2'
         col_fam_option2 = object()
+        col_fam3 = b'cf3'
+        col_fam_option3 = object()
         families = {
             col_fam1: col_fam_option1,
             # A trailing colon is also allowed.
-            col_fam2 + ':': col_fam_option2,
+            col_fam2 + u':': col_fam_option2,
+            col_fam3 + b':': col_fam_option3,
         }
         table_instances = []
         col_fam_instances = []
@@ -419,10 +422,11 @@ class TestConnection(unittest2.TestCase):
 
         # Check if our mock was called twice, but we don't know the order.
         mock_called = mock_parse_family_option.called_args
-        self.assertEqual(len(mock_called), 2)
-        self.assertEqual([len(args) for args in mock_called], [1, 1])
-        self.assertEqual(set(mock_called[0] + mock_called[1]),
-                         set([col_fam_option1, col_fam_option2]))
+        self.assertEqual(len(mock_called), 3)
+        self.assertEqual([len(args) for args in mock_called], [1, 1, 1])
+        self.assertEqual(
+            set(mock_called[0] + mock_called[1] + mock_called[2]),
+            set([col_fam_option1, col_fam_option2, col_fam_option3]))
 
         # We expect two column family instances created, but don't know the
         # order due to non-deterministic dict.items().
@@ -433,6 +437,9 @@ class TestConnection(unittest2.TestCase):
         self.assertEqual(col_fam_instances[1].column_family_id, col_fam2)
         self.assertEqual(col_fam_instances[1].gc_rule, mock_gc_rule)
         self.assertEqual(col_fam_instances[1].create_calls, 1)
+        self.assertEqual(col_fam_instances[2].column_family_id, col_fam3)
+        self.assertEqual(col_fam_instances[2].gc_rule, mock_gc_rule)
+        self.assertEqual(col_fam_instances[2].create_calls, 1)
 
     def test_create_table_bad_type(self):
         cluster = _Cluster()  # Avoid implicit environ check.

@@ -15,14 +15,14 @@
 """User friendly container for Google Cloud Bigtable Table."""
 
 
+from gcloud_bigtable._non_upstream_helpers import _to_bytes
 from gcloud_bigtable._generated import bigtable_data_pb2 as data_pb2
 from gcloud_bigtable._generated import (
     bigtable_service_messages_pb2 as data_messages_pb2)
 from gcloud_bigtable._generated import (
     bigtable_table_service_messages_pb2 as messages_pb2)
-from gcloud_bigtable._non_upstream_helpers import _to_bytes
-from gcloud_bigtable.column_family import ColumnFamily
 from gcloud_bigtable.column_family import _gc_rule_from_pb
+from gcloud_bigtable.column_family import ColumnFamily
 from gcloud_bigtable.row import Row
 from gcloud_bigtable.row_data import PartialRowData
 from gcloud_bigtable.row_data import PartialRowsData
