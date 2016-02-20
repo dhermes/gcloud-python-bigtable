@@ -660,8 +660,6 @@ class Table(object):
         :raises: :class:`ValueError <exceptions.ValueError>` if ``batch_size``
                  or ``scan_batching`` are used, or if ``limit`` is set but
                  non-positive, or if row prefix is used with row start/stop,
-                 :class:`NotImplementedError <exceptions.NotImplementedError>`
-                 temporarily until the method is implemented,
                  :class:`TypeError <exceptions.TypeError>` if a string
                  ``filter`` is used.
         """
