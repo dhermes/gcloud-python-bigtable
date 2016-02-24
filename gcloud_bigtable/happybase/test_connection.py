@@ -87,9 +87,21 @@ class Test__parse_family_option(unittest2.TestCase):
         self.assertEqual(result, None)
 
     def test_dictionary_bad_key(self):
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable.happybase import connection as MUT
+
+        warned = []
+
+        def mock_warn(msg):
+            warned.append(msg)
+
         option = {'badkey': None}
-        with self.assertRaises(ValueError):
-            self._callFUT(option)
+        with _Monkey(MUT, _WARN=mock_warn):
+            result = self._callFUT(option)
+
+        self.assertEqual(result, None)
+        self.assertEqual(len(warned), 1)
+        self.assertIn('badkey', warned[0])
 
     def test_dictionary_versions_key(self):
         from gcloud_bigtable.column_family import MaxVersionsGCRule

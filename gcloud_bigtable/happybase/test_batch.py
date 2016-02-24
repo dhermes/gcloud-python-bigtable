@@ -104,10 +104,20 @@ class TestBatch(unittest2.TestCase):
         self.assertEqual(batch._transaction, transaction)
 
     def test_constructor_with_non_default_wal(self):
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable.happybase import batch as MUT
+
+        warned = []
+
+        def mock_warn(msg):
+            warned.append(msg)
+
         table = object()
         wal = object()
-        with self.assertRaises(ValueError):
+        with _Monkey(MUT, _WARN=mock_warn):
             self._makeOne(table, wal=wal)
+
+        self.assertEqual(warned, [MUT._WAL_WARNING])
 
     def test_constructor_with_non_positive_batch_size(self):
         table = object()

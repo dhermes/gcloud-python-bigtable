@@ -15,9 +15,9 @@
 """Google Cloud Bigtable HappyBase connection module."""
 
 
+import datetime
 import warnings
 
-import datetime
 import six
 
 from gcloud_bigtable.client import Client
@@ -128,9 +128,6 @@ class Connection(object):
     :type kwargs: dict
     :param kwargs: Remaining keyword arguments. Provided for HappyBase
                    compatibility.
-
-    :raises: :class:`ValueError <exceptions.ValueError>` if any of the unused
-             parameters are specified with a value other than the defaults.
     """
 
     _cluster = None
@@ -430,32 +427,33 @@ def _parse_family_option(option):
 
     :rtype: :class:`.GarbageCollectionRule`
     :returns: A garbage collection rule parsed from the input.
-    :raises: :class:`ValueError <exceptions.ValueError>` if ``option`` is a
-             dictionary but keys other than ``max_versions`` and
-             ``time_to_live`` are used.
     """
     result = option
     if isinstance(result, dict):
         if not set(result.keys()) <= set(['max_versions', 'time_to_live']):
-            raise ValueError('Cloud Bigtable only supports max_versions and '
-                             'time_to_live column family settings',
-                             'Received', result.keys())
+            all_keys = ', '.join(repr(key) for key in result.keys())
+            warning_msg = ('Cloud Bigtable only supports max_versions and '
+                           'time_to_live column family settings. '
+                           'Received: %s' % (all_keys,))
+            _WARN(warning_msg)
 
         max_num_versions = result.get('max_versions')
         max_age = None
         if 'time_to_live' in result:
             max_age = datetime.timedelta(seconds=result['time_to_live'])
 
-        if len(result) == 0:
-            result = None
-        elif len(result) == 1:
-            if max_num_versions is None:
-                result = MaxAgeGCRule(max_age)
+        versions_rule = age_rule = None
+        if max_num_versions is not None:
+            versions_rule = MaxVersionsGCRule(max_num_versions)
+        if max_age is not None:
+            age_rule = MaxAgeGCRule(max_age)
+
+        if versions_rule is None:
+            result = age_rule
+        else:
+            if age_rule is None:
+                result = versions_rule
             else:
-                result = MaxVersionsGCRule(max_num_versions)
-        else:  # By our check above we know this means len(result) == 2.
-            rule1 = MaxAgeGCRule(max_age)
-            rule2 = MaxVersionsGCRule(max_num_versions)
-            result = GCRuleIntersection(rules=[rule1, rule2])
+                result = GCRuleIntersection(rules=[age_rule, versions_rule])
 
     return result
