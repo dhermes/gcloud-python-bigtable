@@ -25,7 +25,9 @@ from gcloud_bigtable.row import TimestampRange
 
 
 # BEGIN: Renames for upstream.
+# pylint: disable=invalid-name
 _datetime_from_microseconds = _microseconds_to_timestamp
+# pylint: enable=invalid-name
 #   END: Renames for upstream.
 _WAL_SENTINEL = object()
 # Assumed granularity of timestamps in Cloud Bigtable.

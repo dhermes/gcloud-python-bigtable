@@ -806,25 +806,67 @@ class TestTable(unittest2.TestCase):
             self, [(fake_cells,)], [to_pairs_kwargs])
 
     def test_scan_with_batch_size(self):
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable.happybase import table as MUT
+
+        warned = []
+
+        def mock_warn(msg):
+            warned.append(msg)
+
         name = 'table-name'
         connection = None
         table = self._makeOne(name, connection)
-        with self.assertRaises(ValueError):
-            list(table.scan(batch_size=object()))
+        # Use unknown to force a TypeError, so we don't need to
+        # stub out the rest of the method.
+        with self.assertRaises(TypeError):
+            with _Monkey(MUT, _WARN=mock_warn):
+                list(table.scan(batch_size=object(), unknown=None))
+
+        self.assertEqual(len(warned), 1)
+        self.assertIn('batch_size', warned[0])
 
     def test_scan_with_scan_batching(self):
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable.happybase import table as MUT
+
+        warned = []
+
+        def mock_warn(msg):
+            warned.append(msg)
+
         name = 'table-name'
         connection = None
         table = self._makeOne(name, connection)
-        with self.assertRaises(ValueError):
-            list(table.scan(scan_batching=object()))
+        # Use unknown to force a TypeError, so we don't need to
+        # stub out the rest of the method.
+        with self.assertRaises(TypeError):
+            with _Monkey(MUT, _WARN=mock_warn):
+                list(table.scan(scan_batching=object(), unknown=None))
+
+        self.assertEqual(len(warned), 1)
+        self.assertIn('scan_batching', warned[0])
 
     def test_scan_with_sorted_columns(self):
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable.happybase import table as MUT
+
+        warned = []
+
+        def mock_warn(msg):
+            warned.append(msg)
+
         name = 'table-name'
         connection = None
         table = self._makeOne(name, connection)
-        with self.assertRaises(ValueError):
-            list(table.scan(sorted_columns=object()))
+        # Use unknown to force a TypeError, so we don't need to
+        # stub out the rest of the method.
+        with self.assertRaises(TypeError):
+            with _Monkey(MUT, _WARN=mock_warn):
+                list(table.scan(sorted_columns=object(), unknown=None))
+
+        self.assertEqual(len(warned), 1)
+        self.assertIn('sorted_columns', warned[0])
 
     def test_scan_with_invalid_limit(self):
         name = 'table-name'
@@ -1145,6 +1187,23 @@ class TestTable(unittest2.TestCase):
         col_fam = 'fam'
         col_qual = 'col1'
         column = col_fam + ':' + col_qual
+        value = 42
+        packed_value = struct.pack('>q', value)
+        fake_timestamp = None
+        commit_result = {
+            col_fam: {
+                col_qual: [(packed_value, fake_timestamp)],
+            }
+        }
+        self._counter_inc_helper(row, column, value, commit_result)
+
+    def test_counter_inc_unicode(self):
+        import struct
+
+        row = 'row-key'
+        col_fam = b'fam'
+        col_qual = b'col1'
+        column = (col_fam + b':' + col_qual).decode('utf-8')
         value = 42
         packed_value = struct.pack('>q', value)
         fake_timestamp = None

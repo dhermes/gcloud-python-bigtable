@@ -16,6 +16,7 @@
 
 
 import struct
+import warnings
 
 import six
 
@@ -39,11 +40,14 @@ from gcloud_bigtable.row import TimestampRangeFilter
 from gcloud_bigtable.table import Table as _LowLevelTable
 
 
+_WARN = warnings.warn
 _UNPACK_I64 = struct.Struct('>q').unpack
 _SIMPLE_GC_RULES = (MaxAgeGCRule, MaxVersionsGCRule)
 # Upstream renames
+# pylint: disable=invalid-name
 _datetime_from_microseconds = _microseconds_to_timestamp
 _microseconds_from_datetime = _timestamp_to_microseconds
+# pylint: enable=invalid-name
 
 
 def make_row(cell_map, include_timestamp):
@@ -476,21 +480,24 @@ class Table(object):
         :param kwargs: Remaining keyword arguments. Provided for HappyBase
                        compatibility.
 
-        :raises: :class:`ValueError <exceptions.ValueError>` if ``batch_size``
-                 or ``scan_batching`` are used, or if ``limit`` is set but
-                 non-positive, or if row prefix is used with row start/stop,
+        :raises: If ``limit`` is set but non-positive, or if row prefix is
+                 used with row start/stop,
                  :class:`TypeError <exceptions.TypeError>` if a string
                  ``filter`` is used.
         """
-        if batch_size is not _DEFAULT_BATCH_SIZE:
-            raise ValueError('Batch size cannot be set for gcloud '
-                             'HappyBase module')
-        if scan_batching is not _DEFAULT_SCAN_BATCHING:
-            raise ValueError('Scan batching cannot be set for gcloud '
-                             'HappyBase module')
-        if sorted_columns is not _DEFAULT_SORTED_COLUMNS:
-            raise ValueError('Sorted columns cannot be set for gcloud '
-                             'HappyBase module')
+        legacy_args = []
+        for kw_name in ('batch_size', 'scan_batching', 'sorted_columns'):
+            if kw_name in kwargs:
+                legacy_args.append(kw_name)
+                kwargs.pop(kw_name)
+        if legacy_args:
+            legacy_args = ', '.join(legacy_args)
+            message = ('The HappyBase legacy arguments %s were used. These '
+                       'arguments are unused by gcloud.' % (legacy_args,))
+            _WARN(message)
+        if kwargs:
+            raise TypeError('Received unexpected arguments', kwargs.keys())
+
         if limit is not None and limit < 1:
             raise ValueError('limit must be positive')
         if row_prefix is not None:

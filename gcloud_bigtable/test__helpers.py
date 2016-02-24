@@ -16,11 +16,11 @@
 import unittest2
 
 
-class TestMetadataTransformer(unittest2.TestCase):
+class TestMetadataPlugin(unittest2.TestCase):
 
     def _getTargetClass(self):
-        from gcloud_bigtable._helpers import MetadataTransformer
-        return MetadataTransformer
+        from gcloud_bigtable._helpers import MetadataPlugin
+        return MetadataPlugin
 
     def _makeOne(self, *args, **kwargs):
         return self._getTargetClass()(*args, **kwargs)
@@ -36,9 +36,9 @@ class TestMetadataTransformer(unittest2.TestCase):
         user_agent = 'USER_AGENT'
         client = Client(project=project, credentials=credentials,
                         user_agent=user_agent)
-        transformer = self._makeOne(client)
-        self.assertTrue(transformer._credentials is scoped_creds)
-        self.assertEqual(transformer._user_agent, user_agent)
+        plugin = self._makeOne(client)
+        self.assertTrue(plugin._credentials is scoped_creds)
+        self.assertEqual(plugin._user_agent, user_agent)
         self.assertEqual(credentials._called, [
             ('create_scoped', ([DATA_SCOPE],), {}),
         ])
@@ -54,46 +54,28 @@ class TestMetadataTransformer(unittest2.TestCase):
         class _ReturnVal(object):
             access_token = access_token_expected
 
+        callback_args = []
+
+        def callback(value1, value2):
+            callback_args.append((value1, value2))
+
         scoped_creds = _MockWithAttachedMethods(_ReturnVal)
         credentials = _MockWithAttachedMethods(scoped_creds)
         project = 'PROJECT'
         client = Client(project=project, credentials=credentials)
 
-        transformer = self._makeOne(client)
-        result = transformer(None)
-        self.assertEqual(
-            result,
-            [
-                ('Authorization', 'Bearer ' + access_token_expected),
-                ('User-agent', DEFAULT_USER_AGENT),
-            ])
+        plugin = self._makeOne(client)
+        result = plugin(None, callback)
+        self.assertEqual(result, None)
+        cb_headers = [
+            ('Authorization', 'Bearer ' + access_token_expected),
+            ('User-agent', DEFAULT_USER_AGENT),
+        ]
+        self.assertEqual(callback_args, [(cb_headers, None)])
         self.assertEqual(credentials._called, [
             ('create_scoped', ([DATA_SCOPE],), {}),
         ])
         self.assertEqual(scoped_creds._called, [('get_access_token', (), {})])
-
-
-class Test_get_certs(unittest2.TestCase):
-
-    def _callFUT(self):
-        from gcloud_bigtable._helpers import get_certs
-        return get_certs()
-
-    def test_it(self):
-        import tempfile
-        from gcloud_bigtable._testing import _Monkey
-        from gcloud_bigtable import _helpers as MUT
-
-        # Just write to a mock file.
-        filename = tempfile.mktemp()
-        contents = b'FOOBARBAZ'
-        with open(filename, 'wb') as file_obj:
-            file_obj.write(contents)
-
-        with _Monkey(MUT, SSL_CERT_FILE=filename):
-            result = self._callFUT()
-
-        self.assertEqual(result, contents)
 
 
 class Test_make_stub(unittest2.TestCase):
@@ -110,35 +92,37 @@ class Test_make_stub(unittest2.TestCase):
 
         mock_result = object()
         custom_factory = _MockCalled(mock_result)
-        transformed = object()
-        transformer = _MockCalled(transformed)
+        mock_plugin = object()
+        plugin = _MockCalled(mock_plugin)
 
-        client_creds = object()
+        ssl_creds = object()
+        metadata_creds = object()
+        composite_creds = object()
         channel = object()
-        implementations_mod = _MockWithAttachedMethods(client_creds, channel)
+        implementations_mod = _MockWithAttachedMethods(
+            ssl_creds, metadata_creds, composite_creds, channel)
 
         host = 'HOST'
         port = 1025
-        certs = 'FOOBAR'
         client = _MockWithAttachedMethods()
-        with _Monkey(MUT, get_certs=lambda: certs,
-                     implementations=implementations_mod,
-                     MetadataTransformer=transformer):
+        with _Monkey(MUT, implementations=implementations_mod,
+                     MetadataPlugin=plugin):
             result = self._callFUT(client, custom_factory, host, port)
 
         self.assertTrue(result is mock_result)
         custom_factory.check_called(
             self,
             [(channel,)],
-            [{
-                'metadata_transformer': transformed,
-            }],
+            [{}],
         )
-        transformer.check_called(self, [(client,)])
+        plugin.check_called(self, [(client,)])
         self.assertEqual(client._called, [])
         # Check what was called on the module.
         self.assertEqual(implementations_mod._called, [
-            ('ssl_client_credentials', (certs,),
-             {'private_key': None, 'certificate_chain': None}),
-            ('secure_channel', (host, port, client_creds), {}),
+            ('ssl_channel_credentials', (None, None, None), {}),
+            ('metadata_call_credentials', (mock_plugin,),
+             {'name': 'google_creds'}),
+            ('composite_channel_credentials',
+             (ssl_creds, metadata_creds), {}),
+            ('secure_channel', (host, port, composite_creds), {}),
         ])
