@@ -35,54 +35,6 @@ _WAL_WARNING = ('The wal argument (Write-Ahead-Log) is not '
                 'supported by Cloud Bigtable.')
 
 
-def _get_column_pairs(columns, require_qualifier=False):
-    """Turns a list of column or column families in parsed pairs.
-
-    Turns a column family (``fam`` or ``fam:``) into a pair such
-    as ``['fam', None]`` and turns a column (``fam:col``) into
-    ``['fam', 'col']``.
-
-    :type columns: list
-    :param columns: Iterable containing column names (as
-                    strings). Each column name can be either
-
-                      * an entire column family: ``fam`` or ``fam:``
-                      * an single column: ``fam:col``
-
-    :type require_qualifier: bool
-    :param require_qualifier: Boolean indicating if the columns should
-                              all have a qualifier or not.
-
-    :rtype: list
-    :returns: List of pairs, where the first element in each pair is the
-              column family and the second is the column qualifier
-              (or :data:`None`).
-    :raises: :class:`ValueError <exceptions.ValueError>` if any of the columns
-             are not of the expected format.
-             :class:`ValueError <exceptions.ValueError>` if
-             ``require_qualifier`` is :data:`True` and one of the values is
-             for an entire column family
-    """
-    column_pairs = []
-    for column in columns:
-        # Remove trailing colons (i.e. for standalone column family).
-        column = column.rstrip(':')
-        num_colons = column.count(':')
-        if num_colons == 0:
-            # column is a column family.
-            if require_qualifier:
-                raise ValueError('column does not contain a qualifier',
-                                 column)
-            else:
-                column_pairs.append([column, None])
-        elif num_colons == 1:
-            column_pairs.append(column.split(':'))
-        else:
-            raise ValueError('Column contains the : separator more than once')
-
-    return column_pairs
-
-
 class Batch(object):
     """Batch class for accumulating mutations.
 
@@ -322,3 +274,51 @@ class Batch(object):
         # NOTE: For non-transactional batches, this will even commit mutations
         #       if an error occurred during the context manager.
         self.send()
+
+
+def _get_column_pairs(columns, require_qualifier=False):
+    """Turns a list of column or column families in parsed pairs.
+
+    Turns a column family (``fam`` or ``fam:``) into a pair such
+    as ``['fam', None]`` and turns a column (``fam:col``) into
+    ``['fam', 'col']``.
+
+    :type columns: list
+    :param columns: Iterable containing column names (as
+                    strings). Each column name can be either
+
+                      * an entire column family: ``fam`` or ``fam:``
+                      * an single column: ``fam:col``
+
+    :type require_qualifier: bool
+    :param require_qualifier: Boolean indicating if the columns should
+                              all have a qualifier or not.
+
+    :rtype: list
+    :returns: List of pairs, where the first element in each pair is the
+              column family and the second is the column qualifier
+              (or :data:`None`).
+    :raises: :class:`ValueError <exceptions.ValueError>` if any of the columns
+             are not of the expected format.
+             :class:`ValueError <exceptions.ValueError>` if
+             ``require_qualifier`` is :data:`True` and one of the values is
+             for an entire column family
+    """
+    column_pairs = []
+    for column in columns:
+        # Remove trailing colons (i.e. for standalone column family).
+        column = column.rstrip(':')
+        num_colons = column.count(':')
+        if num_colons == 0:
+            # column is a column family.
+            if require_qualifier:
+                raise ValueError('column does not contain a qualifier',
+                                 column)
+            else:
+                column_pairs.append([column, None])
+        elif num_colons == 1:
+            column_pairs.append(column.split(':'))
+        else:
+            raise ValueError('Column contains the : separator more than once')
+
+    return column_pairs

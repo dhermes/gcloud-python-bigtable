@@ -40,10 +40,10 @@ from gcloud_bigtable.table import Table as _LowLevelTable
 
 
 _UNPACK_I64 = struct.Struct('>q').unpack
-_DEFAULT_BATCH_SIZE = object()
-_DEFAULT_SCAN_BATCHING = object()
-_DEFAULT_SORTED_COLUMNS = object()
 _SIMPLE_GC_RULES = (MaxAgeGCRule, MaxVersionsGCRule)
+# Upstream renames
+_datetime_from_microseconds = _microseconds_to_timestamp
+_microseconds_from_datetime = _timestamp_to_microseconds
 
 
 def make_row(cell_map, include_timestamp):
@@ -93,54 +93,6 @@ def make_ordered_row(sorted_columns, include_timestamp):
                               'as the output from the Thrift server, so this '
                               'helper can not be implemented.', 'Called with',
                               sorted_columns, include_timestamp)
-
-def _convert_to_time_range(timestamp=None):
-    """Create a timestamp range from an HBase / HappyBase timestamp.
-
-    HBase uses timestamp as an argument to specify an exclusive end
-    deadline. Cloud Bigtable also uses exclusive end times, so
-    the behavior matches.
-
-    :type timestamp: int
-    :param timestamp: (Optional) Timestamp (in milliseconds since the
-                      epoch). Intended to be used as the end of an HBase
-                      time range, which is exclusive.
-
-    :rtype: :class:`.TimestampRange`, :data:`NoneType <types.NoneType>`
-    :returns: The timestamp range corresponding to the passed in
-              ``timestamp``.
-    """
-    if timestamp is None:
-        return None
-
-    next_timestamp = _microseconds_to_timestamp(1000 * timestamp)
-    return TimestampRange(end=next_timestamp)
-
-
-def _cells_to_pairs(cells, include_timestamp=False):
-    """Converts list of cells to HappyBase format.
-
-    :type cells: list
-    :param cells: List of :class:`.Cell` returned from a read request.
-
-    :type include_timestamp: bool
-    :param include_timestamp: Flag to indicate if cell timestamps should be
-                              included with the output.
-
-    :rtype: list
-    :returns: List of values in the cell. If ``include_timestamp=True``, each
-              value will be a pair, with the first part the bytes value in
-              the cell and the second part the number of milliseconds in the
-              timestamp on the cell.
-    """
-    result = []
-    for cell in cells:
-        if include_timestamp:
-            ts_millis = _timestamp_to_microseconds(cell.timestamp) // 1000
-            result.append((cell.value, ts_millis))
-        else:
-            result.append(cell.value)
-    return result
 
 
 def _filter_chain_helper(column=None, versions=None, timestamp=None,
@@ -248,90 +200,6 @@ def _row_keys_filter_helper(row_keys):
         return filters[0]
     else:
         return RowFilterUnion(filters=filters)
-
-
-def _partial_row_to_dict(partial_row_data, include_timestamp=False):
-    """Convert a low-level row data object to a dictionary.
-
-    Assumes only the latest value in each row are needed (e.g. different
-    behavior than in :meth:`Table.cells`).
-
-    :type partial_row_data: :class:`.row_data.PartialRowData`
-    :param partial_row_data: Row data consumed from a stream.
-
-    :type include_timestamp: bool
-    :param include_timestamp: Flag to indicate if cell timestamps should be
-                              included with the output.
-
-    :rtype: dict
-    :returns: The row data converted to a dictionary.
-    """
-    result = {}
-    for column, cells in six.iteritems(partial_row_data.to_dict()):
-        cell_vals = _cells_to_pairs(cells,
-                                    include_timestamp=include_timestamp)
-        # NOTE: We assume there is exactly 1 version since we used that in
-        #       our filter, but we don't check this.
-        result[column] = cell_vals[0]
-    return result
-
-
-def _next_char(str_val, index):
-    """Gets the next character based on a position in a string.
-
-    :type str_val: str
-    :param str_val: A string containing the character to update.
-
-    :type index: int
-    :param index: An integer index in ``str_val``.
-
-    :rtype: str
-    :returns: The next character after the character at ``index``
-              in ``str_val``.
-    """
-    if six.PY3:  # pragma: NO COVER
-        ord_val = str_val[index]
-    else:
-        ord_val = ord(str_val[index])
-    return _to_bytes(chr(ord_val + 1), encoding='latin-1')
-
-
-def _string_successor(str_val):
-    """Increment and truncate a byte string.
-
-    Determines shortest string that sorts after the given string when
-    compared using regular string comparison semantics.
-
-    Borrowed from gcloud-golang.
-
-    Increments the last byte that is smaller than ``0xFF``, and
-    drops everything after it. If the string only contains ``0xFF`` bytes,
-    ``''`` is returned.
-
-    :type str_val: str
-    :param str_val: String to increment.
-
-    :rtype: str
-    :returns: The next string in lexical order after ``str_val``.
-    """
-    str_val = _to_bytes(str_val, encoding='latin-1')
-    if str_val == b'':
-        return str_val
-
-    index = len(str_val) - 1
-    while index >= 0:
-        if six.PY3:  # pragma: NO COVER
-            if str_val[index] != 0xff:
-                break
-        else:
-            if str_val[index] != b'\xff':
-                break
-        index -= 1
-
-    if index == -1:
-        return b''
-
-    return str_val[:index] + _next_char(str_val, index)
 
 
 class Table(object):
@@ -534,9 +402,7 @@ class Table(object):
 
     def scan(self, row_start=None, row_stop=None, row_prefix=None,
              columns=None, filter=None, timestamp=None,
-             include_timestamp=False, batch_size=_DEFAULT_BATCH_SIZE,
-             scan_batching=_DEFAULT_SCAN_BATCHING,
-             limit=None, sorted_columns=_DEFAULT_SORTED_COLUMNS):
+             include_timestamp=False, limit=None, **kwargs):
         """Create a scanner for data in this table.
 
         This method returns a generator that can be used for looping over the
@@ -552,6 +418,17 @@ class Table(object):
             the start and the end of the table respectively. If both are
             omitted, a full table scan is done. Note that this usually results
             in severe performance problems.
+
+        The arguments ``batch_size``, ``scan_batching`` and ``sorted_columns``
+        are allowed (as keyword arguments) for compatibility with
+        HappyBase. However, they will not be used in any way, and will cause a
+        warning if passed. (The ``batch_size`` determines the number of
+        results to retrieve per request. The HBase scanner defaults to reading
+        one record at a time, so this argument allows HappyBase to increase
+        that number. However, the Cloud Bigtable API uses HTTP/2 streaming so
+        there is no concept of a batch. The ``sorted_columns`` flag tells
+        HBase to return columns in order, but Cloud Bigtable doesn't have
+        this feature.)
 
         :type row_start: str
         :param row_start: (Optional) Row key where the scanner should start
@@ -592,26 +469,12 @@ class Table(object):
         :param include_timestamp: Flag to indicate if cell timestamps should be
                                   included with the output.
 
-        :type batch_size: int
-        :param batch_size: Unused parameter. This determines the number of
-                           results to retrieve per request. The HBase scanner
-                           defaults to reading one record at a time, so this
-                           increases that number. The Cloud Bigtable API uses
-                           HTTP/2 streaming and this value can't be set.
-
-        :type scan_batching: bool
-        :param scan_batching: Unused parameter. Provided for compatibility
-                              with HappyBase, but irrelevant for Cloud Bigtable
-                              since it does not have concepts of batching or
-                              caching for scans.
-
         :type limit: int
         :param limit: (Optional) Maximum number of rows to return.
 
-        :type sorted_columns: bool
-        :param sorted_columns: Unused parameter. Provided compatibility with
-                               HappyBase, but irrelevant for Cloud Bigtable
-                               since it cannot return sorted columns.
+        :type kwargs: dict
+        :param kwargs: Remaining keyword arguments. Provided for HappyBase
+                       compatibility.
 
         :raises: :class:`ValueError <exceptions.ValueError>` if ``batch_size``
                  or ``scan_batching`` are used, or if ``limit`` is set but
@@ -763,6 +626,9 @@ class Table(object):
                     Provided for compatibility with HappyBase, but irrelevant
                     for Cloud Bigtable since it does not have a Write Ahead
                     Log.
+
+        :rtype: :class:`gcloud.bigtable.happybase.batch.Batch`
+        :returns: A batch bound to this table.
         """
         return Batch(self, timestamp=timestamp, batch_size=batch_size,
                      transaction=transaction, wal=wal)
@@ -916,4 +782,137 @@ def _gc_rule_to_dict(gc_rule):
                 key2, = rule2.keys()
                 if key1 != key2:
                     result = {key1: rule1[key1], key2: rule2[key2]}
+    return result
+
+
+def _next_char(str_val, index):
+    """Gets the next character based on a position in a string.
+
+    :type str_val: str
+    :param str_val: A string containing the character to update.
+
+    :type index: int
+    :param index: An integer index in ``str_val``.
+
+    :rtype: str
+    :returns: The next character after the character at ``index``
+              in ``str_val``.
+    """
+    if six.PY3:  # pragma: NO COVER
+        ord_val = str_val[index]
+    else:
+        ord_val = ord(str_val[index])
+    return _to_bytes(chr(ord_val + 1), encoding='latin-1')
+
+
+def _string_successor(str_val):
+    """Increment and truncate a byte string.
+
+    Determines shortest string that sorts after the given string when
+    compared using regular string comparison semantics.
+
+    Modeled after implementation in ``gcloud-golang``.
+
+    Increments the last byte that is smaller than ``0xFF``, and
+    drops everything after it. If the string only contains ``0xFF`` bytes,
+    ``''`` is returned.
+
+    :type str_val: str
+    :param str_val: String to increment.
+
+    :rtype: str
+    :returns: The next string in lexical order after ``str_val``.
+    """
+    str_val = _to_bytes(str_val, encoding='latin-1')
+    if str_val == b'':
+        return str_val
+
+    index = len(str_val) - 1
+    while index >= 0:
+        if six.PY3:  # pragma: NO COVER
+            if str_val[index] != 0xff:
+                break
+        else:
+            if str_val[index] != b'\xff':
+                break
+        index -= 1
+
+    if index == -1:
+        return b''
+
+    return str_val[:index] + _next_char(str_val, index)
+
+
+def _convert_to_time_range(timestamp=None):
+    """Create a timestamp range from an HBase / HappyBase timestamp.
+
+    HBase uses timestamp as an argument to specify an exclusive end
+    deadline. Cloud Bigtable also uses exclusive end times, so
+    the behavior matches.
+
+    :type timestamp: int
+    :param timestamp: (Optional) Timestamp (in milliseconds since the
+                      epoch). Intended to be used as the end of an HBase
+                      time range, which is exclusive.
+
+    :rtype: :class:`.TimestampRange`, :data:`NoneType <types.NoneType>`
+    :returns: The timestamp range corresponding to the passed in
+              ``timestamp``.
+    """
+    if timestamp is None:
+        return None
+
+    next_timestamp = _datetime_from_microseconds(1000 * timestamp)
+    return TimestampRange(end=next_timestamp)
+
+
+def _cells_to_pairs(cells, include_timestamp=False):
+    """Converts list of cells to HappyBase format.
+
+    :type cells: list
+    :param cells: List of :class:`.Cell` returned from a read request.
+
+    :type include_timestamp: bool
+    :param include_timestamp: Flag to indicate if cell timestamps should be
+                              included with the output.
+
+    :rtype: list
+    :returns: List of values in the cell. If ``include_timestamp=True``, each
+              value will be a pair, with the first part the bytes value in
+              the cell and the second part the number of milliseconds in the
+              timestamp on the cell.
+    """
+    result = []
+    for cell in cells:
+        if include_timestamp:
+            ts_millis = _microseconds_from_datetime(cell.timestamp) // 1000
+            result.append((cell.value, ts_millis))
+        else:
+            result.append(cell.value)
+    return result
+
+
+def _partial_row_to_dict(partial_row_data, include_timestamp=False):
+    """Convert a low-level row data object to a dictionary.
+
+    Assumes only the latest value in each row is needed (e.g. different
+    behavior than in :meth:`Table.cells`).
+
+    :type partial_row_data: :class:`.row_data.PartialRowData`
+    :param partial_row_data: Row data consumed from a stream.
+
+    :type include_timestamp: bool
+    :param include_timestamp: Flag to indicate if cell timestamps should be
+                              included with the output.
+
+    :rtype: dict
+    :returns: The row data converted to a dictionary.
+    """
+    result = {}
+    for column, cells in six.iteritems(partial_row_data.to_dict()):
+        cell_vals = _cells_to_pairs(cells,
+                                    include_timestamp=include_timestamp)
+        # NOTE: We assume there is exactly 1 version since we used that in
+        #       our filter, but we don't check this.
+        result[column] = cell_vals[0]
     return result
