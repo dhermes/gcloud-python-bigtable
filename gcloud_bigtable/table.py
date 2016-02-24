@@ -228,9 +228,7 @@ class Table(object):
         :type row_key: bytes
         :param row_key: The key of the row to read from.
 
-        :type filter_: :class:`.row.RowFilter`, :class:`.row.RowFilterChain`,
-                       :class:`.row.RowFilterUnion` or
-                       :class:`.row.ConditionalRowFilter`
+        :type filter_: :class:`.row.RowFilter`
         :param filter_: (Optional) The filter to apply to the contents of the
                         row. If unset, returns the entire row.
 
@@ -272,13 +270,6 @@ class Table(object):
                         The range will not include ``end_key``. If left empty,
                         will be interpreted as an infinite string.
 
-        :type filter_: :class:`.row.RowFilter`, :class:`.row.RowFilterChain`,
-                       :class:`.row.RowFilterUnion` or
-                       :class:`.row.ConditionalRowFilter`
-        :param filter_: (Optional) The filter to apply to the contents of the
-                        specified row(s). If unset, reads every column in
-                        each row.
-
         :type allow_row_interleaving: bool
         :param allow_row_interleaving: (Optional) By default, rows are read
                                        sequentially, producing results which
@@ -299,6 +290,11 @@ class Table(object):
                       set to :data:`True`, partial results may be returned for
                       more than N rows. However, only N ``commit_row`` chunks
                       will be sent.
+
+        :type filter_: :class:`.row.RowFilter`
+        :param filter_: (Optional) The filter to apply to the contents of the
+                        specified row(s). If unset, reads every column in
+                        each row.
 
         :rtype: :class:`.PartialRowsData`
         :returns: A :class:`.PartialRowsData` convenience wrapper for consuming
@@ -372,9 +368,7 @@ def _create_row_request(table_name, row_key=None, start_key=None, end_key=None,
                     The range will not include ``end_key``. If left empty,
                     will be interpreted as an infinite string.
 
-    :type filter_: :class:`.row.RowFilter`, :class:`.row.RowFilterChain`,
-                   :class:`.row.RowFilterUnion` or
-                   :class:`.row.ConditionalRowFilter`
+    :type filter_: :class:`.row.RowFilter`
     :param filter_: (Optional) The filter to apply to the contents of the
                     specified row(s). If unset, reads the entire table.
 

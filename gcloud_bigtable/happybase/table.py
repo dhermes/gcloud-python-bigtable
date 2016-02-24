@@ -349,7 +349,7 @@ class Table(object):
     def __init__(self, name, connection):
         self.name = name
         # This remains as legacy for HappyBase, but only the cluster
-        # from it is needed.
+        # from the connection is needed.
         self.connection = connection
         self._low_level_table = None
         if self.connection is not None:
@@ -367,8 +367,10 @@ class Table(object):
                   for a column family.
         """
         column_family_map = self._low_level_table.list_column_families()
-        return {col_fam: _gc_rule_to_dict(col_fam_obj.gc_rule)
-                for col_fam, col_fam_obj in column_family_map.items()}
+        result = {}
+        for col_fam, col_fam_obj in six.iteritems(column_family_map):
+            result[col_fam] = _gc_rule_to_dict(col_fam_obj.gc_rule)
+        return result
 
     def regions(self):
         """Retrieve the regions for this table.
@@ -787,7 +789,7 @@ class Table(object):
         :returns: Counter value (after initializing / incrementing by 0).
         """
         # Don't query directly, but increment with value=0 so that the counter
-        # is correctly initialised if didn't exist yet.
+        # is correctly initialized if didn't exist yet.
         return self.counter_inc(row, column, value=0)
 
     def counter_set(self, row, column, value=0):
@@ -836,6 +838,8 @@ class Table(object):
         :returns: Counter value after incrementing.
         """
         row = self._low_level_table.row(row)
+        if isinstance(column, six.binary_type):
+            column = column.decode('utf-8')
         column_family_id, column_qualifier = column.split(':')
         row.increment_cell_value(column_family_id, column_qualifier, value)
         modified_cells = row.commit_modifications()

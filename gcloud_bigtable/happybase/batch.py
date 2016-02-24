@@ -16,15 +16,23 @@
 
 
 import datetime
+import warnings
+
 import six
 
 from gcloud_bigtable._non_upstream_helpers import _microseconds_to_timestamp
 from gcloud_bigtable.row import TimestampRange
 
 
+# BEGIN: Renames for upstream.
+_datetime_from_microseconds = _microseconds_to_timestamp
+#   END: Renames for upstream.
 _WAL_SENTINEL = object()
 # Assumed granularity of timestamps in Cloud Bigtable.
 _ONE_MILLISECOND = datetime.timedelta(microseconds=1000)
+_WARN = warnings.warn
+_WAL_WARNING = ('The wal argument (Write-Ahead-Log) is not '
+                'supported by Cloud Bigtable.')
 
 
 def _get_column_pairs(columns, require_qualifier=False):
@@ -106,15 +114,12 @@ class Batch(object):
              is set and ``transaction=True``.
              :class:`ValueError <exceptions.ValueError>` if ``batch_size``
              is not positive.
-             :class:`ValueError <exceptions.ValueError>` if ``wal``
-             is used.
     """
 
     def __init__(self, table, timestamp=None, batch_size=None,
                  transaction=False, wal=_WAL_SENTINEL):
         if wal is not _WAL_SENTINEL:
-            raise ValueError('The wal argument cannot be used with '
-                             'Cloud Bigtable.')
+            _WARN(_WAL_WARNING)
 
         if batch_size is not None:
             if transaction:
@@ -125,10 +130,11 @@ class Batch(object):
 
         self._table = table
         self._batch_size = batch_size
-        # Timestamp is in milliseconds, convert to microseconds.
         self._timestamp = self._delete_range = None
+
+        # Timestamp is in milliseconds, convert to microseconds.
         if timestamp is not None:
-            self._timestamp = _microseconds_to_timestamp(1000 * timestamp)
+            self._timestamp = _datetime_from_microseconds(1000 * timestamp)
             # For deletes, we get the very next timestamp (assuming timestamp
             # granularity is milliseconds). This is because HappyBase users
             # expect HBase deletes to go **up to** and **including** the
@@ -136,6 +142,7 @@ class Batch(object):
             # final timestamp.
             next_timestamp = self._timestamp + _ONE_MILLISECOND
             self._delete_range = TimestampRange(end=next_timestamp)
+
         self._transaction = transaction
 
         # Internal state for tracking mutations.
