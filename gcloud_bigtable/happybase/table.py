@@ -23,6 +23,7 @@ import six
 from gcloud_bigtable._non_upstream_helpers import _microseconds_to_timestamp
 from gcloud_bigtable._non_upstream_helpers import _timestamp_to_microseconds
 from gcloud_bigtable._non_upstream_helpers import _to_bytes
+from gcloud_bigtable._non_upstream_helpers import _total_seconds
 from gcloud_bigtable.column_family import GCRuleIntersection
 from gcloud_bigtable.column_family import MaxAgeGCRule
 from gcloud_bigtable.column_family import MaxVersionsGCRule
@@ -97,113 +98,6 @@ def make_ordered_row(sorted_columns, include_timestamp):
                               'as the output from the Thrift server, so this '
                               'helper can not be implemented.', 'Called with',
                               sorted_columns, include_timestamp)
-
-
-def _filter_chain_helper(column=None, versions=None, timestamp=None,
-                         filters=None):
-    """Create filter chain to limit a results set.
-
-    :type column: str
-    :param column: (Optional) The column (``fam:col``) to be selected
-                   with the filter.
-
-    :type versions: int
-    :param versions: (Optional) The maximum number of cells to return.
-
-    :type timestamp: int
-    :param timestamp: (Optional) Timestamp (in milliseconds since the
-                      epoch). If specified, only cells returned before (or
-                      at) the timestamp will be matched.
-
-    :type filters: list
-    :param filters: (Optional) List of existing filters to be extended.
-
-    :rtype: :class:`.RowFilter`
-    :returns: The chained filter created, or just a single filter if only
-              one was needed.
-    :raises: :class:`ValueError <exceptions.ValueError>` if there are no
-             filters to chain.
-    """
-    if filters is None:
-        filters = []
-
-    if column is not None:
-        column_family_id, column_qualifier = column.split(':')
-        fam_filter = FamilyNameRegexFilter(column_family_id)
-        qual_filter = ColumnQualifierRegexFilter(column_qualifier)
-        filters.extend([fam_filter, qual_filter])
-    if versions is not None:
-        filters.append(CellsColumnLimitFilter(versions))
-    time_range = _convert_to_time_range(timestamp=timestamp)
-    if time_range is not None:
-        filters.append(TimestampRangeFilter(time_range))
-
-    num_filters = len(filters)
-    if num_filters == 0:
-        raise ValueError('Must have at least one filter.')
-    elif num_filters == 1:
-        return filters[0]
-    else:
-        return RowFilterChain(filters=filters)
-
-
-def _columns_filter_helper(columns):
-    """Creates a union filter for a list of columns.
-
-    :type columns: list
-    :param columns: Iterable containing column names (as strings). Each column
-                    name can be either
-
-                      * an entire column family: ``fam`` or ``fam:``
-                      * an single column: ``fam:col``
-
-    :rtype: :class:`.RowFilter`
-    :returns: The union filter created containing all of the matched columns.
-    :raises: :class:`ValueError <exceptions.ValueError>` if there are no
-             filters to union.
-    """
-    filters = []
-    for column_family_id, column_qualifier in _get_column_pairs(columns):
-        fam_filter = FamilyNameRegexFilter(column_family_id)
-        if column_qualifier is not None:
-            qual_filter = ColumnQualifierRegexFilter(column_qualifier)
-            combined_filter = RowFilterChain(
-                filters=[fam_filter, qual_filter])
-            filters.append(combined_filter)
-        else:
-            filters.append(fam_filter)
-
-    num_filters = len(filters)
-    if num_filters == 0:
-        raise ValueError('Must have at least one filter.')
-    elif num_filters == 1:
-        return filters[0]
-    else:
-        return RowFilterUnion(filters=filters)
-
-
-def _row_keys_filter_helper(row_keys):
-    """Creates a union filter for a list of rows.
-
-    :type row_keys: list
-    :param row_keys: Iterable containing row keys (as strings).
-
-    :rtype: :class:`.RowFilter`
-    :returns: The union filter created containing all of the row keys.
-    :raises: :class:`ValueError <exceptions.ValueError>` if there are no
-             filters to union.
-    """
-    filters = []
-    for row_key in row_keys:
-        filters.append(RowKeyRegexFilter(row_key))
-
-    num_filters = len(filters)
-    if num_filters == 0:
-        raise ValueError('Must have at least one filter.')
-    elif num_filters == 1:
-        return filters[0]
-    else:
-        return RowFilterUnion(filters=filters)
 
 
 class Table(object):
@@ -715,11 +609,25 @@ class Table(object):
             column = column.decode('utf-8')
         column_family_id, column_qualifier = column.split(':')
         row.increment_cell_value(column_family_id, column_qualifier, value)
+        # See row.commit_modifications() will return a dictionary:
+        # {
+        #     u'col-fam-id': {
+        #         b'col-name1': [
+        #             (b'cell-val', datetime.datetime(...)),
+        #             ...
+        #         ],
+        #         ...
+        #     },
+        # }
         modified_cells = row.commit_modifications()
+        # Get the cells in the modified column,
         column_cells = modified_cells[column_family_id][column_qualifier]
+        # Make sure there is exactly one cell in the column.
         if len(column_cells) != 1:
             raise ValueError('Expected server to return one modified cell.')
-        bytes_value = column_cells[0][0]
+        column_cell = column_cells[0]
+        # Get the bytes value from the column and convert it to an integer.
+        bytes_value = column_cell[0]
         int_value, = _UNPACK_I64(bytes_value)
         return int_value
 
@@ -775,7 +683,7 @@ def _gc_rule_to_dict(gc_rule):
     if gc_rule is None:
         result = {}
     elif isinstance(gc_rule, MaxAgeGCRule):
-        result = {'time_to_live': gc_rule.max_age.total_seconds()}
+        result = {'time_to_live': _total_seconds(gc_rule.max_age)}
     elif isinstance(gc_rule, MaxVersionsGCRule):
         result = {'max_versions': gc_rule.max_num_versions}
     elif isinstance(gc_rule, GCRuleIntersection):
@@ -805,10 +713,7 @@ def _next_char(str_val, index):
     :returns: The next character after the character at ``index``
               in ``str_val``.
     """
-    if six.PY3:  # pragma: NO COVER
-        ord_val = str_val[index]
-    else:
-        ord_val = ord(str_val[index])
+    ord_val = six.indexbytes(str_val, index)
     return _to_bytes(chr(ord_val + 1), encoding='latin-1')
 
 
@@ -836,12 +741,8 @@ def _string_successor(str_val):
 
     index = len(str_val) - 1
     while index >= 0:
-        if six.PY3:  # pragma: NO COVER
-            if str_val[index] != 0xff:
-                break
-        else:
-            if str_val[index] != b'\xff':
-                break
+        if six.indexbytes(str_val, index) != 0xff:
+            break
         index -= 1
 
     if index == -1:
@@ -876,6 +777,17 @@ def _convert_to_time_range(timestamp=None):
 def _cells_to_pairs(cells, include_timestamp=False):
     """Converts list of cells to HappyBase format.
 
+    For example::
+
+      >>> import datetime
+      >>> from gcloud_bigtable.row_data import Cell
+      >>> cell1 = Cell(b'val1', datetime.datetime.utcnow())
+      >>> cell2 = Cell(b'val2', datetime.datetime.utcnow())
+      >>> _cells_to_pairs([cell1, cell2])
+      [b'val1', b'val2']
+      >>> _cells_to_pairs([cell1, cell2], include_timestamp=True)
+      [(b'val1', 1456361486255), (b'val2', 1456361491927)]
+
     :type cells: list
     :param cells: List of :class:`.Cell` returned from a read request.
 
@@ -902,8 +814,25 @@ def _cells_to_pairs(cells, include_timestamp=False):
 def _partial_row_to_dict(partial_row_data, include_timestamp=False):
     """Convert a low-level row data object to a dictionary.
 
-    Assumes only the latest value in each row is needed (e.g. different
-    behavior than in :meth:`Table.cells`).
+    Assumes only the latest value in each row is needed. This assumption
+    is due to the fact that this method is used by callers which use
+    a ``CellsColumnLimitFilter(1)`` filter.
+
+    For example::
+
+      >>> import datetime
+      >>> from gcloud_bigtable.row_data import Cell, PartialRowData
+      >>> cell1 = Cell(b'val1', datetime.datetime.utcnow())
+      >>> cell2 = Cell(b'val2', datetime.datetime.utcnow())
+      >>> row_data = PartialRowData(b'row-key')
+      >>> _partial_row_to_dict(row_data)
+      {}
+      >>> row_data._cells[u'fam1'] = {b'col1': [cell1], b'col2': [cell2]}
+      >>> _partial_row_to_dict(row_data)
+      {b'fam1:col2': b'val2', b'fam1:col1': b'val1'}
+      >>> _partial_row_to_dict(row_data, include_timestamp=True)
+      {b'fam1:col2': (b'val2', 1456361724480),
+       b'fam1:col1': (b'val1', 1456361721135)}
 
     :type partial_row_data: :class:`.row_data.PartialRowData`
     :param partial_row_data: Row data consumed from a stream.
@@ -923,3 +852,112 @@ def _partial_row_to_dict(partial_row_data, include_timestamp=False):
         #       our filter, but we don't check this.
         result[column] = cell_vals[0]
     return result
+
+
+def _filter_chain_helper(column=None, versions=None, timestamp=None,
+                         filters=None):
+    """Create filter chain to limit a results set.
+
+    :type column: str
+    :param column: (Optional) The column (``fam:col``) to be selected
+                   with the filter.
+
+    :type versions: int
+    :param versions: (Optional) The maximum number of cells to return.
+
+    :type timestamp: int
+    :param timestamp: (Optional) Timestamp (in milliseconds since the
+                      epoch). If specified, only cells returned before (or
+                      at) the timestamp will be matched.
+
+    :type filters: list
+    :param filters: (Optional) List of existing filters to be extended.
+
+    :rtype: :class:`.RowFilter`
+    :returns: The chained filter created, or just a single filter if only
+              one was needed.
+    :raises: :class:`ValueError <exceptions.ValueError>` if there are no
+             filters to chain.
+    """
+    if filters is None:
+        filters = []
+
+    if column is not None:
+        if isinstance(column, six.binary_type):
+            column = column.decode('utf-8')
+        column_family_id, column_qualifier = column.split(':')
+        fam_filter = FamilyNameRegexFilter(column_family_id)
+        qual_filter = ColumnQualifierRegexFilter(column_qualifier)
+        filters.extend([fam_filter, qual_filter])
+    if versions is not None:
+        filters.append(CellsColumnLimitFilter(versions))
+    time_range = _convert_to_time_range(timestamp=timestamp)
+    if time_range is not None:
+        filters.append(TimestampRangeFilter(time_range))
+
+    num_filters = len(filters)
+    if num_filters == 0:
+        raise ValueError('Must have at least one filter.')
+    elif num_filters == 1:
+        return filters[0]
+    else:
+        return RowFilterChain(filters=filters)
+
+
+def _columns_filter_helper(columns):
+    """Creates a union filter for a list of columns.
+
+    :type columns: list
+    :param columns: Iterable containing column names (as strings). Each column
+                    name can be either
+
+                      * an entire column family: ``fam`` or ``fam:``
+                      * an single column: ``fam:col``
+
+    :rtype: :class:`.RowFilter`
+    :returns: The union filter created containing all of the matched columns.
+    :raises: :class:`ValueError <exceptions.ValueError>` if there are no
+             filters to union.
+    """
+    filters = []
+    for column_family_id, column_qualifier in _get_column_pairs(columns):
+        fam_filter = FamilyNameRegexFilter(column_family_id)
+        if column_qualifier is not None:
+            qual_filter = ColumnQualifierRegexFilter(column_qualifier)
+            combined_filter = RowFilterChain(
+                filters=[fam_filter, qual_filter])
+            filters.append(combined_filter)
+        else:
+            filters.append(fam_filter)
+
+    num_filters = len(filters)
+    if num_filters == 0:
+        raise ValueError('Must have at least one filter.')
+    elif num_filters == 1:
+        return filters[0]
+    else:
+        return RowFilterUnion(filters=filters)
+
+
+def _row_keys_filter_helper(row_keys):
+    """Creates a union filter for a list of rows.
+
+    :type row_keys: list
+    :param row_keys: Iterable containing row keys (as strings).
+
+    :rtype: :class:`.RowFilter`
+    :returns: The union filter created containing all of the row keys.
+    :raises: :class:`ValueError <exceptions.ValueError>` if there are no
+             filters to union.
+    """
+    filters = []
+    for row_key in row_keys:
+        filters.append(RowKeyRegexFilter(row_key))
+
+    num_filters = len(filters)
+    if num_filters == 0:
+        raise ValueError('Must have at least one filter.')
+    elif num_filters == 1:
+        return filters[0]
+    else:
+        return RowFilterUnion(filters=filters)

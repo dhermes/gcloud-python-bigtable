@@ -40,6 +40,14 @@ _WAL_WARNING = ('The wal argument (Write-Ahead-Log) is not '
 class Batch(object):
     """Batch class for accumulating mutations.
 
+    .. note::
+
+       When using a batch with ``transaction=False`` as a context manager
+       (i.e. in a ``with`` statement), mutations will still be sent as
+       row mutations even if the context manager exits with an error.
+       This behavior is in place to match the behavior in the HappyBase
+       HBase / Thrift implementation.
+
     :type table: :class:`Table <gcloud_bigtable.happybase.table.Table>`
     :param table: The table where mutations will be applied.
 
@@ -151,13 +159,9 @@ class Batch(object):
                     instance). Provided for compatibility with HappyBase, but
                     irrelevant for Cloud Bigtable since it does not have a
                     Write Ahead Log.
-
-        :raises: :class:`ValueError <exceptions.ValueError>` if ``wal``
-                 is used.
         """
         if wal is not _WAL_SENTINEL:
-            raise ValueError('The wal argument cannot be used with '
-                             'Cloud Bigtable.')
+            _WARN(_WAL_WARNING)
 
         row_object = self._get_row(row)
         # Make sure all the keys are valid before beginning
@@ -224,13 +228,11 @@ class Batch(object):
                     irrelevant for Cloud Bigtable since it does not have a
                     Write Ahead Log.
 
-        :raises: :class:`ValueError <exceptions.ValueError>` if ``wal``
-                 is used, or if if the delete timestamp range is set on the
+        :raises: If if the delete timestamp range is set on the
                  current batch, but a full row delete is attempted.
         """
         if wal is not _WAL_SENTINEL:
-            raise ValueError('The wal argument cannot be used with '
-                             'Cloud Bigtable.')
+            _WARN(_WAL_WARNING)
 
         row_object = self._get_row(row)
 
@@ -308,9 +310,12 @@ def _get_column_pairs(columns, require_qualifier=False):
     """
     column_pairs = []
     for column in columns:
+        if isinstance(column, six.binary_type):
+            column = column.decode('utf-8')
         # Remove trailing colons (i.e. for standalone column family).
-        column = column.rstrip(':')
-        num_colons = column.count(':')
+        if column.endswith(u':'):
+            column = column[:-1]
+        num_colons = column.count(u':')
         if num_colons == 0:
             # column is a column family.
             if require_qualifier:
@@ -319,7 +324,7 @@ def _get_column_pairs(columns, require_qualifier=False):
             else:
                 column_pairs.append([column, None])
         elif num_colons == 1:
-            column_pairs.append(column.split(':'))
+            column_pairs.append(column.split(u':'))
         else:
             raise ValueError('Column contains the : separator more than once')
 
