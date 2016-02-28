@@ -40,7 +40,6 @@ PROJECT_ID = os.getenv('GCLOUD_TESTS_PROJECT_ID')
 CENTRAL_1C_ZONE = 'us-central1-c'
 NOW_MILLIS = int(1000 * time.time())
 CLUSTER_ID = 'gcloud-python-%d' % (NOW_MILLIS,)
-SERVE_NODES = 3
 TABLE_ID = 'gcloud-python-test-table'
 COLUMN_FAMILY_ID1 = u'col-fam-id1'
 COLUMN_FAMILY_ID2 = u'col-fam-id2'
@@ -53,13 +52,13 @@ CELL_VAL3 = b'altcol-cell-val'
 CELL_VAL4 = b'foo'
 ROW_KEY = b'row-key'
 ROW_KEY_ALT = b'row-key-alt'
+EXISTING_CLUSTERS = []
 EXPECTED_ZONES = (
     'asia-east1-b',
     'europe-west1-c',
     'us-central1-b',
     CENTRAL_1C_ZONE,
 )
-EXISTING_CLUSTERS = []
 CREDENTIALS = GoogleCredentials.get_application_default()
 CLIENT = Client(project=PROJECT_ID, credentials=CREDENTIALS, admin=True)
 CLUSTER = CLIENT.cluster(CENTRAL_1C_ZONE, CLUSTER_ID,

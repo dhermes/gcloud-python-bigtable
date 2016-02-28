@@ -279,7 +279,7 @@ class Batch(object):
 
 
 def _get_column_pairs(columns, require_qualifier=False):
-    """Turns a list of column or column families in parsed pairs.
+    """Turns a list of column or column families into parsed pairs.
 
     Turns a column family (``fam`` or ``fam:``) into a pair such
     as ``['fam', None]`` and turns a column (``fam:col``) into
