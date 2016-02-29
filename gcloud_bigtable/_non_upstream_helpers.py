@@ -338,8 +338,3 @@ def _pb_timestamp_to_datetime(timestamp):
             microseconds=(timestamp.nanos / 1000.0),
         )
     )
-
-
-def _total_seconds(timestamp):
-    # A fake Py2.6 backport (we don't need it since only in Py2.7.)
-    return timestamp.total_seconds()

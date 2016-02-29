@@ -36,7 +36,7 @@ class Test__get_column_pairs(unittest2.TestCase):
         expected_result = [
             ['cf1', None],
             ['cf2', None],
-            ['cf3', None],
+            ['cf3', ''],
             ['cf3', 'name1'],
             ['cf3', 'name2'],
         ]
@@ -241,7 +241,14 @@ class TestBatch(unittest2.TestCase):
         self.assertEqual(batch._row_map, {row_key: mock_row})
 
     def test_put_bad_wal(self):
-        from gcloud_bigtable.happybase.batch import _WAL_SENTINEL
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable.happybase import batch as MUT
+
+        warned = []
+
+        def mock_warn(msg):
+            warned.append(msg)
+            raise RuntimeError('No need to continue')
 
         table = object()
         batch = self._makeOne(table)
@@ -250,9 +257,11 @@ class TestBatch(unittest2.TestCase):
         data = {}
         wal = None
 
-        self.assertNotEqual(wal, _WAL_SENTINEL)
-        with self.assertRaises(ValueError):
-            batch.put(row, data, wal=wal)
+        self.assertNotEqual(wal, MUT._WAL_SENTINEL)
+        with _Monkey(MUT, _WARN=mock_warn):
+            with self.assertRaises(RuntimeError):
+                batch.put(row, data, wal=wal)
+        self.assertEqual(warned, [MUT._WAL_WARNING])
 
     def test_put(self):
         import operator
@@ -345,7 +354,14 @@ class TestBatch(unittest2.TestCase):
             self._delete_columns_test_helper(time_range=time_range)
 
     def test_delete_bad_wal(self):
-        from gcloud_bigtable.happybase.batch import _WAL_SENTINEL
+        from gcloud_bigtable._testing import _Monkey
+        from gcloud_bigtable.happybase import batch as MUT
+
+        warned = []
+
+        def mock_warn(msg):
+            warned.append(msg)
+            raise RuntimeError('No need to continue')
 
         table = object()
         batch = self._makeOne(table)
@@ -354,9 +370,11 @@ class TestBatch(unittest2.TestCase):
         columns = []
         wal = None
 
-        self.assertNotEqual(wal, _WAL_SENTINEL)
-        with self.assertRaises(ValueError):
-            batch.delete(row, columns=columns, wal=wal)
+        self.assertNotEqual(wal, MUT._WAL_SENTINEL)
+        with _Monkey(MUT, _WARN=mock_warn):
+            with self.assertRaises(RuntimeError):
+                batch.delete(row, columns=columns, wal=wal)
+        self.assertEqual(warned, [MUT._WAL_WARNING])
 
     def test_delete_entire_row(self):
         table = object()

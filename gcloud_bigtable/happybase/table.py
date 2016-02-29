@@ -883,7 +883,7 @@ def _filter_chain_helper(column=None, versions=None, timestamp=None,
         filters = []
 
     if column is not None:
-        if isinstance(column, six.binary_type):
+        if isinstance(column, six.binary_type):  # pragma: NO COVER
             column = column.decode('utf-8')
         column_family_id, column_qualifier = column.split(':')
         fam_filter = FamilyNameRegexFilter(column_family_id)
