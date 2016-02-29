@@ -80,3 +80,19 @@
 
     print(list(table.scan()))
     print(list(table.scan(sorted_columns=True)))
+
+
+
+
+TESTING IF DELETE TIMESTAMPS MATTER
+table.cells(row_key, 'family:qual1', include_timestamp=True)
+table.put(row_key, {'family:qual1': 'new-data'})
+table.cells(row_key, 'family:qual1', include_timestamp=True)
+table.delete(row_key, columns=['family:qual1'])
+table.cells(row_key, 'family:qual1', include_timestamp=True)
+table.put(row_key, {'family:qual1': 'value1'})
+table.put(row_key, {'family:qual1': 'new-data'})
+c1, c2 = table.cells(row_key, 'family:qual1', include_timestamp=True)
+midpt = (c1[1] + c2[1]) // 2
+table.delete(row_key, columns=['family:qual1'], timestamp=midpt)
+table.cells(row_key, 'family:qual1', include_timestamp=True)
