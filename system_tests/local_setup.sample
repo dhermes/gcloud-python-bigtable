@@ -1,3 +1,0 @@
-export GCLOUD_REMOTE_FOR_LINT="upstream"
-export GCLOUD_BRANCH_FOR_LINT="master"
-export GCLOUD_TESTS_PROJECT_ID=some-project-id
